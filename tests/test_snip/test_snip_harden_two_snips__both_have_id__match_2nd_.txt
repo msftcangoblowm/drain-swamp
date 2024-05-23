@@ -1,0 +1,9 @@
+zzzzzzzzzzzzz
+# @@@ editable asdf
+blah blah blah
+# @@@ end
+zzzzzz
+# @@@ editable george
+abc abc abc
+# @@@ end
+zzzzzzz

@@ -1,0 +1,19 @@
+# Licensed under the Apache License: http://www.apache.org/licenses/LICENSE-2.0
+# For details: https://github.com/msftcangoblowm/pipenv-unlock/blob/master/NOTICE.txt
+
+# -c pins.lock
+-c prod.in
+
+black
+blackdoc
+isort
+flake8
+flake8-pyi
+flake8-pyproject
+mypy
+coverage
+twine
+validate-pyproject
+pytest>=7.1
+pytest-cov
+pytest-regressions

@@ -1,0 +1,8 @@
+mypy==1.10.0
+    # via -r requirements/mypy.in
+mypy-extensions==1.0.0
+    # via mypy
+tomli==2.0.1
+    # via mypy
+typing-extensions==4.11.0
+    # via mypy

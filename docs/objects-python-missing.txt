@@ -1,0 +1,5 @@
+# Sphinx inventory version 2
+# Project: python 3.9.16
+# Version: 3.9.16
+# The remainder of this file is compressed using zlib.
+abc._get_dump py:function 1 bac277f1dd1f1895ee54a0ae4bf11cf1f2dc5ac2/Modules/_abc.c#L279 -

@@ -1,0 +1,80 @@
+drain-swamp
+==============
+
+Python packaging automation is ripe for exploit. Lets drain the swamp!
+
+Code in Makefile or python scripts should be reduced or removed
+entirely, in favor of packaged, unittested, and well documented code.
+
+Authors and maintainers deal with lots of repos. Too often
+boilerplate gets copy and pasted into each package, becoming:
+
+- an eye sore
+- completely untested code
+- small variations leak in
+- code quality and feature improvements are less likely to happen
+
+Drain swamp focuses on:
+
+- pyproject.toml dependencies and optional dependencies
+- Sphinx ``docs/conf.py``
+- CHANGES.rst
+- NOTICE.txt
+
+This is done skillfully, applying a generic technique, snippets. Static
+config files become dynamic, encouraging automation.
+
+That's a lot of boilerplate code ... gone! Not all, but most.
+
+.. PYVERSIONS
+
+* Python 3.9 through 3.12, and 3.13.0a3 and up.
+
+**New in 0.1.x:**
+
+build package with semantic versioning; generic technique Snip;
+sphinxcontrib-snip; pipenv-unlock; user manual; code manual; frankenpus logo;
+
+Extensions
+-----------
+
+*Snip* is the generic tool. Applying this tool to specific situations
+should be considered Extensions (or plugins).
+
+In which case, comes with two extensions:
+
+**pipenv-unlock**
+
+pyproject.toml is not dynamic and it's not supposed to be dynamic. In
+an ideal world, it would be static.
+
+But some authors, disappear or die. The primary issue with abandoned
+package is it's dependency locked.
+
+pipenv-unlock is a light switch to turn on/off dependency locking.
+
+Snap ... on!
+
+Snap ... off!
+
+Snap ... on!
+
+Snap ... off!
+
+(author dies or discovers girls or gets a job scrapping gum off sidewalks)
+
+world+dog: Phew! Winning ... err ... I mean, *So sad. Poor him*
+
+**sphinxcontrib-snip**
+
+In ``conf.py``, there are some dynamic fields. Each package release,
+has to change these fields:
+
+- version
+- release
+- release_date
+- copyright (start year and author name)
+
+Reduces reliance on ``igor.py``
+
+.. tableofcontents::

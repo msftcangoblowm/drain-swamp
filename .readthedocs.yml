@@ -1,0 +1,32 @@
+version: 2
+
+build:
+  os: ubuntu-22.04
+  tools:
+    # PYVERSIONS: the version we use for building docs. Check tox.ini[doc] also.
+    python: "3.9"
+  jobs:
+    pre_build:
+    - |
+      make --directory=docs build_inv
+      mkdir -p $READTHEDOCS_OUTPUT/html/
+
+python:
+  install:
+    - requirements: docs/requirements.unlock
+    - method: pip
+      path: .
+
+# Consider theme change so pdf and epub are available for download
+# Until then do not build pdf and epub (pandoc)
+# Not sure of:
+# 1. non-English language support: Japanese (East Asian), Hebrew (right 2 left)??
+# 2. mountain of dependencies
+# 3. learning curve
+# https://github.com/executablebooks/sphinx-book-theme
+formats: []
+
+sphinx:
+  configuration: docs/conf.py
+  builder: html
+  fail_on_warning: true

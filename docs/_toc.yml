@@ -1,0 +1,43 @@
+root: index
+subtrees:
+- entries:
+  - file: snippets/index
+    entries:
+    - glob: snippets/*
+- entries:
+  - file: pipenv_unlock/index
+    entries:
+    - glob: pipenv_unlock/*
+- entries:
+  - file: sphinxcontrib_snip/index
+- entries:
+  - file: code/index
+    entries:
+    - file: code/snip
+    - file: code/cli_sphinx_conf
+    - file: code/cli_unlock
+    - file: code/general/index
+      entries:
+      - file: code/general/version
+      - file: code/general/check_type
+      - file: code/general/constants
+      - file: code/general/exceptions
+      - file: code/general/pep518_read
+      - file: code/general/parser_in
+      - file: code/general/version_semantic
+    - file: code/ext/index
+      entries:
+      - file: code/ext/pipenv_unlock/index
+        entries:
+        - file: code/ext/pipenv_unlock/backend_abc
+        - file: code/ext/pipenv_unlock/backend_setuptools
+        - file: code/ext/pipenv_unlock/lock_toggle
+      - file: code/ext/sphinxcontrib_snip/index
+        entries:
+        - file: code/ext/sphinxcontrib_snip/sphinx_conf
+- caption: Links
+  entries:
+  - title: Contact
+    url: https://mastodon.social/@msftcangoblowme
+meta:
+  exclude_missing: true

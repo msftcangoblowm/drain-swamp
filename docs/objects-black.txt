@@ -1,0 +1,7 @@
+# Sphinx inventory version 2
+# Project: black 23.12.1
+# Version: 23.12.1
+# The remainder of this file is compressed using zlib.
+black py:module 0 blob/main/src/black/__init__.py -
+black.files py:module 0 blob/ea66d40dd7f1eaa20256e6fccaf6d7b853ccc541/src/black/files.py -
+black.files.find_project_root py:function 1 blob/ea66d40dd7f1eaa20256e6fccaf6d7b853ccc541/src/black/files.py#L57 -

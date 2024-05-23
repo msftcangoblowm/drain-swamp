@@ -1,0 +1,24 @@
+## asset-scissor-cut
+
+[asset-scissor-cut.svg](https://www.svgrepo.com/show/424249/cut-education-opened.svg)
+
+[Distributor](https://www.svgrepo.com/svg/424249/cut-education-opened)
+
+[License CC0](https://www.svgrepo.com/page/licensing/#CC0)
+
+## asset-octopus-realistic
+
+
+[asset-octopus-realistic](https://www.svgrepo.com/show/397611/octopus.svg)
+
+[Distributor](https://www.svgrepo.com/svg/397611/octopus)
+
+[License Apache](https://www.svgrepo.com/page/licensing/#Apache)
+
+## asset-monkey
+
+[asset-monkey](https://www.svgrepo.com/show/400493/monkey.svg)
+
+[Distributor](https://www.svgrepo.com/svg/400493/monkey)
+
+[License Apache](https://www.svgrepo.com/page/licensing/#Apache)

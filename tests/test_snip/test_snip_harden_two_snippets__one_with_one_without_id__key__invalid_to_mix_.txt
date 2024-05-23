@@ -1,0 +1,10 @@
+zzzzzzzzzzzzz
+# @@@ editable
+blah blah blah
+# @@@ end
+zzzzzzzzzzzzz
+zzzzzzzzzzzzz
+# @@@ editable george
+abc abc abc
+# @@@ end
+zzzzzzzzzzzzz

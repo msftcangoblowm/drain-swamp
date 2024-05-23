@@ -1,0 +1,20 @@
+# Licensed under the Apache License: http://www.apache.org/licenses/LICENSE-2.0
+# For details: https://github.com/msftcangoblowm/pipenv-unlock/blob/master/NOTICE.txt
+
+# -c pins.lock
+
+# Things needed to make distribution kits.
+# "make upgrade" turns this into requirements/kit.pip.
+
+auditwheel
+build
+cibuildwheel  # .github/workflows/kit.yml
+setuptools
+setuptools-scm  # versioning
+wheel
+
+# Build has a windows-only dependency on colorama:
+# https://github.com/pypa/build/blob/main/setup.cfg#L32
+#   colorama;os_name == "nt"
+# We copy it here so it can get pinned.
+colorama

@@ -1,0 +1,13 @@
+# Licensed under the Apache License: http://www.apache.org/licenses/LICENSE-2.0
+# For details: https://github.com/msftcangoblowm/drain-swamp/blob/master/NOTICE.txt
+
+# -c ../requirements/pins.lock
+-c ../requirements/prod.in
+
+sphinx
+sphinx-pyproject
+sphinx-autobuild
+sphinx-paramlinks
+sphobjinv   # cross-references inventories, objects.inv
+sphinx-external-toc-strict
+scriv       # for writing GitHub releases

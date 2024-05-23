@@ -1,0 +1,85 @@
+* Release checklist
+
+- Run twice
+  $ make pre-commit
+- Remove old branches
+  $ git branch
+  $ git branch -D [branch name]
+- Check that the current virtualenv is activated and matches the current branch
+- Check current version. Taken from git. Side effect. Current tag --> src/[app name]/_version.py
+  Do not use, `python setup.py --version`
+  Initial version, manually edit _version.py
+  $ python igor.py version "tag"
+  or for pre-release or post-release development versions
+  $ python igor.py version "current"
+  If not in dev mode,  in venv, update ``[prog name]._version.py`` as needed
+- What would the next version be?
+  Do not use if initial version like, ``v1.0.1-1-g3893340``
+  $ python igor.py cheats "tag"
+  or
+  $ python igor.py cheats "current"
+  See `facts.next_vi`
+- start branch for release work
+    $ make relbranch
+- Edit supported Python version numbers. Search for "PYVERSIONS".
+    - README.rst
+    - docs/index.rst
+- Update sphinx conf.py CHANGES.rst, and NOTICE.txt with release facts. Supply "next version":
+    Seed CHANGES.rst
+    $ python src/drain_swamp/cli_igor.py seed
+    Edit CHANGES.rst, NOTICE.txt and docs/conf.py
+    $ python src/drain_swamp/cli_igor.py edits --kind="1.2.11"
+    or
+    $ python src/drain_swamp/cli_igor.py edits --kind="current"
+    If docs.conf.py snippet has a snippet id
+    $ python src/drain_swamp/cli_igor.py edits --kind="1.2.11" --snip="snippet_id"
+- Look over CHANGES.rst
+  Takes time. Rewrite commit messages to be accessible by normies. Rewrite it again.
+- Update README.rst
+    - "New in x.y:"
+- Update docs
+    - IF PRE-RELEASE:
+        - Version of latest stable release in docs/index.rst
+    - Make sure the docs are cogged:
+        $ make prebuild
+    - Don't forget the man page: docs/python-sphinx-external-toc-strict.1.txt
+    - Check that the docs build correctly:
+        $ tox -e docs
+        or
+        $ cd docs && make doctest && cd - &>/dev/null
+        $ cd docs && make linkcheck && cd - &>/dev/null
+        $ cd docs && make html && cd - &>/dev/null
+        $ cd docs && make pdf && cd - &>/dev/null
+    - tox will affect _version.py, revert version str back to tagged version
+- commit the release-prep changes
+    $ make relcommit1
+    or
+    $ git status
+    $ git add [whatever]
+    $ git commit -S -m ""
+- Done with changes to source files
+    - check them in on the release prep branch
+    - wait for ci to finish
+    - merge to master
+      $ git branch
+      $ git switch main
+      $ git merge -S -m "Your merge commit message" [source_branch]
+    - Check web connection then push. Don't trigger a release until a tag push
+      $ git push
+- Start the kits:
+    - Update src/[app name]/_version.py and build
+      package not previously installed -- Specific version
+      $ python src/drain_swamp/cli_igor.py build --kind="[bumped version]"
+      package previously installed -- Specific version
+      $ python -m drain_swamp.cli_igor build --kind="[bumped version]"
+      package not previously installed -- current version
+      $ python src/drain_swamp/cli_igor.py build --kind="current"
+      package previously installed -- current version
+      $ python -m drain_swamp.cli_igor build --kind="current"
+    Trigger the kit GitHub Action (no CI integration yet)
+        $ make kits_build (make debug=1 prep_kit)
+- Tag the tree
+    $ make tag
+    or
+    $ git tag -as -m "Version 1.2.11" 1.2.11
+    # git push --follow-tags

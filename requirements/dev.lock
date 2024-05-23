@@ -1,0 +1,153 @@
+backports-tarfile==1.1.1
+    # via jaraco-context
+black==24.4.1
+    # via
+    #   -r requirements/dev.in
+    #   blackdoc
+blackdoc==0.3.9
+    # via -r requirements/dev.in
+certifi==2024.2.2
+    # via requests
+cffi==1.16.0
+    # via cryptography
+charset-normalizer==3.3.2
+    # via requests
+click==8.1.7
+    # via
+    #   -c requirements/prod.in
+    #   black
+coverage[toml]==7.5.0
+    # via
+    #   -r requirements/dev.in
+    #   pytest-cov
+cryptography==42.0.5
+    # via secretstorage
+docutils==0.21.2
+    # via readme-renderer
+exceptiongroup==1.2.1
+    # via pytest
+fastjsonschema==2.19.1
+    # via validate-pyproject
+flake8==7.0.0
+    # via
+    #   -r requirements/dev.in
+    #   flake8-pyproject
+flake8-pyproject==1.2.3
+    # via -r requirements/dev.in
+idna==3.7
+    # via requests
+importlib-metadata==7.1.0
+    # via
+    #   keyring
+    #   twine
+iniconfig==2.0.0
+    # via pytest
+isort==5.13.2
+    # via -r requirements/dev.in
+jaraco-classes==3.4.0
+    # via keyring
+jaraco-context==5.3.0
+    # via keyring
+jaraco-functools==4.0.1
+    # via keyring
+jeepney==0.8.0
+    # via
+    #   keyring
+    #   secretstorage
+keyring==25.1.0
+    # via twine
+markdown-it-py==3.0.0
+    # via rich
+mccabe==0.7.0
+    # via flake8
+mdurl==0.1.2
+    # via markdown-it-py
+more-itertools==10.2.0
+    # via
+    #   blackdoc
+    #   jaraco-classes
+    #   jaraco-functools
+mypy==1.10.0
+    # via -r requirements/dev.in
+mypy-extensions==1.0.0
+    # via
+    #   black
+    #   mypy
+nh3==0.2.17
+    # via readme-renderer
+packaging==24.0
+    # via
+    #   black
+    #   pytest
+pathspec==0.12.1
+    # via
+    #   black
+    #   blackdoc
+pkginfo==1.10.0
+    # via twine
+platformdirs==4.2.1
+    # via black
+pluggy==1.5.0
+    # via pytest
+pycodestyle==2.11.1
+    # via flake8
+pycparser==2.22
+    # via cffi
+pyflakes==3.2.0
+    # via flake8
+pygments==2.17.2
+    # via
+    #   readme-renderer
+    #   rich
+pytest==8.1.1
+    # via
+    #   -r requirements/dev.in
+    #   pytest-cov
+    #   pytest-datadir
+    #   pytest-regressions
+pytest-cov==5.0.0
+    # via -r requirements/dev.in
+pytest-datadir==1.5.0
+    # via pytest-regressions
+pytest-regressions==2.5.0
+    # via -r requirements/dev.in
+pyyaml==6.0.1
+    # via pytest-regressions
+readme-renderer==43.0
+    # via twine
+requests==2.31.0
+    # via
+    #   requests-toolbelt
+    #   twine
+requests-toolbelt==1.0.0
+    # via twine
+rfc3986==2.0.0
+    # via twine
+rich==13.7.1
+    # via
+    #   blackdoc
+    #   twine
+secretstorage==3.3.3
+    # via keyring
+tomli==2.0.1
+    # via
+    #   black
+    #   blackdoc
+    #   coverage
+    #   flake8-pyproject
+    #   mypy
+    #   pytest
+twine==5.0.0
+    # via -r requirements/dev.in
+typing-extensions==4.11.0
+    # via
+    #   black
+    #   mypy
+urllib3==2.2.1
+    # via
+    #   requests
+    #   twine
+validate-pyproject==0.16
+    # via -r requirements/dev.in
+zipp==3.18.1
+    # via importlib-metadata
