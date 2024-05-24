@@ -6,6 +6,8 @@
   $ git branch
   $ git branch -D [branch name]
 - Check that the current virtualenv is activated and matches the current branch
+- Sanitize a semantic version str
+  $ python src/drain_swamp/cli_igor.py pretag "0.0.1"
 - Check current version. Taken from git. Side effect. Current tag --> src/[app name]/_version.py
   Do not use, `python setup.py --version`
   Initial version, manually edit _version.py
@@ -62,7 +64,7 @@
     - wait for ci to finish
     - merge to master
       $ git branch
-      $ git switch main
+      $ git switch master
       $ git merge -S -m "Your merge commit message" [source_branch]
     - Check web connection then push. Don't trigger a release until a tag push
       $ git push

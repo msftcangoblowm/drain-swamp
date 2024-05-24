@@ -8,6 +8,9 @@ Changelog
    Feature request
    .................
 
+   self hosted package server. See article
+   https://safjan.com/Create%20Self-Hosted%20Python%20Package%20Repository/
+
    Known regressions
    ..................
 
@@ -22,6 +25,11 @@ Changelog
 
    Commit items for NEXT VERSION
    ..............................
+
+   - feat(drain-swamp): add command, pretag. Sanitize semantic version str
+   - refactor(igor.py): remove do_edit_for_release do_bump_version do_build_next do_pretag
+   - ci(howto.txt): sanitize a semantic version str
+   - ci(howto.txt): should be master, not main
 
 .. scriv-start-here
 

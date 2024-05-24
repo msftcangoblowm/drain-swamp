@@ -9,8 +9,8 @@ igor.py utils
    Module level logger
 
 .. py:data:: __all__
-   :type: tuple[str, str]
-   :value: ("seed_changelog", "edit_for_release")
+   :type: tuple[str, str, str, str]
+   :value: ("seed_changelog", "edit_for_release", "build_package", "pretag")
 
 """
 
@@ -31,12 +31,14 @@ from .version_semantic import (
     SemVersion,
     SetuptoolsSCMNoTaggedVersionError,
     _scm_key,
+    sanitize_tag,
 )
 
 __all__ = (
     "seed_changelog",
     "edit_for_release",
     "build_package",
+    "pretag",
 )
 __package__ = "drain_swamp"
 
@@ -334,3 +336,28 @@ def build_package(path, kind, package_name=None):
             ret = True
 
     return ret
+
+
+def pretag(tag):
+    """Idiot check / sanitize proposed tag
+
+    Validates semantic version str. Printing the fix semantic tag.
+
+    :param tag:
+
+       A semantic version str. Not current tag or now.
+
+    :type tag: str
+    :returns: False if an error occurred otherwise True
+    :rtype: tuple[bool, str]
+    """
+    try:
+        clean_tag = sanitize_tag(tag)
+    except ValueError as e:
+        msg = str(e)
+        bol_ret = False
+    else:
+        msg = clean_tag
+        bol_ret = True
+
+    return bol_ret, msg

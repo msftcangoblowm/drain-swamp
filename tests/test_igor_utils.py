@@ -36,6 +36,7 @@ from drain_swamp.igor_utils import (
     UNRELEASED,
     build_package,
     edit_for_release,
+    pretag,
     seed_changelog,
     update_file,
 )
@@ -324,3 +325,30 @@ def test_build_package(tmp_path):
     ):
         bool_out = build_package(tmp_path, kind, package_name=g_app_name)
         assert bool_out is True
+
+
+testdata_pretag = (
+    ("1!v1.0.1+g4b33a80.d20240129", "1.0.1"),
+    ("0.1.1.candidate1dev1+g4b33a80.d20240129", "0.1.1rc1.dev1"),
+)
+ids_pretag = (
+    "with epoch locals and prepended v",
+    "malformed semantic ver str raise ValueError",
+)
+
+
+@pytest.mark.parametrize(
+    "ver, expected",
+    testdata_pretag,
+    ids=ids_pretag,
+)
+def test_pretag(ver, expected):
+    # pytest --showlocals --log-level INFO -k "test_pretag" tests
+    is_success, actual = pretag(ver)
+    if is_success:
+        assert actual == expected
+    else:
+        # prints the error message
+        assert len(actual) != 0
+        # not the fixed semantic version str
+        assert actual != expected

@@ -35,6 +35,7 @@ from drain_swamp.cli_igor import (
     main,
     seed,
     semantic_version_aware_build,
+    validate_tag,
 )
 from drain_swamp.constants import g_app_name
 
@@ -230,3 +231,33 @@ def test_build(tmp_path):
         ):
             result = runner.invoke(semantic_version_aware_build, cmd_folder_no_commits)
             assert result.exit_code == 0
+
+
+testdata_validate_tag = (
+    ("1!v1.0.1+g4b33a80.d20240129", "1.0.1", 0),
+    ("0.1.1.candidate1dev1+g4b33a80.d20240129", "0.1.1rc1.dev1", 1),
+)
+ids_validate_tag = (
+    "with epoch locals and prepended v",
+    "malformed semantic ver str raise ValueError",
+)
+
+
+@pytest.mark.parametrize(
+    "ver, expected_msg, expected_exit_code",
+    testdata_validate_tag,
+    ids=ids_validate_tag,
+)
+def test_validate_tag(ver, expected_msg, expected_exit_code):
+    # pytest --showlocals --log-level INFO -k "test_validate_tag" tests
+    runner = CliRunner()
+    cmd = [ver]
+    result = runner.invoke(validate_tag, cmd)
+    if expected_exit_code == 0:
+        actual = result.output
+        assert actual.rstrip() == expected_msg
+        assert result.exit_code == 0
+    else:
+        assert result.exit_code == 1
+        # why semantic version str is malformed
+        assert len(result.output) != 0

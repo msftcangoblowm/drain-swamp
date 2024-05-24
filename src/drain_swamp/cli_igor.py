@@ -52,6 +52,11 @@ This reduces the size of the sewer, ``igor.py``, by 90%.
 
    Exit codes explanation for command, ``build``
 
+.. py:data:: EPILOG_PRETAG
+   :type: str
+
+   Exit codes explanation for command, ``pretag``
+
 """
 
 import contextlib
@@ -101,6 +106,7 @@ from .constants import (
 from .igor_utils import (
     build_package,
     edit_for_release,
+    pretag,
     seed_changelog,
 )
 from .version_semantic import SetuptoolsSCMNoTaggedVersionError
@@ -155,6 +161,15 @@ EXIT CODES
 5 -- Not valid a semantic version str. Only occurs when a version str is provided
 
 6 -- When getting tag or current version, no commits nor tagged releases
+
+"""
+
+EPILOG_PRETAG = """
+EXIT CODES
+
+0 -- Sanitized semantic version str
+
+1 -- Error with semantic version str. Cannot be fixed
 
 """
 
@@ -304,6 +319,39 @@ def semantic_version_aware_build(path, kind, package_name):
         sys.exit(1)
     else:
         sys.exit(0)
+
+
+@main.command(
+    "pretag",
+    context_settings={"ignore_unknown_options": True},
+    epilog=EPILOG_PRETAG,
+)
+@click.argument("ver", type=click.STRING)
+def validate_tag(ver):
+    """Print the sanitized semantic version str
+
+    Normal cli usage
+
+    drain-swamp pretag "0.0.1"
+
+    Usage when package is not installed
+
+    python src/drain_swamp/cli_igor.py pretag "0.0.1"
+
+    Usage if package is installed
+
+    python -m drain_swamp.cli_igor pretag "0.0.1"
+
+    \f
+    :param ver: Possibility malformed semantic ver str
+    :type ver: str
+    """
+    is_success, sanitized = pretag(ver)
+    click.echo(sanitized)
+    if is_success:
+        sys.exit(0)
+    else:
+        sys.exit(1)
 
 
 if __name__ == "__main__":  # pragma: no cover
