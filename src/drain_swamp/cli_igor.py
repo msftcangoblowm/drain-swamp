@@ -1,7 +1,7 @@
 """
 .. moduleauthor:: Dave Faulkmore <https://mastodon.social/@msftcangoblowme>
 
-Usage
+**Update changelog, NOTICE.txt and ``docs?/conf.py``**
 
 .. code-block:: shell
 
@@ -15,7 +15,21 @@ Usage
    - NOTICE.txt
    - CHANGES.rst
 
-This reduces the size of the sewer, ``igor.py``, by 90%.
+**Build package**
+
+Running these commands will also update src/[package name]/_version.py
+
+.. code-block:: shell
+
+   python src/drain_swamp/cli_igor.py build --kind="0.0.1"
+
+or
+
+.. code-block:: shell
+
+   python -m drain_swamp.cli_igor build --kind="0.0.1"
+
+First first form can be run from source, without the package being installed
 
 .. py:data:: _logger
    :type: logging.Logger
@@ -106,6 +120,7 @@ from .constants import (
 from .igor_utils import (
     build_package,
     edit_for_release,
+    get_current_version,
     pretag,
     seed_changelog,
 )
@@ -170,6 +185,14 @@ EXIT CODES
 0 -- Sanitized semantic version str
 
 1 -- Error with semantic version str. Cannot be fixed
+
+"""
+
+EPILOG_CURRENT_VERSION = """
+
+0 -- Current semantic version str
+
+1 -- Most likely setuptools-scm package is not installed otherwise command failed
 
 """
 
@@ -352,6 +375,36 @@ def validate_tag(ver):
         sys.exit(0)
     else:
         sys.exit(1)
+
+
+@main.command(
+    "current",
+    context_settings={"ignore_unknown_options": True},
+    epilog=EPILOG_CURRENT_VERSION,
+)
+@click.option(
+    "-p",
+    "--path",
+    "path",
+    default=Path.cwd(),
+    type=click.Path(exists=False, file_okay=False, dir_okay=True),
+    help=help_path,
+)
+def current_version(path):
+    """Usage
+
+    python src/drain_swamp/cli_igor.py current
+
+    \f
+    :param path: current working directory
+    :type path: pathlib.Path
+    """
+    opt_str = get_current_version(path)
+    if opt_str is None:
+        sys.exit(1)
+    else:
+        click.echo(opt_str)
+        sys.exit(0)
 
 
 if __name__ == "__main__":  # pragma: no cover

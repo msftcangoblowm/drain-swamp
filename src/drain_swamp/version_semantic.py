@@ -121,7 +121,29 @@ class SetuptoolsSCMNoTaggedVersionError(AssertionError):
         super().__init__(msg)
 
 
-def path_or_cwd(val):
+def _is_setuptools_scm():
+    """Without importing package, check setuptools-scm package is installed
+
+    :returns: True if setuptools-scm package is installed otherwise False
+    :rtype: bool
+    :meta private:
+    """
+    from importlib.metadata import (
+        PackageNotFoundError,
+        version,
+    )
+
+    try:
+        version("setuptools-scm")
+    except PackageNotFoundError:
+        bol_ret = False
+    else:
+        bol_ret = True
+
+    return bol_ret
+
+
+def _path_or_cwd(val):
     """Frequently used and annoying to test multiple times
 
     Should be a Path. If anything else return cwd
@@ -130,6 +152,7 @@ def path_or_cwd(val):
     :type path: typing.Any | None
     :returns: Path or cwd Path
     :rtype: pathlib.Path
+    :meta private:
     """
     if val is None or not issubclass(type(val), PurePath):
         path_cwd = Path.cwd()
@@ -155,6 +178,7 @@ def _scm_key(prog_name):
     :type prog_name: str
     :returns: environment variable to affect setuptools-scm behavior
     :rtype: str
+    :meta private:
     """
     # hyphen --> underscore. Uppercase
     G_APP_NAME = prog_name.upper()
@@ -180,14 +204,15 @@ def _current_tag(path=None):
        Default None. If None assumes path is current working directory,
        otherwise provide the path to the package base folder
 
-    :type path: Path | None
+    :type path: pathlib.Path | None
     :returns:
 
        None indicates there are no tagged versions otherwise the latest tagged version
 
     :rtype: str | None
+    :meta private:
     """
-    path_cwd = path_or_cwd(path)
+    path_cwd = _path_or_cwd(path)
 
     cmd = ["/bin/git", "describe", "--tag"]
     try:
@@ -275,6 +300,7 @@ def _remove_v(ver):
     :type ver: str
     :returns: original str without the v. Includes epoch and local
     :rtype: str
+    :meta private:
     """
     epoch, remaining = _strip_epoch(ver)
     local, remaining = _strip_local(remaining)
@@ -439,30 +465,38 @@ def get_version(ver, is_use_final=False):
 
 
 def _current_version(path=None):
-    """From setuptools-scm get the current version. Which will more
-    often than not be a development version
+    """:py:mod:`setuptools_scm` get the current
+    version. Which more often than not is a development version
 
     :param path:
 
        Default None. If None assumes path is current working directory,
        otherwise provide the path to the package base folder
 
-    :type path: Path | None
+    :type path: pathlib.Path | None
     :returns:
 
        Current version as known by setuptools-scm. Avoid returning an empty string
 
     :rtype: str | None
+    :meta private:
 
-    .. careful::
+    .. note::
 
-       This command is destructive. Changes src/[app name]/_version.py
-       Only time this command is to be run is if want a development version
+       To update ``src/[app name]/_version.py``, use command,
+       :code:`python setup.py --version`
 
     """
-    path_cwd = path_or_cwd(path)
+    path_cwd = _path_or_cwd(path)
 
-    cmd = [sys.executable, "setup.py", "--version"]
+    # Check setuptools-scm package is installed
+    if not _is_setuptools_scm():
+        return None
+    else:  # pragma: no cover
+        pass
+
+    # cmd = [sys.executable, "setup.py", "--version"]
+    cmd = [sys.executable, "-m", "setuptools_scm"]
     try:
         proc = subprocess.run(
             cmd,
@@ -516,7 +550,7 @@ def _tag_version(
        Default None. If None assumes path is current working directory,
        otherwise provide the path to the package base folder
 
-    :type path: Path | None
+    :type path: pathlib.Path | None
     :param package_name:
 
        Default None. Package name so as to avoid getting it from git
@@ -524,6 +558,7 @@ def _tag_version(
     :type package_name: str | None
     :returns: tagged version or current version str
     :rtype: str | None
+    :meta private:
     :raises:
 
        - :py:exc:`AssertionError` -- Could not get package name from git
@@ -549,7 +584,7 @@ def _arbritary_version(
        Default None. If None assumes path is current working directory,
        otherwise provide the path to the package base folder
 
-    :type path: Path | None
+    :type path: pathlib.Path | None
     :param package_name:
 
        Default None. Package name so as to avoid getting it from git
@@ -557,17 +592,19 @@ def _arbritary_version(
     :type package_name: str | None
     :returns: tagged version or current version str. None rather than empty string
     :rtype: str | None
+    :meta private:
+
     :raises:
 
        - :py:exc:`AssertionError` -- Could not get package name from git
 
-    .. careful::
+    .. warning::
 
        This command writes to src/[package name]/_version.py
-       Use unittest.mock.patch to avoid the actual call
+       Use :py:func:`unittest.mock.patch` to avoid the actual call
 
     """
-    path_cwd = path_or_cwd(path)
+    path_cwd = _path_or_cwd(path)
     cwd_path = str(path_cwd)
 
     # providing the package name is preferred over asking git for it
@@ -647,16 +684,17 @@ def _get_app_name(path=None):
        Default None. If None assumes path is current working directory,
        otherwise provide the path to the package base folder
 
-    :type path: Path | None
+    :type path: pathlib.Path | None
     :returns: app name. None if fails to get from git
     :rtype: str | None
+    :meta private:
 
     .. seealso::
 
-       `From git get project name <https://stackoverflow.com/a/33180289>_
+       `From git get project name <https://stackoverflow.com/a/33180289>`_
 
     """
-    path_cwd = path_or_cwd(path)
+    path_cwd = _path_or_cwd(path)
     cwd_path = str(path_cwd)
 
     cmd = (
@@ -873,7 +911,7 @@ class SemVersion:
            - :py:exc:`NotADirectoryError` -- Not the absolute path to package base folder
 
         """
-        path_cwd = path_or_cwd(val)
+        path_cwd = _path_or_cwd(val)
         if path_cwd.exists() and path_cwd.is_absolute() and not path_cwd.is_dir():
             msg_exc = "Not the absolute path to package base folder"
             raise NotADirectoryError(msg_exc)
@@ -1134,10 +1172,10 @@ class SemVersion:
         Override by passing in a version str
 
         - "current" or "now"
-          Gets the :command:`git describe --tag`
+          Gets current version thru setuptools-scm
 
         - "tag"
-          Gets the last tagged version
+          Gets the last tagged version. Uses :command:`git describe --tag`
 
         - a version str
           Uses that version str. Use this to create prerelease, post

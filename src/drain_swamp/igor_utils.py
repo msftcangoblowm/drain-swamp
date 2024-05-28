@@ -30,6 +30,7 @@ from .snippet_sphinx_conf import SnipSphinxConf
 from .version_semantic import (
     SemVersion,
     SetuptoolsSCMNoTaggedVersionError,
+    _current_version,
     _scm_key,
     sanitize_tag,
 )
@@ -361,3 +362,20 @@ def pretag(tag):
         bol_ret = True
 
     return bol_ret, msg
+
+
+def get_current_version(path):
+    """Get current version from setuptools-scm
+
+    :param path: current working directory path
+    :type path: pathlib.Path
+    :returns:
+
+       package current (semantic) version. None if
+       :py:mod:`setuptools-scm <setuptools_scm>` is not installed
+
+    :rtype: str | None
+    """
+    ret = _current_version(path=path)
+
+    return ret

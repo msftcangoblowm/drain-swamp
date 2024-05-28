@@ -136,11 +136,11 @@ obj_strictyaml:
 # -T show tracebacks on Exception
 # -q quiet
 # --keep-going even if there are warnings
+# @$(MAKE) htmlall
 .PHONY: doctest
 doctest:				## Confirm in-doc code does what it claims
 ifeq ($(is_venv),1)
-	@$(MAKE) htmlall
-	$(SPHINXBUILDNOOPT) -b doctest "$(SOURCEDIR)" "$(BUILDDIR)"
+	@$(SPHINXBUILD) -b doctest "$(SOURCEDIR)" "$(BUILDDIR)"
 endif
 
 ##@ Misc

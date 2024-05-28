@@ -19,7 +19,6 @@ from __future__ import annotations
 import datetime
 import inspect
 import os
-import platform
 import pprint
 import re
 import subprocess
@@ -138,36 +137,6 @@ def do_show_env() -> None:
     print("Environment:")
     for env in sorted(os.environ):
         print(f"  {env} = {os.environ[env]!r}")
-
-
-def print_banner(label: str) -> None:
-    """Print the version of Python."""
-    try:
-        impl = platform.python_implementation()
-    except AttributeError:
-        impl = "Python"
-        PYPY = False
-        CPYTHON = False  # noqa: F841
-    else:
-        PYPY = impl == "PyPy"
-        CPYTHON = impl == "CPython"  # noqa: F841
-    version = platform.python_version()
-
-    if PYPY:
-        version += " (pypy %s)" % ".".join(str(v) for v in sys.pypy_version_info)
-
-    rev = platform.python_revision()
-    if rev:
-        version += f" (rev {rev})"
-
-    try:
-        which_python = os.path.relpath(sys.executable)
-    except ValueError:
-        # On Windows having a python executable on a different drive
-        # than the sources cannot be relative.
-        which_python = sys.executable
-    print(f"=== {impl} {version} {label} ({which_python}) ===")
-    sys.stdout.flush()
 
 
 def _update_file(fname: str, pattern: str, replacement: str) -> None:

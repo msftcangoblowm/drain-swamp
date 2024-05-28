@@ -30,6 +30,11 @@ That's a lot of boilerplate code ... gone! Not all, but most.
 
 * Python 3.9 through 3.12, and 3.13.0a3 and up.
 
+**New in 0.2.x:**
+
+current and pretag commands to get currnet version and sanitize semantic ver string;
+fix that does not update _version.py when getting current version;
+
 **New in 0.1.x:**
 
 build package with semantic versioning; generic technique Snip;

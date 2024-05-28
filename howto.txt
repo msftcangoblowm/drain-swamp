@@ -8,12 +8,11 @@
 - Check that the current virtualenv is activated and matches the current branch
 - Sanitize a semantic version str
   $ python src/drain_swamp/cli_igor.py pretag "0.0.1"
-- Check current version. Taken from git. Side effect. Current tag --> src/[app name]/_version.py
-  Do not use, `python setup.py --version`
+- Check current version. Do not use, `python setup.py --version`
   Initial version, manually edit _version.py
   $ python igor.py version "tag"
   or for pre-release or post-release development versions
-  $ python igor.py version "current"
+  $ python src/drain_swamp/cli_igor.py current
   If not in dev mode,  in venv, update ``[prog name]._version.py`` as needed
 - What would the next version be?
   Do not use if initial version like, ``v1.0.1-1-g3893340``
@@ -33,7 +32,7 @@
     $ python src/drain_swamp/cli_igor.py edits --kind="1.2.11"
     or
     $ python src/drain_swamp/cli_igor.py edits --kind="current"
-    If docs.conf.py snippet has a snippet id
+    If doc?/conf.py snippet has a snippet id
     $ python src/drain_swamp/cli_igor.py edits --kind="1.2.11" --snip="snippet_id"
 - Look over CHANGES.rst
   Takes time. Rewrite commit messages to be accessible by normies. Rewrite it again.
@@ -44,7 +43,7 @@
         - Version of latest stable release in docs/index.rst
     - Make sure the docs are cogged:
         $ make prebuild
-    - Don't forget the man page: docs/python-sphinx-external-toc-strict.1.txt
+    - Don't forget the man page: docs/drain-swamp.1.txt
     - Check that the docs build correctly:
         $ tox -e docs
         or

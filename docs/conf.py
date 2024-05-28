@@ -34,11 +34,11 @@ proj_master_doc = config.get("master_doc")
 # @@@ editable
 copyright = "2024–2024, Dave Faulkmore"
 # The short X.Y.Z version.
-version = "0.1.0"
+version = "0.2.0"
 # The full version, including alpha/beta/rc tags.
-release = "0.1.0"
+release = "0.2.0"
 # The date of release, in "monthname day, year" format.
-release_date = "May 23, 2024"
+release_date = "May 28, 2024"
 # @@@ end
 
 v = parse(release)
@@ -133,6 +133,10 @@ intersphinx_mapping = {
     "python-missing": (
         "https://github.com/python/cpython/blob",
         ("objects-python-missing.inv", "objects-python-missing.txt"),
+    ),
+    "setuptools-scm": (
+        "https://setuptools-scm.readthedocs.io/en/stable",
+        ("objects-setuptools-scm.inv", "objects-setuptools-scm.txt"),
     ),
 }
 intersphinx_disabled_reftypes = ["std:doc"]

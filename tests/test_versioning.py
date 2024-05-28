@@ -1,5 +1,6 @@
 import subprocess
 import unittest
+from importlib.metadata import PackageNotFoundError
 from pathlib import Path
 from unittest.mock import patch
 
@@ -15,6 +16,7 @@ from drain_swamp.version_semantic import (
     _current_tag,
     _current_version,
     _get_app_name,
+    _is_setuptools_scm,
     _map_release,
     _remove_v,
     _tag_version,
@@ -61,6 +63,18 @@ testdata_releaselevel = (
     ("b", "beta"),
     ("beta", "beta"),
 )
+
+
+class PackageInstalled(unittest.TestCase):
+    def test_is_setuptools_scm(self):
+        """Checks whether or not package setuptools-scm is installed"""
+        # non-existent nor installed package
+        with patch(
+            "importlib.metadata.version",
+            side_effect=PackageNotFoundError,
+        ):
+            bol_actual = _is_setuptools_scm()
+            self.assertFalse(bol_actual)
 
 
 class PackageVersioning(unittest.TestCase):
@@ -310,6 +324,15 @@ class SemVersioning(unittest.TestCase):
         """setuptools-scm retrieves development version from git
         Without epoch, local, or prepended v
         """
+        # setuptools-scm is not installed.
+        #    Current version is obtained from package setuptools-scm
+        with patch(
+            f"{g_app_name}.version_semantic._is_setuptools_scm",
+            return_value=False,
+        ):
+            actual = _current_version(path=self.cwd)
+            self.assertIsNone(actual)
+
         cmd = []
         with patch(
             "subprocess.run",

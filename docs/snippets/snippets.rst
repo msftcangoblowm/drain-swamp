@@ -46,13 +46,13 @@ replace example
 
 Replace the text within the snippet
 
-.. doctest:: replace_with_id
+.. doctest:: with_id_replace
 
    >>> import tempfile
    >>> import textwrap
    >>> from pathlib import Path
    >>>
-   >>> from pipenv_unlock import Snip
+   >>> from drain_swamp.snip import Snip
    >>>
    >>> # prepare
    >>> text = (
@@ -89,10 +89,10 @@ Replace the text within the snippet
    ...     is_success = snip.replace(contents_new, id_="i_am_a_snippet_co")
    ...
    ...     actual = path_some_conf.read_text()
+   ...     assert is_success is True
+   ...     assert actual == expected
    ...
-   >>> assert is_success is True
-   >>> assert actual == expected
-
+   >>>
 
 In a temporary folder, created a file, ``some.conf`` with contents,
 *contents_existing*.

@@ -31,6 +31,7 @@ import pytest  # noqa: F401
 from click.testing import CliRunner
 
 from drain_swamp.cli_igor import (
+    current_version,
     entrypoint_name,
     main,
     seed,
@@ -261,3 +262,35 @@ def test_validate_tag(ver, expected_msg, expected_exit_code):
         assert result.exit_code == 1
         # why semantic version str is malformed
         assert len(result.output) != 0
+
+
+testdata_current_version = (
+    (
+        None,
+        1,
+    ),
+    (
+        "abcdefg",
+        0,
+    ),
+)
+ids_current_version = (
+    "call failure",
+    "call succeeds gets the current version str",
+)
+
+
+@pytest.mark.parametrize(
+    "ret, expected_exit_code",
+    testdata_current_version,
+    ids=ids_current_version,
+)
+def test_current_version(ret, expected_exit_code, path_project_base):
+    # demonstrate exit codes, but not that a ver str is returned on a successful call
+    runner = CliRunner()
+
+    cmd = ["--path", path_project_base()]
+    with (patch(f"{g_app_name}.cli_igor.get_current_version", return_value=ret),):
+        result = runner.invoke(current_version, cmd)
+
+    assert result.exit_code == expected_exit_code

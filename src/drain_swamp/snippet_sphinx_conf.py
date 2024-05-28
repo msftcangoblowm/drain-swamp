@@ -42,7 +42,7 @@ from .snip import Snip
 from .version_semantic import (
     SemVersion,
     SetuptoolsSCMNoTaggedVersionError,
-    path_or_cwd,
+    _path_or_cwd,
 )
 
 __all__ = ("SnipSphinxConf", "entrypoint_name")
@@ -190,7 +190,7 @@ class SnipSphinxConf:
 
         :type val: typing.Any | None
         """
-        self._path_cwd = path_or_cwd(val)
+        self._path_cwd = _path_or_cwd(val)
 
     @property
     def SV(self) -> SemVersion | None:

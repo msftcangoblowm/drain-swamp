@@ -36,11 +36,15 @@ from drain_swamp.igor_utils import (
     UNRELEASED,
     build_package,
     edit_for_release,
+    get_current_version,
     pretag,
     seed_changelog,
     update_file,
 )
-from drain_swamp.version_semantic import SetuptoolsSCMNoTaggedVersionError
+from drain_swamp.version_semantic import (
+    SetuptoolsSCMNoTaggedVersionError,
+    _is_setuptools_scm,
+)
 
 
 def test_update_file(tmp_path, prep_pyproject_toml):
@@ -343,6 +347,10 @@ ids_pretag = (
     ids=ids_pretag,
 )
 def test_pretag(ver, expected):
+    """Sanitize ver str
+
+    From just this unittest non-obvious how to sanitize a ver str containing an epoch.
+    Shell escape doesn't work. Instead surround by single quotes"""
     # pytest --showlocals --log-level INFO -k "test_pretag" tests
     is_success, actual = pretag(ver)
     if is_success:
@@ -352,3 +360,12 @@ def test_pretag(ver, expected):
         assert len(actual) != 0
         # not the fixed semantic version str
         assert actual != expected
+
+
+def test_get_current_version(path_project_base):
+    """Get the current version of this package. Requires package setuptools-scm"""
+    ver = get_current_version(path_project_base())
+    if _is_setuptools_scm():
+        assert isinstance(ver, str)
+    else:
+        assert ver is None

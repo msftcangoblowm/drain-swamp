@@ -26,12 +26,28 @@ Changelog
    Commit items for NEXT VERSION
    ..............................
 
-   - feat(drain-swamp): add command, pretag. Sanitize semantic version str
-   - refactor(igor.py): remove do_edit_for_release do_bump_version do_build_next do_pretag
-   - ci(howto.txt): sanitize a semantic version str
-   - ci(howto.txt): should be master, not main
-
 .. scriv-start-here
+
+.. _changes_0-2-0:
+
+Version 0.2.0 — 2024-05-28
+--------------------------
+
+- style: little shop of horrors overly dramatic water spout
+- feat(drain-swamp): add command, pretag. Sanitize semantic version str
+- refactor(igor.py): remove do_edit_for_release do_bump_version do_build_next do_pretag
+- ci(howto.txt): sanitize a semantic version str
+- ci(howto.txt): should be master, not main
+- refactor(igor.py): remove print_banner
+- style: package was renamed, in requirments .in files, refer to the new package name
+- refactor: add setuptool-scm as a dependency. Get the current version
+- refactor(version_semantic): private member prepend with single underscore
+- docs: inventory for setuptools-scm
+- docs: add doctests for _version.py. Explain pretag with examples
+- docs: show private members of version_semantic.py
+- docs: fix doctest which explain snippet usage
+- fix: get current version no longer update _version.py
+- feat(cli_igor): add command, current. Gets current version
 
 .. _changes_0-1-0:
 

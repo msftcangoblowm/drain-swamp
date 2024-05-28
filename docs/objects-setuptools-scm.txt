@@ -1,0 +1,5 @@
+# Sphinx inventory version 2
+# Project: setuptools_scm 8.1.0
+# Version: 8.1.0
+# The remainder of this file is compressed using zlib.
+setuptools_scm py:module 0 usage -
