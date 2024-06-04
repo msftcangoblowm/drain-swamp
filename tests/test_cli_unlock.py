@@ -274,6 +274,26 @@ testdata_lock_unlock_and_back_with_prepare = (
         True,
         8,
     ),
+    (
+        dependencies_lock,
+        Path(__file__).parent.joinpath("_good_files", "complete.pyproject_toml"),
+        "little_shop_of_horrors_obedient_girl_friend",
+        (Path("ci"),),
+        {"ci": Path("ci/kit.in")},
+        True,
+        True,
+        9,
+    ),
+    (
+        dependencies_unlock,
+        Path(__file__).parent.joinpath("_good_files", "complete.pyproject_toml"),
+        "little_shop_of_horrors_obedient_girl_friend",
+        (Path("ci"),),
+        {"ci": Path("ci/kit.in")},
+        True,
+        True,
+        9,
+    ),
 )
 ids_lock_unlock_and_back_with_prepare = (
     "lock unsupported backend",
@@ -282,6 +302,8 @@ ids_lock_unlock_and_back_with_prepare = (
     "unlock missing folders and files",
     "lock Snippet is invalid",
     "unlock Snippet is invalid",
+    "lock Snippet no match",
+    "unlock Snippet no match",
 )
 
 
@@ -335,7 +357,10 @@ def test_lock_unlock_and_back_with_prepare(
         # Call cli func blind; no BackendType.is_locked
         result = runner.invoke(func, cmd)
 
-        logger.info(result.output)
+        logger.info(f"exit_code: {result.exit_code}")
+        logger.info(f"exception: {result.exception}")
+        logger.info(f"output: {result.output}")
+
         tb = result.exc_info[2]
         # msg_info = f"traceback: {pprint(traceback.format_tb(tb))}"
         msg_info = f"traceback: {traceback.format_tb(tb)}"
@@ -603,6 +628,8 @@ def test_lock_unlock_and_back_optionals(
         )
 
         result = runner.invoke(func, cmd)
+        # logger.info(f"exception: {result.exception}")
+        # logger.info(f"output: {result.output}")
         assert result.exit_code == 0
 
         inst = BackendType.load_factory(

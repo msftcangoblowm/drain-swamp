@@ -52,7 +52,7 @@ Replace the text within the snippet
    >>> import textwrap
    >>> from pathlib import Path
    >>>
-   >>> from drain_swamp.snip import Snip
+   >>> from drain_swamp.snip import Snip, ReplaceResult
    >>>
    >>> # prepare
    >>> text = (
@@ -89,7 +89,7 @@ Replace the text within the snippet
    ...     is_success = snip.replace(contents_new, id_="i_am_a_snippet_co")
    ...
    ...     actual = path_some_conf.read_text()
-   ...     assert is_success is True
+   ...     assert is_success == ReplaceResult.REPLACED
    ...     assert actual == expected
    ...
    >>>

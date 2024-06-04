@@ -5,6 +5,7 @@ from typing import Final
 __all__ = (
     "g_app_name",
     "package_name",
+    "SUFFIX_IN",
     "SUFFIX_LOCKED",
     "SUFFIX_UNLOCKED",
     "__version_app",
@@ -16,6 +17,7 @@ __all__ = (
 
 g_app_name: Final[str]
 package_name: Final[str]
+SUFFIX_IN: Final[str]
 SUFFIX_LOCKED: Final[str]
 SUFFIX_UNLOCKED: Final[str]
 

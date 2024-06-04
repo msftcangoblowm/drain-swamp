@@ -14,19 +14,21 @@ Changelog
    Known regressions
    ..................
 
-   - :code:`python -m build` reads both dependencies and optional-dependencies.
-     The requirements files cannot include pip-tools syntax like ``-c prod.in``.
-     Reproduce:
-     In pyproject.toml, change dependencies to ``.in`` files.
-     Run :code:`python -m build`
-     or :code:`src/drain_swamp/cli_igor.py build --kind="0.0.1"`
-     Result: build bombs
-     Mitigation: Recursively include .in file requirements to build .unlock files
-
    Commit items for NEXT VERSION
    ..............................
 
 .. scriv-start-here
+
+.. _changes_0-3-0:
+
+Version 0.3.0 — 2024-06-04
+--------------------------
+
+- style: little shop of horrors obedient girlfriend
+- fix: build package bomb when encounter ``.in`` files with -c lines
+- feat(pipenv-unlock): compile requirements .in --> .unlock
+- refactor: add constant SUFFIX_UNLOCK to not confuse .in and .unlock
+- refactor(snip): add Enum, ReplaceResult. Retire optional boolean
 
 .. _changes_0-2-0:
 

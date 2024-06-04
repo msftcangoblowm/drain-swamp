@@ -3,7 +3,7 @@
 
 # packaging and kitting
 
-# -c pins.lock
+-c pins.in
 -c prod.in
 -c tox.in
 

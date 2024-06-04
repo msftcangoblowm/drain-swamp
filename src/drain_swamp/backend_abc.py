@@ -45,7 +45,7 @@ from .check_type import (
 from .constants import (
     PROG_LOCK,
     PROG_UNLOCK,
-    SUFFIX_UNLOCKED,
+    SUFFIX_IN,
     g_app_name,
 )
 from .exceptions import (
@@ -1126,12 +1126,12 @@ class BackendType(abc.ABC):
             _logger.info(f"rel_path: {rel_path}")
             path_dir = self.parent_dir
             abs_path = path_dir.joinpath(rel_path)
-            pattern = f"**/*{SUFFIX_UNLOCKED}"
+            pattern = f"**/*{SUFFIX_IN}"
             _logger.info(f"abs_path: {abs_path}")
             _logger.info(f"pattern {pattern}")
 
             _logger.info(f"""files: {list(abs_path.glob(pattern))}""")
-            yield from abs_path.glob(f"**/*{SUFFIX_UNLOCKED}")
+            yield from abs_path.glob(f"**/*{SUFFIX_IN}")
         yield from ()
 
     @staticmethod
@@ -1152,7 +1152,7 @@ class BackendType(abc.ABC):
 
            None indicates snippet with that id does not exist
 
-        :rtype: bool | None
+        :rtype: bool | drain_swamp.snip.ReplaceResult
         :raises:
 
            - :py:exc:`TypeError` -- path_config is not Path | str
@@ -1170,14 +1170,14 @@ class BackendType(abc.ABC):
         # contents_existing = snip._contents
         snippet_existing = snip.contents(id_=snippet_co)
 
-        if snippet_existing is None:
+        if not isinstance(snippet_existing, str):
             """no snippet with that id
 
             if it's not locked, it's unlocked.
 
             There is no snippet region in ``pyproject.toml`` with that id. So not setup
             """
-            ret = None
+            ret = snippet_existing
         else:
             locks = PROG_LOCK.findall(snippet_existing)
             unlocks = PROG_UNLOCK.findall(snippet_existing)

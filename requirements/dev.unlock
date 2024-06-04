@@ -1,0 +1,16 @@
+setuptools-scm
+isort
+flake8-pyproject
+pytest-regressions
+mypy
+flake8
+blackdoc
+twine
+validate-pyproject
+pip-tools
+click
+black
+pytest>=7.1
+flake8-pyi
+pytest-cov
+coverage

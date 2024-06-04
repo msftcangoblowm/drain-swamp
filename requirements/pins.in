@@ -1,7 +1,14 @@
 # Licensed under the Apache License: http://www.apache.org/licenses/LICENSE-2.0
 # For details: https://github.com/msftcangoblowm/drain-swamp/blob/master/NOTICE.txt
 
-# Version pins, for use as a constraints file.
+# Source version pins
+#
+# - Do not link constraint files
+# - Should be includable verbartim
+# - Document each pin defending why it is necessary
+
+# Will not be converted into either a .unlock or a .lock file
+
 # myst-parser restricts docutils<0.21
 # To downgrade docutils --> 0.20.1
 # pip install --force-install -v "docutils==0.20.1"

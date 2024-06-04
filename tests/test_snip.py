@@ -33,6 +33,7 @@ from drain_swamp.constants import (
     g_app_name,
 )
 from drain_swamp.snip import (
+    ReplaceResult,
     Snip,
     check_matching_tag_count,
     check_not_nested_or_out_of_order,
@@ -45,6 +46,7 @@ testdata_test_snip_harden = [
         "abc abc abc",
         "zzzzzzzzzzzzz\n# @@@ editable\nblah blah blah\n# @@@ end\nzzzzzzzzzzzzz\n",
         "zzzzzzzzzzzzz\n# @@@ editable\nblah blah blah\n# @@@ end\nzzzzzzzzzzzzz\n",
+        ReplaceResult.NO_MATCH,
         False,
     ),
     (
@@ -53,6 +55,16 @@ testdata_test_snip_harden = [
         "abc abc abc",
         "zzzzzzzzzzzzz\n# @@@ editable george\nblah blah blah\n# @@@ end\nzzzzzzzzzzzzz\n",
         "zzzzzzzzzzzzz\n# @@@ editable george\nblah blah blah\n# @@@ end\nzzzzzzzzzzzzz\n",
+        ReplaceResult.NO_MATCH,
+        False,
+    ),
+    (
+        "with_id_no_change.txt",
+        "asdf",
+        "blah blah blah",
+        "zzzzzzzzzzzzz\n# @@@ editable asdf\nblah blah blah\n# @@@ end\nzzzzzzzzzzzzz\n",
+        "zzzzzzzzzzzzz\n# @@@ editable asdf\nblah blah blah\n# @@@ end\nzzzzzzzzzzzzz\n",
+        ReplaceResult.NO_CHANGE,
         False,
     ),
     (
@@ -61,6 +73,7 @@ testdata_test_snip_harden = [
         "abc abc abc",
         "zzzzzzzzzzzzz\n# @@@ editable asdf\nblah blah blah\n# @@@ end\nzzzzzzzzzzzzz\n",
         "zzzzzzzzzzzzz\n# @@@ editable asdf\nabc abc abc\n# @@@ end\nzzzzzzzzzzzzz\n",
+        ReplaceResult.REPLACED,
         False,
     ),
     (
@@ -69,6 +82,7 @@ testdata_test_snip_harden = [
         "abc abc abc",
         "zzzzzzzzzzzzz\n# @@@ editable\nblah blah blah\n# @@@ end\nzzzzzzzzzzzzz\nzzzzzzzzzzzzz\n# @@@ editable george\nblah blah blah\n# @@@ end\nzzzzzzzzzzzzz\n",
         "zzzzzzzzzzzzz\n# @@@ editable\nblah blah blah\n# @@@ end\nzzzzzzzzzzzzz\nzzzzzzzzzzzzz\n# @@@ editable george\nabc abc abc\n# @@@ end\nzzzzzzzzzzzzz\n",
+        ReplaceResult.REPLACED,
         True,
     ),
     (
@@ -77,6 +91,7 @@ testdata_test_snip_harden = [
         "abc abc abc",
         "zzzzzzzzzzzzz\n# @@@ editable asdf\n\n# @@@ end\nzzzzzzzzzzzzz\n",
         "zzzzzzzzzzzzz\n# @@@ editable asdf\nabc abc abc\n# @@@ end\nzzzzzzzzzzzzz\n",
+        ReplaceResult.REPLACED,
         False,
     ),
     (
@@ -85,6 +100,7 @@ testdata_test_snip_harden = [
         "abc abc abc",
         "zzzzzzzzzzzzz\n# @@@ editable\nblah blah blah\n# @@@ end\nzzzzzzzzzzzzz\n",
         "zzzzzzzzzzzzz\n# @@@ editable\nabc abc abc\n# @@@ end\nzzzzzzzzzzzzz\n",
+        ReplaceResult.REPLACED,
         True,
     ),
     (
@@ -93,6 +109,7 @@ testdata_test_snip_harden = [
         "abc abc abc",
         "zzzzzzzzzzzzz\n# @@@ editable\nblah blah blah\n# @@@ end\nzzzzzzzzzzzzz\n",
         "zzzzzzzzzzzzz\n# @@@ editable\nabc abc abc\n# @@@ end\nzzzzzzzzzzzzz\n",
+        ReplaceResult.REPLACED,
         True,
     ),
     (
@@ -101,6 +118,7 @@ testdata_test_snip_harden = [
         "abc abc abc",
         "zzzzzzzzzzzzz\n# @@@ editable\nblah blah blah\n# @@@ end\nzzzzzzzzzzzzz\n",
         "zzzzzzzzzzzzz\n# @@@ editable\nabc abc abc\n# @@@ end\nzzzzzzzzzzzzz\n",
+        ReplaceResult.REPLACED,
         True,
     ),
     (
@@ -109,6 +127,7 @@ testdata_test_snip_harden = [
         "abc abc abc",
         "zzzzzzzzzzzzz\n# @@@ editable\nblah blah blah\n# @@@ end\nzzzzzzzzzzzzz\n",
         "zzzzzzzzzzzzz\n# @@@ editable\nabc abc abc\n# @@@ end\nzzzzzzzzzzzzz\n",
+        ReplaceResult.REPLACED,
         True,
     ),
     (
@@ -117,6 +136,7 @@ testdata_test_snip_harden = [
         "abc abc abc",
         "zzzzzzzzzzzzz\n# @@@ editable asdf\nblah blah blah\n# @@@ end\nzzzzzz\n# @@@ editable george\nhey there ted\n# @@@ end\nzzzzzzz\n",
         "zzzzzzzzzzzzz\n# @@@ editable asdf\nblah blah blah\n# @@@ end\nzzzzzz\n# @@@ editable george\nabc abc abc\n# @@@ end\nzzzzzzz\n",
+        ReplaceResult.REPLACED,
         False,
     ),
     (
@@ -125,6 +145,7 @@ testdata_test_snip_harden = [
         "abc abc abc",
         "zzzzzzzzzzzzz\n# @@@ editable asdf\nblah blah blah\n# @@@ end\nzzzzzz\n# @@@ editable george\nhey there ted\n# @@@ end\nzzzzzzz\n",
         "zzzzzzzzzzzzz\n# @@@ editable asdf\nabc abc abc\n# @@@ end\nzzzzzz\n# @@@ editable george\nhey there ted\n# @@@ end\nzzzzzzz\n",
+        ReplaceResult.REPLACED,
         False,
     ),
     (
@@ -133,12 +154,14 @@ testdata_test_snip_harden = [
         "abc abc abc",
         "zzzzzzzzzzzzz\n# @@@ editable asdf\nblah blah blah\n# @@@ end\nzzzzzz\n# @@@ editable george\nhey there ted\n# @@@ end\nzzzzzzz\n# @@@ editable asdf\nlol lol lol\n# @@@ end\noh ok then",
         "zzzzzzzzzzzzz\n# @@@ editable asdf\nabc abc abc\n# @@@ end\nzzzzzz\n# @@@ editable george\nhey there ted\n# @@@ end\nzzzzzzz\n# @@@ editable asdf\nabc abc abc\n# @@@ end\noh ok then",
+        ReplaceResult.REPLACED,
         False,
     ),
 ]
 ids_test_snip_harden = [
     "one snip. with id. Key no key",
     "one snip. with id. no key key",
+    "one snip. with id. no change",
     "one snip. with id",
     "two snippets. one with one without id. key. invalid to mix",
     "one snip. with id. snippet empty",
@@ -153,7 +176,7 @@ ids_test_snip_harden = [
 
 
 @pytest.mark.parametrize(
-    "file_name, id_, replace_text, file_contents, expected, is_quiet",
+    "file_name, id_, replace_text, file_contents, expected, expected_result_status, is_quiet",
     testdata_test_snip_harden,
     ids=ids_test_snip_harden,
 )
@@ -163,6 +186,7 @@ def test_snip_harden(
     replace_text,
     file_contents,
     expected,
+    expected_result_status,
     is_quiet,
     tmp_path,
     caplog,
@@ -201,7 +225,7 @@ def test_snip_harden(
             er_bad = Snip(invalid, is_quiet=is_quiet)
             # Fails at this point, not on class construction
             is_success = er_bad.replace(replace_text, id_=id_)
-            assert is_success is False
+            assert is_success == ReplaceResult.VALIDATE_FAIL
 
         Path(mixed_f).write_text(file_contents)
         er = Snip(mixed_f, is_quiet=is_quiet)
@@ -217,7 +241,8 @@ def test_snip_harden(
                 er.replace(invalid, id_=id_)
 
         # normal call
-        er.replace(replace_text, id_=id_)
+        is_success = er.replace(replace_text, id_=id_)
+        assert is_success == expected_result_status
         actual = er.get_file()
         assert actual == expected
 
@@ -245,7 +270,7 @@ def test_snip_properties():
 
 
 @pytest.mark.parametrize(
-    "file_name, id_, replace_text, file_contents, expected, is_quiet",
+    "file_name, id_, replace_text, file_contents, expected, expected_result_status, is_quiet",
     testdata_test_snip_harden,
     ids=ids_test_snip_harden,
 )
@@ -255,6 +280,7 @@ def test_checks_normal_usage(
     replace_text,
     file_contents,
     expected,
+    expected_result_status,
     is_quiet,
     caplog,
 ):
@@ -301,7 +327,7 @@ def test_checks_normal_usage(
 
 
 @pytest.mark.parametrize(
-    "file_name, id_, replace_text, file_contents, expected, is_quiet",
+    "file_name, id_, replace_text, file_contents, expected, expected_result_status, is_quiet",
     testdata_test_snip_harden,
     ids=ids_test_snip_harden,
 )
@@ -311,6 +337,7 @@ def test_checks_bad_input(
     replace_text,
     file_contents,
     expected,
+    expected_result_status,
     is_quiet,
     caplog,
 ):
@@ -378,7 +405,7 @@ def test_check_snips_bad(path):
 
 
 @pytest.mark.parametrize(
-    "file_name, id_, replace_text, file_contents, expected, is_quiet",
+    "file_name, id_, replace_text, file_contents, expected, expected_result_status, is_quiet",
     testdata_test_snip_harden,
     ids=ids_test_snip_harden,
 )
@@ -388,6 +415,7 @@ def test_snip_validate(
     replace_text,
     file_contents,
     expected,
+    expected_result_status,
     is_quiet,
     caplog,
     tmp_path,
@@ -437,14 +465,14 @@ testdata_snip_contents = [
         "with_id_key_no_key.txt",
         "asdf",
         "zzzzzzzzzzzzz\n# @@@ editable\nblah blah blah\n# @@@ end\nzzzzzzzzzzzzz\n",
-        None,
+        ReplaceResult.NO_MATCH,
         False,
     ),
     (
         "with_id_no_key_key.txt",
         "",
         "zzzzzzzzzzzzz\n# @@@ editable george\nblah blah blah\n# @@@ end\nzzzzzzzzzzzzz\n",
-        None,
+        ReplaceResult.NO_MATCH,
         False,
     ),
     (
@@ -554,7 +582,7 @@ def test_snip_contents(
 
     # No preparation
     actual = snip.contents(id_=id_)
-    assert actual is None
+    assert actual == ReplaceResult.VALIDATE_FAIL
 
     # prepare
     seq_create_these = (file_name,)

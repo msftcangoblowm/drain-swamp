@@ -20,7 +20,7 @@ from __future__ import annotations
 import sys
 from pathlib import PurePath
 
-from .constants import SUFFIX_UNLOCKED
+from .constants import SUFFIX_IN
 
 if sys.version_info >= (3, 9):  # pragma: no cover
     from collections.abc import (
@@ -40,7 +40,7 @@ __all__ = (
     "is_iterable_not_str",
 )
 
-DEFAULT_EXTENSIONS = (SUFFIX_UNLOCKED,)
+DEFAULT_EXTENSIONS = (SUFFIX_IN,)
 
 
 def is_ok(test):

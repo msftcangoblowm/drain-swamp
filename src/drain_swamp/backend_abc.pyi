@@ -12,6 +12,8 @@ from typing import (
     Final,
 )
 
+from .snip import ReplaceResult
+
 if sys.version_info >= (3, 11):
     from typing import Self
 else:
@@ -134,4 +136,4 @@ class BackendType(abc.ABC):
     def is_locked(
         self,
         snippet_co: str | None = None,
-    ) -> bool | None: ...
+    ) -> bool | ReplaceResult: ...

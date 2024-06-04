@@ -34,7 +34,7 @@ from drain_swamp.check_type import (
     is_ok,
     is_relative_required,
 )
-from drain_swamp.constants import SUFFIX_UNLOCKED
+from drain_swamp.constants import SUFFIX_IN
 
 testdata_is_ok = (
     (None, False),
@@ -75,14 +75,14 @@ testdata_is_relative_required = (
     pytest.param(
         None, (None, 1.12345, 1), False, marks=pytest.mark.xfail(raises=ValueError)
     ),
-    (None, (SUFFIX_UNLOCKED,), False),
-    ("requirements/horse.in", (SUFFIX_UNLOCKED,), False),
-    (Path("requirements/horse.in"), (SUFFIX_UNLOCKED,), True),
+    (None, (SUFFIX_IN,), False),
+    ("requirements/horse.in", (SUFFIX_IN,), False),
+    (Path("requirements/horse.in"), (SUFFIX_IN,), True),
     (Path("requirements/horse.in"), ("in",), True),
     (Path("requirements/horse.in"), (".pip",), False),
     (
         Path("requirements/horse.pip"),
-        (SUFFIX_UNLOCKED,),
+        (SUFFIX_IN,),
         False,
     ),
     (Path("requirements/horse.in"), (".tar", ".gz"), False),

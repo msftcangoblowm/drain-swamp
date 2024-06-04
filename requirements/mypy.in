@@ -3,6 +3,6 @@
 
 # called by tox.ini [testenv:mypy]
 
-# -c pins.lock
+# -c pins.in
 
 mypy

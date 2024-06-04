@@ -4,8 +4,8 @@
 Be able to search and replace editable regions within text files
 
 .. py:data:: __all__
-   :type: tuple[str]
-   :value: ("Snip",)
+   :type: tuple[str, str]
+   :value: ("Snip", "ReplaceResult")
 
    Modules exports
 
@@ -21,6 +21,10 @@ from __future__ import annotations
 import logging
 import re
 import string
+from enum import (
+    Enum,
+    auto,
+)
 from functools import partial
 from pathlib import (
     Path,
@@ -31,9 +35,59 @@ from .check_type import is_ok
 from .constants import g_app_name
 
 __package__ = "drain_swamp"
-__all__ = ("Snip",)
+__all__ = (
+    "Snip",
+    "ReplaceResult",
+)
 
 _logger = logging.getLogger(f"{g_app_name}.snip")
+
+
+class ReplaceResult(Enum):
+    """Snippet replace result possibilities
+
+    For membership checking, equality comparison is supported
+
+    .. code-block:: python
+
+        oh_this_is_bad = ReplaceResult.VALIDATE_FAIL
+        assert oh_this_is_bad == ReplaceResult.VALIDATE_FAIL
+
+        hmm_looks_promising = ReplaceResult.REPLACED
+        assert hmm_looks_promising != oh_this_is_bad
+
+    .. py:attribute:: VALIDATE_FAIL
+
+       Validation failed. Either nested or no matching start/end token
+
+    .. py:attribute:: NO_MATCH
+
+       No snippet with specified snippet code
+
+    .. py:attribute:: REPLACED
+
+       Snippet contents replaced
+
+    .. py:attribute:: NO_CHANGE
+
+       Snippet contents same as existing, so replace skipped
+
+    """
+
+    VALIDATE_FAIL = auto()
+    NO_MATCH = auto()
+    REPLACED = auto()
+    NO_CHANGE = auto()
+
+    def __eq__(self, other):
+        """Equality check
+
+        :param other: Should be same Enum class
+        :type other: typing.Any
+        :returns: True if equal otherwise False
+        :rtype: bool
+        """
+        return self.__class__ is other.__class__ and other.value == self.value
 
 
 def check_matching_tag_count(
@@ -408,8 +462,8 @@ class Snip:
            If only intended ever to have one snippet, empty string is appropriate
 
         :type id_: str | None
-        :returns: True if a *replacement* occurred otherwise False
-        :rtype: bool
+        :returns: VALIDATE_FAIL, NO_MATCH, REPLACED, NO_CHANGE
+        :rtype: drain_swamp.snip.ReplaceResult
 
         :raises:
 
@@ -530,12 +584,13 @@ class Snip:
         # first match snippet
         snippet_existing = self.contents(id_=id_)
 
-        # file contents
-        text_existing = self._contents
-
         # A replacement will occur
-        ret = False
-        if snippet_existing is not None:
+        if not isinstance(snippet_existing, str):
+            _logger.info(f"text (contents issue): {snippet_existing}")
+            ret = snippet_existing
+        else:
+            # file contents
+            text_existing = self._contents
             # Run re.sub on all editable regions
             token_start = cls.TOKEN_START
             token_end = cls.TOKEN_END
@@ -555,9 +610,9 @@ class Snip:
                 else:  # pragma: no cover
                     pass
                 self.path_file.write_text(new_text)
-                ret = True
+                ret = ReplaceResult.REPLACED
             else:  # pragma: no cover
-                pass
+                ret = ReplaceResult.NO_CHANGE
 
         return ret
 
@@ -616,7 +671,7 @@ class Snip:
         :param id_: Default None. snippet_co
         :type id_: str | None
         :returns: snippet contents, if match for the snippet otherwise None
-        :rtype: str | None
+        :rtype: str | drain_swamp.snip.ReplaceResult
         """
         if not self.validate():
             if not self.is_quiet:  # pragma: no cover
@@ -624,7 +679,7 @@ class Snip:
                 _logger.info(msg_info)
             else:  # pragma: no cover
                 pass
-            return None
+            return ReplaceResult.VALIDATE_FAIL
 
         contents = self._contents
 
@@ -653,7 +708,7 @@ class Snip:
         if len(seq_ret) >= 1:
             ret = seq_ret[0]
         else:
-            ret = None
+            ret = ReplaceResult.NO_MATCH
             if not self.is_quiet:  # pragma: no cover
                 _logger.info("match: no")
             else:  # pragma: no cover

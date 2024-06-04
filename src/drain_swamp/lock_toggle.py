@@ -49,18 +49,9 @@ Example ``pyproject.toml``. specifies an additional folder, ``ci``.
        { target = "docs", relative_path = "docs/requirements.in" },
    ]
 
-.. py:data:: is_piptools
-   :type: bool
-
-   pip-compile is installed by package, pip-tools.
-
-   Avoid executing code:`which pip-compile` within a subprocess, by
-   checking can import ``piptools``. Then assume package pip-tools,
-   install cli commands: :command:`pip-compile` and :command:`pip-sync`
-
 .. py:data:: __all__
    :type: tuple[str, str]
-   :value: ("lock_compile", "unlock_create")
+   :value: ("lock_compile", "unlock_compile")
 
    Module exports
 
@@ -68,21 +59,33 @@ Example ``pyproject.toml``. specifies an additional folder, ``ci``.
 
 from __future__ import annotations
 
+import copy
 import logging
 import pkgutil
 import subprocess
-from pathlib import Path
+from collections.abc import Sequence
+from dataclasses import (
+    InitVar,
+    dataclass,
+    field,
+)
+from pathlib import (
+    Path,
+    PurePath,
+)
 
 from .constants import (
     PATH_PIP_COMPILE,
     SUFFIX_LOCKED,
+    SUFFIX_UNLOCKED,
     g_app_name,
 )
+from .exceptions import MissingRequirementsFoldersFiles
 
 __package__ = "drain_swamp"
 __all__ = (
     "lock_compile",
-    "unlock_create",
+    "unlock_compile",
 )
 
 _logger = logging.getLogger(f"{g_app_name}.lock_toggle")
@@ -101,7 +104,7 @@ def is_piptools():
 
 
 def lock_compile(inst):
-    """In a subprocess call :command:pip-compile to create .lock files
+    """In a subprocess, call :command:`pip-compile` to create ``.lock`` files
 
     :param inst:
 
@@ -121,6 +124,7 @@ def lock_compile(inst):
 
     # store pairs
     lst_pairs = []
+    t_excludes = ("pins.in",)
 
     # Look at the folders. Then convert all ``.in`` --> ``.lock``
     gen_unlocked_files = inst.in_files()
@@ -131,8 +135,13 @@ def lock_compile(inst):
 
     gen_unlocked_files = inst.in_files()
     for path_abs in gen_unlocked_files:
-        abspath_locked = path_abs.parent.joinpath(f"{path_abs.stem}{SUFFIX_LOCKED}")
-        lst_pairs.append((str(path_abs), str(abspath_locked)))
+        if path_abs.name not in t_excludes:
+            file_name = f"{path_abs.stem}{SUFFIX_LOCKED}"
+            abspath_locked = path_abs.parent.joinpath(file_name)
+            lst_pairs.append((str(path_abs), str(abspath_locked)))
+        else:  # pragma: no cover
+            # Not a ``*.in`` file. Ignore
+            pass
 
     _logger.info(f"pairs: {lst_pairs}")
 
@@ -160,7 +169,586 @@ def lock_compile(inst):
     yield from ()
 
 
-def unlock_create(inst):
+def strip_inline_comments(val):
+    """Strip off inline comments. Which may be to the right of a requirement
+
+    :param val: line with contains a requirement and optionally an in-line comment
+    :type val: str
+    :returns: Requirement without a inline comment
+    :rtype: str
+    """
+    try:
+        pos = val.index("#")
+    except ValueError:
+        # not found
+        ret = val
+    else:
+        ret = val[:pos]
+        ret = ret.rstrip()
+
+    return ret
+
+
+@dataclass
+class InFile:
+    """
+    :ivar relpath: Relative path to requirements file
+    :vartype relpath: str
+    :ivar stem:
+
+       Requirements file stem. Later ``.unlock`` suffix is added
+
+    :vartype stem: str
+    :ivar constraints:
+
+       Requirement files may contain lines starting with
+       ``-c [requirements file relative path]``. This constitutes a
+       constraint. The requirements file referenced by a constraint, can
+       also contain constraints. The tree of constraints is resolved
+       recursively until all constraints on all requirements files are resolved.
+
+    :vartype constraints: set[str]
+    :ivar requirements:
+
+       Contains all dependencies from a requirements file. There is no
+       attempt made to resolve package versions.
+
+    :vartype requirements: set[str]
+    """
+
+    relpath: str
+    stem: str
+    constraints: set[str] = field(default_factory=set)
+    requirements: set[str] = field(default_factory=set)
+
+    def __post_init__(self):
+        """relpath given as a Path, convert into a str.
+        :py:func:`drain_swamp.lock_toggle.InFile.check_path` should
+        have already been performed/called prior
+        """
+        is_path = issubclass(type(self.relpath), PurePath)
+        if is_path:
+            self.relpath = str(self.relpath)
+        else:  # pragma: no cover
+            pass
+
+    @staticmethod
+    def check_path(cwd, path_to_check) -> None:
+        """Check Path. Should not be a str
+        :param cwd: Package base folder
+        :type cwd: pathlib.Path
+        :param path_to_check: Hopefully a relative Path
+        :type path_to_check: typing.Any
+        :raises:
+
+           - :py:exc:`TypeError` -- Sequence contains one or more unsupported types
+           - :py:exc:`ValueError` -- Requirements file, (.in), not relative to base folder
+           - :py:exc:`FileNotFoundError` -- Requirements file, (.in), not found
+
+        """
+        # contains only Path
+        is_path = path_to_check is not None and issubclass(
+            type(path_to_check), PurePath
+        )
+        if not is_path:
+            msg_exc = (
+                f"in_files Sequence contains unsupported type, {type(path_to_check)}"
+            )
+            raise TypeError(msg_exc)
+        else:  # pragma: no cover
+            pass
+
+        # FileNotFoundError
+        is_abs_path = path_to_check.is_absolute() and path_to_check.is_file()
+        if not is_abs_path:
+            msg_exc = "Requirement (.in) file does not exist"
+            raise FileNotFoundError(msg_exc)
+
+        # relative to self.cwd
+        try:
+            path_to_check.relative_to(cwd)
+        except Exception as e:
+            msg_exc = (
+                f"requirements file, {path_to_check}, not relative to folder, {cwd}"
+            )
+            raise ValueError(msg_exc) from e
+
+    def abspath(self, path_package_base):
+        """Get the absolute path. The relative path is relative to the
+        package folder.
+
+        :param path_package_base: package base folder
+        :type path_package_base: pathlib.Path
+        :returns: absolute path
+        :rtype: pathlib.Path
+        """
+        return path_package_base.joinpath(self.relpath)
+
+    @property
+    def depth(self):
+        """Number of unresolved constraints. One this number gets down
+        to zero, the InFile is moved from files set --> zeroes set
+
+        :returns: unresolved constraints count
+        :rtype: int
+        """
+        return len(self.constraints)
+
+    def resolve(self, constraint, requirements):
+        """
+        :param constraint: A ``.in`` file relative path
+        :type constraint: str
+        :param requirements:
+
+           The ``.in`` file's requirement lines, which might have silly
+           version upper limits. No attempt is made to address these
+           upper bounds version limits
+
+        :type requirements: set[str]
+        """
+        self.constraints.remove(constraint)
+
+        # Removes duplicates, but ignores version constraints
+        for req in requirements:
+            self.requirements.add(req)
+
+    def __hash__(self):
+        """Constraints as constraints are resolved, are removed,
+        increasing the requirements.
+
+        Both fields are dynamic. For the point of identification,
+        the relpath is unique
+
+        :returns: hash of relpath
+        :rtype: int
+        """
+        return hash((self.relpath,))
+
+    def __eq__(self, right):
+        """Compares equality
+
+        :param right: right side of the equal comparison
+        :type right: typing.Any
+        :returns:
+
+           True if both are same InFile otherwise False. Does not take
+           in account, constraints and requirements.
+
+        :rtype: bool
+        """
+        is_infile = isinstance(right, InFile)
+        is_str = isinstance(right, str)
+        is_relpath = issubclass(type(right), PurePath) and not right.is_absolute()
+        if is_relpath:
+            str_right = str(right)
+        elif is_str:
+            str_right = right
+        else:  # pragma: no cover
+            pass
+
+        if is_infile:
+            is_eq = self.__hash__() == right.__hash__()
+            ret = is_eq
+        elif is_str or is_relpath:
+            # relpath
+            left_hash = hash(self)
+            right_hash = hash((str_right,))
+            is_eq = left_hash == right_hash
+            ret = is_eq
+        else:
+            ret = False
+
+        return ret
+
+
+@dataclass
+class InFiles:
+    """Container of InFile
+
+    :ivar cwd: current working directory
+    :vartype cwd: pathlib.Path
+    :ivar in_files: Requirements files. Relative path to ``.in`` files
+    :vartype in_files: collections.abc.Sequence[pathlib.Path]
+    :ivar _files:
+
+       Set of InFile. Which contains the relative path to a Requirement
+       file. May contain unresolved constraints
+
+    :vartype _files: set[InFile]
+    :ivar _zeroes: Set of InFile that have all constraints resolved
+    :vartype _zeroes: set[InFile]
+
+    :raises:
+
+       - :py:exc:`TypeError` -- in_files unsupported type, expecting
+         :py:class:`collections.abc.Sequence` [ :py:class:`pathlib.Path` ]
+
+       - :py:exc:`ValueError` -- An element within in_files is not
+         relative to folder, cwd
+
+       - :py:exc:`FileNotFoundError` -- Requirements .in file not found
+
+       - :py:exc:`drain_swamp.MissingRequirementsFoldersFiles` -- A requirements
+         file references a nonexistent constraint
+
+    """
+
+    cwd: Path
+    in_files: InitVar[Sequence[Path]]
+    _files: set[InFile] = field(init=False, default_factory=set)
+    _zeroes: set[InFile] = field(init=False, default_factory=set)
+
+    def __post_init__(self, in_files):
+        """Read in and initial pass over ``.in`` files
+
+        :param in_files: Requirements files. Relative path to ``.in`` files
+        :type in_files: collections.abc.Sequence[pathlib.Path]
+        """
+        # is a sequence
+        if in_files is None or not isinstance(in_files, Sequence):
+            msg_exc = f"Expecting a list[Path] got unsupported type {in_files}"
+            raise TypeError(msg_exc)
+
+        # Checks
+        for path_abs in in_files:
+            try:
+                InFile.check_path(self.cwd, path_abs)
+            except (TypeError, ValueError, FileNotFoundError):
+                raise
+
+        for path_abs in in_files:
+            path_relpath = path_abs.relative_to(self.cwd)
+            str_file = path_abs.read_text()
+            lines = str_file.split("\n")
+            constraint_raw = []
+            requirement = set()
+            for line in lines:
+                is_comment = line.startswith("#")
+                is_blank_line = len(line.strip()) == 0
+                is_constraint = line.startswith("-c ")
+                if is_comment or is_blank_line:
+                    continue
+                elif is_constraint:
+                    line_pkg = line[3:]
+                    line_pkg = strip_inline_comments(line_pkg)
+                    constraint_raw.append(line_pkg)
+                else:
+                    line_pkg = strip_inline_comments(line)
+                    requirement.add(line_pkg)
+
+            """Normalize constraint
+            Assume .in files constraints are relative path only
+            """
+            path_parent = path_abs.parent
+            constraint = set()
+            for cons_path in constraint_raw:
+                try:
+                    path_abs_constraint = path_parent.joinpath(cons_path).resolve(
+                        strict=True
+                    )
+                except FileNotFoundError as exc:
+                    msg_exc = (
+                        f"Within requirements file, {path_relpath}, a constraint "
+                        f"file does not exist. Create it! {cons_path}"
+                    )
+                    raise MissingRequirementsFoldersFiles(msg_exc) from exc
+                else:
+                    path_rel_constraint = path_abs_constraint.relative_to(self.cwd)
+                    constraint.add(str(path_rel_constraint))
+
+            # Checks already performed for: TypeError, ValueError or FileNotFoundError
+            in_ = InFile(
+                relpath=path_relpath,
+                stem=path_abs.stem,
+                constraints=constraint,
+                requirements=requirement,
+            )
+            _logger.info(f"in_: {repr(in_)}")
+            # set.add an InFile
+            self.files = in_
+
+    @property
+    def files(self):
+        """Generator of InFile
+
+        :returns: Yields InFile. These tend to contain constraints
+        :rtype: collections.abc.Generator[drain_swamp.lock_toggle.InFile, None, None]
+        """
+        yield from self._files
+
+    @files.setter
+    def files(self, val):
+        """append an InFile
+
+        The constructor performs checks. Not intended to add requirements
+        files outside of the constructor
+
+        :param val: Supposed to be an :py:class:`~drain_swamp.lock_toggle.InFile`
+        :type val: typing.Any
+        """
+        is_infile = val is not None and isinstance(val, InFile)
+        if is_infile:
+            self._files.add(val)
+        else:  # pragma: no cover
+            pass
+
+    @property
+    def zeroes(self):
+        """Generator of InFile
+
+        :returns: Yields InFile without any constraints
+        :rtype: collections.abc.Generator[drain_swamp.lock_toggle.InFile, None, None]
+        """
+        yield from self._zeroes
+
+    @zeroes.setter
+    def zeroes(self, val):
+        """append an InFile that doesn't have any constraints
+
+        The only acceptable source of zeroes is from :code:`self._files`
+
+        :param val: Supposed to be an :py:class:`~drain_swamp.lock_toggle.InFile`
+        :type val: typing.Any
+        """
+        is_infile = val is not None and isinstance(val, InFile)
+        if is_infile:
+            self._zeroes.add(val)
+        else:  # pragma: no cover
+            pass
+
+    def in_generic(self, val, set_name="files"):
+        """A generic __contains__
+
+        :param val: item to check if within zeroes
+        :type val: typing.Any
+        :param set_name: Default "files". Which set to search thru. zeroes or files.
+        :type set_name: str | None
+        :returns: True if InFile contained within zeroes otherwise False
+        :rtype: bool
+        """
+        if set_name is None or not isinstance(set_name, str):
+            set_name = "_files"
+        else:  # pragma: no cover
+            set_name = f"_{set_name}"
+
+        ret = False
+        set_ = getattr(self, set_name, set())
+        for in_ in set_:
+            if val is not None:
+                is_match_infile = isinstance(val, InFile) and in_ == val
+                is_match_str = isinstance(val, str) and in_.relpath == val
+
+                is_match_path = issubclass(type(val), PurePath) and in_.relpath == str(
+                    val
+                )
+                if is_match_infile or is_match_str or is_match_path:
+                    ret = True
+                else:  # pragma: no cover
+                    # unsupported type
+                    pass
+            else:  # pragma: no cover
+                # is None
+                pass
+
+        return ret
+
+    def in_zeroes(self, val):
+        """Check if within zeroes
+
+        :param val: item to check if within zeroes
+        :type val: typing.Any
+        :returns: True if InFile contained within zeroes otherwise False
+        :rtype: bool
+        """
+
+        return self.in_generic(val, set_name="zeroes")
+
+    def __contains__(self, val):
+        """Check if within InFiles
+
+        :param val: item to check if within InFiles
+        :type val: typing.Any
+        :returns: True if InFile contained within InFiles otherwise False
+        :rtype: bool
+        """
+        return self.in_generic(val)
+
+    def get_by_relpath(self, relpath, set_name="files"):
+        """Get the index and :py:class:`~drain_swamp.lock_toggle.InFile`
+
+        :param relpath: relative path of a ``.in`` file
+        :type relpath: str
+        :param set_name: Default "files". Which set to search thru. zeroes or files.
+        :type set_name: str | None
+        :returns:
+
+           The ``.in`` file and index within
+           :py:class:`~drain_swamp.lock_toggle.InFiles`
+
+        :rtype: drain_swamp.lock_toggle.InFile | None
+        :raises:
+
+            - :py:exc:`ValueError` -- Unsupported type. relpath is neither str nor Path
+
+        """
+        if set_name is None or not isinstance(set_name, str):
+            set_name = "_files"
+        else:  # pragma: no cover
+            set_name = f"_{set_name}"
+
+        msg_exc = f"Expected a relative path as str or Path. Got {type(relpath)}"
+        str_relpath = None
+        if relpath is not None:
+            if isinstance(relpath, str):
+                str_relpath = relpath
+            elif issubclass(type(relpath), PurePath):
+                str_relpath = str(relpath)
+            else:
+                raise ValueError(msg_exc)
+        else:
+            raise ValueError(msg_exc)
+
+        ret = None
+        set_ = getattr(self, set_name, set())
+        for in_ in set_:
+            if in_.relpath == str_relpath:
+                ret = in_
+                break
+            else:  # pragma: no cover
+                # not a match
+                pass
+        else:
+            # set empty
+            ret = None
+
+        return ret
+
+    def move_zeroes(self):
+        """Zeroes have had all their constraints resolved and therefore
+        do not need to be further scrutinized.
+        """
+        # add to self.zeroes
+        del_these = []
+        for in_ in self.files:
+            if in_.depth == 0:
+                # set.add an InFile
+                self.zeroes = in_
+                del_these.append(in_)
+            else:  # pragma: no cover
+                pass
+
+        msg_info = f"self.zeroes (after): {self._zeroes}"
+        _logger.info(msg_info)
+
+        # remove from self._files
+        for in_ in del_these:
+            self._files.remove(in_)
+
+        msg_info = f"self.files (after): {self._files}"
+        _logger.info(msg_info)
+
+    def resolve_zeroes(self):
+        """If a requirements file have constraint(s) that can be
+        resolved by a zero, do so.
+        """
+        # Take the win, early and often!
+        self.move_zeroes()
+
+        # Resolve with zeroes
+        for in_ in self.files:
+            constaints_copy = copy.deepcopy(in_.constraints)
+            for constraint_relpath in constaints_copy:
+                is_in_zeroes = self.in_zeroes(constraint_relpath)
+                msg_info = (
+                    f"resolve_zeroes constraint {constraint_relpath} in "
+                    f"zeroes {is_in_zeroes}"
+                )
+                _logger.info(msg_info)
+                if is_in_zeroes:
+                    # Raises ValueError if constraint_relpath is neither str nor Path
+                    item = self.get_by_relpath(constraint_relpath, set_name="zeroes")
+                    msg_info = f"resolve_zeroes in_ (before) {in_}"
+                    _logger.info(msg_info)
+
+                    in_.resolve(constraint_relpath, item.requirements)
+                    msg_info = f"resolve_zeroes in_ (after) {in_}"
+                    _logger.info(msg_info)
+                    # Update set
+                    # self.files.update(in_)
+                    pass
+                else:  # pragma: no cover
+                    pass
+
+        # For an InFile, are all it's constraints resolved?
+        self.move_zeroes()
+
+    def resolution_loop(self):
+        """Run loop of resolve_zeroes calls, sampling before and after
+        counts. If not fully resolved and two iterations have the same
+        result, raise an Exception
+
+        :raises:
+
+           - :py:exc:`drain_swamp.MissingRequirementsFoldersFiles` -- there are
+             unresolvable constraint(s)
+
+        """
+        initial_count = len(list(self.files))
+        current_count = initial_count
+        previous_count = initial_count
+        while current_count != 0:
+            self.resolve_zeroes()
+            current_count = len(list(self.files))
+            # Check previous run results vs current run results, if same raise Exception
+            is_resolved = current_count == 0
+            is_same_result = previous_count == current_count
+
+            # raise exception if not making any progress
+            if not is_resolved and is_same_result:
+                unresolvable_requirement_files = [in_.relpath for in_ in self.files]
+                missing_contraints = [in_.constraints for in_ in self.files]
+                msg_exc = (
+                    "Missing .in requirements file(s). Unable to resolve "
+                    "constraint(s). Files with unresolvable constraints: "
+                    f"{unresolvable_requirement_files}. "
+                    f"Missing constraints: {missing_contraints}"
+                )
+                _logger.info(msg_exc)
+                raise MissingRequirementsFoldersFiles(msg_exc)
+            else:  # pragma: no cover
+                pass
+
+            previous_count = current_count
+
+    def write(self):
+        """After resolving all constraints. Write out all .unlock files
+        :returns:
+        :rtype: collections.abc.Generator[pathlib.Path, None, None]
+        """
+        _logger.info(f"InFiles.write zeroes count: {len(list(self.zeroes))}")
+        for in_ in self.zeroes:
+            if in_.stem != "pins":
+                abspath_zero = in_.abspath(self.cwd)
+                file_name = f"{in_.stem}{SUFFIX_UNLOCKED}"
+                abspath_unlocked = abspath_zero.parent.joinpath(file_name)
+                _logger.info(f"InFiles.write abspath_unlocked: {abspath_unlocked}")
+                abspath_unlocked.touch(mode=0o644, exist_ok=True)
+                is_file = abspath_unlocked.exists() and abspath_unlocked.is_file()
+                _logger.info(f"InFiles.write is_file: {is_file}")
+                if is_file:
+                    contents = "\n".join(list(in_.requirements))
+                    contents = f"{contents}\n"
+                    abspath_unlocked.write_text(contents)
+                    yield abspath_unlocked
+                else:  # pragma: no cover
+                    pass
+            else:  # pragma: no cover
+                pass
+
+        yield from ()
+
+
+def unlock_compile(inst):
     """pip requirement files can contain both ``-r`` and ``-c`` lines.
     Relative path to requirement files and constraint files respectively.
 
@@ -180,8 +768,34 @@ def unlock_create(inst):
     :param inst:
 
        Backend subclass instance which has folders property containing
-       ``collections.abc.Sequence[Path]``
+       ``collections.abc.Sequence[pathlib.Path]``
 
     :type inst: BackendType
+    :returns: Generator of abs path to .lock files
+    :rtype: collections.abc.Generator[pathlib.Path, None, None]
+    :raises:
+
+       - :py:exc:`drain_swamp.MissingRequirementsFoldersFiles` -- there are
+         unresolvable constraint(s)
+
     """
-    pass
+    # Look at the folders. Then convert all ``.in`` --> ``.unlock``
+    path_cwd = inst.parent_dir
+    gen_unlocked_files = inst.in_files()
+    in_files = list(gen_unlocked_files)
+    del gen_unlocked_files
+
+    # read in all .in files. key path_abs
+    try:
+        files = InFiles(path_cwd, in_files)
+        files.resolution_loop()
+    except MissingRequirementsFoldersFiles:
+        raise
+    else:
+        gen = files.write()
+        lst_called = list(gen)
+        for abspath in lst_called:
+            assert abspath.exists() and abspath.is_file()
+        yield from lst_called
+
+    yield from ()

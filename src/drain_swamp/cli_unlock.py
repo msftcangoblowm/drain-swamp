@@ -50,7 +50,11 @@ else:
 
 from .backend_abc import BackendType
 from .backend_setuptools import BackendSetupTools  # noqa: F401
-from .constants import __version_app
+from .constants import (
+    SUFFIX_LOCKED,
+    SUFFIX_UNLOCKED,
+    __version_app,
+)
 from .exceptions import (
     BackendNotSupportedError,
     MissingRequirementsFoldersFiles,
@@ -59,9 +63,12 @@ from .exceptions import (
 )
 from .lock_toggle import (
     lock_compile,
-    unlock_create,
+    unlock_compile,
 )
-from .snip import Snip
+from .snip import (
+    ReplaceResult,
+    Snip,
+)
 
 # taken from pyproject.toml
 entrypoint_name = "pipenv-unlock"  # noqa: F401
@@ -100,6 +107,8 @@ EXIT CODES
 7 -- For locking dependencies, pip-tools package must be installed. Not installed
 
 8 -- The snippet is invalid. Either nested snippets or start stop token out of order. Fix the snippet then try again
+
+9 -- In pyproject.toml, there is no snippet with that snippet code
 """
 
 
@@ -193,6 +202,12 @@ def dependencies_lock(path, required, optionals, additional_folders, snippet_co)
        knowing we are alive, loved, and appreciated. We shout,
        ``it's a miracle!`` and be right!
 
+    Usage
+
+    .. code-block:: shell
+
+       pipenv-unlock lock --snip="little_shop_of_horrors_shrine_candles"
+
     \f
 
     :param path:
@@ -263,9 +278,8 @@ def dependencies_lock(path, required, optionals, additional_folders, snippet_co)
         click.secho(msg_exc, fg="red")
         sys.exit(5)
 
-    suffix_out = ".lock"
     try:
-        new_contents = inst.compose(suffix_out)
+        new_contents = inst.compose(SUFFIX_LOCKED)
     except MissingRequirementsFoldersFiles:
         msg_exc = (
             "Missing requirements folders and files. Prepare these "
@@ -292,13 +306,19 @@ def dependencies_lock(path, required, optionals, additional_folders, snippet_co)
     fname = path / "pyproject.toml"
     snip = Snip(fname, is_quiet=True)
     is_success = snip.replace(new_contents, id_=snippet_co)
-    if not is_success:
+    if is_success == ReplaceResult.VALIDATE_FAIL:
         msg_exc = (
             "Snippet is invalid. Validation failed. Either nested or "
             "unmatched start end tokens"
         )
         click.secho(msg_exc, fg="red")
         sys.exit(8)
+    elif is_success == ReplaceResult.NO_MATCH:
+        msg_exc = (
+            f"In pyproject.toml, there is no snippet with snippet code {snippet_co}"
+        )
+        click.secho(msg_exc, fg="red")
+        sys.exit(9)
     else:
         sys.exit(0)
 
@@ -362,6 +382,12 @@ def dependencies_unlock(path, required, optionals, additional_folders, snippet_c
 
     - intend to pick up a drug habit, die, or discover girls
 
+    Usage
+
+    .. code-block:: shell
+
+       pipenv-unlock unlock --snip="little_shop_of_horrors_shrine_candles"
+
     \f
 
     :param path:
@@ -432,9 +458,9 @@ def dependencies_unlock(path, required, optionals, additional_folders, snippet_c
         click.secho(msg_exc, fg="red")
         sys.exit(5)
 
-    suffix_out = ".in"
+    # get contents for update to pyproject.toml
     try:
-        new_contents = inst.compose(suffix_out)
+        new_contents = inst.compose(SUFFIX_UNLOCKED)
     except MissingRequirementsFoldersFiles:
         msg_exc = (
             "Missing requirements folders and files. Prepare these "
@@ -444,22 +470,29 @@ def dependencies_unlock(path, required, optionals, additional_folders, snippet_c
         click.secho(msg_exc, fg="red")
         sys.exit(6)
 
-    # unlock_create current does nothing
-    unlock_create(inst)
-
-    # update snippet
+    # update snippet -- pyproject.toml
     fname = path / "pyproject.toml"
-    snip = Snip(fname, is_quiet=True)
+    snip = Snip(fname, is_quiet=False)
     is_success = snip.replace(new_contents, id_=snippet_co)
-    if not is_success:
+    if is_success == ReplaceResult.VALIDATE_FAIL:
         msg_exc = (
             "Snippet is invalid. Validation failed. Either nested or "
             "unmatched start end tokens"
         )
         click.secho(msg_exc, fg="red")
         sys.exit(8)
+    elif is_success == ReplaceResult.NO_MATCH:
+        msg_exc = (
+            f"In pyproject.toml, there is no snippet with snippet code {snippet_co}"
+        )
+        click.secho(msg_exc, fg="red")
+        sys.exit(9)
     else:
-        sys.exit(0)
+        pass
+
+    # creates / writes .unlock files
+    gen = unlock_compile(inst)
+    list(gen)  # execute generator
 
 
 if __name__ == "__main__":  # pragma: no cover

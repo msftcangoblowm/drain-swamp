@@ -4,8 +4,8 @@
 package level constants
 
 .. py:data:: __all__
-   :type: tuple[str, str, str, str, str, str, str, str, str]
-   :value: ("g_app_name", "package_name", "SUFFIX_LOCKED", \
+   :type: tuple[str, str, str, str, str, str, str, str, str, str]
+   :value: ("g_app_name", "package_name", "SUFFIX_IN", "SUFFIX_LOCKED", \
    "SUFFIX_UNLOCKED", "__version_app", "__url__", "PATH_PIP_COMPILE", \
    "PROG_LOCK", "PROG_UNLOCK")
 
@@ -23,6 +23,12 @@ package level constants
 
    g_app_name --> package_name by replacing underscore with hyphen
 
+.. py:data:: SUFFIX_IN
+   :type: str
+   :value: ".in"
+
+   Uncompiled requirements file suffix
+
 .. py:data:: SUFFIX_LOCKED
    :type: str
    :value: ".lock"
@@ -31,7 +37,7 @@ package level constants
 
 .. py:data:: SUFFIX_UNLOCKED
    :type: str
-   :value: ".in"
+   :value: ".unlock"
 
    Dependency requirements source files, file suffix. Same as used by pip-lock.
 
@@ -127,6 +133,7 @@ from .version_semantic import (
 __all__ = (
     "g_app_name",
     "package_name",
+    "SUFFIX_IN",
     "SUFFIX_LOCKED",
     "SUFFIX_UNLOCKED",
     "__version_app",
@@ -140,8 +147,9 @@ __package__ = "drain_swamp"
 g_app_name = "drain_swamp"
 # package_name = re.sub(r"\W+", "-", g_app_name.lower())
 package_name = g_app_name.lower().replace("_", "-")
+SUFFIX_IN = ".in"
 SUFFIX_LOCKED = ".lock"
-SUFFIX_UNLOCKED = ".in"
+SUFFIX_UNLOCKED = ".unlock"
 
 # Removes epoch and local. Fixes version
 __version_app = sanitize_tag(__version__)

@@ -79,6 +79,7 @@ from .constants import (
 )
 from .exceptions import PyProjectTOMLParseError
 from .parser_in import get_pyproject_toml
+from .snip import ReplaceResult
 from .snippet_sphinx_conf import SnipSphinxConf
 
 _logger = logging.getLogger(f"{g_app_name}.cli_sphinx_conf")
@@ -264,7 +265,7 @@ def sphinx_conf_snip(path, kind, copyright_start_year, snippet_co):
 
     # existing_contents = sc._contents
     is_success = sc.replace(snippet_co=snippet_co)
-    if not is_success:
+    if is_success == ReplaceResult.NO_MATCH:
         msg_exc = (
             "In sphinx [doc folder]/conf.py, snippet was not "
             f"replaced. Ensure snippet has this id: {snippet_co}"

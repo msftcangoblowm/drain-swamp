@@ -38,7 +38,10 @@ import textwrap
 
 from .constants import g_app_name
 from .package_metadata import PackageMetadata
-from .snip import Snip
+from .snip import (
+    ReplaceResult,
+    Snip,
+)
 from .version_semantic import (
     SemVersion,
     SetuptoolsSCMNoTaggedVersionError,
@@ -310,8 +313,14 @@ class SnipSphinxConf:
            snippets in that file
 
         :type snippet_co: str | None
-        :returns: True if a replacement occurred otherwise False
-        :rtype: bool
+        :returns:
+
+           - VALIDATE_FAIL -- Invalid snippet
+           - NOMATCH -- no matching snippet with snippet_co
+           - NO_CHANGE -- no replacement occurred
+           - REPLACED -- replaced contents
+
+        :rtype: drain_swamp.snip.ReplaceResult
         """
         # is_ok check avoids, TypeError
         contents = self._contents
@@ -319,6 +328,6 @@ class SnipSphinxConf:
             snip = Snip(self.path_abs, is_quiet=True)
             ret = snip.replace(contents, id_=snippet_co)
         else:  # pragma: no cover
-            ret = False
+            ret = ReplaceResult.NO_CHANGE
 
         return ret

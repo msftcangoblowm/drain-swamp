@@ -1,10 +1,24 @@
 # Sphinx inventory version 2
-# Project: drain-swamp 0.0.1
-# Version: 0.0.1
+# Project: drain-swamp 0.3.0
+# Version: 0.3.0
 # The remainder of this file is compressed using zlib.
+drain_swamp.BackendNotSupportedError py:exception 1 code/general/exceptions.html#$ -
+drain_swamp.exceptions.BackendNotSupportedError py:exception 1 code/general/exceptions.html#$ -
+drain_swamp.MissingRequirementsFoldersFiles py:exception 1 code/general/exceptions.html#$ -
+drain_swamp.exceptions.MissingRequirementsFoldersFiles py:exception 1 code/general/exceptions.html#$ -
+drain_swamp.PyProjectTOMLParseError py:exception 1 code/general/exceptions.html#$ -
+drain_swamp.exceptions.PyProjectTOMLParseError py:exception 1 code/general/exceptions.html#$ -
+drain_swamp.PyProjectTOMLReadError py:exception 1 code/general/exceptions.html#$ -
+drain_swamp.exceptions.PyProjectTOMLReadError py:exception 1 code/general/exceptions.html#$ -
+drain_swamp.Snip py:class 1 code/snip/snippet.html#$ -
 drain_swamp.snip py:module 0 code/snip/snippet.html#$ -
 drain_swamp.snip.__all__ py:data 1 code/snip/snippet.html#$ -
 drain_swamp.snip._logger py:data 1 code/snip/snippet.html#$ -
+drain_swamp.snip.ReplaceResult py:class 1 code/snip/snippet.html#$ -
+drain_swamp.snip.ReplaceResult.VALIDATE_FAIL py:attribute 1 code/snip/snippet.html#$ -
+drain_swamp.snip.ReplaceResult.NO_MATCH py:attribute 1 code/snip/snippet.html#$ -
+drain_swamp.snip.ReplaceResult.REPLACED py:attribute 1 code/snip/snippet.html#$ -
+drain_swamp.snip.ReplaceResult.NO_CHANGE py:attribute 1 code/snip/snippet.html#$ -
 drain_swamp.snip.check_matching_tag_count py:function 1 code/snip/snippet.html#$ -
 drain_swamp.snip.check_matching_tag_count.params.contents py:parameter 1 code/snip/snippet.html#$ -
 drain_swamp.snip.check_matching_tag_count.params.token_start py:parameter 1 code/snip/snippet.html#$ -

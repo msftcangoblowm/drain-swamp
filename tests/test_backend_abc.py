@@ -50,6 +50,7 @@ from drain_swamp.exceptions import (
     PyProjectTOMLReadError,
 )
 from drain_swamp.parser_in import get_pyproject_toml
+from drain_swamp.snip import ReplaceResult
 
 if sys.version_info >= (3, 9):  # pragma: no cover
     from collections.abc import Sequence
@@ -807,23 +808,23 @@ testdata_is_locked = (
         "no_snippet_with_id_none.txt",
         None,
         "zzzzzzzzzzzzz\n# @@@ editable asdf\nblah blah blah\n# @@@ end\nzzzzzz\n# @@@ editable george\nhey there george\n# @@@ end\nzzzzzzz\n",
-        None,
+        ReplaceResult.NO_MATCH,
     ),
     (
         "no_snippet_with_that_id.txt",
         "ted",
         "zzzzzzzzzzzzz\n# @@@ editable asdf\nblah blah blah\n# @@@ end\nzzzzzz\n# @@@ editable george\nhey there george\n# @@@ end\nzzzzzzz\n",
-        None,
+        ReplaceResult.NO_MATCH,
     ),
     (
         "snippet_with_id_all_unlocked.txt",
         "ted",
-        """zzzzzzzzzzzzz\n# @@@ editable ted\ndependencies = { file = ["requirements/prod.in"] }
-optional-dependencies.pip = { file = ["requirements/pip.in"] }
-optional-dependencies.pip_tools = { file = ["requirements/pip-tools.in"] }
-optional-dependencies.dev = { file = ["requirements/dev.in"] }
-optional-dependencies.manage = { file = ["requirements/manage.in"] }
-optional-dependencies.docs = { file = ["docs/requirements.in"] }\n# @@@ end\nzzzzzz\n# @@@ editable george\nhey there george\n# @@@ end\nzzzzzzz\n""",
+        """zzzzzzzzzzzzz\n# @@@ editable ted\ndependencies = { file = ["requirements/prod.unlock"] }
+optional-dependencies.pip = { file = ["requirements/pip.unlock"] }
+optional-dependencies.pip_tools = { file = ["requirements/pip-tools.unlock"] }
+optional-dependencies.dev = { file = ["requirements/dev.unlock"] }
+optional-dependencies.manage = { file = ["requirements/manage.unlock"] }
+optional-dependencies.docs = { file = ["docs/requirements.unlock"] }\n# @@@ end\nzzzzzz\n# @@@ editable george\nhey there george\n# @@@ end\nzzzzzzz\n""",
         False,
     ),
     (
@@ -882,16 +883,16 @@ def test_is_locked(fname, id_, content, expected, tmp_path, prepare_folders_file
     # file empty --> ValueError --> None
     p_file = tmp_path / fname
     actual = BackendType.is_locked(p_file)
-    assert actual is None
+    assert actual == ReplaceResult.VALIDATE_FAIL
 
     # is_file_ok fails --> FileNotFoundError --> None
     #    exists, absolute, but not a file
     actual = BackendType.is_locked(tmp_path)
-    assert actual is None
+    assert actual == ReplaceResult.VALIDATE_FAIL
 
     p_file.write_text(content)
     actual = BackendType.is_locked(p_file, snippet_co=id_)
-    if expected is None:
-        assert actual is None
-    else:
+    if isinstance(actual, bool):
         assert actual == expected
+    else:
+        assert expected == ReplaceResult.NO_MATCH

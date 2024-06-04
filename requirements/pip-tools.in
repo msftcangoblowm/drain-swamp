@@ -1,7 +1,6 @@
 # Licensed under the Apache License: http://www.apache.org/licenses/LICENSE-2.0
 # For details: https://github.com/msftcangoblowm/drain-swamp/blob/master/NOTICE.txt
 
-# -c pins.lock
 -c pip.in
 
 # "make upgrade-one package=pip-tools"

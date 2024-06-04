@@ -1,0 +1,10 @@
+setuptools-scm
+sphobjinv
+pip-tools
+scriv
+sphinx-autobuild
+sphinx-external-toc-strict
+sphinx-pyproject
+click
+sphinx-paramlinks
+sphinx
