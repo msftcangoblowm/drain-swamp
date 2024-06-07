@@ -47,7 +47,6 @@ include = ["drain_swamp*"]
 
 [project.scripts]
 pipenv-unlock = "drain_swamp.cli_unlock:main"
-sphinxcontrib-snip = "drain_swamp.cli_sphinx_conf:main"
 drain-swamp = "drain_swamp.cli_igor:main"
 
 [tool.setuptools.dynamic]

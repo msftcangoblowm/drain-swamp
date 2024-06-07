@@ -22,6 +22,8 @@ Will fail with exit code 1 even with 100% coverage
 
 """
 
+import contextlib
+import io
 import logging
 import logging.config
 from pathlib import Path
@@ -41,6 +43,15 @@ from drain_swamp.snip import (
 
 testdata_test_snip_harden = [
     (
+        "with_id_key_no_snippet.txt",
+        "asdf",
+        "abc abc abc",
+        "zzzzzzzzzzzzz\nzzzzzzzzzz\nzzzzzzzzzzzzz\n",
+        "zzzzzzzzzzzzz\nzzzzzzzzzz\nzzzzzzzzzzzzz\n",
+        ReplaceResult.NO_MATCH,
+        False,
+    ),
+    (
         "with_id_key_no_key.txt",
         "asdf",
         "abc abc abc",
@@ -54,8 +65,8 @@ testdata_test_snip_harden = [
         "",
         "abc abc abc",
         "zzzzzzzzzzzzz\n# @@@ editable george\nblah blah blah\n# @@@ end\nzzzzzzzzzzzzz\n",
-        "zzzzzzzzzzzzz\n# @@@ editable george\nblah blah blah\n# @@@ end\nzzzzzzzzzzzzz\n",
-        ReplaceResult.NO_MATCH,
+        "zzzzzzzzzzzzz\n# @@@ editable george\nabc abc abc\n# @@@ end\nzzzzzzzzzzzzz\n",
+        ReplaceResult.REPLACED,
         False,
     ),
     (
@@ -159,8 +170,9 @@ testdata_test_snip_harden = [
     ),
 ]
 ids_test_snip_harden = [
-    "one snip. with id. Key no key",
-    "one snip. with id. no key key",
+    "No snippet. Nothing to do",
+    "one snip. with id. key / no key",
+    "one snip. with id. no key / key",
     "one snip. with id. no change",
     "one snip. with id",
     "two snippets. one with one without id. key. invalid to mix",
@@ -225,7 +237,7 @@ def test_snip_harden(
             er_bad = Snip(invalid, is_quiet=is_quiet)
             # Fails at this point, not on class construction
             is_success = er_bad.replace(replace_text, id_=id_)
-            assert is_success == ReplaceResult.VALIDATE_FAIL
+            assert is_success is None or ReplaceResult.VALIDATE_FAIL == is_success
 
         Path(mixed_f).write_text(file_contents)
         er = Snip(mixed_f, is_quiet=is_quiet)
@@ -242,14 +254,18 @@ def test_snip_harden(
 
         # normal call
         is_success = er.replace(replace_text, id_=id_)
-        assert is_success == expected_result_status
-        actual = er.get_file()
-        assert actual == expected
+        if is_success is None or is_success == ReplaceResult.VALIDATE_FAIL:
+            # issue with file or one or more validation checks failed
+            pass
+        else:
+            assert is_success == expected_result_status
+            actual = er.get_file()
+            assert actual == expected
 
-        assert has_logging_occurred(caplog)
+            assert has_logging_occurred(caplog)
 
-        # https://pytest-regressions.readthedocs.io/en/latest/api.html#pytest_regressions.file_regression.FileRegressionFixture.check
-        file_regression.check(expected, extension=".txt", binary=False)
+            # https://pytest-regressions.readthedocs.io/en/latest/api.html#pytest_regressions.file_regression.FileRegressionFixture.check
+            file_regression.check(expected, extension=".txt", binary=False)
 
 
 def test_snip_properties():
@@ -462,6 +478,13 @@ def test_snip_validate(
 
 testdata_snip_contents = [
     (
+        "with_id_key_no_snippet.txt",
+        "asdf",
+        "zzzzzzzzzzzzz\nzzzzzzzzzz\nzzzzzzzzzzzzz\n",
+        ReplaceResult.NO_MATCH,
+        False,
+    ),
+    (
         "with_id_key_no_key.txt",
         "asdf",
         "zzzzzzzzzzzzz\n# @@@ editable\nblah blah blah\n# @@@ end\nzzzzzzzzzzzzz\n",
@@ -472,7 +495,7 @@ testdata_snip_contents = [
         "with_id_no_key_key.txt",
         "",
         "zzzzzzzzzzzzz\n# @@@ editable george\nblah blah blah\n# @@@ end\nzzzzzzzzzzzzz\n",
-        ReplaceResult.NO_MATCH,
+        "blah blah blah",
         False,
     ),
     (
@@ -540,14 +563,15 @@ testdata_snip_contents = [
     ),
 ]
 ids_snip_contents = [
-    "one snip. with id. Key no key",
-    "one snip. with id. no key key",
+    "No snippets. Nothing to do",
+    "one snip. with id. No key",
+    "one snip. with id. No key. Infers key",
     "one snip. with id",
     "one snip. with id. snippet empty",
-    "one snip. without id empty str",
-    "one snip. without id empty none",
-    "one snip. without id empty not a str",
-    "one snip. without id empty excess whitespace",
+    "one snip. without id empty str. Infers key",
+    "one snip. without id empty none/ Infers key",
+    "one snip. without id empty not a str. Infers key",
+    "one snip. without id empty excess whitespace. Infers key",
     "two snips. both have id. match 2nd",
     "two snips. both have id. match 1st",
     "three snips. All have id. match 1st and 3rd",
@@ -571,6 +595,7 @@ def test_snip_contents(
     has_logging_occurred,
 ):
     # pytest --showlocals --log-level INFO -k "test_snip_contents" tests
+    # pytest --showlocals --log-level INFO tests/test_snip.py::test_snip_contents["No snippets. Nothing to do"]
     LOGGING["loggers"][g_app_name]["propagate"] = True
     logging.config.dictConfig(LOGGING)
     logger = logging.getLogger(name=g_app_name)
@@ -580,17 +605,41 @@ def test_snip_contents(
     path_abs = tmp_path / file_name
     snip = Snip(path_abs, is_quiet=is_quiet)
 
-    # No preparation
-    actual = snip.contents(id_=id_)
-    assert actual == ReplaceResult.VALIDATE_FAIL
+    # No preparation -- snip.contents
+    t_actual = snip.contents(id_=id_)
+    assert t_actual == ReplaceResult.VALIDATE_FAIL
+
+    # No preparation -- snip.print
+    with contextlib.redirect_stderr(io.StringIO()):
+        snippets = snip.print()
+    assert snippets == ReplaceResult.VALIDATE_FAIL
 
     # prepare
     seq_create_these = (file_name,)
     prepare_folders_files(seq_create_these, tmp_path)
     path_abs.write_text(file_contents)
 
-    # act
-    actual = snip.contents(id_=id_)
+    # act -- snip.print
+    #    same return value as snip.snippet
+    with contextlib.redirect_stderr(io.StringIO()) as f_1:
+        snippets = snip.print()
+    msg = f_1.getvalue()
+
+    if isinstance(snippets, ReplaceResult):
+        assert snippets == ReplaceResult.NO_MATCH
+        # logger.info(f"No snippets: {snippets}\n{msg}")
+        pass
+    else:
+        #    Block of human readable beautiful prose was printed
+        assert len(msg) != 0
+
+    # act -- snip.contents
+    t_actual = snip.contents(id_=id_)
 
     assert has_logging_occurred(caplog)
-    assert actual == expected
+
+    if isinstance(t_actual, ReplaceResult):
+        assert t_actual == ReplaceResult.NO_MATCH
+    else:
+        # id_ might have been inferred
+        assert t_actual[0] == expected

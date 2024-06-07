@@ -21,6 +21,8 @@ else:
 
 __all__ = ("BackendType",)
 _logger: Final[logging.Logger]
+is_module_debug: Final[bool]
+entrypoint_name: Final[str]
 
 def try_dict_update(
     set_both: dict[str, Path],

@@ -14,7 +14,6 @@ subtrees:
   - file: code/index
     entries:
     - file: code/snip
-    - file: code/cli_sphinx_conf
     - file: code/cli_unlock
     - file: code/general/index
       entries:

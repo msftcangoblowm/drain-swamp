@@ -197,11 +197,15 @@ def test_edit_for_release(
     # before prepare of docs/conf.py
     opt_int = edit_for_release(tmp_path, kind, snippet_co=snippet_co)
     assert opt_int is not None
-    assert opt_int == 1
+    assert opt_int == 3
 
     #    create docs/ folder
     path_docs = tmp_path.joinpath("docs")
     path_docs.mkdir()
+
+    opt_int = edit_for_release(tmp_path, kind, snippet_co=snippet_co)
+    assert opt_int is not None
+    assert opt_int == 4
 
     #    docs/conf.py
     prep_pyproject_toml(path_snip, path_docs, rename="conf.py")

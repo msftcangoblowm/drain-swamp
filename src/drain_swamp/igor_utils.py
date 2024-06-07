@@ -136,7 +136,11 @@ def edit_for_release(path_cwd, kind, snippet_co=None):
        Default None. Sphinx conf.py snippet code
 
     :type snippet_co: str
-    :returns: None if no error occurred. 1 no doc?/conf.py file. 2 version str was dodgy
+    :returns:
+
+       None if no error occurred. 3 if no folder, 4 if no doc?/conf.py
+       file. 2 version str was dodgy
+
     :rtype: int | None
     """
     # user input parsing?
@@ -145,11 +149,15 @@ def edit_for_release(path_cwd, kind, snippet_co=None):
 
     try:
         sc = SnipSphinxConf(path=path_cwd)
-    except (NotADirectoryError, FileNotFoundError):
+    except NotADirectoryError:
+        msg_exc = "Expected a doc/ or docs/ folder"
+        print(msg_exc, file=sys.stderr)
+        return 3
+    except FileNotFoundError:
         # if no doc?/conf.py ... do nothing
         msg_exc = "As an optimization, doc?/conf.py is needed. It can be an empty file"
         print(msg_exc, file=sys.stderr)
-        return 1
+        return 4
 
     # sc.path_cwd if already filtered
     # ensure app name is not a possible package, so pyproject.toml is loaded
@@ -190,6 +198,13 @@ def edit_for_release(path_cwd, kind, snippet_co=None):
         print(msg_exc, file=sys.stderr)
         return 2
 
+    """No feedback if ``doc?/conf.py`` encounters:
+
+    - ReplaceResult.VALIDATE_FAIL
+
+    - ReplaceResult.NO_MATCH
+
+    """
     sc.replace(snippet_co=snippet_co)
     author_first_name = sc.author_name_left
 

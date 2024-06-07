@@ -124,6 +124,11 @@ from .igor_utils import (
     pretag,
     seed_changelog,
 )
+from .snip import (
+    ReplaceResult,
+    Snip,
+)
+from .snippet_sphinx_conf import SnipSphinxConf
 from .version_semantic import SetuptoolsSCMNoTaggedVersionError
 
 _logger = logging.getLogger(f"{g_app_name}.cli_igor")
@@ -159,6 +164,21 @@ EXIT CODES
 1 -- no doc?/conf.py folder or file
 
 2 -- semantic version str is malformed
+
+"""
+
+EPILOG_LIST = """
+EXIT CODES
+
+0 -- Printed snippet codes list and list of snippet code with respective block
+
+3 -- Expected a doc/ or docs/ folder
+
+4 -- Expected to find file, doc/conf.py or docs/conf.py
+
+5 -- Snippet validation fail. Either nested or non-matching start/end tokens
+
+6 -- There are no snippets
 
 """
 
@@ -285,6 +305,61 @@ def edit(path, kind, snippet_co=None):  # pragma: no cover
         sys.exit(0)
     else:
         sys.exit(opt_int)
+
+
+@main.command(
+    "list",
+    context_settings={"ignore_unknown_options": True},
+    epilog=EPILOG_LIST,
+)
+@click.option(
+    "-p",
+    "--path",
+    default=Path.cwd(),
+    type=click.Path(exists=False, file_okay=False, dir_okay=True),
+    help=help_path,
+)
+def snippets_list(path):
+    """In Sphinx doc?/conf.py, list snippets
+    \f
+    :param path:
+
+       Default current working directory. package root folder. Must
+       contain ``pyproject.toml``
+
+    :type path: pathlib.Path
+    """
+    # Get absolute path to doc?/conf.py
+    try:
+        sc = SnipSphinxConf(path=path)
+    except NotADirectoryError:
+        msg_exc = "Expected a doc/ or docs/ folder"
+        click.secho(msg_exc, fg="red")
+        sys.exit(3)
+    except FileNotFoundError:
+        msg_exc = "Expected to find file, doc/conf.py or docs/conf.py"
+        click.secho(msg_exc, fg="red")
+        sys.exit(4)
+
+    abspath_conf_py = sc.path_abs
+
+    # print:
+    # - snippet codes
+    # - snippets
+    snip = Snip(abspath_conf_py)
+    with contextlib.redirect_stderr(io.StringIO()) as f:
+        snippets = snip.print()
+    msg = f.getvalue()
+    if isinstance(snippets, ReplaceResult):
+        click.secho(msg, fg="red")
+        if snippets == ReplaceResult.VALIDATE_FAIL:
+            sys.exit(5)
+        elif snippets == ReplaceResult.NO_MATCH:
+            sys.exit(6)
+        else:  # pragma: no cover
+            pass
+    else:
+        click.secho(msg, fg="green")
 
 
 @main.command(

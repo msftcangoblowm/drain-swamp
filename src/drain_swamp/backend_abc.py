@@ -19,6 +19,23 @@ Assumes package:
 
    Module's exports
 
+.. py:data:: _logger
+   :type: logging.Logger
+
+   Module level logger
+
+.. py:data:: is_module_debug
+   :type: bool
+   :value: False
+
+   Flag to turn on module level logging
+
+.. py:data:: entrypoint_name
+   :type: str
+   :value: "pipenv-unlock"
+
+   Entrypoint name. For access to settings in ``pyproject.toml``
+
 """
 
 from __future__ import annotations
@@ -55,7 +72,10 @@ from .exceptions import (
     PyProjectTOMLReadError,
 )
 from .parser_in import get_pyproject_toml
-from .snip import Snip
+from .snip import (
+    ReplaceResult,
+    Snip,
+)
 
 if sys.version_info >= (3, 9):  # pragma: no cover
     from collections.abc import Sequence
@@ -66,6 +86,8 @@ __package__ = "drain_swamp"
 __all__ = ("BackendType",)
 
 _logger = logging.getLogger(f"{g_app_name}.backend_abc")
+
+is_module_debug = False
 
 # taken from pyproject.toml
 entrypoint_name = "pipenv-unlock"  # noqa: F401
@@ -200,10 +222,16 @@ def get_optionals_pyproject_toml(
                     continue
 
                 is_pathlike = isinstance(opt, str) or issubclass(type(opt), PurePath)
-                _logger.info(f"is_pathlike: {is_pathlike}")
+                if is_module_debug:
+                    _logger.info(f"is_pathlike: {is_pathlike}")
+                else:  # pragma: no cover
+                    pass
                 if is_pathlike:
                     path_opt = Path(opt)
-                    _logger.info(f"target / rel path: {target} / {path_opt}")
+                    if is_module_debug:
+                        _logger.info(f"target / rel path: {target} / {path_opt}")
+                    else:  # pragma: no cover
+                        pass
                     try_dict_update(
                         d_both,
                         path_config,
@@ -255,21 +283,30 @@ def get_required_pyproject_toml(
         if is_required:
             is_target = "target" in mixed_blob.keys()
             is_relative_path = "relative_path" in mixed_blob.keys()
-            _logger.info(f"is_target (pyproject.toml): {is_target}")
-            _logger.info(f"is_relative_path (pyproject.toml): {is_relative_path}")
+            if is_module_debug:
+                _logger.info(f"is_target (pyproject.toml): {is_target}")
+                _logger.info(f"is_relative_path (pyproject.toml): {is_relative_path}")
+            else:  # pragma: no cover
+                pass
             if is_target and is_relative_path:
                 target_b = cast(str, mixed_blob["target"])
                 path_rel_b = cast(str, mixed_blob["relative_path"])
                 # assumes default extensions
                 is_relative = is_relative_required(path_relative=Path(path_rel_b))
-                _logger.info(f"is_relative (pyproject.toml): {is_relative}")
+                if is_module_debug:
+                    _logger.info(f"is_relative (pyproject.toml): {is_relative}")
+                else:  # pragma: no cover
+                    pass
                 if is_relative:
                     path_abs = path_config.joinpath(path_rel_b)
                     if is_bypass:
                         ret = (target_b, path_abs)
                     else:
                         is_file = path_abs.exists() and path_abs.is_file()
-                        _logger.info(f"is_file (pyproject.toml): {is_file}")
+                        if is_module_debug:
+                            _logger.info(f"is_file (pyproject.toml): {is_file}")
+                        else:  # pragma: no cover
+                            pass
                         if is_file:
                             ret = (target_b, path_abs)
                         else:
@@ -813,14 +850,20 @@ class BackendType(abc.ABC):
             path_config,
             is_bypass=False,
         )
-        _logger.info(f"required (pyproject.toml): {ret}")
+        if is_module_debug:
+            _logger.info(f"required (pyproject.toml): {ret}")
+        else:  # pragma: no cover
+            pass
 
         # cli priority over pyproject.toml
         ret_cli = get_required_cli(
             path_config,
             required,
         )
-        _logger.info(f"required (cli): {ret_cli}")
+        if is_module_debug:
+            _logger.info(f"required (cli): {ret_cli}")
+        else:  # pragma: no cover
+            pass
 
         if ret_cli is not None:
             ret = ret_cli
@@ -828,7 +871,10 @@ class BackendType(abc.ABC):
             # pyproject.toml supplied required
             pass
 
-        _logger.info(f"required (final): {ret}")
+        if is_module_debug:
+            _logger.info(f"required (final): {ret}")
+        else:  # pragma: no cover
+            pass
 
         return ret
 
@@ -930,36 +976,48 @@ class BackendType(abc.ABC):
             # may raise NotADirectoryError
             path_config = self.path_config
             path_dir = ensure_folder(path_config)
-            msg_info = (
-                "path_dir (None) --> self.path_config ("
-                f"{type(self.path_config)}): {path_dir}"
-            )
-            _logger.info(msg_info)
+            if is_module_debug:
+                msg_info = (
+                    "path_dir (None) --> self.path_config ("
+                    f"{type(self.path_config)}): {path_dir}"
+                )
+                _logger.info(msg_info)
+            else:  # pragma: no cover
+                pass
         else:
             if not issubclass(type(parent_dir), PurePath):
                 # may raise NotADirectoryError
                 path_config = self.path_config
                 path_dir = ensure_folder(path_config)
-                msg_info = (
-                    "path_dir (not Path)--> self.path_config ("
-                    f"{type(self.path_config)}): {path_dir}"
-                )
-                _logger.info(msg_info)
+                if is_module_debug:
+                    msg_info = (
+                        "path_dir (not Path)--> self.path_config ("
+                        f"{type(self.path_config)}): {path_dir}"
+                    )
+                    _logger.info(msg_info)
+                else:  # pragma: no cover
+                    pass
             else:
                 if parent_dir.is_absolute() and parent_dir.is_dir():
                     # override acceptable
                     path_dir = parent_dir
-                    _logger.info(f"path_dir --> parent_dir: {path_dir}")
+                    if is_module_debug:
+                        _logger.info(f"path_dir --> parent_dir: {path_dir}")
+                    else:  # pragma: no cover
+                        pass
                 else:
                     # fallback override rejected
                     # may raise NotADirectoryError
                     path_config = self.path_config
                     path_dir = ensure_folder(path_config)
-                    msg_info = (
-                        "path_dir (fallback)--> self.path_config("
-                        f"{type(self.path_config)}): {path_dir}"
-                    )
-                    _logger.info(msg_info)
+                    if is_module_debug:
+                        msg_info = (
+                            "path_dir (fallback)--> self.path_config("
+                            f"{type(self.path_config)}): {path_dir}"
+                        )
+                        _logger.info(msg_info)
+                    else:  # pragma: no cover
+                        pass
 
         self._parent_dir = path_dir
 
@@ -1123,14 +1181,19 @@ class BackendType(abc.ABC):
         # combine two sets (of absolute paths)
         set_folders = self.folders_implied | self.folders_additional
         for rel_path in set_folders:
-            _logger.info(f"rel_path: {rel_path}")
+            if is_module_debug:
+                _logger.info(f"rel_path: {rel_path}")
+            else:  # pragma: no cover
+                pass
             path_dir = self.parent_dir
             abs_path = path_dir.joinpath(rel_path)
             pattern = f"**/*{SUFFIX_IN}"
-            _logger.info(f"abs_path: {abs_path}")
-            _logger.info(f"pattern {pattern}")
-
-            _logger.info(f"""files: {list(abs_path.glob(pattern))}""")
+            if is_module_debug:
+                _logger.info(f"abs_path: {abs_path}")
+                _logger.info(f"pattern {pattern}")
+                _logger.info(f"""files: {list(abs_path.glob(pattern))}""")
+            else:  # pragma: no cover
+                pass
             yield from abs_path.glob(f"**/*{SUFFIX_IN}")
         yield from ()
 
@@ -1168,19 +1231,26 @@ class BackendType(abc.ABC):
         # May raise TypeError if path_config is not Path | str
         snip = Snip(path_config)
         # contents_existing = snip._contents
-        snippet_existing = snip.contents(id_=snippet_co)
+        t_snippet_existing = snip.contents(id_=snippet_co)
 
-        if not isinstance(snippet_existing, str):
+        if isinstance(t_snippet_existing, ReplaceResult):
             """no snippet with that id
 
             if it's not locked, it's unlocked.
 
             There is no snippet region in ``pyproject.toml`` with that id. So not setup
             """
-            ret = snippet_existing
+            ret = t_snippet_existing
         else:
-            locks = PROG_LOCK.findall(snippet_existing)
-            unlocks = PROG_UNLOCK.findall(snippet_existing)
+            content, snippet_co_actual = t_snippet_existing
+            locks = PROG_LOCK.findall(content)
+            unlocks = PROG_UNLOCK.findall(content)
+            if is_module_debug:
+                _logger.info(f"""snippet_co_actual: {snippet_co_actual}""")
+                _logger.info(f"""locks: {locks}""")
+                _logger.info(f"""unlocks: {unlocks}""")
+            else:  # pragma: no cover
+                pass
             if len(locks) == 0:
                 # probably unlocked
                 if len(unlocks) != 0:

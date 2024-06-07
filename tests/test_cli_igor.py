@@ -22,6 +22,8 @@ Will fail with exit code 1 even with 100% coverage
 """
 
 import copy
+import logging
+import logging.config
 import shlex
 import subprocess
 from pathlib import Path
@@ -36,9 +38,13 @@ from drain_swamp.cli_igor import (
     main,
     seed,
     semantic_version_aware_build,
+    snippets_list,
     validate_tag,
 )
-from drain_swamp.constants import g_app_name
+from drain_swamp.constants import (
+    LOGGING,
+    g_app_name,
+)
 
 
 def test_cli_main():
@@ -294,3 +300,103 @@ def test_current_version(ret, expected_exit_code, path_project_base):
         result = runner.invoke(current_version, cmd)
 
     assert result.exit_code == expected_exit_code
+
+
+testdata_snippets_list = (
+    (
+        Path(__file__).parent.joinpath(
+            "_good_files", "complete-manage-pip-prod.pyproject_toml"
+        ),
+        "docs",
+        Path(__file__).parent.joinpath(
+            "test_snip",
+            "test_snip_harden_one_snip__with_id_.txt",
+        ),
+        0,
+        ("little_shop_of_horrors_shrine_candles",),
+    ),
+    (
+        Path(__file__).parent.joinpath(
+            "_good_files", "complete-manage-pip-prod.pyproject_toml"
+        ),
+        "docs",
+        Path(__file__).parent.joinpath(
+            "test_snip",
+            "test_snip_harden_No_snippet__Nothing_to_do_.txt",
+        ),
+        6,
+        (),
+    ),
+    (
+        Path(__file__).parent.joinpath(
+            "_good_files", "complete-manage-pip-prod.pyproject_toml"
+        ),
+        "docs",
+        Path(__file__).parent.joinpath(
+            "_bad_snips",
+            "nested-snips.txt",
+        ),
+        5,
+        (),
+    ),
+)
+ids_snippets_list = (
+    "Has a snippet",
+    "No snippets",
+    "Nested snips --> ReplaceResult.VALIDATE_FAIL",
+)
+
+
+@pytest.mark.parametrize(
+    "path_file, doc_relpath, path_confpy_src, expected_exit_code, keys_expected",
+    testdata_snippets_list,
+    ids=ids_snippets_list,
+)
+def test_snippets_list(
+    path_file,
+    doc_relpath,
+    path_confpy_src,
+    expected_exit_code,
+    keys_expected,
+    tmp_path,
+    caplog,
+):
+    # pytest --showlocals --log-level INFO -k "test_snippets_list" tests
+    LOGGING["loggers"][g_app_name]["propagate"] = True
+    logging.config.dictConfig(LOGGING)
+    logger = logging.getLogger(name=g_app_name)
+    logger.addHandler(hdlr=caplog.handler)
+    caplog.handler.level = logger.level
+
+    runner = CliRunner()
+    with runner.isolated_filesystem(temp_dir=tmp_path) as tmp_dir_path:
+        path_tmp_dir = Path(tmp_dir_path)
+
+        # a folder --> ReplaceResult.VALIDATE_FAIL
+        cmd = [
+            "--path",
+            path_tmp_dir,
+        ]
+        result = runner.invoke(snippets_list, cmd)
+        assert result.exit_code == 3
+        assert result.output.rstrip() == "Expected a doc/ or docs/ folder"
+
+        # prepare docs/ folder
+        path_dir = path_tmp_dir.joinpath(doc_relpath)
+        path_dir.mkdir()
+
+        result = runner.invoke(snippets_list, cmd)
+        assert result.exit_code == 4
+        assert (
+            result.output.rstrip()
+            == "Expected to find file, doc/conf.py or docs/conf.py"
+        )
+
+        # prepare [docs folder]/conf.py
+        contents = path_confpy_src.read_text()
+        path_confpy = path_dir.joinpath("conf.py")
+        path_confpy.write_text(contents)
+        assert path_confpy.exists() and path_confpy.is_file()
+
+        result = runner.invoke(snippets_list, cmd)
+        assert result.exit_code == expected_exit_code

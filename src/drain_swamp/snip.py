@@ -21,6 +21,7 @@ from __future__ import annotations
 import logging
 import re
 import string
+import sys
 from enum import (
     Enum,
     auto,
@@ -41,6 +42,7 @@ __all__ = (
 )
 
 _logger = logging.getLogger(f"{g_app_name}.snip")
+is_module_debug = True
 
 
 class ReplaceResult(Enum):
@@ -127,10 +129,19 @@ def check_matching_tag_count(
         start_count = contents.count(token_start)
         end_count = contents.count(token_end)
 
-        _logger.debug(f"start token count: {start_count}")
-        _logger.debug(f"end token count: {end_count}")
+        if is_module_debug:  # pragma: no cover
+            _logger.debug(f"start token count: {start_count}")
+            _logger.debug(f"end token count: {end_count}")
+        else:  # pragma: no cover
+            pass
+
         is_tag_count_match = start_count == end_count
-        _logger.debug(f"token counts match: {is_tag_count_match}")
+
+        if is_module_debug:  # pragma: no cover
+            _logger.debug(f"token counts match: {is_tag_count_match}")
+        else:  # pragma: no cover
+            pass
+
         ret = is_tag_count_match
     else:
         ret = False
@@ -212,8 +223,12 @@ def check_not_nested_or_out_of_order(
     else:
         # either no contents, no start token, or no end token
         ret = False
-        msg_info = "Either no contents, no start token, or no end token provided"
-        _logger.info(msg_info)
+
+        if is_module_debug:  # pragma: no cover
+            msg_info = "Either no contents, no start token, or no end token provided"
+            _logger.info(msg_info)
+        else:  # pragma: no cover
+            pass
 
     return ret
 
@@ -306,7 +321,7 @@ class Snip:
         r"# @@@ editable\s?(\w*)?\n(.*?)\n# @@@ end\n",
         flags=re.DOTALL,
     )
-    __slots__ = ("_is_quiet", "_path_file", "_contents")
+    __slots__ = ("_is_quiet", "_path_file", "_contents", "_is_infer")
 
     def __init__(
         self,
@@ -320,6 +335,7 @@ class Snip:
         self.path_file = fname
 
         self._contents = None
+        self._is_infer = False
 
     @property
     def path_file(self):
@@ -400,6 +416,15 @@ class Snip:
         else:  # pragma: no cover
             self._is_quiet = val
 
+    @property
+    def is_infer(self):
+        """``id\_`` is None or empty str. snippet_co is taken from snippet
+
+        :returns: True if infer snippet_co otherwise False
+        :rtype: bool
+        """
+        return self._is_infer
+
     def get_file(self):
         """Read the file
 
@@ -471,12 +496,13 @@ class Snip:
 
         """
         cls = type(self)
+        is_log_ok = not self.is_quiet
         if replacement is None or not isinstance(replacement, str):
             msg_exc = "Unsupported type, replacement contents must be a str"
             raise TypeError(msg_exc)
 
         id_ = sanitize_id(id_)
-        if not self.is_quiet:  # pragma: no cover
+        if is_log_ok:  # pragma: no cover
             _logger.info(f"id_ (user input; filtered): {id_}")
             _logger.info(f"replacement (user input filtered): {replacement}")
         else:  # pragma: no cover
@@ -552,11 +578,14 @@ class Snip:
                `regex tester web app <https://regexr.com/>`_
 
             """
-            _logger.debug(f"matched region:   {matchobj.group(0)}")
-            _logger.debug(f"current id:       {matchobj.group(1)}")
-            _logger.debug(f"current contents: {matchobj.group(2)}")
-            _logger.debug(f"target id:        {id_}")
-            _logger.debug(f"replacement: {replacement}")
+            if is_log_ok:  # pragma: no cover
+                _logger.debug(f"matched region:   {matchobj.group(0)}")
+                _logger.debug(f"current id:       {matchobj.group(1)}")
+                _logger.debug(f"current contents: {matchobj.group(2)}")
+                _logger.debug(f"target id:        {id_}")
+                _logger.debug(f"replacement: {replacement}")
+            else:  # pragma: no cover
+                pass
 
             current_id = matchobj.group(1)
             is_target_have_id = len(id_) != 0
@@ -565,46 +594,75 @@ class Snip:
             if is_target_have_id and is_current_have_id and current_id == id_:
                 # both have id and match
                 ret = f"{token_start} {id_}\n{replacement}\n{token_end}"
-                _logger.info("both have id; match")
+
+                if is_log_ok:  # pragma: no cover
+                    msg_debug = "both have id; match"
+                    _logger.debug(msg_debug)
+                else:  # pragma: no cover
+                    pass
             elif is_target_have_id and is_current_have_id and current_id != id_:
                 # both have id; no match
-                _logger.debug("both have id; no match --> return unmodified")
+                if is_log_ok:  # pragma: no cover
+                    msg_debug = "both have id; no match --> return unmodified"
+                    _logger.debug(msg_debug)
+                else:  # pragma: no cover
+                    pass
                 ret = matchobj.group(0)
             elif not is_target_have_id and not is_current_have_id:
                 ret = f"{token_start}\n{replacement}\n{token_end}"
-                _logger.debug("both no id; match")
+                if is_log_ok:  # pragma: no cover
+                    msg_debug = "both no id; match"
+                    _logger.debug(msg_debug)
+                else:  # pragma: no cover
+                    pass
             else:
-                _logger.debug("not a match --> return unmodified")
+                if is_log_ok:  # pragma: no cover
+                    msg_debug = "not a match --> return unmodified"
+                    _logger.debug(msg_debug)
+                else:  # pragma: no cover
+                    pass
                 ret = matchobj.group(0)
 
-            _logger.debug(f"ret: {ret}")
+            if is_log_ok:  # pragma: no cover
+                msg_debug = f"ret: {ret}"
+                _logger.debug(msg_debug)
+            else:  # pragma: no cover
+                pass
 
             return ret
 
         # first match snippet
-        snippet_existing = self.contents(id_=id_)
-
-        # A replacement will occur
-        if not isinstance(snippet_existing, str):
-            _logger.info(f"text (contents issue): {snippet_existing}")
-            ret = snippet_existing
+        t_snippet_existing = self.contents(id_=id_)
+        if isinstance(t_snippet_existing, ReplaceResult):
+            # invalid file or one or more validation checks failed
+            ret = t_snippet_existing
         else:
+            # snippet_existing = t_snippet_existing[0]
+            snippet_co_actual = t_snippet_existing[1]
+            # If snippet_co not provided and only one snippet, use inferred snippet_co
+            if self.is_infer:
+                id_ = snippet_co_actual
+            else:  # pragma: no cover
+                pass
+
             # file contents
             text_existing = self._contents
+
             # Run re.sub on all editable regions
             token_start = cls.TOKEN_START
             token_end = cls.TOKEN_END
             new_text = re.sub(cls.PATTERN_W_ID, replace_fcn, text_existing)
 
-            if not self.is_quiet:  # pragma: no cover
-                _logger.info(f"text (after re.sub): {new_text}")
+            if is_log_ok:  # pragma: no cover
+                msg_info = f"text (after re.sub): {new_text}"
+                _logger.info(msg_info)
             else:  # pragma: no cover
                 pass
 
             is_changed = new_text != text_existing
 
             if is_changed:
-                if not self.is_quiet:  # pragma: no cover
+                if is_log_ok:  # pragma: no cover
                     msg_info = f"Updating {str(self.path_file)}"
                     _logger.info(msg_info)
                 else:  # pragma: no cover
@@ -660,58 +718,154 @@ class Snip:
         if ret is True:
             self._contents = contents
         else:
+            msg_exc = "Validation checks fail"
+            _logger.warning(msg_exc)
             self._contents = None
 
         return ret
 
-    def contents(self, id_=None):
-        """Get the contents. Use :py:func:`re.match` to parse and
-        retrieve 2nd group
+    @property
+    def snippets(self):
+        """Get all snippets. No filtering by snippet_co
 
-        :param id_: Default None. snippet_co
-        :type id_: str | None
-        :returns: snippet contents, if match for the snippet otherwise None
-        :rtype: str | drain_swamp.snip.ReplaceResult
+        :returns: tuple of snippet_co and snippet contents
+        :rtype: list[tuple[str, str]] | ReplaceResult
         """
-        if not self.validate():
-            if not self.is_quiet:  # pragma: no cover
-                msg_info = f"file: validation failed. Check file {str(self.path_file)}"
+        cls = type(self)
+
+        is_log_ok = not self.is_quiet
+        # If True --> self._contents is a str | None. None if checks fail
+        is_valid = self.validate()
+        is_invalid_file = not is_valid
+        is_checks_fail = is_valid and self._contents is None
+        if is_invalid_file or is_checks_fail:
+            if is_log_ok:  # pragma: no cover
+                msg_info = f"Validation issue. Check file: {str(self.path_file)}"
                 _logger.info(msg_info)
             else:  # pragma: no cover
                 pass
+
             return ReplaceResult.VALIDATE_FAIL
 
+        # str, not None
         contents = self._contents
-
-        cls = type(self)
-        id_ = sanitize_id(id_)
-        if not self.is_quiet:  # pragma: no cover
-            _logger.debug(f"target id:        {id_}")
-        else:  # pragma: no cover
-            pass
 
         pattern = cls.PATTERN_W_ID
         prog = re.compile(pattern)
 
+        # snippet_co can be used multiple times, so not a set
         seq_ret = []
         for m in prog.finditer(contents):
-            if m is not None and m.group(1) == id_:
-                if not self.is_quiet:
-                    _logger.info(f"matched region:   {m.group(0)}")
-                    _logger.info(f"current id:       {m.group(1)}")
-                    _logger.info(f"current contents: {m.group(2)}")
-                else:  # pragma: no cover
-                    pass
-
-                seq_ret.append(m.group(2))
-
-        if len(seq_ret) >= 1:
-            ret = seq_ret[0]
-        else:
-            ret = ReplaceResult.NO_MATCH
-            if not self.is_quiet:  # pragma: no cover
-                _logger.info("match: no")
+            if m is not None:
+                # id, snippet contents
+                seq_ret.append((m.group(1), m.group(2)))
             else:  # pragma: no cover
+                # no matches
                 pass
+
+        if len(seq_ret) == 0:
+            return ReplaceResult.NO_MATCH
+
+        return seq_ret
+
+    def print(self):
+        """Human readable summary of snippets
+
+        :returns: tuple of snippet_co and snippet contents
+        :rtype: list[tuple[str, str]] | ReplaceResult
+        """
+        snippets = self.snippets
+        if (
+            isinstance(snippets, ReplaceResult)
+            and snippets == ReplaceResult.VALIDATE_FAIL
+        ):
+            msg = (
+                "Snippet validation fail. Either nested or non-matching "
+                "start/end tokens"
+            )
+            print(msg, file=sys.stderr)
+        elif isinstance(snippets, ReplaceResult) and snippets == ReplaceResult.NO_MATCH:
+            msg = "There are no snippets"
+            print(msg, file=sys.stderr)
+        else:
+            lst = []
+            lst_ids = []
+            lst_contents = []
+            for snippet_co, snippet_content in snippets:
+                if len(snippet_co) == 0:
+                    co = "(empty string)"
+                else:
+                    co = snippet_co
+                lst_ids.append(co)
+                block = f"{co} \n\n{snippet_content}"
+                lst_contents.append(block)
+            str_header_0 = "snippet codes:"
+            str_header_1 = "blocks:"
+            lst.append(f"{str_header_0}\n")
+            lst.extend(lst_ids)
+            lst.append(f"\n{str_header_1}\n")
+            lst.extend(lst_contents)
+            msg = "\n".join(lst)
+            print(msg, file=sys.stderr)
+
+        return snippets
+
+    def contents(self, id_=None):
+        """Get snippet contents.
+
+        If only one snippet and ``id\_`` no provided, infer want the
+        only available snippet.
+
+        :param id_:
+
+           Default None. snippet_co. If know there is only one snippet,
+           my opt to not specify
+
+        :type id_: str | None
+        :returns:
+
+           snippet contents and actual snippet_co. Possible to infer
+           snippet if only one and id not provided
+
+        :rtype: tuple[str, str] | drain_swamp.snip.ReplaceResult
+
+        .. note:: context hint
+
+           By providing a context hint, could achieve a better guess and
+           have some awareness of context
+
+        """
+        id_ = sanitize_id(id_)
+
+        snippets = self.snippets
+        if isinstance(snippets, ReplaceResult):
+            return snippets
+
+        seq_ret = []
+        # infer -- if only one and id not provided
+        is_infer = len(snippets) == 1 and (
+            id_ is None or (isinstance(id_, str) and len(id_.strip()) == 0)
+        )
+        if is_infer:
+            # snippet_co not provided cuz knew there is only one snippet
+            t_snip = snippets[0]
+            snippet_co = t_snip[0]
+            snippet_contents = t_snip[1]
+            ret = (snippet_contents, snippet_co)
+            self._is_infer = is_infer
+        else:
+            # matches
+            for t_snip in snippets:
+                snippet_co = t_snip[0]
+                snippet_contents = t_snip[1]
+                if snippet_co == id_:
+                    seq_ret.append((snippet_contents, snippet_co))
+
+            # ReplaceResult.NO_MATCH already checked for
+            if len(seq_ret) == 0:
+                ret = ReplaceResult.NO_MATCH
+            else:
+                ret = seq_ret[0]
+            self._is_infer = False
 
         return ret

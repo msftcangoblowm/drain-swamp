@@ -8,7 +8,9 @@ Changelog
    Feature request
    .................
 
-   self hosted package server. See article
+   - in pipenv-unlock, is_lock. 0 is lock. 1 is unlock
+
+   - self hosted package server. See article
    https://safjan.com/Create%20Self-Hosted%20Python%20Package%20Repository/
 
    Known regressions
@@ -18,6 +20,16 @@ Changelog
    ..............................
 
 .. scriv-start-here
+
+.. _changes_0-4-0:
+
+Version 0.4.0 — 2024-06-07
+--------------------------
+
+- style: Little shop of horror motorcycle googles
+- feat(snip): infer snippet_co. When not provided and only one snippet
+- feat: list snippets
+- refactor: remove redundant entrypoint, sphinxcontrib-snip
 
 .. _changes_0-3-0:
 

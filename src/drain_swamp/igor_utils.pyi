@@ -1,13 +1,17 @@
 import logging
 from pathlib import Path
+from typing import Final
 
-_logger: logging.Logger
 __all__ = (
     "seed_changelog",
     "edit_for_release",
     "build_package",
     "pretag",
 )
+UNRELEASED: Final[str]
+SCRIV_START: Final[str]
+COPYRIGHT_START_YEAR_FALLBACK: Final[int]
+REGEX_COPYRIGHT_LINE: Final[str]
 
 def update_file(fname: str, pattern: str, replacement: str) -> None: ...
 def seed_changelog(path_cwd: Path) -> None: ...

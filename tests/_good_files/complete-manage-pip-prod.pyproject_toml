@@ -9,6 +9,9 @@ dynamic = [
     "dependencies",
     "version",
 ]
+authors = [  # Contact by mastodon please
+    {name = "Dave Faulkmore", email = "faulkmore@protonmail.com"},
+]
 
 [tool.setuptools.dynamic]
 # @@@ editable little_shop_of_horrors_shrine_candles
