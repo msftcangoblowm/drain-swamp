@@ -9,8 +9,32 @@ igor.py utils
    Module level logger
 
 .. py:data:: __all__
-   :type: tuple[str, str, str, str]
-   :value: ("seed_changelog", "edit_for_release", "build_package", "pretag")
+   :type: tuple[str, str, str, str, str]
+   :value: ("seed_changelog", "edit_for_release", "build_package", "pretag", "print_cheats")
+
+.. py:data:: SCRIV_START
+   :type: str
+   :value: ".. scriv-start-here\n\n"
+
+   In CHANGES.rst, token beneath which a changelog entry is written
+
+.. py:data:: UNRELEASED
+   :type: str
+   :value: "Unreleased\n----------"
+
+   Written into CHANGES.rst, the start of what is being called, the seed
+
+.. py:data:: REGEX_COPYRIGHT_LINE
+   :type: str
+
+   NOTICE.txt has a start and end year. Regex for grabbing both.
+
+.. py:data:: COPYRIGHT_START_YEAR_FALLBACK
+   :type: int
+   :value: 1970
+
+   Fallback start year. NOTICE.txt start year gets updated. Since the
+   start year is static expected to be provided in pyproject.toml
 
 """
 
@@ -26,6 +50,7 @@ from pathlib import (
 from .check_type import is_ok
 from .constants import g_app_name
 from .package_metadata import PackageMetadata
+from .parser_in import get_d_pyproject_toml
 from .snippet_sphinx_conf import SnipSphinxConf
 from .version_semantic import (
     SemVersion,
@@ -40,6 +65,7 @@ __all__ = (
     "edit_for_release",
     "build_package",
     "pretag",
+    "print_cheats",
 )
 __package__ = "drain_swamp"
 
@@ -297,8 +323,9 @@ def build_package(path, kind, package_name=None):
     # expecting Path cwd
     try:
         sv = SemVersion(path=path)
-    except NotADirectoryError:
-        raise
+    except (NotADirectoryError, FileNotFoundError) as e:
+        msg_exc = f"Expecting a folder path. Got a file {path}.\n{str(e)}"
+        raise NotADirectoryError(msg_exc) from e
 
     try:
         # afterwards path available as sv.path_cwd
@@ -394,3 +421,140 @@ def get_current_version(path):
     ret = _current_version(path=path)
 
     return ret
+
+
+def _get_branch() -> str:
+    """From git, get the current branch name
+
+    :returns: Branch name
+    :rtype: str
+    :meta private:
+    """
+    ret = subprocess.getoutput("git rev-parse --abbrev-ref @")
+    return ret
+
+
+def print_cheats(path, kind, package_name=None):
+    """Print cheats
+
+    :param path: current working directory path
+    :type path: pathlib.Path
+    :param kind:
+
+       version str, "tag", or "current" or "now". For tagged versions, a version str
+
+    :type kind: str
+    :param package_name:
+
+       Default None. project or package name (hyphens or underscores).
+       If not provided, will attempt to get from project metadata then pyproject.toml
+
+    :type package_name: str | None
+    :raises:
+
+       - :py:exc:`NotADirectoryError` -- cwd is not a folder
+
+       - :py:exc:`SetuptoolsSCMNoTaggedVersionError` -- Neither a
+         tagged version nor a first commit. Create a commit and
+         preferrably a tagged version
+
+       - :py:exc:`AssertionError` -- Could not get package name from git
+
+       - :py:exc:`ValueError` -- Explicit version str invalid
+
+    """
+    REPO_URL = ""
+    t_repo_key = ("Source code", "Repository")
+
+    # Initial version these will both fail
+    branch = _get_branch()
+    sha = subprocess.getoutput("git rev-parse @")
+
+    # expecting Path cwd
+    try:
+        sv = SemVersion(path=path)
+    except (NotADirectoryError, FileNotFoundError) as e:
+        raise NotADirectoryError(str(e)) from e
+
+    try:
+        # afterwards path available as sv.path_cwd
+        ver = sv.version_clean(kind, package_name=package_name)
+    except AssertionError as e:
+        if isinstance(e, SetuptoolsSCMNoTaggedVersionError):
+            """For tag and current/now, Neither a tagged version nor a first
+            commit. Create a commit and preferrably a tagged version
+            Test: use unittest.mock.patch"""
+            raise SetuptoolsSCMNoTaggedVersionError(str(e)) from e
+        else:
+            """Could not get package name from git.
+            Test: kind="tag", package_name="asdfasfsadfasdfasdf"
+            """
+            raise
+    except ValueError:
+        """Explicit version str invalid.
+        Test: kind='dog food tastes better than this'"""
+        raise
+
+    sv.parse_ver(ver)
+    anchor = sv.anchor()
+
+    d_pyproject_toml = get_d_pyproject_toml(path)
+    if d_pyproject_toml:
+        # PROJECT_NAME
+        PROJECT_NAME = d_pyproject_toml.get("project", {}).get("name", None)
+        # REPO_URL
+        d_project_urls = d_pyproject_toml.get("project", {}).get("urls", {})
+        for k, v in d_project_urls.items():
+            is_repo_key = REPO_URL == "" and k in t_repo_key
+            if is_repo_key and isinstance(v, str) and len(v.strip()) != 0:
+                REPO_URL = v
+    else:  # pragma: no cover
+        # If no pyproject.toml or project.name is not set, just abort
+        PROJECT_NAME = ""
+
+    is_pyproject_toml = PROJECT_NAME is not None
+    if is_pyproject_toml:
+        prints = []
+
+        intro_ = f"{PROJECT_NAME} version is {ver}"
+        prints.append(intro_)
+
+        egg = f"egg={PROJECT_NAME}==0.0"  # to force a re-install
+
+        rtd_uri = f"https://{PROJECT_NAME}.readthedocs.io"
+        changes_page = f"{rtd_uri}/en/{ver}/changes.html#changes-{anchor}"
+        prints.append(changes_page)
+
+        gh_commenting = (
+            "\n## For GitHub commenting:\n"
+            "This is now released as part of "
+            f"[{PROJECT_NAME} {ver}]("
+            f"https://pypi.org/project/{PROJECT_NAME}/{ver})."
+        )
+        prints.append(gh_commenting)
+
+        section_run = "\n## To run this code:"
+        prints.append(section_run)
+
+        if branch in ("master", "main"):
+            msg = f"python3 -m pip install git+{REPO_URL}#{egg}"
+            prints.append(msg)
+        else:
+            msg = f"python3 -m pip install git+{REPO_URL}@{branch}#{egg}"
+            prints.append(msg)
+
+        msg = f"python3 -m pip install git+{REPO_URL}@{sha[:20]}#{egg}"
+        prints.append(msg)
+
+        msg = (
+            "\n## For other collaborators:\n"
+            f"git clone {REPO_URL}\n"
+            f"cd {PROJECT_NAME}\n"
+            f"git checkout {sha}"
+        )
+        prints.append(msg)
+
+        str_print = "\n".join(prints)
+        print(str_print)
+    else:  # pragma: no cover
+        pass

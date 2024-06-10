@@ -60,9 +60,9 @@ from .check_type import (
     is_relative_required,
 )
 from .constants import (
-    PROG_LOCK,
-    PROG_UNLOCK,
     SUFFIX_IN,
+    SUFFIX_LOCKED,
+    SUFFIX_UNLOCKED,
     g_app_name,
 )
 from .exceptions import (
@@ -72,10 +72,6 @@ from .exceptions import (
     PyProjectTOMLReadError,
 )
 from .parser_in import get_pyproject_toml
-from .snip import (
-    ReplaceResult,
-    Snip,
-)
 
 if sys.version_info >= (3, 9):  # pragma: no cover
     from collections.abc import Sequence
@@ -222,13 +218,13 @@ def get_optionals_pyproject_toml(
                     continue
 
                 is_pathlike = isinstance(opt, str) or issubclass(type(opt), PurePath)
-                if is_module_debug:
+                if is_module_debug:  # pragma: no cover
                     _logger.info(f"is_pathlike: {is_pathlike}")
                 else:  # pragma: no cover
                     pass
                 if is_pathlike:
                     path_opt = Path(opt)
-                    if is_module_debug:
+                    if is_module_debug:  # pragma: no cover
                         _logger.info(f"target / rel path: {target} / {path_opt}")
                     else:  # pragma: no cover
                         pass
@@ -283,7 +279,7 @@ def get_required_pyproject_toml(
         if is_required:
             is_target = "target" in mixed_blob.keys()
             is_relative_path = "relative_path" in mixed_blob.keys()
-            if is_module_debug:
+            if is_module_debug:  # pragma: no cover
                 _logger.info(f"is_target (pyproject.toml): {is_target}")
                 _logger.info(f"is_relative_path (pyproject.toml): {is_relative_path}")
             else:  # pragma: no cover
@@ -293,7 +289,7 @@ def get_required_pyproject_toml(
                 path_rel_b = cast(str, mixed_blob["relative_path"])
                 # assumes default extensions
                 is_relative = is_relative_required(path_relative=Path(path_rel_b))
-                if is_module_debug:
+                if is_module_debug:  # pragma: no cover
                     _logger.info(f"is_relative (pyproject.toml): {is_relative}")
                 else:  # pragma: no cover
                     pass
@@ -303,7 +299,7 @@ def get_required_pyproject_toml(
                         ret = (target_b, path_abs)
                     else:
                         is_file = path_abs.exists() and path_abs.is_file()
-                        if is_module_debug:
+                        if is_module_debug:  # pragma: no cover
                             _logger.info(f"is_file (pyproject.toml): {is_file}")
                         else:  # pragma: no cover
                             pass
@@ -850,7 +846,7 @@ class BackendType(abc.ABC):
             path_config,
             is_bypass=False,
         )
-        if is_module_debug:
+        if is_module_debug:  # pragma: no cover
             _logger.info(f"required (pyproject.toml): {ret}")
         else:  # pragma: no cover
             pass
@@ -860,7 +856,7 @@ class BackendType(abc.ABC):
             path_config,
             required,
         )
-        if is_module_debug:
+        if is_module_debug:  # pragma: no cover
             _logger.info(f"required (cli): {ret_cli}")
         else:  # pragma: no cover
             pass
@@ -871,7 +867,7 @@ class BackendType(abc.ABC):
             # pyproject.toml supplied required
             pass
 
-        if is_module_debug:
+        if is_module_debug:  # pragma: no cover
             _logger.info(f"required (final): {ret}")
         else:  # pragma: no cover
             pass
@@ -976,7 +972,7 @@ class BackendType(abc.ABC):
             # may raise NotADirectoryError
             path_config = self.path_config
             path_dir = ensure_folder(path_config)
-            if is_module_debug:
+            if is_module_debug:  # pragma: no cover
                 msg_info = (
                     "path_dir (None) --> self.path_config ("
                     f"{type(self.path_config)}): {path_dir}"
@@ -989,7 +985,7 @@ class BackendType(abc.ABC):
                 # may raise NotADirectoryError
                 path_config = self.path_config
                 path_dir = ensure_folder(path_config)
-                if is_module_debug:
+                if is_module_debug:  # pragma: no cover
                     msg_info = (
                         "path_dir (not Path)--> self.path_config ("
                         f"{type(self.path_config)}): {path_dir}"
@@ -1001,7 +997,7 @@ class BackendType(abc.ABC):
                 if parent_dir.is_absolute() and parent_dir.is_dir():
                     # override acceptable
                     path_dir = parent_dir
-                    if is_module_debug:
+                    if is_module_debug:  # pragma: no cover
                         _logger.info(f"path_dir --> parent_dir: {path_dir}")
                     else:  # pragma: no cover
                         pass
@@ -1010,7 +1006,7 @@ class BackendType(abc.ABC):
                     # may raise NotADirectoryError
                     path_config = self.path_config
                     path_dir = ensure_folder(path_config)
-                    if is_module_debug:
+                    if is_module_debug:  # pragma: no cover
                         msg_info = (
                             "path_dir (fallback)--> self.path_config("
                             f"{type(self.path_config)}): {path_dir}"
@@ -1181,14 +1177,14 @@ class BackendType(abc.ABC):
         # combine two sets (of absolute paths)
         set_folders = self.folders_implied | self.folders_additional
         for rel_path in set_folders:
-            if is_module_debug:
+            if is_module_debug:  # pragma: no cover
                 _logger.info(f"rel_path: {rel_path}")
             else:  # pragma: no cover
                 pass
             path_dir = self.parent_dir
             abs_path = path_dir.joinpath(rel_path)
             pattern = f"**/*{SUFFIX_IN}"
-            if is_module_debug:
+            if is_module_debug:  # pragma: no cover
                 _logger.info(f"abs_path: {abs_path}")
                 _logger.info(f"pattern {pattern}")
                 _logger.info(f"""files: {list(abs_path.glob(pattern))}""")
@@ -1198,16 +1194,12 @@ class BackendType(abc.ABC):
         yield from ()
 
     @staticmethod
-    def is_locked(path_config, snippet_co=None):
+    def is_locked(path_config):
         """pyproject.toml exists and the backend is supported. Check
         package dependency lock state.
 
-        :param snippet_co:
-
-           Default None. Snippet code, within a file, unique id of an
-           editable region, aka snippet. Only necessary if allows for multiple snippets
-
-        :type snippet_co: str | None
+        :param path_config: absolute path to ``pyproject.toml``
+        :type path_config: pathlib.Path
         :returns:
 
            True if has mostly dependencies and optional dependencies
@@ -1215,52 +1207,130 @@ class BackendType(abc.ABC):
 
            None indicates snippet with that id does not exist
 
-        :rtype: bool | drain_swamp.snip.ReplaceResult
+        :rtype: bool
         :raises:
 
-           - :py:exc:`TypeError` -- path_config is not Path | str
-           - :py:exc:`ValueError` -- issues reading text file
-           - :py:exc:`FileNotFoundError` -- issues reading text file
+           - :py:exc:`TypeError` -- Unsupported type. Expecting a
+             :py:class:`pathlib.Path`
+
+           - :py:exc:`AssertionError` -- In pyproject.toml no section,
+             tool.setuptools.dynamic
+
+           - :py:exc:`drain_swamp.exceptions.PyProjectTOMLParseError` --
+             either not found or cannot be parsed
+
+           - :py:exc:`drain_swamp.exceptions.PyProjectTOMLReadError` --
+             Either not a file or lacks read permission
+
+        .. todo:: requirements.txt usage
+
+           pip-compile usage encourages: .in and .txt
+           .txt is equivalent to .lock, but .lock meaning is explicit and clear
+
+           drain_swamp broke .txt --> .unlock and .lock
+
+           What if accidently or still using .txt?
 
         """
+        # tomli parser ignores snippet (comments).
+        # This is for the best; parsing quotes in regex is too hard
         # Possible to get a snippet from an invalid ``pyproject.toml`` file
         # May raise PyProjectTOMLParseError or PyProjectTOMLReadError
-        # d_pyproject_toml = BackendType.read(self.path_config)
-        pass
+        try:
+            d_pyproject_toml = BackendType.read(path_config)
+        except (PyProjectTOMLParseError, PyProjectTOMLReadError):
+            raise
+        except AssertionError as e:
+            msg_exc = (
+                "path_config must be a Path and absolute. To a "
+                f"pyproject.toml file {path_config}"
+            )
+            raise TypeError(msg_exc) from e
 
-        # May raise TypeError if path_config is not Path | str
-        snip = Snip(path_config)
-        # contents_existing = snip._contents
-        t_snippet_existing = snip.contents(id_=snippet_co)
+        if is_module_debug:  # pragma: no cover
+            _logger.info(f"BackendType.is_locked d_pyproject_toml: {d_pyproject_toml}")
+        else:  # pragma: no cover
+            pass
 
-        if isinstance(t_snippet_existing, ReplaceResult):
-            """no snippet with that id
+        locks = []
+        unlocks = []
 
-            if it's not locked, it's unlocked.
+        def sorting_hat(abspath: Path) -> None:
+            nonlocal locks
+            nonlocal unlocks
 
-            There is no snippet region in ``pyproject.toml`` with that id. So not setup
-            """
-            ret = t_snippet_existing
-        else:
-            content, snippet_co_actual = t_snippet_existing
-            locks = PROG_LOCK.findall(content)
-            unlocks = PROG_UNLOCK.findall(content)
-            if is_module_debug:
-                _logger.info(f"""snippet_co_actual: {snippet_co_actual}""")
-                _logger.info(f"""locks: {locks}""")
-                _logger.info(f"""unlocks: {unlocks}""")
+            file_name = abspath.name
+            if file_name.endswith(SUFFIX_LOCKED):
+                locks.append(abspath)
+            elif file_name.endswith(SUFFIX_UNLOCKED):
+                unlocks.append(abspath)
             else:  # pragma: no cover
                 pass
-            if len(locks) == 0:
-                # probably unlocked
-                if len(unlocks) != 0:
+
+        def choose_winner() -> bool:
+            """Choose winner
+
+            Assumes suffixes are either: .unlock or .lock
+
+            A file suffix of ``.txt`` is not supported
+
+            :returns: True is locked otherwise False
+            :rtype: bool
+            """
+            nonlocal locks
+            nonlocal unlocks
+
+            locks_count = len(locks)
+            unlocks_count = len(unlocks)
+
+            is_both_zero = locks_count == 0 and unlocks_count == 0
+            if is_both_zero:  # pragma: no cover
+                # both 0 ! Yikes!! No locks means is unlocked. Even if no unlocks
+                ret = False
+            else:
+                is_locks_win = locks_count != 0
+                if is_locks_win:
+                    # locked
+                    ret = True
+                else:
                     # Not locked, so False
                     ret = False
-                else:
-                    # both 0 ! Yikes!! No locks means is unlocked. Even if no unlocks
-                    ret = False
-            else:
-                ret = True
+
+            return ret
+
+        section_ = (
+            d_pyproject_toml.get("tool", {}).get("setuptools", {}).get("dynamic", {})
+        )
+        is_no_tool_setuptools_dynamic_section = len(section_.keys()) == 0
+        if is_no_tool_setuptools_dynamic_section:
+            msg_exc = (
+                "In pyproject.toml, there is no tool.setuptools.dynamic section. "
+                "Create this section"
+            )
+            raise AssertionError(msg_exc)
+
+        for target, d_ in section_.items():
+            if target == "dependencies":
+                # required dependencies
+                files = d_.get("file", [])
+                for f_relpath in files:
+                    sorting_hat(Path(f_relpath))
+            elif target == "optional-dependencies":
+                # optional dependencies
+                for target_opt, d_opt in section_.items():
+                    files = d_opt.get("file", [])
+                    for f_relpath in files:
+                        sorting_hat(Path(f_relpath))
+            else:  # pragma: no cover
+                pass
+
+        if is_module_debug:  # pragma: no cover
+            _logger.info(f"BackendType.is_locked locks: {locks}")
+            _logger.info(f"BackendType.is_locked unlocks: {unlocks}")
+        else:  # pragma: no cover
+            pass
+
+        ret = choose_winner()
 
         return ret
 

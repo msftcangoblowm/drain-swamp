@@ -16,6 +16,8 @@
 
    `import package <https://stackoverflow.com/a/6655098>`_
 
+   `removal of __package__ <https://github.com/python/cpython/pull/97879>`_
+
 """
 
 __package__ = __name__

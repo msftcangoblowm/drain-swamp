@@ -18,6 +18,8 @@ Will fail with exit code 1 even with 100% coverage
 
 """
 
+import contextlib
+import io
 import logging
 import logging.config
 import re
@@ -38,6 +40,7 @@ from drain_swamp.igor_utils import (
     edit_for_release,
     get_current_version,
     pretag,
+    print_cheats,
     seed_changelog,
     update_file,
 )
@@ -373,3 +376,60 @@ def test_get_current_version(path_project_base):
         assert isinstance(ver, str)
     else:
         assert ver is None
+
+
+def test_print_cheats(path_project_base, tmp_path):
+    """prints non-vital info. Useful urls and commands"""
+    # pytest --showlocals --log-level INFO -k "test_print_cheats" tests
+    path_cwd = path_project_base()
+    kinds = ("tag", "current")
+
+    # NotADirectoryError
+    kind = "current"
+    path_f = tmp_path.joinpath("fish.txt")
+    path_f.touch()
+    with pytest.raises(NotADirectoryError):
+        print_cheats(path_f, kind)
+
+    # ValueError
+    with pytest.raises(ValueError):
+        kind_food_bad = "'dog food tastes better than this'"
+        print_cheats(path_cwd, kind_food_bad)
+
+    # SetuptoolsSCMNoTaggedVersionError
+    with pytest.raises(SetuptoolsSCMNoTaggedVersionError):
+        kind = "tag"
+        package_name = "asdfasfsadfasdfasdf"
+        print_cheats(tmp_path, kind, package_name=package_name)
+
+    # SetuptoolsSCMNoTaggedVersionError
+    msg = "This is bad"
+    with (
+        patch(
+            f"{g_app_name}.igor_utils.SemVersion.version_clean",
+            side_effect=SetuptoolsSCMNoTaggedVersionError(msg),
+        ),
+        pytest.raises(SetuptoolsSCMNoTaggedVersionError),
+    ):
+        print_cheats(path_cwd, kind, package_name=g_app_name)
+
+    for kind in kinds:
+        with contextlib.redirect_stdout(io.StringIO()) as f:
+            print_cheats(path_cwd, kind)
+        out = f.getvalue()
+        assert out is not None
+        assert isinstance(out, str)
+        assert len(out.strip()) != 0
+
+        with (
+            patch(
+                f"{g_app_name}.igor_utils._get_branch",
+                return_value="important_branch",
+            ),
+            contextlib.redirect_stdout(io.StringIO()) as f,
+        ):
+            print_cheats(path_cwd, kind)
+        out = f.getvalue()
+        assert out is not None
+        assert isinstance(out, str)
+        assert len(out.strip()) != 0

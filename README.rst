@@ -30,13 +30,14 @@ That's a lot of boilerplate code ... gone! Not all, but most.
 
 * Python 3.9 through 3.12, and 3.13.0a3 and up.
 
+**New in 0.5.0:**
+
+igor.py retired; pipenv-unlock is_lock command; swamp-drain cheats command;
+integration unit tests seperated;
+
 **New in 0.4.0:**
 
 removed sphinxcontrib-snip; infer snippet code; list snippets;
-
-**New in 0.3.0:**
-
-compile to .unlock; .in file support for constraints;
 
 Whats a snippet?
 -----------------

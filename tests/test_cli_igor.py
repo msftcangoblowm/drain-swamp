@@ -26,6 +26,7 @@ import logging
 import logging.config
 import shlex
 import subprocess
+import traceback
 from pathlib import Path
 from unittest.mock import patch
 
@@ -34,6 +35,7 @@ from click.testing import CliRunner
 
 from drain_swamp.cli_igor import (
     current_version,
+    do_cheats,
     entrypoint_name,
     main,
     seed,
@@ -45,6 +47,7 @@ from drain_swamp.constants import (
     LOGGING,
     g_app_name,
 )
+from drain_swamp.version_semantic import SetuptoolsSCMNoTaggedVersionError
 
 
 def test_cli_main():
@@ -400,3 +403,123 @@ def test_snippets_list(
 
         result = runner.invoke(snippets_list, cmd)
         assert result.exit_code == expected_exit_code
+
+
+testdata_cheats_exceptions = (
+    (
+        True,
+        "current",
+        3,
+        g_app_name,
+    ),
+    (
+        False,
+        "dog food tastes better than this",
+        4,
+        g_app_name,
+    ),
+    (
+        False,
+        "current",
+        0,
+        "asdfasfsadfasdfasdf",
+    ),
+)
+ids_cheats_exceptions = (
+    "Expecting a folder",
+    "--kind nonsense. Explicit version str invalid",
+    "package_name ignored",
+)
+
+
+@pytest.mark.parametrize(
+    "is_tmp, kind, exit_code_expected, package_name",
+    testdata_cheats_exceptions,
+    ids=ids_cheats_exceptions,
+)
+def test_cheats_exceptions(
+    is_tmp, kind, exit_code_expected, package_name, path_project_base, tmp_path
+):
+    # pytest --showlocals --log-level INFO -k "test_cheats_exceptions" tests
+
+    # prepare
+    if is_tmp:
+        path_f = tmp_path.joinpath("fish.txt")
+        path_f.touch()
+    else:
+        path_cwd = path_project_base()
+        path_f = path_cwd
+
+    # act
+    cmd = [
+        "--path",
+        path_f,
+        "--kind",
+        kind,
+    ]
+    runner = CliRunner()
+    result = runner.invoke(do_cheats, cmd)
+
+    # out = result.output
+
+    tb = result.exc_info[2]
+    traceback.print_tb(tb)
+    # str_tb = traceback.format_tb(tb)
+    # result_exc = result.exception
+    pass
+
+    exit_code_actual = result.exit_code
+    assert exit_code_actual == exit_code_expected
+
+
+def test_cheats_unusual(path_project_base, tmp_path):
+    # pytest --showlocals --log-level INFO -k "test_cheats_unusual" tests
+    # current package. current version
+    path_cwd = path_project_base()
+    cmd = [
+        "--path",
+        path_cwd,
+        "--kind",
+        "current",
+    ]
+
+    runner = CliRunner()
+    result = runner.invoke(do_cheats, cmd)
+    str_cheats = result.output
+
+    tb = result.exc_info[2]
+    traceback.print_tb(tb)
+    # str_tb = traceback.format_tb(tb)
+    assert result.exit_code == 0
+    assert str_cheats is not None and isinstance(str_cheats, str)
+    assert len(str_cheats) != 0
+
+    # SetuptoolsSCMNoTaggedVersionError
+    kind = "current"
+    cmd = [
+        "--path",
+        path_cwd,
+        "--kind",
+        kind,
+    ]
+    msg = "This is bad"
+    exit_code_expected = 5
+    with (
+        patch(
+            f"{g_app_name}.igor_utils.SemVersion.version_clean",
+            side_effect=SetuptoolsSCMNoTaggedVersionError(msg),
+        ),
+    ):
+        result = runner.invoke(do_cheats, cmd)
+        exit_code_actual = result.exit_code
+
+    assert exit_code_actual == exit_code_expected
+
+    # SetuptoolsSCMNoTaggedVersionError
+    exit_code_expected = 5
+    kind = "tag"
+    package_name = "asdfasfsadfasdfasdf"
+    cmd = ["--path", tmp_path, "--kind", kind, "--package-name", package_name]
+    result = runner.invoke(do_cheats, cmd)
+    exit_code_actual = result.exit_code
+    assert exit_code_actual == exit_code_expected

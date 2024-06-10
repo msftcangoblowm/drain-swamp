@@ -8,7 +8,9 @@ Changelog
    Feature request
    .................
 
-   - in pipenv-unlock, is_lock. 0 is lock. 1 is unlock
+   - article discussing when to use: alpha, beta, post, and rc
+
+   - break up getting started. Configure one piece at a time. Small victories
 
    - self hosted package server. See article
    https://safjan.com/Create%20Self-Hosted%20Python%20Package%20Repository/
@@ -16,10 +18,33 @@ Changelog
    Known regressions
    ..................
 
+   - (upstream) click.Path(resolve_path=True) chokes given a non-Path. Gave a float
+
+     type=click.Path(exists=True, file_okay=True, dir_okay=True, resolve_path=True),
+
+     Expect: Ideally use default value, fallback to exit code 2
+
+     Actual: uncatchable TypeError crash
+
+     `click#2742 <https://github.com/pallets/click/issues/2742>`_
+
    Commit items for NEXT VERSION
    ..............................
 
 .. scriv-start-here
+
+.. _changes_0-5-0:
+
+Version 0.5.0 — 2024-06-10
+--------------------------
+
+- feat(pipenv-unlock): add command is_lock
+- feat(swamp-drain): add command cheats
+- refactor(entrypoints): py313+ importlib to ignore __package__. Use __spec__
+- fix: click.Path(resolve_path=True) resolves relative path --> absolute path
+- test(pep366): run commands directly. Use only source code
+- test(pep366): integration test. Isolated from 1st run unit tests
+- refactor: retire igor.py
 
 .. _changes_0-4-0:
 

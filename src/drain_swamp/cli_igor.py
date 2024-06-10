@@ -83,24 +83,43 @@ import click
 
 # pep366 ...
 # https://stackoverflow.com/a/34155199
-if __name__ == "__main__" and __package__ is None:  # pragma: no cover
+if __name__ == "__main__" and __spec__ is None:  # pragma: no cover
     # Package not installed
     # python src/drain_swamp/cli_igor.py build --kind="0.0.1"
+    import importlib.util
+
     path_d = Path(__file__).parent
     rev_mods = []
     while path_d.joinpath("__init__.py").exists():
         name = path_d.name
+        path_prev = path_d
         path_d = path_d.parent
         rev_mods.append(name)
-    tmp_pkg = ".".join(reversed(rev_mods))
+    # One level above top package --> sys.path.insert
     sys.path.insert(1, str(path_d))
-    mod = __import__(tmp_pkg)
-    sys.modules[tmp_pkg] = mod
-    __package__ = tmp_pkg
+    # parent (aka package) dotted path
+    dotted_path = ".".join(reversed(rev_mods))
+
+    # print(f"str(path_d): {str(path_d)}", file=sys.stderr)
+    # print(f"dotted_path: {dotted_path}", file=sys.stderr)
+    # print(f"path_prev: {path_prev}", file=sys.stderr)
+    pass
+
+    # import top package level
+    path_top = path_prev.joinpath("__init__.py")
+    spec_top = importlib.util.spec_from_file_location(name, path_top)
+    mod_top = importlib.util.module_from_spec(spec_top)
+    sys.modules[dotted_path] = mod_top
+    spec_top.loader.exec_module(mod_top)
+
+    # __spec__ is None. Set __spec__ rather than :code:`__package__ = dotted_path`
+    dotted_path_this = f"{dotted_path}.{Path(__file__).stem}"
+    spec_this = importlib.util.spec_from_file_location(dotted_path_this, Path(__file__))
+    __spec__ = spec_this
 elif (
     __name__ == "__main__" and isinstance(__package__, str) and len(__package__) == 0
 ):  # pragma: no cover
-    # Package installed
+    # When package is not installed
     # python -m drain_swamp.cli_igor build --kind="0.0.1"
     tmp_pkg = "drain_swamp"
     path_pkg_base_dir = Path(__file__).parent.parent
@@ -110,7 +129,8 @@ elif (
     __package__ = tmp_pkg
 else:
     # normal import
-    __package__ = "drain_swamp"
+    # __package__ = "drain_swamp"
+    pass
 # pep366 ...done
 
 from .constants import (
@@ -122,6 +142,7 @@ from .igor_utils import (
     edit_for_release,
     get_current_version,
     pretag,
+    print_cheats,
     seed_changelog,
 )
 from .snip import (
@@ -133,7 +154,7 @@ from .version_semantic import SetuptoolsSCMNoTaggedVersionError
 
 _logger = logging.getLogger(f"{g_app_name}.cli_igor")
 # taken from pyproject.toml
-entrypoint_name = "igor"  # noqa: F401
+entrypoint_name = "drain-swamp"  # noqa: F401
 
 help_path = "package root folder"
 help_snippet_co = (
@@ -216,13 +237,29 @@ EPILOG_CURRENT_VERSION = """
 
 """
 
+EPILOG_CHEATS = """
+
+0 -- printed the cheats
+
+2 -- Unknown parameter or parameter has unsupported type
+
+3 -- Expecting a folder, got something else
+
+4 -- --kind nonsense. Explicit version str invalid
+
+5 -- Neither a tagged version nor a first commit
+
+6 -- Could not get package name from git
+
+"""
+
 
 @click.group(
     context_settings={"help_option_names": ["-h", "--help"]},
 )
 @click.version_option(version=__version_app)
 def main():
-    """Command-line for igor. Prints usage"""
+    """Command-line for drain-swamp. Prints usage"""
 
 
 @main.command(
@@ -235,7 +272,7 @@ def main():
     "--path",
     "path",
     default=Path.cwd(),
-    type=click.Path(exists=False, file_okay=False, dir_okay=True),
+    type=click.Path(exists=False, file_okay=False, dir_okay=True, resolve_path=True),
     help=help_path,
 )
 def seed(path):
@@ -246,6 +283,12 @@ def seed(path):
     :param path: path to the current working directory containing pyproject.toml
     :type path: pathlib.Path
     """
+    # resolve causing conversion into a str. Should be Path
+    if isinstance(path, str):  # pragma: no cover
+        path = Path(path)
+    else:  # pragma: no cover
+        pass
+
     with contextlib.redirect_stderr(io.StringIO()) as f_stream:
         seed_changelog(path)
     str_err = f_stream.getvalue()
@@ -262,7 +305,7 @@ def seed(path):
     "--path",
     "path",
     default=Path.cwd(),
-    type=click.Path(exists=False, file_okay=False, dir_okay=True),
+    type=click.Path(exists=False, file_okay=False, dir_okay=True, resolve_path=True),
     help=help_path,
 )
 @click.option(
@@ -296,6 +339,12 @@ def edit(path, kind, snippet_co=None):  # pragma: no cover
     :param snippet_co: Sphinx doc?/conf.py snippet code. Supply none is no snippet has no code
     :type snippet_co: str | None
     """
+    # resolve causing conversion into a str. Should be Path
+    if isinstance(path, str):  # pragma: no cover
+        path = Path(path)
+    else:  # pragma: no cover
+        pass
+
     with contextlib.redirect_stderr(io.StringIO()) as f_stream:
         opt_int = edit_for_release(path, kind, snippet_co=snippet_co)
     str_err = f_stream.getvalue()
@@ -316,7 +365,7 @@ def edit(path, kind, snippet_co=None):  # pragma: no cover
     "-p",
     "--path",
     default=Path.cwd(),
-    type=click.Path(exists=False, file_okay=False, dir_okay=True),
+    type=click.Path(exists=False, file_okay=False, dir_okay=True, resolve_path=True),
     help=help_path,
 )
 def snippets_list(path):
@@ -329,6 +378,12 @@ def snippets_list(path):
 
     :type path: pathlib.Path
     """
+    # resolve causing conversion into a str. Should be Path
+    if isinstance(path, str):  # pragma: no cover
+        path = Path(path)
+    else:  # pragma: no cover
+        pass
+
     # Get absolute path to doc?/conf.py
     try:
         sc = SnipSphinxConf(path=path)
@@ -372,7 +427,7 @@ def snippets_list(path):
     "--path",
     "path",
     default=Path.cwd(),
-    type=click.Path(exists=False, file_okay=False, dir_okay=True),
+    type=click.Path(exists=False, file_okay=False, dir_okay=True, resolve_path=True),
     help=help_path,
 )
 @click.option(
@@ -392,6 +447,12 @@ def snippets_list(path):
     help=help_package_name,
 )
 def semantic_version_aware_build(path, kind, package_name):
+    # resolve causing conversion into a str. Should be Path
+    if isinstance(path, str):  # pragma: no cover
+        path = Path(path)
+    else:  # pragma: no cover
+        pass
+
     try:
         with contextlib.redirect_stderr(io.StringIO()) as f_stream:
             # click --> exit code 2. Preventing NotADirectoryError
@@ -462,7 +523,7 @@ def validate_tag(ver):
     "--path",
     "path",
     default=Path.cwd(),
-    type=click.Path(exists=False, file_okay=False, dir_okay=True),
+    type=click.Path(exists=False, file_okay=False, dir_okay=True, resolve_path=True),
     help=help_path,
 )
 def current_version(path):
@@ -474,12 +535,96 @@ def current_version(path):
     :param path: current working directory
     :type path: pathlib.Path
     """
+    # resolve causing conversion into a str. Should be Path
+    if isinstance(path, str):  # pragma: no cover
+        path = Path(path)
+    else:  # pragma: no cover
+        pass
+
     opt_str = get_current_version(path)
     if opt_str is None:
         sys.exit(1)
     else:
         click.echo(opt_str)
         sys.exit(0)
+
+
+@main.command(
+    "cheats",
+    context_settings={"ignore_unknown_options": True},
+    epilog=EPILOG_CHEATS,
+)
+@click.option(
+    "-p",
+    "--path",
+    "path",
+    default=Path.cwd(),
+    type=click.Path(exists=False, file_okay=True, dir_okay=True, resolve_path=True),
+    help=help_path,
+)
+@click.option(
+    "-k",
+    "--kind",
+    "kind",
+    default="tag",
+    type=click.STRING,
+    help=help_kind,
+)
+@click.option(
+    "-n",
+    "--package-name",
+    "package_name",
+    type=click.STRING,
+    default=None,
+    help=help_package_name,
+)
+def do_cheats(path, kind, package_name):
+    """Usage
+
+    python src/drain_swamp/cli_igor.py cheats
+
+    or
+
+    drain-swamp cheats
+
+    \f
+    :param path: current working directory
+    :type path: pathlib.Path
+    """
+    # resolve causing conversion into a str. Should be Path
+    if isinstance(path, str):  # pragma: no cover
+        path = Path(path)
+    else:  # pragma: no cover
+        pass
+
+    try:
+        print_cheats(path, kind, package_name=package_name)
+    except NotADirectoryError as e:
+        # Expecting a folder, got something else
+        msg = str(e)
+        exit_code = 3
+    except ValueError as e:
+        # --kind nonsense. Explicit version str invalid
+        msg = str(e)
+        exit_code = 4
+    except AssertionError as e:
+        msg = str(e)
+        if isinstance(e, SetuptoolsSCMNoTaggedVersionError):
+            msg = str(e)
+            exit_code = 5
+        else:
+            # Could not get package name from git
+            exit_code = 6
+    else:
+        msg = None
+        exit_code = 0
+
+    if msg is not None:
+        click.secho(msg, fg="green")
+    else:  # pragma: no cover
+        pass
+
+    sys.exit(exit_code)
 
 
 if __name__ == "__main__":  # pragma: no cover

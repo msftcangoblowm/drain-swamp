@@ -850,23 +850,45 @@ optional-dependencies.docs = { file = ["docs/requirements.pip"] }\n# @@@ end\nzz
         False,
     ),
 )
-ids_is_locked = (
-    "id None. No snippet with that id",
-    "id provided. no snippet with that id",
-    "id provided. snippet exists. All unlocked",
-    "id provided. snippet exists. All locked",
-    "id provided. snippet exists. no matches, so unlocked",
+testdata_is_locked2 = (
+    (
+        Path(__file__).parent.joinpath(
+            "_good_files",
+            "complete.pyproject_toml",
+        ),
+        True,
+    ),
+    (
+        Path(__file__).parent.joinpath(
+            "_good_files",
+            "complete-manage-pip-prod-unlock.pyproject_toml",
+        ),
+        False,
+    ),
+    pytest.param(
+        Path(__file__).parent.joinpath(
+            "_bad_files",
+            "static_dependencies.pyproject_toml",
+        ),
+        None,
+        marks=pytest.mark.xfail(raises=AssertionError),
+    ),
+)
+ids_is_locked2 = (
+    "Locked",
+    "Unlocked",
+    "static dependencies. no tool.setuptools.dynamic section",
 )
 
 
 @pytest.mark.parametrize(
-    "fname, id_, content, expected",
-    testdata_is_locked,
-    ids=ids_is_locked,
+    "path_config, expected",
+    testdata_is_locked2,
+    ids=ids_is_locked2,
 )
-def test_is_locked(fname, id_, content, expected, tmp_path, prepare_folders_files):
+def test_is_locked(path_config, expected, tmp_path, prep_pyproject_toml):
     # pytest --showlocals --log-level INFO -k "test_is_locked" -v tests
-    # path_config invalids
+    # path_config invalids. Must be: pathlib.Path, absolute, to a file
     invalids = (
         1.1234,
         1,
@@ -876,23 +898,16 @@ def test_is_locked(fname, id_, content, expected, tmp_path, prepare_folders_file
         with pytest.raises(TypeError):
             BackendType.is_locked(invalid)
 
+    # path_config_in_tmp = tmp_path / "pyproject.toml"
+    pass
+
+    # is_file_ok fails --> PyProjectTOMLReadError
+    with pytest.raises(PyProjectTOMLReadError):
+        BackendType.is_locked(tmp_path)
+
     # prepare
-    seq_create_these = (fname,)
-    prepare_folders_files(seq_create_these, tmp_path)
+    #    does not check existance of requirements files
+    path_config_in_tmp = prep_pyproject_toml(path_config, tmp_path)
 
-    # file empty --> ValueError --> None
-    p_file = tmp_path / fname
-    actual = BackendType.is_locked(p_file)
-    assert actual == ReplaceResult.VALIDATE_FAIL
-
-    # is_file_ok fails --> FileNotFoundError --> None
-    #    exists, absolute, but not a file
-    actual = BackendType.is_locked(tmp_path)
-    assert actual == ReplaceResult.VALIDATE_FAIL
-
-    p_file.write_text(content)
-    actual = BackendType.is_locked(p_file, snippet_co=id_)
-    if isinstance(actual, bool):
-        assert actual == expected
-    else:
-        assert expected == ReplaceResult.NO_MATCH
+    actual = BackendType.is_locked(path_config_in_tmp)
+    assert actual is expected

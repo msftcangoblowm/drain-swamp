@@ -42,6 +42,7 @@ from drain_swamp.cli_unlock import (
     dependencies_unlock,
     entrypoint_name,
     main,
+    state_is_lock,
 )
 from drain_swamp.constants import (
     LOGGING,
@@ -116,7 +117,7 @@ def test_lock_unlock_successfully(
             snip_co=id_,
             add_folders=additional_folders,
         )
-        is_locked = BackendType.is_locked(path_f, snippet_co=id_)
+        is_locked = BackendType.is_locked(path_f)
         expected = path_f.read_text()
 
         # act
@@ -644,3 +645,97 @@ def test_lock_unlock_and_back_optionals(
         assert has_logging_occurred(caplog)
 
         assert actual_count == expected_count
+
+
+testdata_is_lock = (
+    (
+        Path(__file__).parent.joinpath("_good_files", "complete.pyproject_toml"),
+        0,
+    ),
+    (
+        Path(__file__).parent.joinpath(
+            "_good_files", "complete-manage-pip-prod-unlock.pyproject_toml"
+        ),
+        1,
+    ),
+    (
+        Path(__file__).parent.joinpath(
+            "_bad_files", "static_dependencies.pyproject_toml"
+        ),
+        4,
+    ),
+    (
+        Path(__file__).parent.joinpath("_changelog_files", "CHANGES-empty.rst"),
+        3,
+    ),
+)
+ids_is_lock = (
+    "locked",
+    "unlocked",
+    "static dependencies. No tool.setuptools.dynamic section",
+    "not a toml file",
+)
+
+
+@pytest.mark.parametrize(
+    "path_pyproject_toml, expected_exit_code",
+    testdata_is_lock,
+    ids=ids_is_lock,
+)
+def test_state_is_lock(
+    path_pyproject_toml,
+    expected_exit_code,
+    tmp_path,
+    prep_pyproject_toml,
+    caplog,
+    has_logging_occurred,
+):
+    # pytest --showlocals --log-level INFO -k "test_state_is_lock" tests
+    LOGGING["loggers"][g_app_name]["propagate"] = True
+    logging.config.dictConfig(LOGGING)
+    logger = logging.getLogger(name=g_app_name)
+    logger.addHandler(hdlr=caplog.handler)
+    caplog.handler.level = logger.level
+
+    runner = CliRunner()
+
+    with runner.isolated_filesystem(temp_dir=tmp_path) as tmp_dir_path:
+        path_tmp_dir = Path(tmp_dir_path)
+        path_f = prep_pyproject_toml(path_pyproject_toml, path_tmp_dir)
+        # click chokes! Attempts to Path.resolve a float
+        invalids = (1.2345,)
+        for invalid in invalids:
+            cmd = [
+                "--path",
+                invalid,
+            ]
+            result = runner.invoke(state_is_lock, cmd)
+            assert result.exception.__class__ == TypeError
+            # logger.info(f"result.output: {result.output}")
+            # logger.info(f"result.exit_code: {result.exit_code}")
+            # tb = result.exc_info[2]
+            # logger.info(f"traceback: {traceback.format_tb(tb)}")
+            pass
+
+        relpath_f = path_f.relative_to(path_tmp_dir)
+
+        cmds = [
+            ("--path", str(relpath_f)),  # relative path
+            (
+                "--path",
+                path_f,
+            ),  # absolute path
+            (
+                "--path",
+                "",
+            ),  # --> default path
+        ]
+
+        for func_cmd in cmds:
+            result = runner.invoke(state_is_lock, func_cmd)
+            logger.info(f"result.exception: {result.exception}")
+            logger.info(f"result.output: {result.output}")
+            assert result.exit_code == expected_exit_code
+
+        # assert has_logging_occurred(caplog)
+        pass

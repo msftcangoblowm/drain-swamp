@@ -17,35 +17,59 @@ import click
 
 # pep366 ...
 # https://stackoverflow.com/a/34155199
-if __name__ == "__main__" and __package__ is None:  # pragma: no cover
+if __name__ == "__main__" and __spec__ is None:  # pragma: no cover
     # Package not installed
     # python src/drain_swamp/cli_unlock.py unlock --snip=little_shop_of_horrors_shrine_candles
+    import importlib.util
+
     path_d = Path(__file__).parent
     rev_mods = []
     while path_d.joinpath("__init__.py").exists():
         name = path_d.name
+        path_prev = path_d
         path_d = path_d.parent
         rev_mods.append(name)
-    tmp_pkg = ".".join(reversed(rev_mods))
+    # One level above top package --> sys.path.insert
     sys.path.insert(1, str(path_d))
-    mod = __import__(tmp_pkg)
-    sys.modules[tmp_pkg] = mod
-    __package__ = tmp_pkg
+    # parent (aka package) dotted path
+    dotted_path = ".".join(reversed(rev_mods))
+
+    # print(f"str(path_d): {str(path_d)}", file=sys.stderr)
+    # print(f"dotted_path: {dotted_path}", file=sys.stderr)
+    # print(f"path_prev: {path_prev}", file=sys.stderr)
+    pass
+
+    # import top package level
+    path_top = path_prev.joinpath("__init__.py")
+    spec_top = importlib.util.spec_from_file_location(name, path_top)
+    mod_top = importlib.util.module_from_spec(spec_top)
+    sys.modules[dotted_path] = mod_top
+    spec_top.loader.exec_module(mod_top)
+
+    # __spec__ is None. Set __spec__ rather than :code:`__package__ = dotted_path`
+    dotted_path_this = f"{dotted_path}.{Path(__file__).stem}"
+    spec_this = importlib.util.spec_from_file_location(dotted_path_this, Path(__file__))
+    __spec__ = spec_this
 elif (
     __name__ == "__main__" and isinstance(__package__, str) and len(__package__) == 0
 ):  # pragma: no cover
-    # Package installed
+    # When package is not installed
     # python -m drain_swamp.cli_unlock lock --snip=little_shop_of_horrors_shrine_candles
-    tmp_pkg = "drain_swamp"
+    # python -m drain_swamp.cli_unlock unlock --snip=little_shop_of_horrors_shrine_candles
+    dotted_path = "drain_swamp"
     path_pkg_base_dir = Path(__file__).parent.parent
     sys.path.insert(1, str(path_pkg_base_dir))
-    mod = __import__(tmp_pkg)
-    sys.modules[tmp_pkg] = mod
-    __package__ = tmp_pkg
+
+    mod = __import__(dotted_path)
+    sys.modules[dotted_path] = mod
+
+    __package__ = dotted_path
 else:
     # pipenv-unlock unlock --snip=little_shop_of_horrors_shrine_candles
     # pipenv-unlock lock --snip=little_shop_of_horrors_shrine_candles
-    __package__ = "drain_swamp"
+    # __package__ = "drain_swamp"
+    pass
+
 # pep366 ...done
 
 from .backend_abc import BackendType
@@ -111,6 +135,17 @@ EXIT CODES
 9 -- In pyproject.toml, there is no snippet with that snippet code
 """
 
+EPILOG_IS_LOCK = """
+EXIT CODES
+
+0 -- is locked
+1 -- is unlocked
+2 -- Path not a file
+3 -- file is not ok for whatever reason
+4 -- Static dependencies. No tool.setuptools.dynamic section
+
+"""
+
 
 @click.group(
     context_settings={"help_option_names": ["-h", "--help"]},
@@ -118,6 +153,64 @@ EXIT CODES
 @click.version_option(version=__version_app)
 def main():
     """Command-line for pipenv-unlock. Prints usage"""
+
+
+@main.command(
+    "is_lock",
+    context_settings={"ignore_unknown_options": True},
+    epilog=EPILOG_IS_LOCK,
+)
+@click.option(
+    "-p",
+    "--path",
+    default=Path.cwd(),
+    type=click.Path(exists=True, file_okay=True, dir_okay=True, resolve_path=True),
+    help=help_path,
+)
+def state_is_lock(path):
+    """0 if locked; 1 if unlocked. Otherwise an error occurred
+
+    If only one snippet, snippet_co is optional
+
+    Usage
+
+    .. code-block:: shell
+
+       pipenv-unlock is_lock
+
+    \f
+    :param path:
+
+       The root directory [default: pyproject.toml directory]
+
+    :type path: pathlib.Path
+    """
+
+    # click.secho(f"path (before): {path} type {type(path)}", fg="green")
+    # resolve causing conversion into a str. Should be Path
+    if isinstance(path, str):  # pragma: no cover
+        path = Path(path)
+    else:  # pragma: no cover
+        pass
+    # click.secho(f"path (after): {str(path)}", fg="green")
+    pass
+
+    try:
+        out = BackendType.is_locked(path)
+    except (PyProjectTOMLParseError, PyProjectTOMLReadError) as e:
+        msg_exc = str(e)
+        click.secho(msg_exc, fg="red")
+        sys.exit(3)
+    except AssertionError as e:
+        # Static dependencies. No tool.setuptools.dynamic section
+        msg_exc = str(e)
+        click.secho(msg_exc, fg="red")
+        sys.exit(4)
+
+    if out:
+        sys.exit(0)
+    else:
+        sys.exit(1)
 
 
 @main.command(
@@ -129,7 +222,7 @@ def main():
     "-p",
     "--path",
     default=Path.cwd(),
-    type=click.Path(exists=False, file_okay=False, dir_okay=True),
+    type=click.Path(exists=False, file_okay=False, dir_okay=True, resolve_path=True),
     help=help_path,
 )
 @click.option(
@@ -238,6 +331,11 @@ def dependencies_lock(path, required, optionals, additional_folders, snippet_co)
 
     :type snippet_co: str | None
     """
+    # resolve causing conversion into a str. Should be Path
+    if isinstance(path, str):  # pragma: no cover
+        path = Path(path)
+    else:  # pragma: no cover
+        pass
 
     # No user input validation yet
     # Sequence[tuple[str, pathlib.Path]] | None --> dict[str, Path]
@@ -332,7 +430,7 @@ def dependencies_lock(path, required, optionals, additional_folders, snippet_co)
     "-p",
     "--path",
     default=Path.cwd(),
-    type=click.Path(exists=False, file_okay=False, dir_okay=True),
+    type=click.Path(exists=False, file_okay=False, dir_okay=True, resolve_path=True),
     help=help_path,
 )
 @click.option(
@@ -418,6 +516,11 @@ def dependencies_unlock(path, required, optionals, additional_folders, snippet_c
 
     :type snippet_co: str | None
     """
+    # resolve causing conversion into a str. Should be Path
+    if isinstance(path, str):  # pragma: no cover
+        path = Path(path)
+    else:  # pragma: no cover
+        pass
 
     # No user input validation yet
     # Sequence[tuple[str, pathlib.Path]] | None --> dict[str, Path]

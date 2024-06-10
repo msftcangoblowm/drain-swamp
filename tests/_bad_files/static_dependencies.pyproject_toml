@@ -1,0 +1,42 @@
+[build-system]
+requires = ["setuptools>=69.0.2", "wheel", "build", "setuptools_scm>=8"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "complete-awesome-perfect"
+dynamic = [
+    "version",
+]
+authors = [  # Contact by mastodon please
+    {name = "Dave Faulkmore", email = "faulkmore@protonmail.com"},
+]
+dependencies = [
+  "httpx",
+  "gidgethub[httpx]>4.0.0",
+  "django>2.1; os_name != 'nt'",
+  "django>2.0; os_name == 'nt'",
+]
+[project.optional-dependencies]
+gui = ["PyQt5"]
+cli = [
+  "rich",
+  "click",
+]
+
+version = {attr = "drain_swamp._version.__version__"}
+
+[tool.sphinxcontrib-snip]
+copyright_start_year = 2024
+
+[tool.pipenv-unlock]
+folders = [
+    "ci",
+]
+
+required = { target = "prod", relative_path = "requirements/prod.in" }
+
+# underscore: hyphen
+optionals = [
+    { target = "pip", relative_path = "requirements/pip.in" },
+    { target = "manage", relative_path = "requirements/manage.in" },
+]
