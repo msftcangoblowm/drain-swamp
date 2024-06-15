@@ -10,7 +10,7 @@ dynamic = [
     "version",
 ]
 license = {file = "LICENSE"}
-description = "easily and quickly turn on/off dependency lock"
+description = "turn on/off dependency lock and packaging stuff"
 keywords = ["pipenv", "pip", "pip-tools", "dependency lock"]
 readme = "README.rst"
 requires-python = ">=3.9"
@@ -81,7 +81,7 @@ optionals = [
     { target = "docs", relative_path = "docs/requirements.in" },
 ]
 
-[tool.sphinxcontrib-snip]
+[tool.drain-swamp]
 copyright_start_year = 2024
 
 [tool.pip-tools]

@@ -1,12 +1,12 @@
-Build for 1st time
-===================
+Build fails
+============
 
 Assumptions
 ------------
 
 - :code:`validate-pyproject pyproject.toml` ... works
 
-- :code:`pip list | grep "pipenv_unlock"` ... not installed
+- :code:`pip list | grep drain-swamp` ... not installed
 
 - :code:`python -c "import build.util; print(build.util.project_wheel_metadata('.').get('Requires-Dist'))"` ... fails
 
@@ -93,11 +93,12 @@ To see the verbose error message
 
    ERROR Backend subprocess exited when trying to invoke get_requires_for_build_sdist
 
-Which proves :code:`python -m build` does not understand pip-tools
-``-c %.in`` constraint lines. So ``.unlock`` and ``.lock`` are needed afterall.
+``-c %.in`` is a constraint lines. Which is ``pip-tools`` syntax.
 
+:code:`python -m build` does not understand ``pip-tools`` syntax.
 
-A red herring, although interesting tool
+``.unlock`` and ``.lock`` are *compiled*, resolving/removing the constraint
+lines. This both ``build`` and ``pip`` can understand
 
 .. seealso::
 

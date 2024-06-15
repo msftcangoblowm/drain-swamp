@@ -19,9 +19,9 @@ Snip plugin for Sphinx ``conf.py``. Replaces snippet containing variables:
 
 .. py:data:: entrypoint_name
    :type: str
-   :value: "sphinxcontrib-snip"
+   :value: "drain-swamp"
 
-   Will use this entrypoint. In ``pyproject.toml``, ``[tool.sphinxcontrib-snip]``
+   Will use this entrypoint. In ``pyproject.toml``, ``[tool.drain-swamp]``
 
 .. py:data:: _logger
    :type: logging.Logger
@@ -50,7 +50,7 @@ from .version_semantic import (
 
 __all__ = ("SnipSphinxConf", "entrypoint_name")
 
-entrypoint_name = "sphinxcontrib-snip"
+entrypoint_name = "drain-swamp"
 
 _logger = logging.getLogger(f"{g_app_name}.snippet_sphinx_conf")
 

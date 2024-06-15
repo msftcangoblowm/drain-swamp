@@ -504,6 +504,12 @@ def folders_additional_init(
     """
     set_folders_additional = set()
     for path_mixed in additional_folders:
+        # click may resolve Path --> str
+        if isinstance(path_mixed, str):
+            path_mixed = Path(path_mixed)
+        else:  # pragma: no cover
+            pass
+
         if path_mixed.is_absolute():
             if (
                 path_mixed.exists()

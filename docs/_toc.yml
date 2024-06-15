@@ -1,15 +1,16 @@
 root: index
 subtrees:
 - entries:
-  - file: snippets/index
+  - file: getting_started/index
     entries:
-    - glob: snippets/*
+    - file: getting_started/drain-swamp-files
+    - file: getting_started/pipenv-unlock
+    - file: getting_started/setuptools-scm
+    - file: getting_started/from-source
 - entries:
-  - file: pipenv_unlock/index
+  - file: api/index
     entries:
-    - glob: pipenv_unlock/*
-- entries:
-  - file: sphinxcontrib_snip/index
+    - glob: api/*
 - entries:
   - file: code/index
     entries:
@@ -34,8 +35,19 @@ subtrees:
       - file: code/ext/sphinxcontrib_snip/index
         entries:
         - file: code/ext/sphinxcontrib_snip/sphinx_conf
+- caption: Articles
+  entries:
+  - file: snippets/snippets
+  - file: article-version-specifiers
+  - file: why/about_authors
+  - file: why/cringe-culture
+    entries:
+    - file: troubleshooting/index
+      entries:
+      - glob: troubleshooting/*
 - caption: Links
   entries:
+  - file: getting-help
   - title: Contact
     url: https://mastodon.social/@msftcangoblowme
 meta:

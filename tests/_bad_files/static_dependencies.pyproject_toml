@@ -25,7 +25,7 @@ cli = [
 
 version = {attr = "drain_swamp._version.__version__"}
 
-[tool.sphinxcontrib-snip]
+[tool.drain-swamp]
 copyright_start_year = 2024
 
 [tool.pipenv-unlock]

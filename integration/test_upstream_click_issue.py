@@ -119,17 +119,32 @@ def main():
 )
 def choke_on_non_path(path):
     # When a relative path, gets resolved, but returns as str rather than Path
+    """
+    $> cd integrations
+    $> printf 'test_upstream_click_issue.py choke --path=%f' 0.1234 | xargs python
+    path: /home/faulkmore/Downloads/git_decimals/drain_swamp/integration/0.123400 <class 'str'>
+    """
+    print(f"path: {path} {type(path)}")
     if isinstance(path, str):
         path = Path(path)
 
 
 class TestChokeOnNonPath(unittest.TestCase):
     def test_choke_on_this(self):
-        """"""
+        """This is bypassing the shell, which was the mistake. The shell
+        treats everything as a string
+
+        .. seealso::
+
+           `click#2742 <https://github.com/pallets/click/issues/2742>`_
+
+            Thanks `David Lord <https://github.com/davidism>`_ for your time
+
+        """
         runner = CliRunner()
         cmd = (
             "--path",
-            0.1234,
+            0.1234,  # <-- Shell normally would treat as str, not float
         )
         # result = <Result TypeError('expected str, bytes or os.PathLike object, not float')>
         result = runner.invoke(choke_on_non_path, cmd)
@@ -158,9 +173,6 @@ if __name__ == "__main__":  # pragma: no cover
 
        python -m unittest integration.test_upstream_click_issue --locals
 
-    .. seealso::
-
-       `click#2742 <https://github.com/pallets/click/issues/2742>`_
-
     """
+    # main()
     unittest.main(tb_locals=True)

@@ -8,9 +8,9 @@ Changelog
    Feature request
    .................
 
-   - article discussing when to use: alpha, beta, post, and rc
+   - how to initialize _version.py ??
 
-   - break up getting started. Configure one piece at a time. Small victories
+   - pipenv-unlock (un)lock required and optionals resolve path
 
    - self hosted package server. See article
    https://safjan.com/Create%20Self-Hosted%20Python%20Package%20Repository/
@@ -22,9 +22,8 @@ Changelog
 
      type=click.Path(exists=True, file_okay=True, dir_okay=True, resolve_path=True),
 
-     Expect: Ideally use default value, fallback to exit code 2
-
-     Actual: uncatchable TypeError crash
+     Shell input are only string. CliRunner.invoke feed only str
+     Remove tests that feed non-str Python types
 
      `click#2742 <https://github.com/pallets/click/issues/2742>`_
 
@@ -32,6 +31,23 @@ Changelog
    ..............................
 
 .. scriv-start-here
+
+.. _changes_0-5-1:
+
+Version 0.5.1 — 2024-06-15
+--------------------------
+
+- style: little shop of horrors punchable dental hygienist
+- refactor: tool.drain-swamp rather than tool.sphinxcontrib-snip
+- fix(pipenv-unlock): remove ignore of additional_folders argument to unlock and lock
+- test(integration): click allow input as str only
+- docs: when to use: alpha, beta, post, and rc
+- docs: add section troubleshooting
+- docs: add section paid services
+- docs: add section api
+- docs: add section getting started
+- docs: add section why
+- style: edit project description
 
 .. _changes_0-5-0:
 

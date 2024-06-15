@@ -11,7 +11,10 @@ pipenv-unlock package entrypoint
 
 import sys
 import traceback
-from pathlib import Path
+from pathlib import (
+    Path,
+    PurePath,
+)
 
 import click
 
@@ -246,7 +249,7 @@ def state_is_lock(path):
     "-d",
     "--dir",
     "additional_folders",
-    type=click.Path(exists=False, file_okay=False, dir_okay=True),
+    type=click.Path(exists=False, file_okay=False, dir_okay=True, resolve_path=True),
     multiple=True,
     help=help_additional_folder,
 )
@@ -337,7 +340,7 @@ def dependencies_lock(path, required, optionals, additional_folders, snippet_co)
     else:  # pragma: no cover
         pass
 
-    # No user input validation yet
+    # cli optionals. No user input validation yet
     # Sequence[tuple[str, pathlib.Path]] | None --> dict[str, Path]
     has_optionals = (
         optionals is not None and isinstance(optionals, tuple) and len(optionals) > 0
@@ -352,11 +355,27 @@ def dependencies_lock(path, required, optionals, additional_folders, snippet_co)
     else:
         d_optionals = {}
 
+    # additional folders
+    #    list[str | Path] --> tuple[Path]
+    s_additionals = set()
+    for add_dir in additional_folders:
+        if isinstance(add_dir, str):
+            # Counter-intuitively, this is what click provides
+            p_new = Path(add_dir)
+            s_additionals.add(p_new)
+        elif issubclass(type(add_dir), PurePath):  # pragma: no cover
+            # This is what click should be providing
+            s_additionals.add(add_dir)
+        else:  # pragma: no cover
+            pass
+    t_add_folders = tuple(s_additionals)
+
     try:
         inst = BackendType.load_factory(
             path,
             required=required,
             optionals=d_optionals,
+            additional_folders=t_add_folders,
         )
     except PyProjectTOMLReadError:
         msg_exc = (
@@ -454,7 +473,7 @@ def dependencies_lock(path, required, optionals, additional_folders, snippet_co)
     "-d",
     "--dir",
     "additional_folders",
-    type=click.Path(exists=False, file_okay=False, dir_okay=True),
+    type=click.Path(exists=False, file_okay=False, dir_okay=True, resolve_path=True),
     multiple=True,
     help=help_additional_folder,
 )
@@ -537,11 +556,27 @@ def dependencies_unlock(path, required, optionals, additional_folders, snippet_c
     else:
         d_optionals = {}
 
+    # additional folders
+    #    list[str | Path] --> tuple[Path]
+    s_additionals = set()
+    for add_dir in additional_folders:
+        if isinstance(add_dir, str):
+            # Counter-intuitively, this is what click provides
+            p_new = Path(add_dir)
+            s_additionals.add(p_new)
+        elif issubclass(type(add_dir), PurePath):  # pragma: no cover
+            # This is what click should be providing
+            s_additionals.add(add_dir)
+        else:  # pragma: no cover
+            pass
+    t_add_folders = tuple(s_additionals)
+
     try:
         inst = BackendType.load_factory(
             path,
             required=required,
             optionals=d_optionals,
+            additional_folders=t_add_folders,
         )
     except PyProjectTOMLReadError:
         msg_exc = (

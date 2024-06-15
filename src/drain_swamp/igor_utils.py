@@ -145,7 +145,7 @@ def edit_for_release(path_cwd, kind, snippet_co=None):
 
     .. code-block:: text
 
-       [tool.sphinxcontrib-snip]
+       [tool.drain-swamp]
        copyright_start_year = [an int]
 
     app name also taken from pyproject.toml
@@ -191,7 +191,7 @@ def edit_for_release(path_cwd, kind, snippet_co=None):
     d_pyproject_toml = pm.d_pyproject_toml
 
     # Get copyright_start_year from pyproject.toml
-    d_section = d_pyproject_toml.get("tool", {}).get("sphinxcontrib-snip", {})
+    d_section = d_pyproject_toml.get("tool", {}).get("drain-swamp", {})
     if "copyright_start_year" in d_section.keys() and (
         isinstance(d_section["copyright_start_year"], int)
         or isinstance(d_section["copyright_start_year"], str)

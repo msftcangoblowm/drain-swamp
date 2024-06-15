@@ -10,7 +10,7 @@
   $ python src/drain_swamp/cli_igor.py pretag "0.0.1"
 - Check current version. Do not use, `python setup.py --version`
   Initial version, manually edit _version.py
-  $ python src/drain_swamp/cli_igor.py tag
+  $ [means to initialize _version.py needed]
   or for pre-release or post-release development versions
   $ python src/drain_swamp/cli_igor.py current
   If not in dev mode,  in venv, update ``[prog name]._version.py`` as needed
@@ -19,7 +19,6 @@
   $ python src/drain_swamp/cli_igor.py cheats --kind="tag"
   or
   $ python src/drain_swamp/cli_igor.py cheats --kind="current"
-  See `facts.next_vi`
 - start branch for release work
     $ make relbranch
 - Edit supported Python version numbers. Search for "PYVERSIONS".

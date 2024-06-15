@@ -7,9 +7,7 @@ planet by introducing into coding ...
 CRINGE
 -------
 
-The changelog is the single most exciting file in a software package, i'm
-foreshadowing, laugh now, won't be laughing in a second, no well you
-will be.
+The changelog is the single most exciting file in a software package.
 
 Authors are influencers. Modern life could actually be tied to
 wind direction on a particular day preventing that author from quickly
@@ -38,7 +36,7 @@ So when an obscure package author says,
 Might want that on a t-shirt. Sounds stupid, for the love of cringe,
 you'll come around and embrace stupid. Especially when it seeps into
 our culture, muhahahaha (gay not gay right hand pinky to side of
-mouth Austin powers A spy who shagged me!)
+mouth -- Austin powers A spy who shagged me!)
 
 Come to think of it, why isn't stupid the singular focus of our
 existance /nosarc? We are literally surrounded by stupids. Oh was i
@@ -74,7 +72,7 @@ objects and minor characters.
 
 - style: End of Dead Snow 2, not 1 cuz that suacked, the van
 - style: while the main character is faulking the resurrected corpse,
-- style: the window with blood stains. Will the blood stain be the same in Dead Snow III?
+- style: the window with blood stains. In Dead Snow III, blood stain there?
 
 Did you miss that? The window and the blood stain?
 
@@ -99,7 +97,7 @@ A deep philosophical question, lets clear up any confusion
   Maybe having to watch only Korean dramas will teach you not to make
   backwards incompatiable breaking changes!
 
-^^ Can't remember; print it on a t-shirt stupid!
+^^ Can't remember; print it on a t-shirt!
 
 SPOILER ALERT! <-- the spoiler alert right before the sudden weird transition to the package docs
 
@@ -130,7 +128,7 @@ Don't need to change cringe reference in all snippets, one will suffice.
 Scary threat
 ~~~~~~~~~~~~~
 
-When changing versions, submitting a PR, or an raising an issue. Each
+When changing versions, submitting a PR, or raising an issue. Each
 would influence the next commit. Without supplying a cringe reference
 the author *may* deem this sufficient grounds for refusing the change
 or dragging it out to maximize the LOLs.

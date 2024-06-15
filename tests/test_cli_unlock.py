@@ -566,7 +566,7 @@ testdata_lock_unlock_and_back_optionals = (
         dependencies_unlock,
         Path(__file__).parent.joinpath("_good_files", "complete.pyproject_toml"),
         "little_shop_of_horrors_shrine_candles",
-        (Path("ci"),),
+        ("ci",),
         {"ci": Path("ci/kit.in")},
         {
             "web": Path("ci/web.in"),
@@ -577,7 +577,7 @@ testdata_lock_unlock_and_back_optionals = (
 )
 ids_lock_unlock_and_back_optionals = (
     "lock create two optionals",
-    "unlock create two optionals",
+    "unlock create two optionals ",
 )
 
 
