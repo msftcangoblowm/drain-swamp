@@ -49,7 +49,7 @@ Then link this to your ``pyproject.toml`` file
 .. code:: text
 
    [build-system]
-   requires = ["setuptools>=69.0.2", "wheel", "build", "setuptools_scm>=8"]
+   requires = ["setuptools>=70.0.0", "wheel", "build", "setuptools_scm>=8", "drain_swamp"]
    build-backend = "setuptools.build_meta"
 
    [project]
@@ -71,16 +71,16 @@ Then link this to your ``pyproject.toml`` file
    # this is a snippet with snippet code **may_the_force_be_with_you_tshirt**
    # From Dead Snow II -- best zombie movie ... ever!
    # Specifying a snippet_co turns on support for multiple snippets / file
-   # @@@ editable may_the_force_be_with_you_tshirt\n
-   dependencies = { file = ["requirements/prod.lock"] }
-   optional-dependencies.pip = { file = ["requirements/pip.lock"] }
-   optional-dependencies.pip_tools = { file = ["requirements/pip-tools.lock"] }
-   optional-dependencies.ui = { file = ["requirements/ui.lock"] }
-   optional-dependencies.test = { file = ["requirements/test.lock"] }
-   optional-dependencies.dev = { file = ["requirements/dev.lock"] }
-   optional-dependencies.manage = { file = ["requirements/manage.lock"] }
-   optional-dependencies.docs = { file = ["docs/requirements.lock"] }
-   # @@@ end\n
+   # @@@ editable may_the_force_be_with_you_tshirt
+   dependencies = { file = ["requirements/prod.lnk"] }
+   optional-dependencies.pip = { file = ["requirements/pip.lnk"] }
+   optional-dependencies.pip_tools = { file = ["requirements/pip-tools.lnk"] }
+   optional-dependencies.ui = { file = ["requirements/ui.lnk"] }
+   optional-dependencies.test = { file = ["requirements/test.lnk"] }
+   optional-dependencies.dev = { file = ["requirements/dev.lnk"] }
+   optional-dependencies.manage = { file = ["requirements/manage.lnk"] }
+   optional-dependencies.docs = { file = ["docs/requirements.lnk"] }
+   # @@@ end
 
    # replace [your package] is app name (underscores, not hyphens)
    version = {attr = "[your package]._version.__version__"}

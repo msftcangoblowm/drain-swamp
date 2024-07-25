@@ -27,7 +27,7 @@ pip==24.0
     # via
     #   -c requirements/pip.in
     #   pip-tools
-setuptools==69.5.1
+setuptools==70.1.1
     # via
     #   -c requirements/pip.in
     #   pip-tools

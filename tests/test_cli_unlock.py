@@ -5,20 +5,13 @@
 
 Unittest for entrypoint, cli_unlock
 
-Without coverage
-
 .. code-block:: shell
 
    pytest --showlocals --log-level INFO tests/test_cli_unlock.py
-
-With coverage
+   pytest --showlocals --cov="drain_swamp" --cov-report=term-missing tests/test_cli_unlock.py
 
 Needs a config file to specify exact files to include / omit from report.
 Will fail with exit code 1 even with 100% coverage
-
-.. code-block:: shell
-
-   pytest --showlocals --cov="drain_swamp" --cov-report=term-missing tests/test_cli_unlock.py
 
 .. seealso::
 
@@ -38,6 +31,7 @@ from click.testing import CliRunner
 from drain_swamp.backend_abc import BackendType
 from drain_swamp.backend_setuptools import BackendSetupTools  # noqa: F401
 from drain_swamp.cli_unlock import (
+    create_links,
     dependencies_lock,
     dependencies_unlock,
     entrypoint_name,
@@ -48,7 +42,7 @@ from drain_swamp.constants import (
     LOGGING,
     g_app_name,
 )
-from drain_swamp.parser_in import get_pyproject_toml
+from drain_swamp.parser_in import TomlParser
 
 
 def test_cli_main():
@@ -106,7 +100,8 @@ def test_lock_unlock_successfully(
     with runner.isolated_filesystem(temp_dir=tmp_path) as tmp_dir_path:
         path_tmp_dir = Path(tmp_dir_path)
         path_f = prep_pyproject_toml(path_pyproject_toml, path_tmp_dir)
-        d_pyproject_toml = get_pyproject_toml(path_f)
+        tp = TomlParser(path_f)
+        d_pyproject_toml = tp.d_pyproject_toml
         prepare_files_empties(
             d_pyproject_toml,
             path_tmp_dir,
@@ -341,7 +336,8 @@ def test_lock_unlock_and_back_with_prepare(
         path_tmp_dir = Path(tmp_dir_path)
         if is_prep_pyproject_toml:
             path_f = prep_pyproject_toml(path_pyproject_toml, path_tmp_dir)
-            d_pyproject_toml = get_pyproject_toml(path_f)
+            tp = TomlParser(path_f)
+            d_pyproject_toml = tp.d_pyproject_toml
             if is_prep_files:
                 prepare_files_empties(
                     d_pyproject_toml,
@@ -422,7 +418,8 @@ def test_lock_unlock_and_back_with_patch(
         path_tmp_dir = Path(tmp_dir_path)
         if is_prep_pyproject_toml:
             path_f = prep_pyproject_toml(path_pyproject_toml, path_tmp_dir)
-            d_pyproject_toml = get_pyproject_toml(path_f)
+            tp = TomlParser(path_f)
+            d_pyproject_toml = tp.d_pyproject_toml
             if is_prep_files:
                 prepare_files_empties(
                     d_pyproject_toml,
@@ -522,7 +519,8 @@ def test_lock_unlock_and_back_card_monte(
         path_tmp_dir = Path(tmp_dir_path)
         if is_prep_pyproject_toml:
             path_f_prep = prep_pyproject_toml(path_pyproject_toml_prep, path_tmp_dir)
-            d_pyproject_toml = get_pyproject_toml(path_f_prep)
+            tp = TomlParser(path_f_prep)
+            d_pyproject_toml = tp.d_pyproject_toml
             if is_prep_files:
                 prepare_files_empties(
                     d_pyproject_toml,
@@ -613,7 +611,8 @@ def test_lock_unlock_and_back_optionals(
     with runner.isolated_filesystem(temp_dir=tmp_path) as tmp_dir_path:
         path_tmp_dir = Path(tmp_dir_path)
         path_f = prep_pyproject_toml(path_pyproject_toml, path_tmp_dir)
-        d_pyproject_toml = get_pyproject_toml(path_f)
+        tp = TomlParser(path_f)
+        d_pyproject_toml = tp.d_pyproject_toml
         prepare_files_empties(
             d_pyproject_toml,
             path_tmp_dir,
@@ -739,3 +738,326 @@ def test_state_is_lock(
 
         # assert has_logging_occurred(caplog)
         pass
+
+
+def test_create_links_exceptions(
+    caplog, tmp_path, prep_pyproject_toml, has_logging_occurred, prepare_folders_files
+):
+    # pytest --showlocals --log-level INFO -k "test_create_links_exceptions" tests
+    LOGGING["loggers"][g_app_name]["propagate"] = True
+    logging.config.dictConfig(LOGGING)
+    logger = logging.getLogger(name=g_app_name)
+    logger.addHandler(hdlr=caplog.handler)
+    caplog.handler.level = logger.level
+
+    runner = CliRunner()
+
+    with runner.isolated_filesystem(temp_dir=tmp_path) as tmp_dir_path:
+        path_tmp_dir = Path(tmp_dir_path)
+        # PyProjectTOMLReadError (3) -- note BackendType.load_factory call is wrong
+        func_cmd = [
+            "--path",
+            tmp_dir_path,
+        ]
+        result = runner.invoke(create_links, func_cmd)
+        assert result.exit_code == 3
+
+        # malformed toml / backend only --> PyProjectTOMLParseError
+        path_pyproject_toml_4 = Path(__file__).parent.joinpath(
+            "_bad_files", "backend_only.pyproject_toml"
+        )
+        expected = 4
+        path_f = prep_pyproject_toml(path_pyproject_toml_4, path_tmp_dir)
+        result = runner.invoke(create_links, func_cmd)
+        assert result.exit_code == expected
+
+        # unsupported backend (5) -- note BackendType.load_factory call is wrong
+        path_pyproject_toml_5 = Path(__file__).parent.joinpath(
+            "_good_files", "backend-unsupported.pyproject_toml"
+        )
+        expected = 5
+        #    prepare
+        path_f = prep_pyproject_toml(path_pyproject_toml_5, path_tmp_dir)
+        result = runner.invoke(create_links, func_cmd)
+        assert result.exit_code == expected
+
+        # Path is expected to be a folder, not a file (2)
+        path_pyproject_toml_7 = Path(__file__).parent.joinpath(
+            "_bad_files", "static_dependencies.pyproject_toml"
+        )
+        expected = 2
+        #    prepare
+        path_f = prep_pyproject_toml(path_pyproject_toml_7, path_tmp_dir)
+        func_cmd = [
+            "--path",
+            str(path_f),
+        ]
+        inst = BackendType.load_factory(
+            path_f,
+            parent_dir=tmp_dir_path,
+        )
+        assert inst.parent_dir == path_tmp_dir
+        with patch(
+            f"{g_app_name}.cli_unlock.BackendType.load_factory",
+            return_value=inst,
+        ):
+            result = runner.invoke(create_links, func_cmd)
+            assert result.exit_code == expected
+
+        """static dependencies (7)
+
+        - No dynamic section in pyproject.toml
+        - no ``dependencies`` key
+
+        unlocked == "0" locked == "1". None use current lock state
+        """
+        expected = 7
+        func_cmd = [
+            "--path",
+            tmp_dir_path,
+        ]
+        with patch(
+            f"{g_app_name}.cli_unlock.BackendType.load_factory",
+            return_value=inst,
+        ):
+            result = runner.invoke(create_links, func_cmd)
+            assert result.exit_code == expected
+
+            """
+            logger.info(f"result.output: {result.output}")
+            logger.info(f"result.exit_code: {result.exit_code}")
+            logger.info(f"result.exception: {result.exception}")
+            tb = result.exc_info[2]
+            logger.info(f"traceback: {traceback.format_tb(tb)}")
+            assert has_logging_occurred(caplog)
+
+
+            assert result.stdout.rstrip() == expected_text
+
+            expected_text = "In pyproject.toml no section, tool.setuptools.dynamic"
+            """
+            pass
+
+
+testdata_create_links_set_lock = (
+    (
+        Path(__file__).parent.joinpath(
+            "_good_files", "complete-manage-pip-prod-unlock.pyproject_toml"
+        ),
+        (
+            "requirements/prod.in",
+            "requirements/pip.in",
+            "requirements/manage.in",
+        ),
+        (
+            "requirements/prod.unlock",
+            "requirements/pip.unlock",
+            "requirements/manage.unlock",
+        ),
+        (
+            "requirements/prod.lock",
+            "requirements/pip.lock",
+            "requirements/manage.lock",
+        ),
+        "1",
+        0,
+    ),
+    (
+        Path(__file__).parent.joinpath(
+            "_good_files", "complete-manage-pip-prod-unlock.pyproject_toml"
+        ),
+        (
+            "requirements/prod.in",
+            "requirements/pip.in",
+            "requirements/manage.in",
+        ),
+        (
+            "requirements/prod.unlock",
+            "requirements/pip.unlock",
+            "requirements/manage.unlock",
+        ),
+        (
+            "requirements/prod.lock",
+            "requirements/pip.lock",
+            "requirements/manage.lock",
+        ),
+        "0",
+        0,
+    ),
+    (
+        Path(__file__).parent.joinpath(
+            "_good_files", "complete-manage-pip-prod-unlock.pyproject_toml"
+        ),
+        (
+            "requirements/prod.in",
+            "requirements/pip.in",
+            "requirements/manage.in",
+        ),
+        (
+            "requirements/prod.unlock",
+            "requirements/pip.unlock",
+            "requirements/manage.unlock",
+        ),
+        (
+            "requirements/prod.lock",
+            "requirements/pip.lock",
+            "requirements/manage.lock",
+        ),
+        None,
+        0,
+    ),
+)
+ids_create_links_set_lock = (
+    "set symlink to dependency locked",
+    "set symlink to dependency unlocked",
+    "set symlink to current lock state",
+)
+
+
+@pytest.mark.parametrize(
+    "path_pyproject_toml, seq_in, seq_unlock, seq_lock, set_lock, expected",
+    testdata_create_links_set_lock,
+    ids=ids_create_links_set_lock,
+)
+def test_create_links_set_lock(
+    path_pyproject_toml,
+    seq_in,
+    seq_unlock,
+    seq_lock,
+    set_lock,
+    expected,
+    caplog,
+    tmp_path,
+    prep_pyproject_toml,
+    has_logging_occurred,
+    prepare_folders_files,
+):
+    # pytest --showlocals --log-level INFO -k "test_create_links_set_lock" tests
+    LOGGING["loggers"][g_app_name]["propagate"] = True
+    logging.config.dictConfig(LOGGING)
+    logger = logging.getLogger(name=g_app_name)
+    logger.addHandler(hdlr=caplog.handler)
+    caplog.handler.level = logger.level
+
+    runner = CliRunner()
+
+    with runner.isolated_filesystem(temp_dir=tmp_path) as tmp_dir_path:
+        path_tmp_dir = Path(tmp_dir_path)
+        # prepare
+        path_config = prep_pyproject_toml(path_pyproject_toml, path_tmp_dir)
+
+        #    .in
+        prepare_folders_files(seq_in, path_tmp_dir)
+        #    .unlock .lock
+        prepare_folders_files(seq_unlock, path_tmp_dir)
+        prepare_folders_files(seq_lock, path_tmp_dir)
+
+        inst = BackendType.load_factory(
+            path_config,
+            parent_dir=tmp_dir_path,
+        )
+        for in_ in inst.in_files():
+            assert in_.exists()
+
+        #    cmd
+        click_true = ("1", "true", "t", "yes", "y", "on")
+        click_false = ("0", "false", "f", "no", "n", "off")
+        if set_lock in click_true:
+            from_suffix = ".lock"
+        elif set_lock == click_false:
+            from_suffix = ".unlock"
+        else:
+            is_locked = inst.is_locked(path_config)
+            if is_locked:
+                from_suffix = ".lock"
+            else:
+                from_suffix = ".unlock"
+
+        #    Defaults to None, but can't pass in None explicitly
+        func_cmd = [
+            "--path",
+            tmp_dir_path,
+        ]
+        if set_lock is not None and isinstance(set_lock, str):
+            func_cmd.extend(["--set-lock", set_lock])
+
+        with patch(
+            f"{g_app_name}.cli_unlock.BackendType.load_factory",
+            return_value=inst,
+        ):
+            result = runner.invoke(create_links, func_cmd)
+
+        #    prove symlinks created
+        for unlock_relpath in seq_in:
+            lnk_relpath = unlock_relpath.replace(".in", ".lnk")
+            path_lnk = path_tmp_dir.joinpath(lnk_relpath)
+            is_symlink = path_lnk.is_symlink()
+            is_suffix_match = path_lnk.resolve().suffix == from_suffix
+            assert (
+                is_suffix_match
+            ), f"{path_lnk} does not resolve to a {from_suffix} file"
+            # assert has_logging_occurred(caplog)
+            assert is_symlink
+
+        assert result.exit_code == expected
+
+
+@pytest.mark.parametrize(
+    "path_pyproject_toml, seq_in, seq_unlock, seq_lock, set_lock, expected",
+    testdata_create_links_set_lock,
+    ids=ids_create_links_set_lock,
+)
+def test_create_links_missing_files(
+    path_pyproject_toml,
+    seq_in,
+    seq_unlock,
+    seq_lock,
+    set_lock,
+    expected,
+    caplog,
+    tmp_path,
+    prep_pyproject_toml,
+    has_logging_occurred,
+    prepare_folders_files,
+):
+    # pytest --showlocals --log-level INFO -k "test_create_links_missing_files" tests
+    LOGGING["loggers"][g_app_name]["propagate"] = True
+    logging.config.dictConfig(LOGGING)
+    logger = logging.getLogger(name=g_app_name)
+    logger.addHandler(hdlr=caplog.handler)
+    caplog.handler.level = logger.level
+
+    runner = CliRunner()
+
+    with runner.isolated_filesystem(temp_dir=tmp_path) as tmp_dir_path:
+        path_tmp_dir = Path(tmp_dir_path)
+        # prepare
+        path_config = prep_pyproject_toml(path_pyproject_toml, path_tmp_dir)
+
+        #    .in
+        prepare_folders_files(seq_in, path_tmp_dir)
+        #    try without .unlock and .lock files --> MissingRequirementsFoldersFiles(6)
+        inst = BackendType.load_factory(
+            path_config,
+            parent_dir=tmp_dir_path,
+        )
+        for in_ in inst.in_files():
+            assert in_.exists()
+
+        #    cmd
+        #    Defaults to None, but can't pass in None explicitly
+        func_cmd = [
+            "--path",
+            tmp_dir_path,
+        ]
+        if set_lock is not None and isinstance(set_lock, str):
+            func_cmd.extend(["--set-lock", set_lock])
+
+        expected_exit_code = 6
+        with patch(
+            f"{g_app_name}.cli_unlock.BackendType.load_factory",
+            return_value=inst,
+        ):
+            result = runner.invoke(create_links, func_cmd)
+            actual_exit_code = result.exit_code
+            assert actual_exit_code == expected_exit_code

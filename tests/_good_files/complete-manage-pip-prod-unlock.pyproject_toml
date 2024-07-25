@@ -1,5 +1,5 @@
 [build-system]
-requires = ["setuptools>=69.0.2", "wheel", "build", "setuptools_scm>=8"]
+requires = ["setuptools>=70.0.0", "wheel", "build", "setuptools_scm>=8", "click", "pluggy"]
 build-backend = "setuptools.build_meta"
 
 [project]
@@ -20,12 +20,17 @@ optional-dependencies.pip = { file = ["requirements/pip.unlock"] }
 optional-dependencies.manage = { file = ["requirements/manage.unlock"] }
 # @@@ end
 
-version = {attr = "drain_swamp._version.__version__"}
+version = {attr = "complete_awesome_perfect._version.__version__"}
+
+[tool.setuptools.packages.find]
+where = ["src"]
+include = ["complete_awesome_perfect*"]
 
 [tool.drain-swamp]
 copyright_start_year = 2024
 
 [tool.pipenv-unlock]
+version_file = "src/complete_awesome_perfect/_version.py"
 folders = [
     "ci",
 ]

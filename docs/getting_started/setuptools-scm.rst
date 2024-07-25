@@ -7,7 +7,7 @@ pyproject.toml
 .. code-block:: text
 
    [build-system]
-   requires = ["setuptools>=69.0.2", "wheel", "build", "setuptools_scm>=8"]
+   requires = ["setuptools>=70.0.0", "wheel", "build", "setuptools_scm>=8", "drain-swamp"]
    build-backend = "setuptools.build_meta"
 
    [project]
@@ -27,13 +27,36 @@ pyproject.toml
    ]
 
    [tool.setuptools.dynamic]
-   version = {attr = "drain_swamp._version.__version__"}
+   version = {attr = "your_package_name._version.__version__"}
 
-   [tool.setuptools_scm]
-   # can be empty if no extra settings are needed, presence enables setuptools_scm
-   # SETUPTOOLS_SCM_PRETEND_VERSION_FOR_DRAIN_SWAMP="1.0.2" python -m setuptools_scm
-   fallback_version = "1.0.2"
-   version_file = "src/drain_swamp/_version.py"
+   [tool.setuptools.packages.find]
+   where = ["src"]
+   include = ["your_package_name*"]
+
+   [tool.setuptools.dynamic]
+   # @@@ editable little_shop_of_horrors_shrine_candles
+   dependencies = { file = ["requirements/prod.lnk"] }
+   optional-dependencies.pip = { file = ["requirements/pip.lnk"] }
+   optional-dependencies.manage = { file = ["requirements/manage.lnk"] }
+   # @@@ end
+
+   [tool.drain-swamp]
+   copyright_start_year = 2024
+
+   [tool.pipenv-unlock]
+   # wraps-build-backend = "setuptools.build_meta"
+   version_file = "src/complete_awesome_perfect/_version.py"
+   folders = [
+       "ci",
+   ]
+
+   required = { target = "prod", relative_path = "requirements/prod.in" }
+
+   # underscore: hyphen
+   optionals = [
+       { target = "pip", relative_path = "requirements/pip.in" },
+       { target = "manage", relative_path = "requirements/manage.in" },
+   ]
 
 Change ``drain_swamp`` to your package name (underscores, not hyphens)
 
@@ -46,41 +69,6 @@ Provide defaults
    copyright_start_year = 2024  # this is an int, not a str
 
 Default value for copyright_start_year is 1970
-
-setup.py
----------
-
-Create the linkage between ``setuptools-scm`` and ``setuptools``.
-
-.. code-block:: text
-
-   from setuptools import setup
-   from setuptools_scm.version import (
-       get_local_node_and_date,
-       guess_next_dev_version,
-   )
-   def _clean_version():
-       return {
-           "local_scheme": get_local_node_and_date,
-           "version_scheme": guess_next_dev_version,
-       }
-
-   setup(
-       use_scm_version=_clean_version,
-   )
-
-Figuring out how this ^^ code works is an ugly rabbit hole. Like dog
-shiat, best not to step in it. Copy+paste into ``setup.py`` then brush teeth,
-gargle, and try to forget. Don't thank me, just forget it ever happened.
-
-Keep an eye on ``src/[package_name]/_version.py``.
-
-:code:`drain-swamp build --kind="current"` would set to a development version.
-
-:code:`drain-swamp build --kind="0.0.2"` would set to an explicit semantic version str.
-
-Beyond ``[major].[minor].[micro]`` learn about when to be using
-alpha/beta/pre/post/rc releases.
 
 \_version.py
 --------------
@@ -107,7 +95,12 @@ first commit or tagged release
    __version__ = version = '0.0.2'
    __version_tuple__ = version_tuple = (0, 0, 2)
 
-Always automatically generated, so don't bother fixing the state typing
+Always automatically generated, so don't bother fixing the static typing
+
+Keep an eye on ``src/[package_name]/_version.py``
+
+Beyond ``[major].[minor].[micro]`` learn about when to be using
+alpha/beta/post/rc releases.
 
 static typing
 --------------

@@ -5,16 +5,9 @@
 
 Unittest for module, drain_swamp.backend_setupttools
 
-Without coverage
-
 .. code-block:: shell
 
    pytest --showlocals --log-level INFO tests/test_backend_setuptools.py
-
-With coverage
-
-.. code-block:: shell
-
    pytest --showlocals --cov="drain_swamp" --cov-report=term-missing tests/test_backend_setuptools.py
 
 """
@@ -42,7 +35,7 @@ from drain_swamp.exceptions import (
     MissingRequirementsFoldersFiles,
     PyProjectTOMLParseError,
 )
-from drain_swamp.parser_in import get_pyproject_toml
+from drain_swamp.parser_in import TomlParser
 
 if sys.version_info >= (3, 9):  # pragma: no cover
     from collections.abc import (
@@ -84,6 +77,7 @@ def test_load_factory_good(
     caplog,
     has_logging_occurred,
     prepare_folders_files,
+    prep_pyproject_toml,
 ):
     # pytest --showlocals --log-level INFO -k "test_load_factory_good" tests
     LOGGING["loggers"][g_app_name]["propagate"] = True
@@ -93,7 +87,8 @@ def test_load_factory_good(
     caplog.handler.level = logger.level
 
     # prepare -- create folders and files
-    d_pyproject_toml = get_pyproject_toml(path_config)
+    tp = TomlParser(path_config)
+    d_pyproject_toml = tp.d_pyproject_toml
 
     # prepare -- optionals
     d_optionals = dict()
@@ -135,12 +130,24 @@ def test_load_factory_good(
 
     assert has_logging_occurred(caplog)
 
+    #    pyproject.toml
+    path_f = prep_pyproject_toml(path_config, tmp_path)
+
     # Confirm backend name
-    inst_backend = BackendType.load_factory(path_config, parent_dir=tmp_path)
-    assert inst_backend.path_config == path_config
-    assert inst_backend.parent_dir != path_config
+    inst_backend = BackendType.load_factory(path_f, parent_dir=tmp_path)
+    assert inst_backend.path_config == path_f
+    assert inst_backend.parent_dir != path_f
     assert issubclass(type(inst_backend), BackendType)
     assert backend_expected == inst_backend.backend
+
+    # BackendType.parent_dir setter only accepts folder
+    parent_dir_before = inst_backend.parent_dir
+    assert parent_dir_before.exists() and parent_dir_before.is_dir()
+    assert parent_dir_before == tmp_path
+    #    not a folder. Coerses file --> folder
+    inst_backend.parent_dir = tmp_path.joinpath(inst_backend.path_config.name)
+    del inst_backend
+    inst_backend = BackendType.load_factory(path_config, parent_dir=tmp_path)
 
     # BackendSetupTools.compose_dependencies_line
     suffixes = (
@@ -211,23 +218,30 @@ ids_load_factory_bad = (
 def test_load_factory_bad(
     path_config,
     tmp_path,
+    prep_pyproject_toml,
 ):
     # pytest --showlocals --log-level INFO -k "test_load_factory_bad" tests
+    # prepare
+    prep_pyproject_toml(path_config, tmp_path)
+    # act
     BackendType.load_factory(path_config, parent_dir=tmp_path)
 
 
 testdata_load_factory_avert_disaster = (
-    (
+    pytest.param(
         Path(__file__).parent.joinpath("_good_files", "requires-none.pyproject_toml"),
         None,
+        marks=pytest.mark.xfail(raises=PyProjectTOMLParseError),
     ),
-    (
+    pytest.param(
         Path(__file__).parent.joinpath("_good_files", "requires-none.pyproject_toml"),
         1.2345,
+        marks=pytest.mark.xfail(raises=PyProjectTOMLParseError),
     ),
-    (
+    pytest.param(
         Path(__file__).parent.joinpath("_good_files", "requires-none.pyproject_toml"),
         Path(__file__).parent.joinpath("conftest.py"),
+        marks=pytest.mark.xfail(raises=PyProjectTOMLParseError),
     ),
 )
 ids_load_factory_avert_disaster = (

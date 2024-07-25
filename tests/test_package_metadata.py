@@ -1,21 +1,13 @@
 """
 .. moduleauthor:: Dave Faulkmore <https://mastodon.social/@msftcangoblowme>
 
-Without coverage
-
 .. code-block:: shell
 
    pytest --showlocals --log-level INFO tests/test_package_metadata.py
-
-With coverage
+   pytest --showlocals --cov="drain_swamp" --cov-report=term-missing tests/test_package_metadata.py
 
 Needs a config file to specify exact files to include / omit from report.
 Will fail with exit code 1 even with 100% coverage
-
-.. code-block:: shell
-
-   pytest --showlocals --cov="drain_swamp" --cov-report=term-missing tests/test_package_metadata.py
-
 
 """
 

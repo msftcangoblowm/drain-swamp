@@ -141,16 +141,17 @@ from .igor_utils import (
     build_package,
     edit_for_release,
     get_current_version,
+    get_tag_version,
     pretag,
     print_cheats,
     seed_changelog,
+    write_version_file,
 )
 from .snip import (
     ReplaceResult,
     Snip,
 )
 from .snippet_sphinx_conf import SnipSphinxConf
-from .version_semantic import SetuptoolsSCMNoTaggedVersionError
 
 _logger = logging.getLogger(f"{g_app_name}.cli_igor")
 # taken from pyproject.toml
@@ -212,11 +213,21 @@ EXIT CODES
 
 2 -- Expecting current working folder to be project base folder. Not a folder
 
-4 -- Could not get package name from git, needed to set the correct version
+4 -- Could not get package name from pyproject.toml, needed to set the correct version
 
 5 -- Not valid a semantic version str. Only occurs when a version str is provided
 
-6 -- When getting tag or current version, no commits nor tagged releases
+"""
+
+EPILOG_SCM_PAIR = """
+
+0 -- Package built and placed in dist/
+
+2 -- Expecting current working folder to be project base folder. Not a folder
+
+4 -- Could not get package name from pyproject.toml, needed to set the correct version
+
+5 -- Not valid a semantic version str. Only occurs when a version str is provided
 
 """
 
@@ -237,6 +248,18 @@ EPILOG_CURRENT_VERSION = """
 
 """
 
+EPILOG_TAG_VERSION = """
+
+0 -- Tag semantic version str from version file or fallback current version
+
+1 -- Most likely setuptools-scm package is not installed otherwise command failed
+
+4 -- --kind nonsense. Explicit version str invalid
+
+6 -- Could not get package name from git
+
+"""
+
 EPILOG_CHEATS = """
 
 0 -- printed the cheats
@@ -246,8 +269,6 @@ EPILOG_CHEATS = """
 3 -- Expecting a folder, got something else
 
 4 -- --kind nonsense. Explicit version str invalid
-
-5 -- Neither a tagged version nor a first commit
 
 6 -- Could not get package name from git
 
@@ -276,7 +297,9 @@ def main():
     help=help_path,
 )
 def seed(path):
-    """If file [path]/CHANGES.rst does not exist, a warning is logged,
+    """Updates changelog, ``CHANGES.rst``, creating placeholder
+
+    If file [path]/CHANGES.rst does not exist, a warning is logged,
     need to capture that log entry
 
     \f
@@ -348,7 +371,7 @@ def edit(path, kind, snippet_co=None):  # pragma: no cover
     with contextlib.redirect_stderr(io.StringIO()) as f_stream:
         opt_int = edit_for_release(path, kind, snippet_co=snippet_co)
     str_err = f_stream.getvalue()
-    click.echo(str_err)
+    click.echo(str_err, err=True)
 
     if opt_int is None:
         sys.exit(0)
@@ -370,6 +393,15 @@ def edit(path, kind, snippet_co=None):  # pragma: no cover
 )
 def snippets_list(path):
     """In Sphinx doc?/conf.py, list snippets
+
+    path is the package base folder. Searches for ``doc?/conf.py``
+
+    .. code-block shell:
+
+       drain-swamp list
+       cd tests
+       drain-swamp list --path=..
+
     \f
     :param path:
 
@@ -389,11 +421,11 @@ def snippets_list(path):
         sc = SnipSphinxConf(path=path)
     except NotADirectoryError:
         msg_exc = "Expected a doc/ or docs/ folder"
-        click.secho(msg_exc, fg="red")
+        click.secho(msg_exc, fg="red", err=True)
         sys.exit(3)
     except FileNotFoundError:
         msg_exc = "Expected to find file, doc/conf.py or docs/conf.py"
-        click.secho(msg_exc, fg="red")
+        click.secho(msg_exc, fg="red", err=True)
         sys.exit(4)
 
     abspath_conf_py = sc.path_abs
@@ -406,7 +438,7 @@ def snippets_list(path):
         snippets = snip.print()
     msg = f.getvalue()
     if isinstance(snippets, ReplaceResult):
-        click.secho(msg, fg="red")
+        click.secho(msg, fg="red", err=True)
         if snippets == ReplaceResult.VALIDATE_FAIL:
             sys.exit(5)
         elif snippets == ReplaceResult.NO_MATCH:
@@ -414,7 +446,7 @@ def snippets_list(path):
         else:  # pragma: no cover
             pass
     else:
-        click.secho(msg, fg="green")
+        click.secho(msg, fg="green", err=True)
 
 
 @main.command(
@@ -438,15 +470,19 @@ def snippets_list(path):
     type=click.STRING,
     help=help_kind,
 )
-@click.option(
-    "-n",
-    "--package-name",
-    "package_name",
-    type=click.STRING,
-    default=None,
-    help=help_package_name,
-)
-def semantic_version_aware_build(path, kind, package_name):
+def semantic_version_aware_build(path, kind):
+    """Build package
+
+    \f
+    :param path: current working directory
+    :type path: pathlib.Path
+    :param kind:
+
+       semantic version str or "current" or "now" or "tag". Side effect
+       changes ``src/[app name]/_version.py``
+
+    :type kind: str
+    """
     # resolve causing conversion into a str. Should be Path
     if isinstance(path, str):  # pragma: no cover
         path = Path(path)
@@ -456,28 +492,85 @@ def semantic_version_aware_build(path, kind, package_name):
     try:
         with contextlib.redirect_stderr(io.StringIO()) as f_stream:
             # click --> exit code 2. Preventing NotADirectoryError
-            bol_out = build_package(path, kind, package_name=package_name)
+            bol_out = build_package(path, kind)
     except AssertionError as e:
-        if isinstance(e, SetuptoolsSCMNoTaggedVersionError):
-            msg_exc = str(e)
-            click.echo(msg_exc)
-            sys.exit(6)
-        else:
-            # AssertionError
-            msg_exc = str(e)
-            click.echo(msg_exc)
-            sys.exit(4)
+        # AssertionError
+        msg_exc = str(e)
+        click.echo(msg_exc, err=True)
+        sys.exit(4)
     except ValueError as e:
         msg_exc = str(e)
-        click.echo(msg_exc)
+        click.echo(msg_exc, err=True)
         sys.exit(5)
     if not bol_out:
         # need entire output to know how to deal with the failure
         str_err = f_stream.getvalue()
-        click.echo(str_err)
+        click.echo(str_err, err=True)
         sys.exit(1)
     else:
         sys.exit(0)
+
+
+@main.command(
+    "write_version",
+    context_settings={"ignore_unknown_options": True},
+    epilog=EPILOG_SCM_PAIR,
+    deprecated=True,
+)
+@click.option(
+    "-p",
+    "--path",
+    "path",
+    default=Path.cwd(),
+    type=click.Path(exists=False, file_okay=False, dir_okay=True, resolve_path=True),
+    help=help_path,
+)
+@click.option(
+    "-k",
+    "--kind",
+    "kind",
+    default="tag",
+    type=click.STRING,
+    help=help_kind,
+)
+def setuptools_scm_key_value_pair(path, kind):
+    """Given kind, write version str to version_file
+
+    \f
+    :param path: current working directory
+    :type path: pathlib.Path
+    :param kind:
+
+       semantic version str or "current" or "now" or "tag". Side effect
+       changes ``src/[app name]/_version.py``
+
+    :type kind: str
+
+    .. deprecated:: 0.5.1
+
+       Version file written by plugin, ds_scm_version, during sdist
+       build. Might remain relevent only to initially create the version file
+
+    """
+    # resolve causing conversion into a str. Should be Path
+    if isinstance(path, str):  # pragma: no cover
+        path = Path(path)
+    else:  # pragma: no cover
+        pass
+
+    try:
+        with contextlib.redirect_stderr(io.StringIO()):
+            # click --> exit code 2. Preventing NotADirectoryError
+            write_version_file(path, kind)
+    except AssertionError as e:
+        # AssertionError
+        msg_exc = str(e)
+        click.echo(msg_exc, err=True)
+        sys.exit(4)
+    except ValueError as e:
+        msg_exc = str(e)
+        click.echo(msg_exc, err=True)
+        sys.exit(5)
 
 
 @main.command(
@@ -527,9 +620,13 @@ def validate_tag(ver):
     help=help_path,
 )
 def current_version(path):
-    """Usage
+    """Get scm version str
 
     python src/drain_swamp/cli_igor.py current
+
+    or
+
+    drain-swamp current
 
     \f
     :param path: current working directory
@@ -547,6 +644,61 @@ def current_version(path):
     else:
         click.echo(opt_str)
         sys.exit(0)
+
+
+@main.command(
+    "tag",
+    context_settings={"ignore_unknown_options": True},
+    epilog=EPILOG_TAG_VERSION,
+)
+@click.option(
+    "-p",
+    "--path",
+    "path",
+    default=Path.cwd(),
+    type=click.Path(exists=False, file_okay=False, dir_okay=True, resolve_path=True),
+    help=help_path,
+)
+def tag_version(path):
+    """Get semantic version str from version_file. Fall back to current version
+
+    python src/drain_swamp/cli_igor.py tag
+
+    or
+
+    drain-swamp tag
+
+    \f
+    :param path: current working directory
+    :type path: pathlib.Path
+    """
+    # resolve causing conversion into a str. Should be Path
+    if isinstance(path, str):  # pragma: no cover
+        path = Path(path)
+    else:  # pragma: no cover
+        pass
+
+    # NotADirectoryError prevents by click
+    try:
+        ver_sem = get_tag_version(path)
+    except ValueError as e:
+        """tag version skipped if version file semantic version str is
+        invalid. Then if current version is invalid --> ValueError"""
+        msg = str(e)
+        exit_code = 4
+    except AssertionError as e:
+        # pyproject.toml file missing or malformed
+        msg = str(e)
+        exit_code = 6
+    else:
+        msg = None
+        exit_code = 0
+
+    if msg is not None:
+        click.secho(msg, fg="green", err=True)
+        sys.exit(exit_code)
+    else:  # pragma: no cover
+        click.echo(ver_sem)
 
 
 @main.command(
@@ -570,16 +722,8 @@ def current_version(path):
     type=click.STRING,
     help=help_kind,
 )
-@click.option(
-    "-n",
-    "--package-name",
-    "package_name",
-    type=click.STRING,
-    default=None,
-    help=help_package_name,
-)
-def do_cheats(path, kind, package_name):
-    """Usage
+def do_cheats(path, kind):
+    """Get useful notes to aid in kitting and publishing
 
     python src/drain_swamp/cli_igor.py cheats
 
@@ -590,6 +734,12 @@ def do_cheats(path, kind, package_name):
     \f
     :param path: current working directory
     :type path: pathlib.Path
+    :param kind:
+
+       semantic version str or "current" or "now" or "tag". Side effect
+       changes ``src/[app name]/_version.py``
+
+    :type kind: str
     """
     # resolve causing conversion into a str. Should be Path
     if isinstance(path, str):  # pragma: no cover
@@ -598,7 +748,7 @@ def do_cheats(path, kind, package_name):
         pass
 
     try:
-        print_cheats(path, kind, package_name=package_name)
+        print_cheats(path, kind)
     except NotADirectoryError as e:
         # Expecting a folder, got something else
         msg = str(e)
@@ -608,19 +758,15 @@ def do_cheats(path, kind, package_name):
         msg = str(e)
         exit_code = 4
     except AssertionError as e:
+        # Could not get package name from git
         msg = str(e)
-        if isinstance(e, SetuptoolsSCMNoTaggedVersionError):
-            msg = str(e)
-            exit_code = 5
-        else:
-            # Could not get package name from git
-            exit_code = 6
+        exit_code = 6
     else:
         msg = None
         exit_code = 0
 
     if msg is not None:
-        click.secho(msg, fg="green")
+        click.secho(msg, fg="green", err=True)
     else:  # pragma: no cover
         pass
 

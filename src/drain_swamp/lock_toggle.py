@@ -50,10 +50,21 @@ Example ``pyproject.toml``. specifies an additional folder, ``ci``.
    ]
 
 .. py:data:: __all__
-   :type: tuple[str, str]
-   :value: ("lock_compile", "unlock_compile")
+   :type: tuple[str, str, str]
+   :value: ("lock_compile", "refresh_links", "unlock_compile")
 
    Module exports
+
+.. py:data:: _logger
+   :type: logging.Logger
+
+   Module level logger
+
+.. py:data:: is_module_debug
+   :type: bool
+   :value: False
+
+   on/off for module level logging
 
 """
 
@@ -61,8 +72,8 @@ from __future__ import annotations
 
 import copy
 import logging
+import os
 import pkgutil
-import subprocess
 from collections.abc import Sequence
 from dataclasses import (
     InitVar,
@@ -74,9 +85,11 @@ from pathlib import (
     PurePath,
 )
 
+from ._run_cmd import run_cmd
 from .constants import (
     PATH_PIP_COMPILE,
     SUFFIX_LOCKED,
+    SUFFIX_SYMLINK,
     SUFFIX_UNLOCKED,
     g_app_name,
 )
@@ -85,10 +98,12 @@ from .exceptions import MissingRequirementsFoldersFiles
 __package__ = "drain_swamp"
 __all__ = (
     "lock_compile",
+    "refresh_links",
     "unlock_compile",
 )
 
 _logger = logging.getLogger(f"{g_app_name}.lock_toggle")
+is_module_debug = False
 
 
 def is_piptools():
@@ -103,6 +118,136 @@ def is_piptools():
     return pkgutil.find_loader("piptools") is not None
 
 
+def _create_symlinks_relative(src: str, dest: str, cwd_path: str) -> None:
+    """Create the relative symlink
+
+    src and dest are relative paths. Relative to cwd_path
+
+    - No :py:func:`os.chdir`
+
+    - Does not create the folder
+
+    - Does not create the source file
+
+    :param src: relative path to source file
+    :type src: str
+    :param dest: relative path to what will be the symlink
+    :type dest: str
+    :param cwd_path: Absolute path a folder
+    :type cwd_path: str
+
+    :raises:
+
+       - :py:exc:`NotADirectoryError` -- Directory not found or not a directory
+       - :py:exc:`FileNotFoundError` -- Source file not found
+       - :py:exc:`NotImplementedError` -- os.symlink not supported on this platform
+       - :py:exc:`ValueError` -- destination symlink must suffix must be .lnk
+
+    :meta private:
+
+    .. note::
+
+       :code:`tempfile.TemporaryDirectory(delete=False)` delete keyword is py312+
+
+    """
+    path_cwd = Path(cwd_path)
+    path_src = path_cwd.joinpath(src)
+    path_parent = path_src.parent
+    src_name = path_src.name
+    dest_name = Path(dest).name
+    path_parent_src = path_parent.joinpath(src_name)
+    path_parent_dest = path_parent.joinpath(dest_name)
+
+    # base folder, not including subfolders
+    is_dir_bad = not path_cwd.exists() or (path_cwd.exists() and not path_cwd.is_dir())
+    if is_dir_bad:
+        msg_exc = "Expecting folder to already exist"
+        raise NotADirectoryError(msg_exc)
+
+    is_not_src = not path_parent_src.exists()
+    if is_not_src:
+        msg_exc = f"Source file not found: {src} folder: {path_cwd}"
+        raise FileNotFoundError(msg_exc)
+
+    # Assert dest suffixes indicate it's a .lnk file
+    if path_parent_dest.suffixes != [
+        SUFFIX_SYMLINK,
+    ]:
+        msg_exc = "Destination symlink must suffix must be .lnk"
+        raise ValueError(msg_exc)
+
+    # Remove dest (symlink), if it exists
+    is_dest = path_parent_dest.exists() and (
+        path_parent_dest.is_file() or path_parent_dest.is_symlink()
+    )
+    if is_dest:  # pragma: no cover
+        path_parent_dest.unlink(missing_ok=True)
+    else:  # pragma: no cover
+        pass
+
+    # Create file descriptor for tmp folder
+    # folder is rw
+    fd = os.open(str(path_parent), os.O_RDONLY)
+
+    mod_path = f"{g_app_name}.lock_toggle._create_symlinks_relative"
+    if is_module_debug:  # pragma: no cover
+        _logger.info(f"{mod_path} parent {path_parent!r}")
+        _logger.info(f"{mod_path} src name {src_name!r}")
+        _logger.info(f"{mod_path} dest name {dest_name!r}")
+    else:  # pragma: no cover
+        pass
+
+    try:
+        # Create relative symlink
+        os.symlink(src_name, dest_name, dir_fd=fd)
+    except NotImplementedError:
+        raise
+
+
+def _maintain_symlink(path_cwd, abspath_src):
+    """Create/Update symlink which indicates current state file
+
+    ``%.lnk`` --> [``%.unlock`` | ``%.lock`]
+
+    Symlink path must be relative, not absolute to the machine base folder
+    :param path_cwd:
+
+       folder containing the src file. Relative to the package or a requirements folder
+
+    :type path_cwd: pathlib.Path
+    :param abspath_src: Absolute path to the source file. With suffix .unlock or .lock
+    :type abspath_src: pathlib.Path
+    :raises:
+
+       - :py:exc:`NotADirectoryError` -- Directory not found or not a directory
+       - :py:exc:`FileNotFoundError` -- Source file not found
+       - :py:exc:`NotImplementedError` -- os.symlink not supported on this platform
+
+    :meta private:
+    """
+    is_dir_bad = not path_cwd.exists() or (path_cwd.exists() and not path_cwd.is_dir())
+    if is_dir_bad:
+        msg_exc = "Expecting folder to already exist"
+        raise NotADirectoryError(msg_exc)
+
+    is_not_src = not abspath_src.exists()
+    if is_not_src:
+        msg_exc = f"Source file not found: {abspath_src} folder: {path_cwd}"
+        raise FileNotFoundError(msg_exc)
+
+    relpath_src = abspath_src.relative_to(path_cwd)
+    src = str(relpath_src)
+
+    # dest suffix is .lnk, so ValueError impossible
+    src_stem = abspath_src.stem
+    dest = f"{src_stem}{SUFFIX_SYMLINK}"
+
+    try:
+        _create_symlinks_relative(src, dest, str(path_cwd))
+    except Exception:  # pragma: no cover
+        raise
+
+
 def lock_compile(inst):
     """In a subprocess, call :command:`pip-compile` to create ``.lock`` files
 
@@ -112,7 +257,7 @@ def lock_compile(inst):
        ``collections.abc.Sequence[Path]``
 
     :type inst: BackendType
-    :returns: Generator of abs path to .lock files
+    :returns: Generator of abs path to ``.lock`` files
     :rtype: collections.abc.Generator[pathlib.Path, None, None]
     :raises:
 
@@ -120,6 +265,7 @@ def lock_compile(inst):
          a dependency of this package
 
     """
+    str_func_name = f"{g_app_name}.lock_toggle.lock_compile"
     assert is_piptools()
 
     # store pairs
@@ -130,8 +276,13 @@ def lock_compile(inst):
     gen_unlocked_files = inst.in_files()
 
     in_files = list(gen_unlocked_files)
-    _logger.info(f"in_files: {in_files}")
     del gen_unlocked_files
+
+    if is_module_debug:  # pragma: no cover
+        msg_info = f"{str_func_name} in_files: {in_files}"
+        _logger.info(msg_info)
+    else:  # pragma: no cover
+        pass
 
     gen_unlocked_files = inst.in_files()
     for path_abs in gen_unlocked_files:
@@ -143,7 +294,11 @@ def lock_compile(inst):
             # Not a ``*.in`` file. Ignore
             pass
 
-    _logger.info(f"pairs: {lst_pairs}")
+    if is_module_debug:  # pragma: no cover
+        msg_info = f"{str_func_name} pairs: {lst_pairs}"
+        _logger.info(msg_info)
+    else:  # pragma: no cover
+        pass
 
     # Serial it's whats for breakfast
     for in_path, out_path in lst_pairs:
@@ -156,11 +311,22 @@ def lock_compile(inst):
             out_path,
             in_path,
         )
-        _logger.info(f"cmd: {cmd}")
-        subprocess.run(cmd, cwd=inst.parent_dir)
+
+        if is_module_debug:  # pragma: no cover
+            msg_info = f"{str_func_name} cmd: {cmd}"
+            _logger.info(msg_info)
+        else:  # pragma: no cover
+            pass
+
+        run_cmd(cmd, cwd=inst.parent_dir)
         is_confirm = Path(out_path).exists() and Path(out_path).is_file()
         if is_confirm:
-            _logger.info(f"yield: {out_path!s}")
+            if is_module_debug:  # pragma: no cover
+                msg_info = f"{str_func_name} yield: {out_path!s}"
+                _logger.info(msg_info)
+            else:  # pragma: no cover
+                pass
+
             yield Path(out_path)
         else:
             # File not created. Darn you pip-compile!
@@ -388,8 +554,8 @@ class InFiles:
 
        - :py:exc:`FileNotFoundError` -- Requirements .in file not found
 
-       - :py:exc:`drain_swamp.MissingRequirementsFoldersFiles` -- A requirements
-         file references a nonexistent constraint
+       - :py:exc:`drain_swamp.exceptions.MissingRequirementsFoldersFiles` --
+         A requirements file references a nonexistent constraint
 
     """
 
@@ -463,7 +629,10 @@ class InFiles:
                 constraints=constraint,
                 requirements=requirement,
             )
-            _logger.info(f"in_: {repr(in_)}")
+            if is_module_debug:  # pragma: no cover
+                _logger.info(f"in_: {repr(in_)}")
+            else:  # pragma: no cover
+                pass
             # set.add an InFile
             self.files = in_
 
@@ -637,19 +806,28 @@ class InFiles:
             else:  # pragma: no cover
                 pass
 
-        msg_info = f"self.zeroes (after): {self._zeroes}"
-        _logger.info(msg_info)
+        if is_module_debug:  # pragma: no cover
+            msg_info = f"self.zeroes (after): {self._zeroes}"
+            _logger.info(msg_info)
+        else:  # pragma: no cover
+            pass
 
         # remove from self._files
         for in_ in del_these:
             self._files.remove(in_)
 
-        msg_info = f"self.files (after): {self._files}"
-        _logger.info(msg_info)
+        if is_module_debug:  # pragma: no cover
+            msg_info = f"self.files (after): {self._files}"
+            _logger.info(msg_info)
+        else:  # pragma: no cover
+            pass
 
     def resolve_zeroes(self):
         """If a requirements file have constraint(s) that can be
-        resolved by a zero, do so.
+        resolved, by a zero, do so.
+
+        _files and _zeroes are both type, set. Modifying an element
+        modifies element within the set
         """
         # Take the win, early and often!
         self.move_zeroes()
@@ -659,23 +837,33 @@ class InFiles:
             constaints_copy = copy.deepcopy(in_.constraints)
             for constraint_relpath in constaints_copy:
                 is_in_zeroes = self.in_zeroes(constraint_relpath)
-                msg_info = (
-                    f"resolve_zeroes constraint {constraint_relpath} in "
-                    f"zeroes {is_in_zeroes}"
-                )
-                _logger.info(msg_info)
+
+                if is_module_debug:  # pragma: no cover
+                    msg_info = (
+                        f"resolve_zeroes constraint {constraint_relpath} in "
+                        f"zeroes {is_in_zeroes}"
+                    )
+                    _logger.info(msg_info)
+                else:  # pragma: no cover
+                    pass
+
                 if is_in_zeroes:
                     # Raises ValueError if constraint_relpath is neither str nor Path
                     item = self.get_by_relpath(constraint_relpath, set_name="zeroes")
-                    msg_info = f"resolve_zeroes in_ (before) {in_}"
-                    _logger.info(msg_info)
+
+                    if is_module_debug:  # pragma: no cover
+                        msg_info = f"resolve_zeroes in_ (before) {in_}"
+                        _logger.info(msg_info)
+                    else:  # pragma: no cover
+                        pass
 
                     in_.resolve(constraint_relpath, item.requirements)
-                    msg_info = f"resolve_zeroes in_ (after) {in_}"
-                    _logger.info(msg_info)
-                    # Update set
-                    # self.files.update(in_)
-                    pass
+
+                    if is_module_debug:  # pragma: no cover
+                        msg_info = f"resolve_zeroes in_ (after) {in_}"
+                        _logger.info(msg_info)
+                    else:  # pragma: no cover
+                        pass
                 else:  # pragma: no cover
                     pass
 
@@ -689,8 +877,8 @@ class InFiles:
 
         :raises:
 
-           - :py:exc:`drain_swamp.MissingRequirementsFoldersFiles` -- there are
-             unresolvable constraint(s)
+           - :py:exc:`drain_swamp.exceptions.MissingRequirementsFoldersFiles` --
+             there are unresolvable constraint(s)
 
         """
         initial_count = len(list(self.files))
@@ -722,19 +910,36 @@ class InFiles:
 
     def write(self):
         """After resolving all constraints. Write out all .unlock files
-        :returns:
+
+        :returns: Generator of ``.unlock`` absolute paths
         :rtype: collections.abc.Generator[pathlib.Path, None, None]
         """
-        _logger.info(f"InFiles.write zeroes count: {len(list(self.zeroes))}")
+        if is_module_debug:  # pragma: no cover
+            msg_info = f"InFiles.write zeroes count: {len(list(self.zeroes))}"
+            _logger.info(msg_info)
+        else:  # pragma: no cover
+            pass
+
         for in_ in self.zeroes:
             if in_.stem != "pins":
                 abspath_zero = in_.abspath(self.cwd)
                 file_name = f"{in_.stem}{SUFFIX_UNLOCKED}"
                 abspath_unlocked = abspath_zero.parent.joinpath(file_name)
-                _logger.info(f"InFiles.write abspath_unlocked: {abspath_unlocked}")
+
+                if is_module_debug:  # pragma: no cover
+                    msg_info = f"InFiles.write abspath_unlocked: {abspath_unlocked}"
+                    _logger.info(msg_info)
+                else:  # pragma: no cover
+                    pass
+
                 abspath_unlocked.touch(mode=0o644, exist_ok=True)
                 is_file = abspath_unlocked.exists() and abspath_unlocked.is_file()
-                _logger.info(f"InFiles.write is_file: {is_file}")
+
+                if is_module_debug:  # pragma: no cover
+                    _logger.info(f"InFiles.write is_file: {is_file}")
+                else:  # pragma: no cover
+                    pass
+
                 if is_file:
                     contents = "\n".join(list(in_.requirements))
                     contents = f"{contents}\n"
@@ -775,8 +980,8 @@ def unlock_compile(inst):
     :rtype: collections.abc.Generator[pathlib.Path, None, None]
     :raises:
 
-       - :py:exc:`drain_swamp.MissingRequirementsFoldersFiles` -- there are
-         unresolvable constraint(s)
+       - :py:exc:`drain_swamp.exceptions.MissingRequirementsFoldersFiles` --
+         there are unresolvable constraint(s)
 
     """
     # Look at the folders. Then convert all ``.in`` --> ``.unlock``
@@ -796,6 +1001,151 @@ def unlock_compile(inst):
         lst_called = list(gen)
         for abspath in lst_called:
             assert abspath.exists() and abspath.is_file()
+
         yield from lst_called
 
     yield from ()
+
+
+def refresh_links(inst, is_set_lock=None):
+    """Create/refresh ``.lnk`` files
+
+    Does not write .lock or .unlock files
+
+    :param inst:
+
+       Backend subclass instance which has folders property containing
+       ``collections.abc.Sequence[pathlib.Path]``
+
+    :type inst: BackendType
+    :param is_set_lock:
+
+       Force the dependency lock. True to lock. False to unlock. None
+       to use current lock state
+
+    :type is_set_lock: bool | None
+    :raises:
+
+       - :py:exc:`drain_swamp.exceptions.MissingRequirementsFoldersFiles` --
+         there are unresolvable constraint(s)
+
+       - :py:exc:`AssertionError` -- In pyproject.toml no section,
+         tool.setuptools.dynamic
+
+       - :py:exc:`drain_swamp.exceptions.PyProjectTOMLParseError` --
+         either not found or cannot be parsed
+
+       - :py:exc:`drain_swamp.exceptions.PyProjectTOMLReadError` --
+         Either not a file or lacks read permission
+
+       - :py:exc:`TypeError` -- is_set_lock unsupported type expecting None or bool
+
+    """
+    is_invalid_set_lock = is_set_lock is not None and not isinstance(is_set_lock, bool)
+    if is_invalid_set_lock:
+        msg_exc = (
+            "refresh_links parameter is_set_lock can be either None or "
+            f"a boolean, got {is_set_lock!r}"
+        )
+        raise TypeError(msg_exc)
+    else:  # pragma: no cover
+        pass
+
+    mod_path = "lock_toggle.refresh_links"
+    path_cwd = inst.parent_dir
+    path_config = inst.path_config
+    gen_unlocked_files = inst.in_files()
+    in_files = list(gen_unlocked_files)
+    del gen_unlocked_files
+
+    if is_module_debug:  # pragma: no cover
+        msg_info = f"{mod_path} in_files {in_files}"
+        _logger.info(msg_info)
+    else:  # pragma: no cover
+        pass
+
+    # read in all .in files. key path_abs
+    try:
+        files = InFiles(path_cwd, in_files)
+        files.resolution_loop()
+    except MissingRequirementsFoldersFiles:
+        raise
+
+    if is_set_lock is None:
+        # Get dependency lock state from pyproject.toml
+        try:
+            is_locked = inst.is_locked(path_config)
+        except Exception:
+            # PyProjectTOMLParseError, PyProjectTOMLReadError, AssertionError
+            raise
+    else:
+        """To update symlinks to unlock dependencies
+
+        .. code-block:: shell
+
+           python -m build --config-setting="--set-lock=1" --sdist
+
+        To update symlinks to lock dependencies
+
+        .. code-block:: shell
+
+           python -m build --config-setting="--set-lock=0" --sdist
+
+        """
+        is_locked = is_set_lock
+    suffix = SUFFIX_LOCKED if is_locked else SUFFIX_UNLOCKED
+
+    if is_module_debug:  # pragma: no cover
+        msg_info = (
+            f"{mod_path} is_set_lock --> is_locked {is_set_lock!r} --> {is_locked!r}"
+        )
+        _logger.info(msg_info)
+        zeroes_count = len(list(files.zeroes))
+        msg_info = f"{mod_path} files.zeroes zeroes_count {zeroes_count}"
+        _logger.info(msg_info)
+        msg_info = f"{mod_path} files: {files}"
+        _logger.info(msg_info)
+    else:  # pragma: no cover
+        pass
+
+    msg_warn = (
+        "{}. No corresponding .unlock / .lock files"
+        "Cannot make symlink. "
+        "In {}, prepare the missing folders and files"
+    )
+    for in_ in files.zeroes:
+        if in_.stem == "pins":
+            # pins.in is used as-is
+            continue
+        else:  # pragma: no cover
+            if is_module_debug:  # pragma: no cover
+                msg_info = f"{mod_path} files.zeroes InFile {in_}"
+                _logger.info(msg_info)
+            else:  # pragma: no cover
+                pass
+            abspath_zero = in_.abspath(path_cwd)
+            file_name = f"{in_.stem}{suffix}"
+            abspath = abspath_zero.parent.joinpath(file_name)
+            is_dest_file_exists = abspath.exists() and abspath.is_file()
+            if not is_dest_file_exists:
+                # No dest file, so skip creating a symlink
+                msg_warn_missing_dest = msg_warn.format(abspath, path_cwd)
+                raise MissingRequirementsFoldersFiles(msg_warn_missing_dest)
+            else:
+                if is_module_debug:  # pragma: no cover
+                    msg_info = f"{mod_path} path_cwd: {path_cwd}"
+                    _logger.info(msg_info)
+                    msg_info = f"{mod_path} abspath: {abspath}"
+                    _logger.info(msg_info)
+                else:  # pragma: no cover
+                    pass
+
+                try:
+                    _maintain_symlink(path_cwd, abspath)
+                except (NotADirectoryError, FileNotFoundError) as e:
+                    msg_warn_missing_dest = msg_warn.format(abspath, path_cwd)
+                    raise MissingRequirementsFoldersFiles(msg_warn_missing_dest) from e
+                except Exception as e:  # pragma: no cover
+                    # Sad, but not the end of the world
+                    msg_exc = str(e)
+                    _logger.warning(msg_exc)

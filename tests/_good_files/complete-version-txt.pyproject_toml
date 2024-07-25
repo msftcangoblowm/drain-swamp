@@ -1,0 +1,44 @@
+[build-system]
+requires = ["setuptools>=70.0.0", "wheel", "build", "setuptools_scm>=8", "click", "pluggy"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "complete-awesome-perfect"
+dynamic = [
+    "optional-dependencies",
+    "dependencies",
+    "version",
+]
+authors = [  # Contact by mastodon please
+    {name = "Dave Faulkmore", email = "faulkmore@protonmail.com"},
+]
+
+[tool.setuptools.dynamic]
+# @@@ editable little_shop_of_horrors_shrine_candles
+dependencies = { file = ["requirements/prod.unlock"] }
+optional-dependencies.pip = { file = ["requirements/pip.unlock"] }
+optional-dependencies.manage = { file = ["requirements/manage.unlock"] }
+# @@@ end
+
+version = {file = "VERSION.txt"}
+
+[tool.setuptools.packages.find]
+where = ["src"]
+include = ["complete_awesome_perfect*"]
+
+[tool.drain-swamp]
+copyright_start_year = 2024
+
+[tool.pipenv-unlock]
+version_file = "src/complete_awesome_perfect/_version.py"
+folders = [
+    "ci",
+]
+
+required = { target = "prod", relative_path = "requirements/prod.in" }
+
+# underscore: hyphen
+optionals = [
+    { target = "pip", relative_path = "requirements/pip.in" },
+    { target = "manage", relative_path = "requirements/manage.in" },
+]

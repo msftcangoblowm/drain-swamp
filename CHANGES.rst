@@ -8,9 +8,11 @@ Changelog
    Feature request
    .................
 
-   - how to initialize _version.py ??
+   - Makefile target to add the environment variable with path to a config_settings toml file
 
-   - pipenv-unlock (un)lock required and optionals resolve path
+   - Confirm setuptools-scm file finders are being called?
+
+   - add gha
 
    - self hosted package server. See article
    https://safjan.com/Create%20Self-Hosted%20Python%20Package%20Repository/
@@ -18,19 +20,38 @@ Changelog
    Known regressions
    ..................
 
-   - (upstream) click.Path(resolve_path=True) chokes given a non-Path. Gave a float
-
-     type=click.Path(exists=True, file_okay=True, dir_okay=True, resolve_path=True),
-
-     Shell input are only string. CliRunner.invoke feed only str
-     Remove tests that feed non-str Python types
-
-     `click#2742 <https://github.com/pallets/click/issues/2742>`_
-
    Commit items for NEXT VERSION
    ..............................
 
 .. scriv-start-here
+
+.. _changes_1-0-0:
+
+Version 1.0.0 — 2024-07-25
+--------------------------
+
+- style: little shop of horrors N2O helmet
+- fix: require minimum setuptools>=70.0.0 version
+- feat: add entrypoint scm-version
+- feat: refresh symlink during sdist build or manually pipenv-unlock refresh
+- feat: native support for version file
+- feat: entrypoint setuptools.finalize_distribution_options use plugins
+- feat: setuptools thin wrapped build-backend
+- feat(drain-swamp): add tag command
+- ci(tox.ini): use symlink .lnk not .lock or .unlock
+- ci(gitignore): add to ignore .lnk symlinks
+- ci(gitignore): add to ignore rogue src/_version.py
+- refactor(setup.py): remove. Use entrypoint distutils.setup_keywords
+- refactor(parser_in): class TomlParser. reverse search path_file and d_pyproject_toml
+- refactor(_run_cmd): wrap subprocess.run return a tuple
+- test: from setuptools-scm, 5 fingers appropriate class WorkDir and pytest fixture wd
+- feat(check_type): add check click_bool
+- feat: sane fallback when before git init and no version file
+- fix(pep518_read): find_project_root remove lru_cache decorator
+- docs: do not show blank page after toc
+- docs: add make targets pdf-view and html-view
+- test(test_wrap_version_keyword): cleanup temporary version file
+- test: use resources teardown resources
 
 .. _changes_0-5-1:
 

@@ -7,7 +7,7 @@
   $ git branch -D [branch name]
 - Check that the current virtualenv is activated and matches the current branch
 - Sanitize a semantic version str
-  $ python src/drain_swamp/cli_igor.py pretag "0.0.1"
+  $ python src/drain_swamp/cli_igor.py pretag "1.0.0"
 - Check current version. Do not use, `python setup.py --version`
   Initial version, manually edit _version.py
   $ [means to initialize _version.py needed]
@@ -28,11 +28,11 @@
     Seed CHANGES.rst
     $ python src/drain_swamp/cli_igor.py seed
     Edit CHANGES.rst, NOTICE.txt and docs/conf.py
-    $ python src/drain_swamp/cli_igor.py edits --kind="1.2.11"
+    $ python src/drain_swamp/cli_igor.py edits --kind="1.0.0"
     or
     $ python src/drain_swamp/cli_igor.py edits --kind="current"
     If doc?/conf.py snippet has a snippet id
-    $ python src/drain_swamp/cli_igor.py edits --kind="1.2.11" --snip="snippet_id"
+    $ python src/drain_swamp/cli_igor.py edits --kind="1.0.0" --snip="snippet_id"
 - Look over CHANGES.rst
   Takes time. Rewrite commit messages to be accessible by normies. Rewrite it again.
 - Update README.rst
@@ -81,5 +81,5 @@
 - Tag the tree
     $ make tag
     or
-    $ git tag -as -m "Version 1.2.11" 1.2.11
+    $ git tag -as -m "Version 1.0.0" 1.0.0
     # git push --follow-tags

@@ -16,6 +16,8 @@ from drain_swamp.backend_abc import (
     get_required_pyproject_toml,
 )
 
+from .wd_wrapper import WorkDir
+
 pytest_plugins: str = "sphinx.testing.fixtures"
 
 
@@ -117,6 +119,8 @@ def has_logging_occurred():
 def prepare_folders_files():
     """Prepare folders and files within folder"""
 
+    set_folders = set()
+
     def _method(seq_rel_paths, tmp_path):
         set_abs_paths = set()
         is_seq = seq_rel_paths is not None and (
@@ -137,6 +141,7 @@ def prepare_folders_files():
 
                 if abs_path is not None:
                     set_abs_paths.add(abs_path)
+                    set_folders.add(abs_path.parent)
                     abs_path.parent.mkdir(parents=True, exist_ok=True)
                     abs_path.touch()
         else:
@@ -144,7 +149,11 @@ def prepare_folders_files():
 
         return set_abs_paths
 
-    return _method
+    yield _method
+
+    # cleanup
+    for abspath_folder in set_folders:
+        shutil.rmtree(abspath_folder, ignore_errors=True)
 
 
 @pytest.fixture()
@@ -162,6 +171,7 @@ def prep_pyproject_toml():
     :returns: Path to the copied and renamed file within it's new home, temp folder
     :rtype: pathlib.Path
     """
+    lst_delete_me = []
 
     def _method(p_toml_file, path_dest_dir, rename="pyproject.toml"):
         if p_toml_file is not None and issubclass(type(p_toml_file), PurePath):
@@ -172,12 +182,23 @@ def prep_pyproject_toml():
             path_f = path_dest.parent.joinpath(rename)
             shutil.move(path_dest, path_f)
             ret = path_f
+            lst_delete_me.append(path_f)
         else:
             ret = None
 
         return ret
 
-    return _method
+    yield _method
+
+    # cleanup
+    for path_delete_me in lst_delete_me:
+        if (
+            path_delete_me is not None
+            and issubclass(type(path_delete_me), PurePath)
+            and path_delete_me.exists()
+            and path_delete_me.is_file()
+        ):
+            path_delete_me.unlink()
 
 
 @pytest.fixture()
@@ -310,5 +331,36 @@ def path_project_base():
         path_cwd = path_tests.parent
 
         return path_cwd
+
+    return _method
+
+
+@pytest.fixture()
+def wd(tmp_path: Path) -> WorkDir:
+    """https://github.com/pypa/setuptools_scm/blob/main/testing/conftest.py"""
+    target_wd = tmp_path.resolve() / "wd"
+    target_wd.mkdir()
+    return WorkDir(target_wd)
+
+
+@pytest.fixture
+def get_section_dict():
+    """Read config settings from .toml file and get section"""
+
+    def _method(path_dir, toml_contents):
+        import os
+
+        from drain_swamp.monkey.wrap_infer_version import _get_config_settings
+
+        path_toml = path_dir.joinpath("setuptools-build.toml")
+        path_toml.write_text(toml_contents)
+
+        env_key = "DS_CONFIG_SETTINGS"
+        toml_path = str(path_toml)
+        os.environ[env_key] = toml_path
+
+        d_section = _get_config_settings()
+
+        return d_section
 
     return _method

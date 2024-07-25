@@ -32,7 +32,7 @@ To see the verbose error message
    * Creating isolated environment: venv+pip...
    * Installing packages in isolated environment:
      - build
-     - setuptools>=69.0.2
+     - setuptools>=70.0.0
      - setuptools_scm>=8
      - wheel
    * Getting build dependencies for sdist...

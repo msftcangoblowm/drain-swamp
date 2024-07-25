@@ -4,10 +4,10 @@
 package level constants
 
 .. py:data:: __all__
-   :type: tuple[str, str, str, str, str, str, str, str, str, str]
+   :type: tuple[str, str, str, str, str, str, str, str, str, str, str]
    :value: ("g_app_name", "package_name", "SUFFIX_IN", "SUFFIX_LOCKED", \
-   "SUFFIX_UNLOCKED", "__version_app", "__url__", "PATH_PIP_COMPILE", \
-   "PROG_LOCK", "PROG_UNLOCK")
+   "SUFFIX_UNLOCKED", "SUFFIX_SYMLINK", "__version_app", "__url__", \
+   "PATH_PIP_COMPILE", "PROG_LOCK", "PROG_UNLOCK")
 
    Module exports
 
@@ -45,6 +45,10 @@ package level constants
    unless absolutely unavoidable. In which case, every restriction **must**
    be throughly documented to defend the justification for imposing
    such a restriction so know later whether to keep it or not
+
+.. py:data:: SUFFIX_SYMLINK
+   :type: str
+   :value: ".lnk"
 
 .. py:data:: __version_app
    :type: str
@@ -136,6 +140,7 @@ __all__ = (
     "SUFFIX_IN",
     "SUFFIX_LOCKED",
     "SUFFIX_UNLOCKED",
+    "SUFFIX_SYMLINK",
     "__version_app",
     "__url__",
     "PATH_PIP_COMPILE",
@@ -150,12 +155,13 @@ package_name = g_app_name.lower().replace("_", "-")
 SUFFIX_IN = ".in"
 SUFFIX_LOCKED = ".lock"
 SUFFIX_UNLOCKED = ".unlock"
+SUFFIX_SYMLINK = ".lnk"
 
 # Removes epoch and local. Fixes version
-__version_app = sanitize_tag(__version__)
+__version_app, local = sanitize_tag(__version__)
 
 sv = SemVersion()
-sv.parse_ver(__version__)
+sv.parse_ver(__version__, local=local)
 __url__ = sv.readthedocs_url(g_app_name, is_latest=False)
 
 # Required only for pytest

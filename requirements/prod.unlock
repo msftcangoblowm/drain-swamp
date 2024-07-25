@@ -1,3 +1,4 @@
 setuptools-scm
-click
 pip-tools
+click
+pluggy

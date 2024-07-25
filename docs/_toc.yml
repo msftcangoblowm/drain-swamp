@@ -7,6 +7,7 @@ subtrees:
     - file: getting_started/pipenv-unlock
     - file: getting_started/setuptools-scm
     - file: getting_started/from-source
+    - file: getting_started/build-package
 - entries:
   - file: api/index
     entries:
@@ -32,9 +33,9 @@ subtrees:
         - file: code/ext/pipenv_unlock/backend_abc
         - file: code/ext/pipenv_unlock/backend_setuptools
         - file: code/ext/pipenv_unlock/lock_toggle
-      - file: code/ext/sphinxcontrib_snip/index
+      - file: code/ext/drain_swamp/index
         entries:
-        - file: code/ext/sphinxcontrib_snip/sphinx_conf
+        - file: code/ext/drain_swamp/sphinx_conf
 - caption: Articles
   entries:
   - file: snippets/snippets

@@ -1,9 +1,10 @@
-restview
-tox-gh
-pip-tools
-tox
-twine
-colorama>=0.4.6
 pre-commit
-click
+twine
+restview
+pluggy
 setuptools-scm
+tox-gh
+tox
+colorama>=0.4.6
+pip-tools
+click

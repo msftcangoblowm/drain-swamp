@@ -44,7 +44,7 @@ from importlib.metadata import (
 
 from .check_type import is_ok
 from .constants import g_app_name
-from .parser_in import get_d_pyproject_toml
+from .parser_in import TomlParser
 
 _logger = logging.getLogger(f"{g_app_name}.package_metadata")
 
@@ -127,7 +127,8 @@ class PackageMetadata:
             self._full_name, self._email = get_author_and_email(self.app_name)
         else:
             # Looks alot like :py:func:`drain_swamp.pep518_read.find_pyproject_toml`
-            d_pyproject_toml = get_d_pyproject_toml(path)
+            tp = TomlParser(path)
+            d_pyproject_toml = tp.d_pyproject_toml
             if d_pyproject_toml is None:
                 self._full_name = AUTHOR_NAME_FALLBACK
                 self._email = None

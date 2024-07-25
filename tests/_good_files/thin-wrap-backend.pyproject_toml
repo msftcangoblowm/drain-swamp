@@ -1,0 +1,42 @@
+[build-system]
+requires = ["setuptools>=70.0.0", "wheel", "build", "setuptools_scm>=8", "click", "pluggy"]
+build-backend = "backend"
+backend-path = ["_req_links"]
+
+[project]
+name = "complete-awesome-perfect"
+dynamic = [
+    "optional-dependencies",
+    "dependencies",
+    "version",
+]
+authors = [  # Contact by mastodon please
+    {name = "Dave Faulkmore", email = "faulkmore@protonmail.com"},
+]
+
+[tool.setuptools.dynamic]
+# @@@ editable little_shop_of_horrors_shrine_candles
+dependencies = { file = ["requirements/prod.unlock"] }
+optional-dependencies.pip = { file = ["requirements/pip.unlock"] }
+optional-dependencies.manage = { file = ["requirements/manage.unlock"] }
+# @@@ end
+
+version = {attr = "drain_swamp._version.__version__"}
+
+[tool.drain-swamp]
+copyright_start_year = 2024
+
+[tool.pipenv-unlock]
+wraps-build-backend = "setuptools.build_meta"
+version_file = "src/drain_swamp/_version.py"
+folders = [
+    "ci",
+]
+
+required = { target = "prod", relative_path = "requirements/prod.in" }
+
+# underscore: hyphen
+optionals = [
+    { target = "pip", relative_path = "requirements/pip.in" },
+    { target = "manage", relative_path = "requirements/manage.in" },
+]

@@ -91,7 +91,9 @@ pkginfo==1.10.0
 platformdirs==4.2.1
     # via black
 pluggy==1.5.0
-    # via pytest
+    # via
+    #   -c requirements/prod.in
+    #   pytest
 pycodestyle==2.11.1
     # via flake8
 pycparser==2.22
@@ -144,7 +146,9 @@ tomli==2.0.1
     #   pytest
 twine==5.0.0
     # via -r requirements/dev.in
-typing-extensions==4.11.0
+types-setuptools==70.1.0.20240627
+    # via -r requirements/dev.in
+typing-extensions==4.12.2
     # via
     #   black
     #   mypy

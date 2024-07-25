@@ -5,20 +5,13 @@
 
 Unittest for module, check_type
 
-Without coverage
-
 .. code-block:: shell
 
    pytest --showlocals --log-level INFO tests/test_check_type.py
-
-With coverage
+   pytest --showlocals --cov="drain_swamp" --cov-report=term-missing tests/test_check_type.py
 
 Needs a config file to specify exact files to include / omit from report.
 Will fail with exit code 1 even with 100% coverage
-
-.. code-block:: shell
-
-   pytest --showlocals --cov="drain_swamp" --cov-report=term-missing tests/test_check_type.py
 
 .. seealso::
 
@@ -31,6 +24,7 @@ from pathlib import Path
 import pytest
 
 from drain_swamp.check_type import (
+    click_bool,
     is_ok,
     is_relative_required,
 )
@@ -114,3 +108,32 @@ def test_is_relative_required(relative_path, exts, expected):
     # pytest --showlocals --log-level INFO -k "test_is_relative_required" tests
     actual = is_relative_required(path_relative=relative_path, extensions=exts)
     assert actual == expected
+
+
+testdata_click_bool = (
+    (None, None),
+    ("George", None),
+    ("0", False),
+    ("off", False),
+    ("1", True),
+    ("on", True),
+)
+ids_click_bool = (
+    "None",
+    "Unknown str",
+    "str number indicating a bool value False",
+    "off means False",
+    "str number indicating a bool value True",
+    "off means True",
+)
+
+
+@pytest.mark.parametrize(
+    "val, expected",
+    testdata_click_bool,
+    ids=ids_click_bool,
+)
+def test_click_bool(val, expected):
+    # pytest --showlocals --log-level INFO -k "test_click_bool" tests
+    actual = click_bool(val=val)
+    assert actual is expected

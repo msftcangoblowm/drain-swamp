@@ -16,7 +16,12 @@ boilerplate gets copy and pasted into each package, becoming:
 
 Drain swamp focuses on:
 
-- pyproject.toml dependencies and optional dependencies
+- pyproject.toml dependencies locks
+- semantic versioning -- current, tag (in version file), semantic version str
+- build Python package uses plugins
+
+updating
+
 - Sphinx ``docs/conf.py``
 - CHANGES.rst
 - NOTICE.txt
@@ -30,14 +35,100 @@ That's a lot of boilerplate code ... gone! Not all, but most.
 
 * Python 3.9 through 3.12, and 3.13.0a3 and up.
 
+**New in 1.0.x**
+
+build plugin manager and plugins; build uses plugins; entrypoint scm-version;
+version file native support; drain-swamp tag; semantic version str sane fallback;
+
 **New in 0.5.x:**
 
 igor.py retired; pipenv-unlock is_lock command; swamp-drain cheats command;
 integration unit tests seperated;
 
-**New in 0.4.0:**
+Extensions
+-----------
 
-removed sphinxcontrib-snip; infer snippet code; list snippets;
+*Snip* is the generic technique to make an otherwise static
+config file, dynamic. Simple explanation: static portion is surrounded
+by comments turning it into a snippet.
+
+This technique is applied to aid DevOps.
+
+Comes with these *extensions*:
+
+**pipenv-unlock** -- switch on/off dependency locks
+
+``pyproject.toml`` is not dynamic and it's not supposed to be dynamic. In
+an ideal world, it would be static.
+
+Authors disappear or die. Unfunded projects quickly become
+abandonware. Packages with locked dependencies do not age well.
+
+pipenv-unlock is a light switch to turn on/off dependency locking.
+
+refresh both .unlock and .lock files. During build time, .lnk shortcut is created.
+
+An author dies, discovers girls, or gets a job scrapping gum off sidewalks. No worries
+
+refreshes symlinks (.lnk)
+
+.. code-block:: shell
+
+   pipenv-unlock refresh --set-lock "off"
+   pipenv-unlock refresh --set-lock "on"
+
+lock / unlock dependencies
+
+.. code-block:: shell
+
+   pipenv-unlock lock
+   pipenv-unlock unlock
+
+.. csv-table:: Following in Click's footsteps
+   :header: "State", "Possible values"
+   :widths: auto
+
+   "lock", """1"", ""true"", ""t"", ""yes"", ""y"", ""on"""
+   "unlock", """0"", ""false"", ""f"", ""no"", ""n"", ""off"""
+
+**drain-swamp**
+
+In ``conf.py``, there are some dynamic fields. Each package release,
+has to change these fields:
+
+- version
+- release
+- release_date
+- copyright (start year and author name)
+
+Reduces reliance on ``igor.py``
+
+**scm-version** -- Version file support
+
+Replaces getting version from setup.py or from setuptools-scm
+
+Get :abbr:`scm (source control management)` version
+
+.. code-block:: shell
+
+   scm-version get
+
+0.5.2.dev0+g2988c13.d20240724
+
+Get from version file
+
+.. code-block:: shell
+
+   drain-swamp tag
+
+0.5.2
+
+Writes a semantic version str to version file. :code:`drain-swamp pretag`
+to check/fix semantic version str
+
+.. code-block:: shell
+
+   scm-version write "0.5.2post0.dev1"
 
 Whats a snippet?
 -----------------
@@ -153,87 +244,3 @@ Lines starting with pound sign **#** are considered comments:
 - bash
 - pyproject.toml
 - Linux config files
-
-File formats -- tricky:
-
-- yaml
-
-  Indention would need to be supplied with the content. There is no
-  :code:`indent=8` option
-
-File formats -- ill-suited (for now):
-
-- html
-
-  Comment begin/end tokens are :code:`<!-- -->`
-
-- RestructuredText
-
-  Comment token (period)(period)(space)
-
-- markdown
-
-  Platform-independent comment
-
-  .. code:: text
-
-     (empty line)
-     [comment]: # (This actually is the most platform independent comment)
-
-  The blank line before the comment line and maybe one afterwards would be tricky
-
-  .. seealso::
-
-     https://stackoverflow.com/a/32190021
-
-- Makefile
-
-  Makefile contains two languages: Makefile and bash (or whatever shell is set).
-  So there are two distinct languages in one file. Intertwined!
-
-  Isn't autotools meant to build Makefiles? Isn't this also a sewer
-  targetted by hackers?
-
-  The entire point is to reduce Makefile and igor.py code to the minimum.
-
-Extensions
------------
-
-*Snip* is the generic tool. Applying this tool to specific situations
-should be considered Extensions (or plugins).
-
-In which case, comes with two extensions:
-
-**pipenv-unlock**
-
-pyproject.toml is not dynamic and it's not supposed to be dynamic. In
-an ideal world, it would be static.
-
-But some authors, disappear or die. The primary issue with abandoned
-package is it's dependency locked.
-
-pipenv-unlock is a light switch to turn on/off dependency locking.
-
-Snap ... on!
-
-Snap ... off!
-
-Snap ... on!
-
-Snap ... off!
-
-(author dies or discovers girls or gets a job scrapping gum off sidewalks)
-
-world+dog: Phew! Winning ... err ... I mean, *So sad. Poor him*
-
-**sphinxcontrib-snip**
-
-Sphinx is amazing. In ``conf.py``, there are some dynamic fields. Each
-package release, has to change these fields:
-
-- version
-- release
-- release_date
-- copyright (start year and author name)
-
-Code that handles this should be removed from ``igor.py``!

@@ -61,9 +61,8 @@ Move the tag past post commits
 
 
 .. py:data:: __all__
-   :type: tuple[str, str, str, str]
-   :value: ("SemVersion", "SetuptoolsSCMNoTaggedVersionError", "sanitize_tag", \
-   "get_version")
+   :type: tuple[str, str, str]
+   :value: ("SemVersion", "sanitize_tag", "get_version")
 
    Module exports
 
@@ -78,10 +77,11 @@ Move the tag past post commits
 
 """
 
-import os
-import subprocess
+import importlib.util
+import logging
 import sys
 import types
+import warnings
 from collections.abc import Sequence
 from functools import partial
 from pathlib import (
@@ -96,36 +96,31 @@ except ImportError:  # pragma: no cover
     from setuptools.extern.packaging.version import InvalidVersion  # type: ignore
     from setuptools.extern.packaging.version import Version as Version  # type: ignore
 
+from ._run_cmd import run_cmd
+from .parser_in import TomlParser
+from .version_file._overrides import (
+    PRETEND_KEY_NAMED,
+    normalize_dist_name,
+)
+
 __package__ = "drain_swamp"
 __all__ = (
     "SemVersion",
-    "SetuptoolsSCMNoTaggedVersionError",
     "sanitize_tag",
     "get_version",
 )
 
 _map_release = types.MappingProxyType({"alpha": "a", "beta": "b", "candidate": "rc"})
+_logger = logging.getLogger("drain_swamp.version_semantic")
 
 
-class SetuptoolsSCMNoTaggedVersionError(AssertionError):
-    """Neither a tagged version nor a first commit. Create a commit and
-    preferrably a tagged version
+def _is_package(package_name):
+    """Check if package installed
 
-    Do not rely on sibling modules, vendor the Exception
-
-    :ivar msg: The error message
-    :vartype msg: str
-    """
-
-    def __init__(self, msg: str) -> None:
-        super().__init__(msg)
-
-
-def _is_setuptools_scm():
-    """Without importing package, check setuptools-scm package is installed
-
-    :returns: True if setuptools-scm package is installed otherwise False
-    :rtype: bool
+    :param package_name: package name to check if installed
+    :type package_name: str
+    :returns: True if package installed otherwise False
+    :rtype: str
     :meta private:
     """
     from importlib.metadata import (
@@ -141,6 +136,18 @@ def _is_setuptools_scm():
         bol_ret = True
 
     return bol_ret
+
+
+def _is_setuptools_scm():
+    """Without importing package, check setuptools-scm package is installed
+
+    :returns: True if setuptools-scm package is installed otherwise False
+    :rtype: bool
+    :meta private:
+    """
+    ret = _is_package("setuptools-scm")
+
+    return ret
 
 
 def _path_or_cwd(val):
@@ -162,7 +169,30 @@ def _path_or_cwd(val):
     return path_cwd
 
 
-def _scm_key(prog_name):
+def get_package_name(path):
+    """Get package name, unmodified, from pyproject.toml
+
+    :param path: absolute path to either package base folder or ``pyproject.toml``
+    :type path: pathlib.Path
+    :returns:
+
+       package name. ``[project].name`` is a required field, so can
+       assume exists. None if issue with ``pyproject.toml``
+
+    :rtype: str | None
+    """
+    path_ = _path_or_cwd(path)
+    tp = TomlParser(path_)
+    d_pyproject_toml = tp.d_pyproject_toml
+    if d_pyproject_toml is not None:
+        ret = d_pyproject_toml.get("project", {}).get("name", None)
+    else:
+        ret = None
+
+    return ret
+
+
+def _scm_key(dist_name):
     """When want to set a specific version, setuptools-scm offers an
     environment variable which overrides normal behavior
 
@@ -180,10 +210,10 @@ def _scm_key(prog_name):
     :rtype: str
     :meta private:
     """
-    # hyphen --> underscore. Uppercase
-    G_APP_NAME = prog_name.upper()
-    G_APP_NAME.replace("-", "_")
-    scm_override_key = f"SETUPTOOLS_SCM_PRETEND_VERSION_FOR_{G_APP_NAME}"
+    # source setuptools_scm._override.read_named_env
+    env_var_dist_name = normalize_dist_name(dist_name)
+    d_named = {"name": env_var_dist_name}
+    scm_override_key = PRETEND_KEY_NAMED.format(**d_named)
 
     return scm_override_key
 
@@ -215,26 +245,17 @@ def _current_tag(path=None):
     path_cwd = _path_or_cwd(path)
 
     cmd = ["/bin/git", "describe", "--tag"]
-    try:
-        proc = subprocess.run(
-            cmd,
-            shell=False,
-            stdout=subprocess.PIPE,
-            stderr=subprocess.DEVNULL,
-            cwd=str(path_cwd),
-            text=True,
-        )
-    except subprocess.CalledProcessError:
+    t_ret = run_cmd(cmd, cwd=path_cwd)
+    out, err, exit_code, exc = t_ret
+    if exc is not None:
         # git says, no tagged version
         str_out = None
     else:
         # No tags yet
         # 128 -- fatal: No names found, cannot describe anything.
-        int_exit_code = proc.returncode
-        is_error = int_exit_code != 0
-        if not is_error:
-            str_out = proc.stdout
-            str_out = str_out.rstrip()
+        is_fail = exit_code != 0
+        if not is_fail:
+            str_out = out
         else:
             str_out = None
 
@@ -328,7 +349,7 @@ def sanitize_tag(ver):
     :param ver: raw semantic version
     :type ver: str
     :returns: Sanitized semantic version str
-    :rtype: str
+    :rtype: tuple[str, str | None]
     :raises:
 
        - :py:exc:`ValueError` -- Invalid token within Version str
@@ -338,7 +359,7 @@ def sanitize_tag(ver):
     str_remaining_whole = _remove_v(ver)
 
     # Strip epoch, if exists
-    epoch, str_remaining_stripped = _strip_epoch(str_remaining_whole)
+    _, str_remaining_stripped = _strip_epoch(str_remaining_whole)
 
     """Strip local, if exists
 
@@ -380,10 +401,10 @@ def sanitize_tag(ver):
     ret = str(v)
 
     # Strip epoch and local, if exists
-    epoch, ret = _strip_epoch(ret)
-    local, ret = _strip_local(ret)
+    _, ret = _strip_epoch(ret)
+    _, ret = _strip_local(ret)
 
-    return ret
+    return ret, local
 
 
 def get_version(ver, is_use_final=False):
@@ -495,42 +516,28 @@ def _current_version(path=None):
     else:  # pragma: no cover
         pass
 
+    # Call in subprocess to avoid circular import error
+    # Replaces:
     # cmd = [sys.executable, "setup.py", "--version"]
-    cmd = [sys.executable, "-m", "setuptools_scm"]
-    try:
-        proc = subprocess.run(
-            cmd,
-            shell=False,
-            stdout=subprocess.PIPE,
-            stderr=subprocess.DEVNULL,  # suppress annoying useless warning
-            cwd=str(path_cwd),
-            text=True,
-        )
-    except subprocess.CalledProcessError:  # pragma: no cover
-        """setuptools-scm requires at least one commit. Could not get
-        semantic version
+    # cmd = [sys.executable, "-m", "setuptools_scm"]
+    if _is_package("drain_swamp"):
+        # thru entrypoint
+        cmd = ("scm-version", "get")
+    else:  # pragma: no cover
+        # thru pep366. unittest adds nothing
+        cmd = (sys.executable, "src/drain_swamp/cli_scm_version.py", "get")
 
-        Tested using :py:func:`unittest.mock.patch`
-        """
+    t_ret = run_cmd(cmd, cwd=path_cwd)
+    out, err, exit_code, exc = t_ret
+    if exc is not None:
+        # scm-version get says no tagged version
         str_out = None
     else:
-        str_out = proc.stdout
-        str_out = str_out.rstrip()
-
-        # Avoid returning an empty string
-        is_cmd_fail = len(str_out) == 0
-        if is_cmd_fail:  # pragma: no cover
-            """These commands fail with exit code 128. Causes setuptools-scm to also fail
-
-            .. code-block:: shell
-
-               git --git-dir [package home]/.git rev-parse --abbrev-ref HEAD
-               git --git-dir [package home]/.git -c log.showSignature=false log -n 1 HEAD --format=%cI
-
-            """
+        is_fail = exit_code != 0
+        if not is_fail:
+            str_out = out
+        else:
             str_out = None
-        else:  # pragma: no cover
-            pass
 
     return str_out
 
@@ -538,10 +545,12 @@ def _current_version(path=None):
 def _tag_version(
     next_version="",
     path=None,
-    package_name=None,
 ):
-    """Alias / wrapper for _arbritary_version. Indicating type / purpose
-    of the version str.
+    """Previously meant latest git tagged version, but there is no
+    situation where this is desirable.
+
+    If ``tag`` version, take from: version_file, or fallback
+    If version provided, update version file
 
     :param next_version: Default empty string. If not provided, tagged version
     :type next_version: str | None
@@ -551,21 +560,16 @@ def _tag_version(
        otherwise provide the path to the package base folder
 
     :type path: pathlib.Path | None
-    :param package_name:
-
-       Default None. Package name so as to avoid getting it from git
-
-    :type package_name: str | None
     :returns: tagged version or current version str
     :rtype: str | None
     :meta private:
     :raises:
 
-       - :py:exc:`AssertionError` -- Could not get package name from git
+       - :py:exc:`AssertionError` -- ``pyproject.toml`` missing or unparsable
 
     """
     # empty str means take current tag version
-    ret = _arbritary_version(next_version, path=path, package_name=package_name)
+    ret = _arbritary_version(next_version, path=path)
 
     return ret
 
@@ -573,9 +577,9 @@ def _tag_version(
 def _arbritary_version(
     next_version,
     path=None,
-    package_name=None,
 ):
-    """Get version **and** setuptools-scm creates the `` _version.py`` file
+    """From the version file get semantic version str. This depends heavily on
+    ``pyproject.toml`` being well-formed
 
     :param next_version: Default empty string. If not provided, tagged version
     :type next_version: str
@@ -585,18 +589,9 @@ def _arbritary_version(
        otherwise provide the path to the package base folder
 
     :type path: pathlib.Path | None
-    :param package_name:
-
-       Default None. Package name so as to avoid getting it from git
-
-    :type package_name: str | None
     :returns: tagged version or current version str. None rather than empty string
     :rtype: str | None
     :meta private:
-
-    :raises:
-
-       - :py:exc:`AssertionError` -- Could not get package name from git
 
     .. warning::
 
@@ -604,73 +599,153 @@ def _arbritary_version(
        Use :py:func:`unittest.mock.patch` to avoid the actual call
 
     """
+    msg_issue = "Could not get tag version from version_file"
     path_cwd = _path_or_cwd(path)
-    cwd_path = str(path_cwd)
 
-    # providing the package name is preferred over asking git for it
-    is_pkg = (
-        package_name is not None
-        and isinstance(package_name, str)
-        and len(package_name.strip()) != 0
+    tp = TomlParser(path_cwd)
+    d_pyproject_toml = tp.d_pyproject_toml
+    if d_pyproject_toml is None:
+        msg_warn = f"Issue with pyproject.toml, {msg_issue}"
+        _logger.warning(msg_warn)
+        raise AssertionError(msg_warn)
+    else:  # pragma: no cover
+        path_f = tp.path_file
+        path_package_base = path_f.parent
+
+    """From here, for all issues, issue a non-blocking warning and return None.
+    This strategy is so can fallback to the current version"""
+    lst_dynamic = d_pyproject_toml.get("project", {}).get("dynamic", [])
+    is_version_file = isinstance(lst_dynamic, Sequence) and "version" in lst_dynamic
+    static_ver = d_pyproject_toml.get("project", {}).get("version", None)
+    is_version_static = (
+        static_ver is not None
+        and isinstance(static_ver, str)
+        and len(static_ver.strip()) != 0
     )
-    if is_pkg:
-        g_app_name = package_name.replace("-", "_")
-    else:
-        tmp_name = _get_app_name(path=path_cwd)
-        if tmp_name is None:
-            msg_exc = "Relies upon git for the package name"
-            raise AssertionError(msg_exc)
-        else:
-            g_app_name = tmp_name
-
-    scm_override_key = _scm_key(g_app_name)
-
-    if next_version is None or (
-        next_version is not None
-        and isinstance(next_version, str)
-        and len(next_version) == 0
-    ):
-        # If no tags yet will be None
-        scm_override_val = _current_tag(path=path_cwd)
-    else:
-        scm_override_val = next_version
-
-    # Get tagged version number from setup.py
-    # https://peps.python.org/pep-0584/
-    if scm_override_val is not None:
-        env = os.environ.copy()
-        env |= {scm_override_key: scm_override_val}
-    else:
-        # Oh no! Problem. Maybe setuptools-scm will return fallback version
-        env = os.environ.copy()
-
-    """env with a tagged version and cmd will change
-    ``src/[package name]/_version.py``"""
-    cmd = [sys.executable, "setup.py", "--version"]
-    try:
-        proc = subprocess.run(
-            cmd,
-            shell=False,
-            stdout=subprocess.PIPE,
-            stderr=subprocess.DEVNULL,  # suppress annoying useless warning
-            cwd=cwd_path,
-            env=env,
-            text=True,
+    if is_version_static:
+        # static version
+        ver_tag = d_pyproject_toml.get("project", {}).get("version", None)
+    elif is_version_file:
+        # dynamic version_file
+        d_dynamic = (
+            d_pyproject_toml.get("tool", {}).get("setuptools", {}).get("dynamic", {})
         )
-    except subprocess.CalledProcessError:  # pragma: no cover
-        """setuptools-scm requires at least one commit. Could not get
-        semantic version"""
-        str_out = None
-    else:
-        str_out = proc.stdout
-        str_out = str_out.rstrip()
-        if len(str_out) == 0:
-            # setuptools-scm fails to get a version. Reason: Not even one commit
-            str_out = None
+
+        is_version = (
+            "version" in d_dynamic.keys()
+            and isinstance(d_dynamic["version"], dict)
+            and (
+                "attr" in d_dynamic["version"].keys()
+                or "file" in d_dynamic["version"].keys()
+            )
+        )
+
+        # Check tool.setuptools.dynamic.version
+        if not is_version:  # pragma: no cover
+            msg_warn = (
+                "Expecting tool.setuptools.dynamic.version to contain "
+                f"attr or file key, {msg_issue}"
+            )
+            warnings.warn(msg_warn)
+            return None
         else:  # pragma: no cover
             pass
 
-    return str_out
+        d_version = d_dynamic["version"]
+        is_attr = "attr" in d_version.keys() and isinstance(d_version["attr"], str)
+        is_file = "file" in d_version.keys() and isinstance(d_version["file"], str)
+        if is_attr:
+            # https://setuptools.pypa.io/en/latest/userguide/pyproject_config.html
+            # ast.literal_eval() ??
+            # attr is dotted path to module variable containing semantic version str
+            # file would be to a text file
+            version_file_dottedpath = d_dynamic["version"]["attr"]
+            dots = version_file_dottedpath.split(".")
+            variable_name = dots[-1]
+            dotted_path_to_module = dots[:-1]
+
+            # this is an assumption
+            # ############################################################################################
+            lst_relpath = ["src"]
+
+            lst_relpath.extend(dotted_path_to_module)
+
+            # Coming from a dotted_path, restore the suffix
+            file_stem = Path(lst_relpath[-1]).stem
+            lst_relpath[-1] = f"{file_stem!s}.py"
+
+            path_version_file = path_package_base.joinpath(*lst_relpath)
+            is_not_file = not (
+                path_version_file.exists()
+                and path_version_file.is_file()
+                and path_version_file.suffixes == [".py"]
+            )
+            if is_not_file:
+                msg_warn = (
+                    f"version_file {path_version_file} either does "
+                    f"not exist or not a file, {msg_issue}"
+                )
+                warnings.warn(msg_warn)
+                return None
+            else:  # pragma: no cover
+                name = path_version_file.stem
+                spec = importlib.util.spec_from_file_location(
+                    name,
+                    path_version_file,
+                )
+                module = importlib.util.module_from_spec(spec)
+                loader = importlib.util.LazyLoader(spec.loader)
+                loader.exec_module(module)
+                mixed_var = getattr(module, variable_name, None)
+                if mixed_var is None or not isinstance(mixed_var, str):
+                    msg_warn = (
+                        "In version_file (python module), "
+                        f"{path_version_file} module  variable, "
+                        "__version__ expected to be a the semantic "
+                        "version str, unsupported type got "
+                        f"{type(mixed_var)} {msg_issue}"
+                    )
+                    warnings.warn(msg_warn)
+                    return None
+                else:  # pragma: no cover
+                    pass
+                ver_tag = mixed_var
+        elif is_file:
+            path_f = path_package_base.joinpath(d_version["file"])
+            _logger.info(f"_tag_version dynamic version file: {path_f}")
+            is_not_file = not (
+                path_f.exists() and path_f.is_file() and path_f.suffixes == [".txt"]
+            )
+            if is_not_file:
+                msg_warn = (
+                    "Could not find version_file "
+                    f"""{d_version["file"]} {msg_issue}"""
+                )
+                warnings.warn(msg_warn)
+                return None
+            else:  # pragma: no cover
+                pass
+
+            # limit read size to avoid bufferoverflow attack
+            # ###############################################################################################
+            ver_tag = path_f.read_text()
+        else:  # pragma: no cover
+            # Check tool.setuptools.dynamic.version.[file|attr] value valid
+            msg_warn = (
+                "marked dynamic, tool.setuptools.dynamic.version.[file|attr] "
+                f"contains something other than a str. {msg_issue}"
+            )
+            warnings.warn(msg_warn)
+            return None
+    else:
+        msg_warn = (
+            f"In {path_f}, neither static nor dynamic version specified "
+            f"pyproject.toml is invalid. {msg_issue}"
+        )
+        warnings.warn(msg_warn)
+        return None
+
+    return ver_tag
 
 
 def _get_app_name(path=None):
@@ -695,31 +770,21 @@ def _get_app_name(path=None):
 
     """
     path_cwd = _path_or_cwd(path)
-    cwd_path = str(path_cwd)
 
     cmd = (
         "/bin/git",
         "rev-parse",
         "--show-toplevel",
     )
-    try:
-        proc = subprocess.run(
-            cmd,
-            shell=False,
-            stdout=subprocess.PIPE,
-            stderr=subprocess.DEVNULL,  # suppress annoying useless warning
-            cwd=cwd_path,
-            text=True,
-        )
-    except subprocess.CalledProcessError:
+    t_ret = run_cmd(cmd, cwd=path_cwd)
+    out, err, exit_code, exc = t_ret
+    if exc is not None:
         ret = None
     else:
-        str_out = proc.stdout
-        str_out = str_out.rstrip()
-        if len(str_out) == 0:
+        if out is None:
             ret = None
         else:
-            str_mixed = Path(str_out).name
+            str_mixed = Path(out).name
             ret = str_mixed.replace("-", "_")
 
     return ret
@@ -1045,12 +1110,61 @@ class SemVersion:
         """
         return self._dev
 
-    def parse_ver(self, ver):
+    @property
+    def release(self):
+        """Components of the release segment of the version
+
+        Does not include epoch or any pre-release / development / post-release
+        suffixes
+
+        :returns: tuple of major, minor, micro
+        :rtype: tuple[int, int, int]
+        """
+        return self._release
+
+    @staticmethod
+    def as_tuple(version_str):
+        """version tuple as written to ``_version.py`` file
+
+        :param version_str: raw version str
+        :type version_str: str
+        :returns: version tuple
+        :rtype: tuple[int | str, ...]
+        """
+        try:
+            ver, local = sanitize_tag(version_str)
+        except ValueError:
+            return (version_str,)
+
+        sv = SemVersion()
+        sv.parse_ver(ver, local=local)
+
+        version_fields: tuple[int | str, ...] = sv.release
+
+        if sv.dev is not None:
+            version_fields += (f"dev{sv.dev}",)
+        else:  # pragma: no cover
+            pass
+
+        if sv._local is not None:
+            version_fields += (sv._local,)
+        else:  # pragma: no cover
+            pass
+
+        return version_fields
+
+    def parse_ver(self, ver, local=None):
         """Safely parses the semantic version str. The epoch and local
         will be removed.
 
         :param ver: version str. Best to preprocess this using sanitize_tag
         :type ver: str
+        :param local:
+
+           Default None. local format ``+g[commit].d[YYYYMMDD]``.
+           Format wrong if there isn't minimum one tagged version
+
+        :type local: str | None
         :raises:
 
            - :py:exc:`ValueError` -- Invalid version string. git
@@ -1068,6 +1182,17 @@ class SemVersion:
         self._releaselevel = releaselevel
         self._serial = serial
         self._dev = dev
+        if local is None:  # pragma: no cover
+            self._local = None
+        else:
+            is_unsupported = not isinstance(local, str)
+            is_empty_str = isinstance(local, str) and len(local.strip()) == 0
+            if is_unsupported or is_empty_str:  # pragma: no cover
+                self._local = None
+            else:
+                self._local = local
+
+        self._release = (major, minor, micro)
 
     def version_xyz(self):
         """Get xyz version. Call parse_ver first
@@ -1166,16 +1291,24 @@ class SemVersion:
 
         return ret
 
-    def version_clean(self, kind, package_name=None):
-        """Gets cleaned version str from git
-
-        Override by passing in a version str
+    def version_clean(self, kind):
+        """Gets cleaned version str from either git or version_file.
 
         - "current" or "now"
           Gets current version thru setuptools-scm
 
         - "tag"
-          Gets the last tagged version. Uses :command:`git describe --tag`
+          Gets version from version file. Greatly depends on the
+          ``pyproject.toml`` being valid and well configured.
+
+          If ``pyproject.toml`` doesn't exist or malformed will raise a
+          :py:exc:`AssertionError`. For any other reason, will issue a
+          warning and return None.
+
+          Prefer to fallback to the current version rather than not be
+          able to return a version str at all. Convert the
+          warning --> strerr, so have a chance to correct the problem
+          without sacrificing usability
 
         - a version str
           Uses that version str. Use this to create prerelease, post
@@ -1183,29 +1316,16 @@ class SemVersion:
 
         :param kind: a known kind or a version str
         :type kind: str
-        :param package_name:
-
-           Default None. Package name so as to avoid getting it from git
-
-        :type package_name: str | None
         :returns: cleaned version str
         :rtype: str
         :raises:
 
-           - :py:exc:`AssertionError` -- Could not get package name from git
-
-           - :py:exc:`SetuptoolsSCMNoTaggedVersionError` -- Neither a
-             tagged version nor a first commit. Create a commit and
-             preferrably a tagged version
+           - :py:exc:`AssertionError` -- ``pyproject.toml`` missing or malformed
 
            - :py:exc:`ValueError` -- Explicit version str invalid
 
         """
         cls = type(self)
-        msg_exc = (
-            "Neither a tagged version nor a first commit. "
-            "Make first commit. Preferrably a tagged version"
-        )
 
         # sanitize again just in case
         # returns: current, tag, or version str
@@ -1215,7 +1335,7 @@ class SemVersion:
             # Version str. Will become next version
             git_ver = kind_
             try:
-                clean_ver = sanitize_tag(git_ver)
+                clean_ver, local = sanitize_tag(git_ver)
             except ValueError:
                 self._version = None
                 raise
@@ -1223,40 +1343,39 @@ class SemVersion:
             # Don't sanitize. Affects src/[project name]/_version.py
             # Automagically written by setuptools-scm. Version -- git
             if kind_ == cls.CURRENT_ALIAS_DEFAULT:
-                # Most likely development version
+                """Most likely development version
+                No git init, current version --> "0.0.1"
+                """
                 func = partial(_current_version, path=self.path_cwd)
                 git_ver = func()
-                if git_ver is None:
-                    self._version = None
-                    # No current version only happens when no first commit
-                    raise SetuptoolsSCMNoTaggedVersionError(msg_exc)
-                else:  # pragma: no cover
-                    # Do nothing
-                    pass
             else:
                 """last tagged version. May throw AttributeError if
-                cannot get package_name"""
+                has pyproject.toml configuration issues"""
                 func = partial(
                     _tag_version,
                     path=self.path_cwd,
-                    package_name=package_name,
                 )
                 git_ver = func()
+                # Check -- version file semantic version str
+                if git_ver is not None:
+                    try:
+                        sanitize_tag(git_ver)
+                    except ValueError:
+                        # invalid semantic version str in version file
+                        git_ver = None
+                else:  # pragma: no cover
+                    pass
+
                 if git_ver is None:
-                    # No tagged version. Fallback to current version
+                    """No tagged version. Fallback to current version.
+                    No git init, current version --> "0.0.1"
+                    """
                     func = partial(_current_version, path=self.path_cwd)
                     git_ver = func()
-                    if git_ver is None:
-                        self._version = None
-                        """Neither a tagged version nor a first commit.
-                        Definitely raise warning"""
-                        raise SetuptoolsSCMNoTaggedVersionError(msg_exc)
-                    else:  # pragma: no cover
-                        # Do nothing
-                        pass
-                else:
+                else:  # pragma: no cover
                     pass
-            clean_ver = sanitize_tag(git_ver)
+
+            clean_ver, local = sanitize_tag(git_ver)
 
         self._version = clean_ver
 

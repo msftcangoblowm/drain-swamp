@@ -143,6 +143,33 @@ ifeq ($(is_venv),1)
 	@$(SPHINXBUILD) -b doctest "$(SOURCEDIR)" "$(BUILDDIR)"
 endif
 
+##@ View
+
+.PHONY: pdf-view
+pdf-view:				## Open in pdf viewier
+	@DESKTOP_DIR=/usr/share/applications
+	pdf_viewer=$$(/bin/xdg-mime query default application/pdf)
+	if [[ "$$pdf_viewer" = "gimp.desktop" && -f $$DESKTOP_DIR/org.gnome.Evince.desktop ]]; then
+	/bin/xdg-mime default org.gnome.Evince.desktop application/pdf
+	fi
+	while read f_path; do
+	abspath_pdf=$$f_path
+	done < <(/bin/find $(CURDIR)/_build/latex -maxdepth 1 -type f -name "*.pdf" -print)
+
+	if [[ -x "/bin/xdg-open" ]] && [[ -f "$${abspath_pdf}" ]]; then
+	/bin/xdg-open $$abspath_pdf
+	fi
+
+.PHONY: html-view
+html-view:				## Open in web browser
+	@arr=("index" "intro")
+	for master_doc in $${arr[@]}; do
+	abspath_html=$(CURDIR)/_build/html/$$master_doc.html
+	if [[ -x "/bin/xdg-open" ]] && [[ -f "$$abspath_html" ]]; then
+	/bin/xdg-open $$abspath_html
+	fi
+	done
+
 ##@ Misc
 
 # Put it first so that "make" without argument is like "make help".

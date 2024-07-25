@@ -1,0 +1,8 @@
+include _req_links/backend.py
+global-include *.lnk
+
+include LICENSE
+include CHANGELOG.rst
+
+include tox.ini
+prune src/_version.py

@@ -62,6 +62,7 @@ from .check_type import (
 from .constants import (
     SUFFIX_IN,
     SUFFIX_LOCKED,
+    SUFFIX_SYMLINK,
     SUFFIX_UNLOCKED,
     g_app_name,
 )
@@ -71,7 +72,7 @@ from .exceptions import (
     PyProjectTOMLParseError,
     PyProjectTOMLReadError,
 )
-from .parser_in import get_pyproject_toml
+from .parser_in import TomlParser
 
 if sys.version_info >= (3, 9):  # pragma: no cover
     from collections.abc import Sequence
@@ -202,32 +203,46 @@ def get_optionals_pyproject_toml(
             and mixed_blob is not None
             and isinstance(mixed_blob, Sequence)
         )
-        _logger.info(f"is_optionals: {is_optionals}")
+        if is_module_debug:  # pragma: no cover
+            _logger.info(f"is_optionals: {is_optionals}")
+        else:  # pragma: no cover
+            pass
+
         if is_optionals:
             for d_optional_dependency in mixed_blob:
-                target = None
-                opt = None
                 if "target" in d_optional_dependency.keys():
                     target = d_optional_dependency["target"]
+                else:  # pragma: no cover
+                    target = None
+
                 if "relative_path" in d_optional_dependency.keys():
                     opt = d_optional_dependency["relative_path"]
+                else:  # pragma: no cover
+                    opt = None
 
-                if target is None or opt is None:  # pragma: no cover
+                is_missing_expected_keys = target is None or opt is None
+                if is_missing_expected_keys:  # pragma: no cover
                     """a dict, but no recognized keys. Expected target
                     and relative_path"""
                     continue
+                else:  # pragma: no cover
+                    pass
 
                 is_pathlike = isinstance(opt, str) or issubclass(type(opt), PurePath)
                 if is_module_debug:  # pragma: no cover
-                    _logger.info(f"is_pathlike: {is_pathlike}")
+                    msg_info = f"is_pathlike: {is_pathlike}"
+                    _logger.info(msg_info)
                 else:  # pragma: no cover
                     pass
+
                 if is_pathlike:
                     path_opt = Path(opt)
                     if is_module_debug:  # pragma: no cover
-                        _logger.info(f"target / rel path: {target} / {path_opt}")
+                        msg_info = f"target / rel path: {target} / {path_opt}"
+                        _logger.info(msg_info)
                     else:  # pragma: no cover
                         pass
+
                     try_dict_update(
                         d_both,
                         path_config,
@@ -275,7 +290,11 @@ def get_required_pyproject_toml(
             and mixed_blob is not None
             and isinstance(mixed_blob, dict)
         )
-        _logger.info(f"is_required: {is_required}")
+        if is_module_debug:  # pragma: no cover
+            _logger.info(f"is_required: {is_required}")
+        else:  # pragma: no cover
+            pass
+
         if is_required:
             is_target = "target" in mixed_blob.keys()
             is_relative_path = "relative_path" in mixed_blob.keys()
@@ -620,8 +639,8 @@ class BackendType(abc.ABC):
 
         :param path_config: ``pyproject.toml`` folder path
         :type path_config: pathlib.Path
-        :returns: None if issue with the file otherwise pyproject.toml dict
-        :rtype: dict[str, typing.Any]
+        :returns: ``pyproject.toml`` dict and resolved path to file
+        :rtype: tuple[dict[str, typing.Any], pathlib.Path]
         :raises:
 
            - :py:exc:`drain_swamp.exceptions.PyProjectTOMLParseError` --
@@ -632,20 +651,34 @@ class BackendType(abc.ABC):
 
         """
         # Expects a Path. get_pyproject_toml call won't create a TypeError
-        assert issubclass(type(path_config), PurePath)
+        if is_module_debug:  # pragma: no cover
+            _logger.info(f"BackendType.read path_config: {path_config!r}")
+        else:  # pragma: no cover
+            pass
+
+        is_type_ng = path_config is None or not (
+            isinstance(path_config, str) or issubclass(type(path_config), PurePath)
+        )
+
+        # Avoids TypeError during resolve_pyproject_toml call
+        if is_type_ng:
+            msg_exc = "pyproject.toml is either not a file or lacks r/w permission"
+            raise PyProjectTOMLReadError(msg_exc)
+        else:  # pragma: no cover
+            pass
+
         try:
             # raise TypeError, FileNotFoundError, or PyProjectTOMLParseError
-            d_pyproject_toml = get_pyproject_toml(path_config)
-        except PyProjectTOMLParseError:
-            """Create package specific exception. Need to know
-            ``pyproject.toml`` can't be parsed
-            """
+            tp = TomlParser(
+                path_config,
+                raise_exceptions=True,
+            )
+            d_pyproject_toml = tp.d_pyproject_toml
+            path_f = tp.path_file
+        except (PyProjectTOMLParseError, PyProjectTOMLReadError):
             raise
-        except FileNotFoundError as e:
-            msg_exc = "pyproject.toml is either not a file or lacks r/w permission"
-            raise PyProjectTOMLReadError(msg_exc) from e
 
-        return d_pyproject_toml
+        return d_pyproject_toml, path_f
 
     @staticmethod
     def load_factory(
@@ -694,17 +727,34 @@ class BackendType(abc.ABC):
              No support yet for python package backend
 
         """
+
+        # During testing, path_config can be cwd, while parent_dir is tmp_path
+        if parent_dir is not None and issubclass(type(parent_dir), PurePath):
+            path_override = parent_dir
+        else:
+            path_override = path_config
+
+        if is_module_debug:  # pragma: no cover
+            msg_info = (
+                "drain_swamp.backend_abc.BackendType:load_factory "
+                f"path_override {path_override!r}"
+            )
+            _logger.info(msg_info)
+        else:  # pragma: no cover
+            pass
+
         # May raise PyProjectTOMLParseError or PyProjectTOMLReadError
-        d_pyproject_toml = BackendType.read(path_config)
+        d_pyproject_toml, path_f = BackendType.read(path_override)
 
         str_backend = BackendType.determine_backend(d_pyproject_toml)
+        lst_registered = list(BackendType.get_registered())
 
         ret = None
-        for kls in BackendType.get_registered():
+        for kls in lst_registered:
             if kls.BACKEND_NAME == str_backend:
                 ret = kls(  # type: ignore[call-arg]
                     d_pyproject_toml,
-                    path_config,
+                    path_f,
                     required=required,
                     optionals=optionals,
                     parent_dir=parent_dir,
@@ -715,7 +765,13 @@ class BackendType(abc.ABC):
                 pass
 
         if ret is None:
-            msg_exc = f"No support yet for python package backend {str_backend}"
+            backends_name = [kls.BACKEND_NAME for kls in lst_registered]
+            msg_exc = (
+                f"No support yet for python package backend {str_backend}. "
+                f"Registered backends: {backends_name}. The pyproject.toml "
+                f"{path_override}, specify backend in build-system.build-backend "
+                "or override tool.pipenv-unlock.wraps-build-backend"
+            )
             raise BackendNotSupportedError(msg_exc)
         else:  # pragma: no cover
             pass
@@ -803,8 +859,25 @@ class BackendType(abc.ABC):
 
     @staticmethod
     def determine_backend(d_pyproject_toml):
-        """Believes whatever is in the ``pyproject.toml``. Assumes
-        there is a ``pyproject.toml``
+        """If a thin-wrapped custom build backend, must specify build
+        backend
+
+        .. code-block:: text
+
+           [tool.pipenv-unlock]
+           wraps-build-backend = "setuptools.build_meta"
+
+        Example custom build backend
+
+        .. code-block:: text
+
+           [build-system]
+           requires = ["setuptools>=70.0.0", "wheel", "build", "setuptools_scm>=8"]
+           build-backend = "_req_links.backend"
+           backend-path = [
+               ".",
+               "src",
+           ]
 
         :param d_pyproject_toml: ``pyproject.toml`` read in as a dict
         :type d_pyproject_toml: dict[str, typing.Any]
@@ -814,9 +887,25 @@ class BackendType(abc.ABC):
            setuptools.build_meta --> "setuptools"
 
         :rtype: str
+
+        .. seealso::
+
+           https://setuptools.pypa.io/en/latest/build_meta.html#dynamic-build-dependencies-and-other-build-meta-tweaks
+
         """
-        d_build_system = d_pyproject_toml.get("build-system", {})
-        str_build_system = d_build_system["build-backend"]
+        str_build_system = (
+            d_pyproject_toml.get("tool", {})
+            .get("pipenv-unlock", {})
+            .get("wraps-build-backend", None)
+        )
+
+        if str_build_system is None:
+            # build-backend not thin-wrapped
+            d_build_system = d_pyproject_toml.get("build-system", {})
+            str_build_system = d_build_system["build-backend"]
+        else:  # pragma: no cover
+            pass
+
         str_build = str_build_system.split(".")[0]
         ret = cast(str, str_build)
 
@@ -993,14 +1082,15 @@ class BackendType(abc.ABC):
                 path_dir = ensure_folder(path_config)
                 if is_module_debug:  # pragma: no cover
                     msg_info = (
-                        "path_dir (not Path)--> self.path_config ("
-                        f"{type(self.path_config)}): {path_dir}"
+                        f"BackendType.parent_dir setter. path_dir: {path_dir!r} "
+                        f"path config: ({self.path_config!r})"
                     )
                     _logger.info(msg_info)
                 else:  # pragma: no cover
                     pass
             else:
-                if parent_dir.is_absolute() and parent_dir.is_dir():
+                is_abs_dir = parent_dir.is_absolute() and parent_dir.is_dir()
+                if is_abs_dir:
                     # override acceptable
                     path_dir = parent_dir
                     if is_module_debug:  # pragma: no cover
@@ -1008,10 +1098,10 @@ class BackendType(abc.ABC):
                     else:  # pragma: no cover
                         pass
                 else:
-                    # fallback override rejected
-                    # may raise NotADirectoryError
+                    # fallback override rejected may raise NotADirectoryError
                     path_config = self.path_config
                     path_dir = ensure_folder(path_config)
+
                     if is_module_debug:  # pragma: no cover
                         msg_info = (
                             "path_dir (fallback)--> self.path_config("
@@ -1181,19 +1271,27 @@ class BackendType(abc.ABC):
         :rtype: collections.abc.Generator[pathlib.Path, None, None]
         """
         # combine two sets (of absolute paths)
+        mod_path = "backend_abc.BackendType.in_files"
         set_folders = self.folders_implied | self.folders_additional
+        if is_module_debug:  # pragma: no cover
+            _logger.info(f"{mod_path} implied folders: {self.folders_implied}")
+            _logger.info(f"{mod_path} additional folders: {self.folders_additional}")
+            _logger.info(f"{mod_path} set_folders: {set_folders}")
+        else:  # pragma: no cover
+            pass
+
         for rel_path in set_folders:
             if is_module_debug:  # pragma: no cover
-                _logger.info(f"rel_path: {rel_path}")
+                _logger.info(f"{mod_path} rel_path: {rel_path}")
             else:  # pragma: no cover
                 pass
             path_dir = self.parent_dir
             abs_path = path_dir.joinpath(rel_path)
             pattern = f"**/*{SUFFIX_IN}"
             if is_module_debug:  # pragma: no cover
-                _logger.info(f"abs_path: {abs_path}")
-                _logger.info(f"pattern {pattern}")
-                _logger.info(f"""files: {list(abs_path.glob(pattern))}""")
+                _logger.info(f"{mod_path} abs_path: {abs_path}")
+                _logger.info(f"{mod_path} pattern {pattern}")
+                _logger.info(f"""{mod_path} files: {list(abs_path.glob(pattern))}""")
             else:  # pragma: no cover
                 pass
             yield from abs_path.glob(f"**/*{SUFFIX_IN}")
@@ -1216,11 +1314,8 @@ class BackendType(abc.ABC):
         :rtype: bool
         :raises:
 
-           - :py:exc:`TypeError` -- Unsupported type. Expecting a
-             :py:class:`pathlib.Path`
-
-           - :py:exc:`AssertionError` -- In pyproject.toml no section,
-             tool.setuptools.dynamic
+           - :py:exc:`AssertionError` -- in pyproject.toml [tool.setuptools.dynamic]
+              section, expect this section and at least key, dependencies
 
            - :py:exc:`drain_swamp.exceptions.PyProjectTOMLParseError` --
              either not found or cannot be parsed
@@ -1242,16 +1337,16 @@ class BackendType(abc.ABC):
         # This is for the best; parsing quotes in regex is too hard
         # Possible to get a snippet from an invalid ``pyproject.toml`` file
         # May raise PyProjectTOMLParseError or PyProjectTOMLReadError
+        if is_module_debug:  # pragma: no cover
+            msg_info = f"BackendType.is_locked reading path config: {path_config!r}"
+            _logger.info(msg_info)
+        else:  # pragma: no cover
+            pass
+
         try:
-            d_pyproject_toml = BackendType.read(path_config)
+            d_pyproject_toml, path_f = BackendType.read(path_config)
         except (PyProjectTOMLParseError, PyProjectTOMLReadError):
             raise
-        except AssertionError as e:
-            msg_exc = (
-                "path_config must be a Path and absolute. To a "
-                f"pyproject.toml file {path_config}"
-            )
-            raise TypeError(msg_exc) from e
 
         if is_module_debug:  # pragma: no cover
             _logger.info(f"BackendType.is_locked d_pyproject_toml: {d_pyproject_toml}")
@@ -1261,15 +1356,29 @@ class BackendType(abc.ABC):
         locks = []
         unlocks = []
 
-        def sorting_hat(abspath: Path) -> None:
+        def sorting_hat(relpath: Path) -> None:
             nonlocal locks
             nonlocal unlocks
+            nonlocal path_f
 
-            file_name = abspath.name
+            file_name = relpath.name
             if file_name.endswith(SUFFIX_LOCKED):
-                locks.append(abspath)
+                locks.append(relpath)
             elif file_name.endswith(SUFFIX_UNLOCKED):
-                unlocks.append(abspath)
+                unlocks.append(relpath)
+            elif file_name.endswith(SUFFIX_SYMLINK):
+                # resolve symlink gets the file towhich it points
+                abspath_package = path_f.parent
+                abspath_dependency_file = abspath_package / relpath
+                path_resolved = abspath_dependency_file.resolve()
+
+                dependency_file_name = path_resolved.name
+                if dependency_file_name.endswith(SUFFIX_LOCKED):
+                    locks.append(path_resolved)
+                elif dependency_file_name.endswith(SUFFIX_UNLOCKED):
+                    unlocks.append(path_resolved)
+                else:  # pragma: no cover
+                    pass
             else:  # pragma: no cover
                 pass
 
@@ -1308,18 +1417,14 @@ class BackendType(abc.ABC):
             d_pyproject_toml.get("tool", {}).get("setuptools", {}).get("dynamic", {})
         )
         is_no_tool_setuptools_dynamic_section = len(section_.keys()) == 0
-        if is_no_tool_setuptools_dynamic_section:
-            msg_exc = (
-                "In pyproject.toml, there is no tool.setuptools.dynamic section. "
-                "Create this section"
-            )
-            raise AssertionError(msg_exc)
 
+        required_count = 0
         for target, d_ in section_.items():
             if target == "dependencies":
                 # required dependencies
                 files = d_.get("file", [])
                 for f_relpath in files:
+                    required_count += 1
                     sorting_hat(Path(f_relpath))
             elif target == "optional-dependencies":
                 # optional dependencies
@@ -1329,6 +1434,24 @@ class BackendType(abc.ABC):
                         sorting_hat(Path(f_relpath))
             else:  # pragma: no cover
                 pass
+
+        if is_no_tool_setuptools_dynamic_section or required_count != 1:
+            """Minimally a package has one dependencies ``.in`` with
+            cooresponding ``.unlock`` and ``.lock``
+
+            .. code-block:: text
+
+               [tool.setuptools.dynamic]
+               # @@@ editable little_shop_of_horrors_shrine_candles
+               dependencies = { file = ["requirements/prod.unlock"] }
+               # @@@ end
+
+            """
+            msg_exc = (
+                "in pyproject.toml [tool.setuptools.dynamic] section, "
+                "expect this section and at least key, dependencies"
+            )
+            raise AssertionError(msg_exc)
 
         if is_module_debug:  # pragma: no cover
             _logger.info(f"BackendType.is_locked locks: {locks}")

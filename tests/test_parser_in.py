@@ -5,27 +5,26 @@
 
 Unittest for module, drain_swamp.backend_setupttools
 
-Without coverage
-
 .. code-block:: shell
 
    pytest --showlocals --log-level INFO tests/test_parser_in.py
-
-With coverage
-
-.. code-block:: shell
-
    pytest --showlocals --cov="drain_swamp" --cov-report=term-missing tests/test_parser_in.py
 
 """
 
 import sys
-from pathlib import Path
+from pathlib import (
+    Path,
+    PurePath,
+)
 
 import pytest
 
-from drain_swamp.exceptions import PyProjectTOMLParseError
-from drain_swamp.parser_in import get_pyproject_toml
+from drain_swamp.exceptions import (
+    PyProjectTOMLParseError,
+    PyProjectTOMLReadError,
+)
+from drain_swamp.parser_in import TomlParser
 
 if sys.version_info >= (3, 9):  # pragma: no cover
     from collections.abc import Mapping
@@ -53,75 +52,92 @@ ids_unsupported_type = (
 )
 def test_get_pyproject_toml_unsupported_type(invalid):
     # pytest --showlocals --log-level INFO -k "test_get_pyproject_toml_unsupported_type" tests
-    with pytest.raises(TypeError):
-        get_pyproject_toml(invalid)
+    with pytest.raises(PyProjectTOMLReadError):
+        TomlParser(invalid, raise_exceptions=True)
 
 
-def test_get_pyproject_toml_path_bad(tmp_path):
-    # pytest --showlocals --log-level INFO -k "test_get_pyproject_toml_path_bad" tests
+testdata_random_folders_and_files = (
+    pytest.param(
+        Path("/etc"),
+        marks=pytest.mark.xfail(raises=PyProjectTOMLReadError),
+    ),
+    pytest.param(
+        Path("/etc/dog_shit_throwing_monkey.conf"),
+        marks=pytest.mark.xfail(raises=PyProjectTOMLReadError),
+    ),
+    (Path("__init__.py")),
+)
+ids_random_folders_and_files = (
+    "folder without a pyproject.toml in it",
+    "absolute but nonexistent",
+    "realitive path which shockingly resolves",
+)
+
+
+@pytest.mark.parametrize(
+    "path_f",
+    testdata_random_folders_and_files,
+    ids=ids_random_folders_and_files,
+)
+def test_random_folders_and_files(path_f):
+    # pytest --showlocals --log-level INFO -k "test_random_folders_and_files" tests
     # A Path but dodgy --> FileNotFoundError
-    invalids = (
-        Path("/etc"),  # folder without a pyproject.toml in it
-        tmp_path.joinpath("hi_there.txt"),  # absolute but nonexistent
-        Path("__init__.py"),  # not absolute
-    )
-    for invalid in invalids:
-        with pytest.raises(FileNotFoundError):
-            get_pyproject_toml(invalid)
+    TomlParser(path_f, raise_exceptions=True)
 
 
-PYPROJECT_TOML_BAD = list(
+testdata_unparsable = list(
     Path(__file__).parent.joinpath("_bad_files").glob("backend_only.pyproject_toml")
 )
 
 
 @pytest.mark.parametrize(
-    "path",
-    PYPROJECT_TOML_BAD,
-    ids=[path.name.rsplit(".", 1)[0] for path in PYPROJECT_TOML_BAD],
+    "path_toml_src",
+    testdata_unparsable,
+    ids=[path.name.rsplit(".", 1)[0] for path in testdata_unparsable],
 )
-def test_get_pyproject_toml_bad(path):
+def test_get_pyproject_toml_bad(path_toml_src, tmp_path, prep_pyproject_toml):
     # pytest --showlocals --log-level INFO -k "test_get_pyproject_toml_bad" tests
 
     # file_as_str = path.read_text()
     # Provide a path, not the file contents
-    invalids = (
-        path,
-        str(path),
-        # file_as_str,
-    )
+    path_f = prep_pyproject_toml(path_toml_src, tmp_path)
+    invalids = (path_f,)
     for invalid in invalids:
         with pytest.raises(PyProjectTOMLParseError):
-            get_pyproject_toml(invalid)
+            TomlParser(invalid, raise_exceptions=True)
+        tp = TomlParser(invalid, raise_exceptions=False)
+        actual = tp.d_pyproject_toml
+        assert actual is None
 
 
-PYPROJECT_TOML_GOOD = list(
+testdata_valid_pyproject_toml = list(
     Path(__file__).parent.joinpath("_good_files").glob("*.pyproject_toml")
 )
 
 
 @pytest.mark.parametrize(
-    "path",
-    PYPROJECT_TOML_GOOD,
-    ids=[path.name.rsplit(".", 1)[0] for path in PYPROJECT_TOML_GOOD],
+    "path_toml_src",
+    testdata_valid_pyproject_toml,
+    ids=[path.name.rsplit(".", 1)[0] for path in testdata_valid_pyproject_toml],
 )
-def test_get_pyproject_toml_good(path):
+def test_get_pyproject_toml_good(path_toml_src, tmp_path, prep_pyproject_toml):
     # pytest --showlocals --log-level INFO -k "test_get_pyproject_toml_good" tests
-    valids = (
-        path,
-        str(path),
-    )
+    path_f = prep_pyproject_toml(path_toml_src, tmp_path)
+    valids = (path_f,)
     for valid in valids:
         # Provide a path, not the file contents
-        actual = get_pyproject_toml(valid)
-        assert isinstance(actual, Mapping)
+        tp = TomlParser(valid)
+        actual_dict = tp.d_pyproject_toml
+        assert isinstance(actual_dict, Mapping)
+        path_actual = tp.path_file
+        assert issubclass(type(path_actual), PurePath)
 
 
-testdata_get_pyproject_toml_dir = (
+testdata_search_for_pyproject_toml = (
     Path(__file__).parent.parent,
     Path(__file__).parent,
 )
-ids_get_pyproject_toml_dir = (
+ids_search_for_pyproject_toml = (
     "package base folder",
     "tests folder",
 )
@@ -129,10 +145,32 @@ ids_get_pyproject_toml_dir = (
 
 @pytest.mark.parametrize(
     "path_dir",
-    testdata_get_pyproject_toml_dir,
-    ids=ids_get_pyproject_toml_dir,
+    testdata_search_for_pyproject_toml,
+    ids=ids_search_for_pyproject_toml,
 )
-def test_get_pyproject_toml_dir(path_dir):
+def test_search_for_pyproject_toml(path_dir):
     # pytest --showlocals --log-level INFO -k "test_get_pyproject_toml_dir" tests
-    actual = get_pyproject_toml(path_dir)
+    tp = TomlParser(path_dir, raise_exceptions=True)
+    actual = tp.d_pyproject_toml
     assert isinstance(actual, Mapping)
+
+    # classmethod TomlParser.resolve accepts str
+    dir_path = str(path_dir)
+    actual = TomlParser.resolve(dir_path)
+    assert issubclass(type(actual), PurePath)
+
+
+def test_pyproject_toml_search_fail(tmp_path):
+    # pytest --showlocals --log-level INFO -k "test_pyproject_toml_search_fail" tests
+    # there should be no pyproject.toml in the reverse path
+    path_f = tmp_path.joinpath("some_file.txt")
+    with pytest.raises(PyProjectTOMLReadError):
+        TomlParser(path_f, raise_exceptions=True)
+
+    invalids = (
+        "Go team!",
+        0.1234,
+    )
+    for invalid in invalids:
+        tp = TomlParser(path_f, raise_exceptions=invalid)
+        assert tp.d_pyproject_toml is None

@@ -9,8 +9,9 @@ igor.py utils
    Module level logger
 
 .. py:data:: __all__
-   :type: tuple[str, str, str, str, str]
-   :value: ("seed_changelog", "edit_for_release", "build_package", "pretag", "print_cheats")
+   :type: tuple[str, str, str, str, str, str]
+   :value: ("seed_changelog", "edit_for_release", "build_package", \
+   "pretag", "print_cheats", "get_tag_version", "write_version_file")
 
 .. py:data:: SCRIV_START
    :type: str
@@ -47,16 +48,18 @@ from pathlib import (
     PurePath,
 )
 
+from ._run_cmd import run_cmd
 from .check_type import is_ok
-from .constants import g_app_name
 from .package_metadata import PackageMetadata
-from .parser_in import get_d_pyproject_toml
+from .parser_in import TomlParser
 from .snippet_sphinx_conf import SnipSphinxConf
+from .version_file.dump_version import write_version_files
 from .version_semantic import (
     SemVersion,
-    SetuptoolsSCMNoTaggedVersionError,
     _current_version,
+    _path_or_cwd,
     _scm_key,
+    get_package_name,
     sanitize_tag,
 )
 
@@ -66,6 +69,8 @@ __all__ = (
     "build_package",
     "pretag",
     "print_cheats",
+    "get_tag_version",
+    "write_version_file",
 )
 __package__ = "drain_swamp"
 
@@ -219,7 +224,7 @@ def edit_for_release(path_cwd, kind, snippet_co=None):
             package_name,
             copyright_start_year,
         )
-    except (SetuptoolsSCMNoTaggedVersionError, AssertionError, ValueError) as e:
+    except (AssertionError, ValueError) as e:
         msg_exc = str(e)
         print(msg_exc, file=sys.stderr)
         return 2
@@ -276,7 +281,294 @@ def edit_for_release(path_cwd, kind, snippet_co=None):
         pass
 
 
-def build_package(path, kind, package_name=None):
+def get_version_file_path(path):
+    """Get version file relative path, from pyproject.toml,
+    tool.pipenv-unlock.version_file
+
+    :param path: absolute path to either package base folder or ``pyproject.toml``
+    :type path: pathlib.Path
+    :returns:
+
+       version file relative path. Relative to package base path. None
+       if issue with ``pyproject.toml``
+
+    :rtype: str | None
+    """
+    path_ = _path_or_cwd(path)
+    tp = TomlParser(path_)
+    d_pyproject_toml = tp.d_pyproject_toml
+    if d_pyproject_toml is not None:
+        ret = (
+            d_pyproject_toml.get("tool", {})
+            .get("pipenv-unlock", {})
+            .get("version_file", None)
+        )
+    else:
+        ret = None
+
+    return ret
+
+
+class AlterEnv:
+    """setuptools thin wrapped build-backend will need to modify the
+    in-process environment to inform setuptools-scm which version to use.
+
+    That will mean getting the key / value only via subprocess to an
+    pep366 compliant entrypoint
+
+    :ivar path: Current working directory path
+    :vartype path: pathlib.Path
+    :ivar kind:
+
+       version str, "tag", or "current" or "now". For tagged versions, a version str
+
+    :vartype kind: str
+    :raises:
+
+       - :py:exc:`NotADirectoryError` -- cwd is not a folder
+
+       - :py:exc:`AssertionError` -- Could not get package name from pyproject.toml
+
+       - :py:exc:`ValueError` -- Explicit version str invalid
+
+    """
+
+    __slots__ = (
+        "_path_cwd",
+        "_pkg_name",
+        "_scm_override_val",
+        "_scm_override_key",
+        "_version_file",
+    )
+
+    def __init__(self, path, kind):
+        super().__init__()
+        try:
+            sv = SemVersion(path=path)
+        except (NotADirectoryError, FileNotFoundError) as e:
+            msg_exc = f"Expecting a folder path. Got a file {path}.\n{str(e)}"
+            raise NotADirectoryError(msg_exc) from e
+
+        try:
+            # fallback version "0.0.1"
+            # afterwards path available as sv.path_cwd
+            ver = sv.version_clean(kind)
+        except AssertionError:
+            """Has pyproject.toml configuration issues or version file is bad
+            Test: kind="tag", package_name="asdfasfsadfasdfasdf"
+            """
+            raise
+        except ValueError:
+            """Explicit version str invalid. Either from version_file,
+            scm (aka git), or explicit e.g. kind='golf balls'"""
+            raise
+
+        self._path_cwd = sv.path_cwd
+        self._scm_override_val = ver
+
+        pkg_name = get_package_name(path)
+        if pkg_name is None:
+            msg_exc = "Could not get package name from pyproject.toml"
+            raise AssertionError(msg_exc)
+        else:  # pragma: no cover
+            pass
+        self._pkg_name = pkg_name
+
+        self.scm_key = _scm_key(pkg_name)
+
+        # TypeError or ValueError --> AssertionError
+        version_file = get_version_file_path(path)
+        try:
+            self.version_file = version_file
+        except TypeError as e:
+            msg_warn = "Expecting a relative path to version file"
+            raise AssertionError(msg_warn) from e
+
+    def modify_env(self):
+        """Get a modified :py:data:`os.environ`
+        Alter environment so setuptools-scm knows what the version should be
+
+        :returns: Modified os.environ Pass to a subprocess
+        :rtype: os.Environ[typing.Any]
+        """
+        env = os.environ.copy()
+        env |= {self.scm_key: self.scm_val}
+
+        return env
+
+    @property
+    def path_cwd(self):
+        """current working directory path.
+
+        SemVersion does a good job at user input validation
+
+        :returns: cwd path
+        :rtype: pathlib.Path
+        """
+        return self._path_cwd
+
+    @property
+    def scm_key(self):
+        """setuptools-scm key
+
+        :returns: setuptools-scm key for forcing a particular version
+        :rtype: str
+        """
+        return self._scm_override_key
+
+    @scm_key.setter
+    def scm_key(self, val):
+        """Setter for scm_key. Ensure upper case and underscore, not hyphen
+
+        :param val: Value to be set
+        :type val: typing.Any
+        """
+        if val is not None and isinstance(val, str):
+            val = val.upper()
+            ret = val.replace("-", "_")
+            self._scm_override_key = ret
+        else:  # pragma: no cover
+            pass
+
+    @property
+    def scm_val(self):
+        """setuptools-scm value
+
+        :returns: setuptools-scm val for forcing a particular version
+        :rtype: str
+        """
+        return self._scm_override_val
+
+    @property
+    def pkg_name(self):
+        """Package name from pyproject.toml project.name
+
+        :returns: Package name
+        :rtype: str
+        """
+        return self._pkg_name
+
+    @property
+    def version_file(self):
+        """version file relative path
+
+        :returns: version file relative path
+        :rtype: str | None
+        """
+        return self._version_file
+
+    @version_file.setter
+    def version_file(self, val) -> None:
+        """Version file setter
+        :param val: relative Path to version file
+        :type val: typing.Any | None
+        :raises:
+
+           - :py:exc:`TypeError` -- expecting a Path
+
+        """
+        if val is None or not isinstance(val, str):
+            msg_exc = "Could not get version_file from pyproject.toml"
+            raise TypeError(msg_exc)
+        else:
+            self._version_file = val
+
+
+def get_tag_version(path):
+    """Specifically want version from version file, not current version
+    from setuptools-scm and git.
+
+    If ``pyproject.toml`` is missing or malformed raise :py:exc:`AssertionError`.
+
+    For all other issues, issue a warning and fallback to current version.
+    Always want a semantic version str, even if it's wrong. The warning will indicate
+    what needs to be fixed
+
+    :param path: current working directory path
+    :type path: pathlib.Path
+    :param is_test: Default False. During testing set to True
+    :type is_test: bool | None
+    :returns: tag version fall back to current version
+    :rtype: str
+    :raises:
+
+       - :py:exc:`NotADirectoryError` -- cwd is not a folder
+
+       - :py:exc:`AssertionError` -- pyproject.toml is missing or malformed
+
+       - :py:exc:`ValueError` -- Explicit version str invalid
+
+    """
+    kind = "tag"
+    try:
+        ae = AlterEnv(path, kind)
+    except (ValueError, AssertionError):
+        raise
+
+    # tag version (from version file) fallback current version
+    # catpure warnings and redirect to stderr
+    ver = ae.scm_val
+
+    return ver
+
+
+def write_version_file(path, kind, is_test=False):
+    """Writes version file. Uses vendored setuptools-scm code
+
+    From pyproject.toml requires:
+
+    - project.name
+
+    - tool.pipenv-unlock.version_file
+
+    :param path: current working directory path
+    :type path: pathlib.Path
+    :param kind:
+
+       version str, "tag", or "current" or "now". For tagged versions, a version str
+
+    :type kind: str
+    :param is_test: Default False. During testing set to True
+    :type is_test: bool | None
+    :raises:
+
+       - :py:exc:`NotADirectoryError` -- cwd is not a folder
+
+       - :py:exc:`AssertionError` -- Could not get package name from pyproject.toml
+
+       - :py:exc:`ValueError` -- Explicit version str invalid
+
+       - :py:exc:`ValueError` -- Only support write to .py or .txt file
+
+    """
+    if is_test is None or not isinstance(is_test, bool):
+        is_test = False
+    else:  # pragma: no cover
+        pass
+
+    try:
+        ae = AlterEnv(path, kind)
+    except (ValueError, AssertionError):
+        raise
+
+    ver = ae.scm_val
+    root = ae.path_cwd
+    if is_test:
+        write_to = ae.version_file
+        version_file = None
+    else:  # pragma: no cover
+        write_to = None
+        version_file = ae.version_file
+
+    try:
+        write_version_files(ver, root, write_to, version_file)
+    except ValueError:
+        # if is_test=True does not validate the template, so ValueError
+        # target not a ``.txt`` or ``.py`` file
+        raise
+
+
+def build_package(path, kind):
     """Build package
 
     Replaces / obsoletes
@@ -295,12 +587,6 @@ def build_package(path, kind, package_name=None):
        version str, "tag", or "current" or "now". For tagged versions, a version str
 
     :type kind: str
-    :param package_name:
-
-       Default None. project or package name (hyphens or underscores).
-       If not provided, will attempt to get from project metadata then pyproject.toml
-
-    :type package_name: str | None
     :returns: True if build succeeded otherwise False
     :rtype: bool
     :raises:
@@ -311,10 +597,6 @@ def build_package(path, kind, package_name=None):
 
        - :py:exc:`ValueError` -- Explicit version str invalid
 
-       - :py:exc:`SetuptoolsSCMNoTaggedVersionError` -- Neither a
-         tagged version nor a first commit. Create a commit and
-         preferrably a tagged version
-
     .. caution:: side effect
 
        kind will update [app name]/src/_version.py (done by setupttools-scm)
@@ -322,58 +604,26 @@ def build_package(path, kind, package_name=None):
     """
     # expecting Path cwd
     try:
-        sv = SemVersion(path=path)
-    except (NotADirectoryError, FileNotFoundError) as e:
-        msg_exc = f"Expecting a folder path. Got a file {path}.\n{str(e)}"
-        raise NotADirectoryError(msg_exc) from e
-
-    try:
-        # afterwards path available as sv.path_cwd
-        ver = sv.version_clean(kind, package_name=package_name)
-    except AssertionError as e:
-        if isinstance(e, SetuptoolsSCMNoTaggedVersionError):
-            """For tag and current/now, Neither a tagged version nor a first
-            commit. Create a commit and preferrably a tagged version
-            Test: use unittest.mock.patch"""
-            raise SetuptoolsSCMNoTaggedVersionError(str(e)) from e
-        else:
-            """Could not get package name from git.
-            Test: kind="tag", package_name="asdfasfsadfasdfasdf"
-            """
-            raise
-    except ValueError:
-        """Explicit version str invalid.
-        Test: kind='dog food tastes better than this'"""
+        ae = AlterEnv(path, kind)
+    except Exception:
         raise
+    env = ae.modify_env()
 
-    scm_override_val = ver
-    env = os.environ.copy()
-    scm_override_key = _scm_key(g_app_name)
-    env |= {scm_override_key: scm_override_val}
-
+    # get lock state --> send to backend
+    # 0 to lock; 1 to unlock
+    # --config-setting="--set-lock=1"
     cmd = [sys.executable, "-m", "build"]
-    try:
-        proc = subprocess.run(
-            cmd,
-            shell=False,
-            stdout=subprocess.PIPE,
-            stderr=subprocess.DEVNULL,  # suppress annoying useless warning
-            cwd=sv.path_cwd,
-            env=env,
-            text=True,
-        )
-    except subprocess.CalledProcessError as e:  # pragma: no cover
+    t_out = run_cmd(cmd, cwd=ae.path_cwd, env=env)
+    out, err, exit_code, str_exception = t_out
+    if str_exception is not None:
         """setuptools-scm requires at least one commit. Could not get
         semantic version"""
-        str_err = str(e)
-        print(str_err, file=sys.stderr)
+        print(str_exception, file=sys.stderr)
         ret = False
-    else:
-        str_out = proc.stdout
-        is_fail = proc.returncode != 0
+    else:  # pragma: no cover
+        is_fail = exit_code != 0
         if is_fail:
-            str_out = str_out.rstrip()
-            print(str_out, file=sys.stderr)
+            print(out, file=sys.stderr)
             ret = False
         else:
             ret = True
@@ -395,7 +645,7 @@ def pretag(tag):
     :rtype: tuple[bool, str]
     """
     try:
-        clean_tag = sanitize_tag(tag)
+        clean_tag, local = sanitize_tag(tag)
     except ValueError as e:
         msg = str(e)
         bol_ret = False
@@ -434,7 +684,7 @@ def _get_branch() -> str:
     return ret
 
 
-def print_cheats(path, kind, package_name=None):
+def print_cheats(path, kind):
     """Print cheats
 
     :param path: current working directory path
@@ -444,19 +694,9 @@ def print_cheats(path, kind, package_name=None):
        version str, "tag", or "current" or "now". For tagged versions, a version str
 
     :type kind: str
-    :param package_name:
-
-       Default None. project or package name (hyphens or underscores).
-       If not provided, will attempt to get from project metadata then pyproject.toml
-
-    :type package_name: str | None
     :raises:
 
        - :py:exc:`NotADirectoryError` -- cwd is not a folder
-
-       - :py:exc:`SetuptoolsSCMNoTaggedVersionError` -- Neither a
-         tagged version nor a first commit. Create a commit and
-         preferrably a tagged version
 
        - :py:exc:`AssertionError` -- Could not get package name from git
 
@@ -478,18 +718,12 @@ def print_cheats(path, kind, package_name=None):
 
     try:
         # afterwards path available as sv.path_cwd
-        ver = sv.version_clean(kind, package_name=package_name)
-    except AssertionError as e:
-        if isinstance(e, SetuptoolsSCMNoTaggedVersionError):
-            """For tag and current/now, Neither a tagged version nor a first
-            commit. Create a commit and preferrably a tagged version
-            Test: use unittest.mock.patch"""
-            raise SetuptoolsSCMNoTaggedVersionError(str(e)) from e
-        else:
-            """Could not get package name from git.
-            Test: kind="tag", package_name="asdfasfsadfasdfasdf"
-            """
-            raise
+        ver = sv.version_clean(kind)
+    except AssertionError:
+        """Could not get package name from git.
+        Test: kind="tag", package_name="asdfasfsadfasdfasdf"
+        """
+        raise
     except ValueError:
         """Explicit version str invalid.
         Test: kind='dog food tastes better than this'"""
@@ -498,7 +732,8 @@ def print_cheats(path, kind, package_name=None):
     sv.parse_ver(ver)
     anchor = sv.anchor()
 
-    d_pyproject_toml = get_d_pyproject_toml(path)
+    tp = TomlParser(path)
+    d_pyproject_toml = tp.d_pyproject_toml
     if d_pyproject_toml:
         # PROJECT_NAME
         PROJECT_NAME = d_pyproject_toml.get("project", {}).get("name", None)

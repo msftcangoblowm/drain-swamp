@@ -5,7 +5,7 @@
 
 .. py:data:: __all__
    :type: tuple[str]
-   :value: ("get_pyproject_toml",)
+   :value: ("TomlParser",)
 
    Module exports
 
@@ -20,7 +20,10 @@ from pathlib import (
 )
 from typing import TYPE_CHECKING
 
-from .exceptions import PyProjectTOMLParseError
+from .exceptions import (
+    PyProjectTOMLParseError,
+    PyProjectTOMLReadError,
+)
 from .pep518_read import find_pyproject_toml
 
 if sys.version_info >= (3, 11):  # pragma: no cover
@@ -34,80 +37,147 @@ else:  # pragma: no cover
     import tomli as tomllib
 
 __package__ = "drain_swamp"
-__all__ = ("get_pyproject_toml",)
+__all__ = ("TomlParser",)
 
 
-def get_pyproject_toml(path_config):
-    """Load pyproject.toml
+class TomlParser:
+    """Reverse searches for a ``pyproject.toml`` file and parses it.
 
-    Package click handles converting to :py:class:`pathlib.Path`.
+    Interface provides both the dict and the resolved absolute path
 
-    Example usage
+    :ivar path:
 
-    .. code-block:: text
+       Starting search absolute path. Can be a folder or file. Reverse
+       searches for a ``pyproject.toml`` file
 
-       from drain_swamp.parser_in import get_pyproject_toml
-
-       path_config = Path("[proj path]/requirements/prod.in")
-       d_pyproject_toml = get_pyproject_toml(path_config)
-       config_tables = d_pyproject_toml.get("tool", {}).get("setuptools", {}).get("dynamic", {})
-       for (key, value) in config_tables.items():
-           ...
-
-    :param path_config: absolute path to ``pyproject.toml`` file
-    :type path_config: pathlib.Path
-    :returns: tomllib dict. Cannot know yet which fields are needed
-    :rtype: dict[str, typing.Any]
+    :vartype path: typing.Any | None
+    :ivar raise_exceptions: Default False. Expecting a bool. If True raise exceptions
+    :vartype raise_exceptions: typing.Any | None
     :raises:
 
+       - :py:exc:`drain_swamp.exceptions.PyProjectTOMLReadError` --
+         pyproject.toml either doesn't exist or inaccessible
+
        - :py:exc:`drain_swamp.exceptions.PyProjectTOMLParseError` --
-         parsing toml unsuccessful
-
-       - :py:exc:`TypeError` -- positional arg unsupported type
-
-       - :py:exc:`FileNotFoundError` -- positional arg does not exist or not a file
-
-    .. todo:: demand for setup.cfg / setup.py ?
-
-       There is no support for setup.cfg / setup.py
-
-       Should there be?
-
-    .. todo:: check r/w permissions
-
-       Check file is read write. If not raise a PermissionError
+         pyproject.toml unparsable
 
     """
-    meth_name = "get_pyproject_toml"
-    msg_exc_type_bad = f"Unsupported type expecting a Path. Got {type(path_config)}"
-    is_type_ok = path_config is None or not (
-        issubclass(type(path_config), PurePath) or isinstance(path_config, str)
-    )
-    if is_type_ok:
-        # unsupported type
-        raise TypeError(msg_exc_type_bad)
-    else:  # pragma: no cover
-        pass
 
-    if isinstance(path_config, str):
-        path_file = Path(path_config)
-    else:
-        path_file = path_config
+    def __init__(self, path, raise_exceptions=False):
+        super().__init__()
+        if raise_exceptions is None or not isinstance(raise_exceptions, bool):
+            raise_exceptions = False
+        else:  # pragma: no cover
+            pass
 
-    msg_exc_no_such_file = (
-        f"In {meth_name}, positional arg, no such file {str(path_file)}"
-    )
+        """
+        is_dir = (
+            path is not None
+            and issubclass(type(path), PurePath)
+            and path.exists()
+            and path.is_dir()
+            and path.joinpath("pyproject.toml").exists()
+            and path.joinpath("pyproject.toml").is_file()
+        )
+        is_pyproject_toml = (
+            path is not None
+            and issubclass(type(path), PurePath)
+            and path.exists()
+            and path.is_file()
+            and path.name == "pyproject.toml"
+        )
 
-    is_not_there = not path_file.is_absolute() or (
-        path_file.is_absolute() and not path_file.exists()
-    )
-    if is_not_there:
-        raise FileNotFoundError(msg_exc_no_such_file)
-    else:  # pragma: no cover
-        pass
+        if is_dir:
+            path_config = path.joinpath("pyproject.toml")
+        elif is_pyproject_toml:
+            path_config = path
+        else:
+            path_config = None
+        """
+        if path is None or not issubclass(type(path), PurePath):
+            path_config = None
+        else:
+            path_config = path
 
-    # Ensure we are dealing with ``pyproject.toml`` file
-    if path_file.exists() and path_file.is_dir():
+        try:
+            d_pyproject_toml = self._get_pyproject_toml(path_config)
+        except PyProjectTOMLParseError:
+            if raise_exceptions is True:
+                raise
+            else:
+                d_pyproject_toml = None
+        except (TypeError, FileNotFoundError) as e:
+            if raise_exceptions is True:
+                msg_warn = "pyproject.toml is either not a file or lacks r/w permission"
+                raise PyProjectTOMLReadError(msg_warn) from e
+            else:
+                d_pyproject_toml = None
+
+        self._d_pyproject_toml = d_pyproject_toml
+
+    @property
+    def path_file(self):
+        """Absolute Path to ``pyproject.toml``
+
+        :returns:
+
+           Absolute Path to ``pyproject.toml`` file. Not set if constructor
+           raised an Exception
+
+        :rtype: pathlib.Path | None
+        """
+        return self._path_file
+
+    @property
+    def d_pyproject_toml(self):
+        """Getter pyproject.toml dict
+
+        :returns: pyproject.toml dict. Not set if constructor raised an Exception
+        :rtype: collections.abc.Mapping[str, typing.Any] | None
+        """
+        return self._d_pyproject_toml
+
+    @classmethod
+    def resolve(cls, path_config):
+        """Reverse search for a ``pyproject.toml`` file
+
+        Leverages reverse search algo from Python package, black
+
+        :param path_config:
+
+           Starting absolute path to reserve search for a ``pyproject.toml``.
+           Expecting an absolute path either: Path or str
+
+        :type path_config: typing.Any | None
+        :returns: absolute path to a pyproject.toml
+        :rtype: pathlib.Path
+        :raises:
+
+           - :py:exc:`TypeError` -- Start search path unsupported type
+           - :py:exc:`FileNotFoundError` -- Reverse search pyproject.toml not found
+
+        """
+        meth_name = "resolve_pyproject_toml"
+        msg_exc_type_bad = f"Unsupported type expecting a Path. Got {type(path_config)}"
+        is_type_ng = path_config is None or not (
+            isinstance(path_config, str) or issubclass(type(path_config), PurePath)
+        )
+        if is_type_ng:
+            # unsupported type
+            raise TypeError(msg_exc_type_bad)
+        else:  # pragma: no cover
+            pass
+
+        if isinstance(path_config, str):
+            path_file = Path(path_config)
+        else:
+            path_file = path_config
+
+        msg_exc_no_such_file = (
+            f"In {meth_name}, positional arg, no such file {str(path_file)}"
+        )
+
+        # can be a file or dir or symlink. Try to resolve
         path_dir = path_file
         t_str = (str(path_dir),)
         file_path = find_pyproject_toml(t_str, None)
@@ -115,66 +185,63 @@ def get_pyproject_toml(path_config):
             raise FileNotFoundError(msg_exc_no_such_file)
         else:
             path_file = Path(file_path)
-    elif path_file.exists() and path_file.is_file():
-        # Check path_file.name?
-        pass
-    else:  # pragma: no cover
-        # not a folder or file
-        raise FileNotFoundError(msg_exc_no_such_file)
 
-    # tomllib insists on opened as binary
-    with path_file.open(mode="rb") as f:
-        try:
-            d_ret = tomllib.load(f)
-        except tomllib.TOMLDecodeError as e:
-            msg_exc_pyproject_toml = (
-                "pyproject.toml either not found or cannot be parsed"
-            )
-            raise PyProjectTOMLParseError(msg_exc_pyproject_toml) from e
+        return path_file
 
-    return d_ret
+    def _get_pyproject_toml(self, path_config):
+        """Load pyproject.toml
 
+        Package click handles converting to :py:class:`pathlib.Path`.
 
-def get_d_pyproject_toml(path):
-    """Get pyproject_toml dict
+        Example usage
 
-    See package_metadata.PackageMetadata for testing
+        .. code-block:: text
 
-    :param path:
+           from drain_swamp.parser_in import get_pyproject_toml
 
-       Default None. If the package has yet to be installed, fallback
-       to ``pyproject.toml``
+           path_config = Path("[proj path]/requirements/prod.in")
+           d_pyproject_toml = get_pyproject_toml(path_config)
+           config_tables = d_pyproject_toml.get("tool", {}).get("setuptools", {}).get("dynamic", {})
+           for (key, value) in config_tables.items():
+               ...
 
-    :type path: typing.Any | None
-    :returns: pyproject.toml as a dict otherwise None
-    :rtype: dict[str, typing.Any] | None
-    """
-    is_dir = (
-        path is not None
-        and issubclass(type(path), PurePath)
-        and path.exists()
-        and path.is_dir()
-        and path.joinpath("pyproject.toml").exists()
-        and path.joinpath("pyproject.toml").is_file()
-    )
-    is_pyproject_toml = (
-        path is not None
-        and issubclass(type(path), PurePath)
-        and path.exists()
-        and path.is_file()
-        and path.name == "pyproject.toml"
-    )
+        :param path_config: absolute path to ``pyproject.toml`` file or it's folder
+        :type path_config: typing.Any | None
+        :returns: tomllib dict. Cannot know yet which fields are needed
+        :rtype: collections.abc.Mapping[str, typing.Any]
+        :raises:
 
-    if is_dir:
-        path_config = path.joinpath("pyproject.toml")
-    elif is_pyproject_toml:
-        path_config = path
-    else:
-        path_config = None
+           - :py:exc:`drain_swamp.exceptions.PyProjectTOMLParseError` --
+             parsing toml unsuccessful
 
-    try:
-        d_pyproject_toml = get_pyproject_toml(path_config)
-    except (PyProjectTOMLParseError, TypeError):
-        d_pyproject_toml = None
+           - :py:exc:`TypeError` -- positional arg unsupported type
 
-    return d_pyproject_toml
+           - :py:exc:`FileNotFoundError` -- positional arg does not exist or not a file
+
+        .. todo:: demand for setup.cfg / setup.py ?
+
+           There is no support for setup.cfg / setup.py
+
+           Should there be?
+
+        .. todo:: check r/w permissions
+
+           Check file is read write. If not raise a PermissionError
+
+        """
+        cls = type(self)
+        # may raise TypeError or FileNotFoundError
+        self._path_file = cls.resolve(path_config)
+
+        # tomllib insists on opened as binary
+        with self._path_file.open(mode="rb") as f:
+            try:
+                d_ret = tomllib.load(f)
+            except tomllib.TOMLDecodeError as e:
+                msg_exc_pyproject_toml = (
+                    f"pyproject.toml either not found or cannot be parsed. "
+                    f"path {self._path_file!s} exact issue: {e}"
+                )
+                raise PyProjectTOMLParseError(msg_exc_pyproject_toml)
+
+        return d_ret

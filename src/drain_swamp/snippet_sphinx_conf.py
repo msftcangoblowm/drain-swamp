@@ -44,7 +44,6 @@ from .snip import (
 )
 from .version_semantic import (
     SemVersion,
-    SetuptoolsSCMNoTaggedVersionError,
     _path_or_cwd,
 )
 
@@ -258,18 +257,14 @@ class SnipSphinxConf:
 
            - :py:exc:`ValueError` -- Explicit version str is invalid
 
-           - :py:exc:`drain_swamp.version_semantic.SetuptoolsSCMNoTaggedVersionError` --
-             Cannot get both tagged and current version. Means git has no commit
-             and no tagged release version
-
         """
         cls = type(self)
         sv = SemVersion(path=self.path_cwd)
         path_project_base_dir = sv.path_cwd
         try:
             # Supply package name
-            ver_full = sv.version_clean(kind, package_name=package_name)
-        except (SetuptoolsSCMNoTaggedVersionError, AssertionError, ValueError):
+            ver_full = sv.version_clean(kind)
+        except (AssertionError, ValueError):
             self._contents = None
             raise
 

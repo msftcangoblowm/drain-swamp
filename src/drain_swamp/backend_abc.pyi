@@ -77,7 +77,7 @@ class BackendType(abc.ABC):
     @staticmethod
     def read(
         path_config: Path,
-    ) -> dict[str, Any]: ...
+    ) -> tuple[dict[str, Any], Path]: ...
     @staticmethod
     def load_factory(
         path_config: Path,

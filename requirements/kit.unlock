@@ -1,7 +1,7 @@
-wheel
 setuptools
-auditwheel
-colorama
-cibuildwheel
 setuptools-scm
 build
+auditwheel
+cibuildwheel
+wheel
+colorama

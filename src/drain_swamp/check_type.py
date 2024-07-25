@@ -41,6 +41,8 @@ __all__ = (
 )
 
 DEFAULT_EXTENSIONS = (SUFFIX_IN,)
+CLICK_TRUE = ("1", "true", "t", "yes", "y", "on")
+CLICK_FALSE = ("0", "false", "f", "no", "n", "off")
 
 
 def is_ok(test):
@@ -141,5 +143,30 @@ def is_iterable_not_str(mixed):
         )
         and not isinstance(mixed, str)
     )
+
+    return ret
+
+
+def click_bool(val=None):
+    """Simulate click.Bool
+
+    :param val: str provided on the command line indicating boolean state
+    :type val: str | None
+    :returns:
+
+       None if not provided. True if command line equivalent of True or
+       False if the opposite equivalent
+
+    :rtype: bool | None
+    """
+    if val is None:
+        ret = None
+    else:
+        if val in CLICK_TRUE:
+            ret = True
+        elif val in CLICK_FALSE:
+            ret = False
+        else:
+            ret = None
 
     return ret

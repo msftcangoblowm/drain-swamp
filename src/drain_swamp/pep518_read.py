@@ -45,7 +45,6 @@ These functions are lifted from the black project. With minor changes:
 from __future__ import annotations
 
 import sys
-from functools import lru_cache
 from pathlib import Path
 from typing import Any
 
@@ -89,7 +88,6 @@ def _is_ok(test):
     return ret
 
 
-@lru_cache
 def find_project_root(srcs, stdin_filename=None):
     """Return folder containing .git, .hg, or ``pyproject.toml``.
 
@@ -127,6 +125,10 @@ def find_project_root(srcs, stdin_filename=None):
     .. note::
 
        Passing ``pyproject.toml``, by stdin, could be useful for testing recipes
+
+    .. warning::
+
+       functools.lru_cache causes optional parameter stdin_filename to **NOT BE OPTIONAL**
 
     .. seealso::
 

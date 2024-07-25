@@ -8,6 +8,7 @@ __all__ = (
     "SUFFIX_IN",
     "SUFFIX_LOCKED",
     "SUFFIX_UNLOCKED",
+    "SUFFIX_SYMLINK",
     "__version_app",
     "__url__",
     "PATH_PIP_COMPILE",
@@ -20,6 +21,7 @@ package_name: Final[str]
 SUFFIX_IN: Final[str]
 SUFFIX_LOCKED: Final[str]
 SUFFIX_UNLOCKED: Final[str]
+SUFFIX_SYMLINK: Final[str]
 
 __version_app: Final[str]
 __url__: Final[str]
