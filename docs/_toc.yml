@@ -46,6 +46,11 @@ subtrees:
     - file: troubleshooting/index
       entries:
       - glob: troubleshooting/*
+- entries:
+  - file: LICENSE/index
+    entries:
+    - file: LICENSE/donation
+    - file: LICENSE/closed-source-license
 - caption: Links
   entries:
   - file: getting-help

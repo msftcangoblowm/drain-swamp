@@ -67,15 +67,32 @@
     - Check web connection then push. Don't trigger a release until a tag push
       $ git push
 - Start the kits:
-    - Update src/[app name]/_version.py and build
-      package not previously installed -- Specific version
-      $ python src/drain_swamp/cli_igor.py build --kind="[bumped version]"
-      package previously installed -- Specific version
-      $ python -m drain_swamp.cli_igor build --kind="[bumped version]"
-      package not previously installed -- current version
-      $ python src/drain_swamp/cli_igor.py build --kind="current"
-      package previously installed -- current version
-      $ python -m drain_swamp.cli_igor build --kind="current"
+    - Build drain-swamp
+      $ python -m build -C--kind="1.0.0" -C--set-lock="0"
+    - Build other package
+      $ export DS_CONFIG_SETTINGS=/tmp/setuptools-build.toml
+      $ cat <<-EOF > "$DS_CONFIG_SETTINGS"
+      [project]
+      name = "whatever"
+      version = "99.99.99a1.dev6"
+
+      [tool.config-settings]
+      kind="1.0.0"
+      set-lock="0"
+      EOF
+      $ python -m build
+    - Build drain-swamp as-is
+      $ export DS_CONFIG_SETTINGS=/tmp/setuptools-build.toml
+      $ cat <<-EOF > "$DS_CONFIG_SETTINGS"
+      [project]
+      name = "whatever"
+      version = "99.99.99a1.dev6"
+
+      [tool.config-settings]
+      kind="tag"
+      set-lock="0"
+      EOF
+      $ python -m build
     Trigger the kit GitHub Action (no CI integration yet)
         $ make kits_build (make debug=1 prep_kit)
 - Tag the tree

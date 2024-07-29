@@ -39,6 +39,7 @@ That's a lot of boilerplate code ... gone! Not all, but most.
 
 build plugin manager and plugins; build uses plugins; entrypoint scm-version;
 version file native support; drain-swamp tag; semantic version str sane fallback;
+license apache2.0 --> AGPLv3+;
 
 **New in 0.5.x:**
 

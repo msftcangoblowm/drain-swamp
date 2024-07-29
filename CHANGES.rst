@@ -25,6 +25,16 @@ Changelog
 
 .. scriv-start-here
 
+.. _changes_1-0-1:
+
+Version 1.0.1 — 2024-07-29
+--------------------------
+
+- style: little shop of horrors two dozen roses
+- docs: add donation procedure
+- docs: add closed source license procedure
+- docs: license from apache2 to agplv3+
+
 .. _changes_1-0-0:
 
 Version 1.0.0 — 2024-07-25

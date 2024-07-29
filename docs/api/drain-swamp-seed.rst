@@ -65,7 +65,7 @@ And voila!
 
 .. code-block:: text
 
-   Copyright 2024-2024 Dave Faulkmore.  All rights reserved. Apache2 License
+   Copyright 2024-2024 Dave Faulkmore. AGPLv3+ License
 
 Affects copyright start year. Defaults to 1970. Provide value in ``pyproject.toml``
 

@@ -1,3 +1,6 @@
+# Licensed under the AGPLv3+ License: https://www.gnu.org/licenses/
+# For details: https://github.com/msftcangoblowm/drain-swamp/blob/master/NOTICE.txt
+
 click           # entrypoints
 pip-tools       # lock requirements
 pluggy          # plugin support in build backend and setuptools.finalize_distribution_options entrypoint
