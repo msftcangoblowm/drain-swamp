@@ -5,7 +5,7 @@ Legal
    :figwidth: image
    :align: center
 
-   Decision diagram aiding understanding why to choose a license
+   Which FOSS license to choose
 
 - :doc:`Donations </LICENSE/donation>`
 

@@ -23,6 +23,9 @@ Changelog
    Commit items for NEXT VERSION
    ..............................
 
+   - docs(MANIFEST.in): remove include lines
+   - docs(LICENSE): move to base folder. In docs, symlink to base folder file
+
 .. scriv-start-here
 
 .. _changes_1-0-1:
