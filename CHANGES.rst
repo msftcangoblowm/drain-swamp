@@ -23,9 +23,6 @@ Changelog
    Commit items for NEXT VERSION
    ..............................
 
-   - docs(MANIFEST.in): remove include lines
-   - docs(LICENSE): move to base folder. In docs, symlink to base folder file
-
 .. scriv-start-here
 
 .. _changes_1-0-1:
@@ -37,6 +34,8 @@ Version 1.0.1 — 2024-07-29
 - docs: add donation procedure
 - docs: add closed source license procedure
 - docs: license from apache2 to agplv3+
+- docs(MANIFEST.in): remove include lines
+- docs(LICENSE): move to base folder. In docs, symlink to base folder file
 
 .. _changes_1-0-0:
 
