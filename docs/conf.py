@@ -34,11 +34,11 @@ proj_master_doc = config.get("master_doc")
 # @@@ editable
 copyright = "2024–2024, Dave Faulkmore"
 # The short X.Y.Z version.
-version = "1.0.1"
+version = "1.1.0"
 # The full version, including alpha/beta/rc tags.
-release = "1.0.1"
+release = "1.1.0"
 # The date of release, in "monthname day, year" format.
-release_date = "July 29, 2024"
+release_date = "August 1, 2024"
 # @@@ end
 
 v = parse(release)

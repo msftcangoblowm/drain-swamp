@@ -12,8 +12,6 @@ from typing import (
     Final,
 )
 
-from .snip import ReplaceResult
-
 if sys.version_info >= (3, 11):
     from typing import Self
 else:

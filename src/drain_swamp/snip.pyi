@@ -20,7 +20,7 @@ class ReplaceResult(Enum):
     NO_MATCH = auto()
     REPLACED = auto()
     NO_CHANGE = auto()
-    def __eq__(self, other: Any) -> bool: ...
+    def __eq__(self, other: object) -> bool: ...
 
 def check_matching_tag_count(
     contents: str,

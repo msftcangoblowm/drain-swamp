@@ -36,13 +36,17 @@ Usage
 
 from __future__ import annotations
 
+import copy
 import sys
 from collections.abc import Mapping
 
 from setuptools import build_meta as _orig
 from setuptools.build_meta import *  # noqa: F401 F403
 
-from drain_swamp.monkey.wrap_infer_version import run_build_plugins
+from drain_swamp.monkey.wrap_infer_version import (
+    _get_config_settings,
+    run_build_plugins,
+)
 
 
 def get_requires_for_build_sdist(config_settings=None):
@@ -107,16 +111,21 @@ def get_requires_for_build_sdist(config_settings=None):
     print(msg_info)
 
     if config_settings is None or not isinstance(config_settings, Mapping):
-        msg_exc = (
-            "ERROR In build backend, expecting config_settings to be "
-            f"Mapping got {config_settings!r} "
-        )
-        print(msg_exc)
-        exit_code = 8
-        sys.exit(exit_code)
+        # tox does not pass in config_settings, check DS_CONFIG_SETTINGS
+        d_config_settings_tox = _get_config_settings()
+        if d_config_settings_tox is not None:
+            d_config_settings = copy.deepcopy(d_config_settings_tox)
+        else:
+            msg_exc = (
+                "ERROR In build backend, expecting config_settings to be "
+                f"Mapping got {config_settings!r} "
+            )
+            print(msg_exc)
+            exit_code = 8
+            sys.exit(exit_code)
     else:  # pragma: no cover
-        pass
+        d_config_settings = copy.deepcopy(config_settings)
 
-    run_build_plugins(config_settings)
+    run_build_plugins(d_config_settings)
 
-    return _orig.get_requires_for_build_sdist(config_settings)
+    return _orig.get_requires_for_build_sdist(d_config_settings)

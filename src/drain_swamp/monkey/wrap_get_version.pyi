@@ -1,6 +1,9 @@
 import logging
 from collections.abc import Callable
-from typing import Any
+from typing import (
+    Any,
+    Final,
+)
 
 import setuptools_scm._types as _t
 from setuptools_scm import (
@@ -15,6 +18,8 @@ __all__ = (
     "write_to_file",
     "SEM_VERSION_FALLBACK_SANE",
 )
+
+SEM_VERSION_FALLBACK_SANE: Final[str]
 
 try_parse: list[Callable[[_t.PathT, Configuration], ScmVersion | None]]
 

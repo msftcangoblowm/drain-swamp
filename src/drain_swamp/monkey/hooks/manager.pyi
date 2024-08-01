@@ -5,14 +5,8 @@ from collections.abc import (
     Mapping,
     Sequence,
 )
-from types import (
-    FunctionType,
-    ModuleType,
-)
-from typing import (
-    Any,
-    Final,
-)
+from types import ModuleType
+from typing import Any
 
 from pluggy import (
     HookImpl,
@@ -46,7 +40,7 @@ def lazy_package(
 def _filter_specs(member: Any) -> bool: ...
 def iter_specs(
     mod: ModuleType,
-    filter_: Callable[[Any], bool] = _filter_specs,
+    filter_: Callable[[Any], bool] = ...,
 ) -> Iterable[Any]: ...
 def _create_hook_manager(namespace: str, specs_dotted_path: str) -> PluginManager: ...
 def _register_hooks(

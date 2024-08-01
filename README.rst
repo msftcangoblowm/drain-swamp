@@ -33,18 +33,17 @@ That's a lot of boilerplate code ... gone! Not all, but most.
 
 .. PYVERSIONS
 
-* Python 3.9 through 3.12, and 3.13.0a3 and up.
+* Python 3.9 through 3.12, PyPy
+
+**New in 1.1.x**
+
+tox-test.ini; tox.ini; gha; build backend DS_CONFIG_SETTINGS support;
 
 **New in 1.0.x**
 
 build plugin manager and plugins; build uses plugins; entrypoint scm-version;
 version file native support; drain-swamp tag; semantic version str sane fallback;
 license apache2.0 --> AGPLv3+;
-
-**New in 0.5.x:**
-
-igor.py retired; pipenv-unlock is_lock command; swamp-drain cheats command;
-integration unit tests seperated;
 
 Extensions
 -----------
@@ -108,7 +107,7 @@ Reduces reliance on ``igor.py``
 
 Replaces getting version from setup.py or from setuptools-scm
 
-Get :abbr:`scm (source control management)` version
+Get scm (source control management) version
 
 .. code-block:: shell
 
@@ -214,7 +213,7 @@ In a temporary folder, created a file, ``some.conf`` with contents,
 Replace the contents within the snippet, with id *i_am_a_snippet_co*,
 with *contents_new*.
 
-:code:`textwrap.dedent("""\` means, remove any indention and escape
+textwrap.dedent("""\ means, remove any indention and escape
 ignore the preceding newline
 
 Snip constructor parameter, is_quiet, turns off logging

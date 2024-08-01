@@ -418,7 +418,7 @@ class Snip:
 
     @property
     def is_infer(self):
-        """``id\_`` is None or empty str. snippet_co is taken from snippet
+        """id is None or empty str. snippet_co is taken from snippet
 
         :returns: True if infer snippet_co otherwise False
         :rtype: bool
@@ -813,7 +813,7 @@ class Snip:
     def contents(self, id_=None):
         """Get snippet contents.
 
-        If only one snippet and ``id\_`` no provided, infer want the
+        If only one snippet and id no provided, infer want the
         only available snippet.
 
         :param id_:

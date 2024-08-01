@@ -90,8 +90,12 @@ def _parse(root, config):
             msg_info = f"{mod_path} parse with {maybe_parse!s} failed with: {e!s}"
             log.info(msg_info)
         else:
-            if parsed is not None:
+            if parsed is not None:  # pragma: no cover
+                """tox, runs within it's own virtual environment, during
+                testing, does not see git. So file finder will not find any match"""
                 return parsed
+            else:  # pragma: no cover
+                pass
     else:
         return None
 

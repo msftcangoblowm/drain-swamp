@@ -12,9 +12,9 @@ Unittest for module, drain_swamp.lock_toggle
 
 """
 
+import importlib.util
 import logging
 import logging.config
-import pkgutil
 import shutil
 from collections.abc import Sequence
 from pathlib import Path
@@ -73,7 +73,7 @@ ids_lock_compile = (
 
 
 @pytest.mark.skipif(
-    pkgutil.find_loader("piptools") is None,
+    importlib.util.find_spec("piptools") is None,
     reason="uses pip-compile part of pip-tools",
 )
 @pytest.mark.parametrize(

@@ -1,0 +1,112 @@
+# Licensed under the AGPLv3+ License: https://www.gnu.org/licenses/
+# For details: https://github.com/msftcangoblowm/drain-swamp/blob/master/NOTICE.txt
+# https://github.com/pyscaffold/pyscaffold/blob/master/src/pyscaffold/templates/github_ci_workflow.template
+# https://docs.github.com/en/actions/using-workflows/storing-workflow-data-as-artifacts#passing-data-between-jobs-in-a-workflow
+
+name: "Tests"
+
+on:
+  push:
+    branches:
+      - master
+      - msftcangoblowm/*
+  pull_request:
+  workflow_dispatch:
+
+defaults:
+  run:
+    shell: bash
+
+env:
+  PIP_DISABLE_PIP_VERSION_CHECK: 1
+  COVERAGE_IGOR_VERBOSE: 1
+  FORCE_COLOR: 1    # Get colored test output
+
+permissions:
+  contents: read
+
+concurrency:
+  group: >-
+    ${{ github.workflow }}-${{ github.ref_type }}-
+    ${{ github.event.pull_request.number || github.sha }}
+  cancel-in-progress: true
+
+jobs:
+  tests:
+    name: "${{ matrix.python-version }} on ${{ matrix.os }}"
+    runs-on: "${{ matrix.os }}-latest"
+    # Don't run tests if the branch name includes "-notests"
+    if: "!contains(github.ref, '-notests')"
+    strategy:
+      matrix:
+        os:
+          - ubuntu
+        python-version:
+          # When changing this list, be sure to check the [gh] list in
+          # tox.ini so that tox will run properly. PYVERSIONS
+          # Available versions:
+          # https://github.com/actions/python-versions/blob/main/versions-manifest.json
+          # https://github.com/actions/setup-python/blob/main/docs/advanced-usage.md#available-versions-of-python-and-pypy
+          - "3.9"
+          - "3.10"
+          - "3.11"
+          - "3.12"
+          - "3.13"
+          - "pypy-3.9"
+          - "pypy-3.10"
+      fail-fast: false
+
+    steps:
+      - name: "Check out the repo"
+        uses: "actions/checkout@v4"
+
+      - name: "Set up Python"
+        uses: "actions/setup-python@v5"
+        with:
+          python-version: "${{ matrix.python-version }}"
+          allow-prereleases: true
+          # At a certain point, installing dependencies failed on pypy 3.9 and
+          # 3.10 on Windows.  Commenting out the cache here fixed it.  Someday
+          # try using the cache again.
+          #cache: pip
+          #cache-dependency-path: 'requirements/*.lnk'
+
+      - name: "Show environment"
+        run: |
+          set -xe
+          python -VV
+          python -m site
+          # For extreme debugging:
+          # python -c "import urllib.request as r; exec(r.urlopen('https://bit.ly/pydoctor').read())"
+          env
+
+      - name: "Install dependencies"
+        run: |
+          set -xe
+          python -m pip install -r requirements/tox.lnk
+
+      - name: "Run tox for ${{ matrix.python-version }}"
+        run: |
+          python -m tox -c tox-test.ini -- -rfsEX
+
+      - name: "Retry tox for ${{ matrix.python-version }}"
+        if: failure()
+        run: |
+          # `exit 1` makes sure that the job remains red with flaky runs
+          python -m tox -- -rfsEX --lf -vvvvv && exit 1
+
+  # This job aggregates test results. It's the required check for branch protection.
+  # https://github.com/marketplace/actions/alls-green#why
+  # https://github.com/orgs/community/discussions/33579
+  success:
+    name: Tests successful
+    # The tests didn't run if the branch name includes "-notests"
+    if: "!contains(github.ref, '-notests')"
+    needs:
+      - tests
+    runs-on: ubuntu-latest
+    steps:
+      - name: Decide whether the needed jobs succeeded or failed
+        uses: re-actors/alls-green@05ac9388f0aebcb5727afa17fcccfecd6f8ec5fe
+        with:
+          jobs: ${{ toJSON(needs) }}

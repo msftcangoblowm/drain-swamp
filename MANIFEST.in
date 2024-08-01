@@ -1,4 +1,2 @@
 include _req_links/backend.py
 global-include *.lnk
-
-exclude src/_version.py

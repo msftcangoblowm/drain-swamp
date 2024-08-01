@@ -1,0 +1,309 @@
+# Licensed under the Apache License: http://www.apache.org/licenses/LICENSE-2.0
+# For details: https://github.com/nedbat/coveragepy/blob/master/NOTICE.txt
+
+# This file is meant to be processed with cog.
+# Running "make prebuild" will bring it up to date.
+
+# Based on:
+# https://github.com/joerick/cibuildwheel/blob/master/examples/github-deploy.yml
+
+# To test installing wheels without uploading them to PyPI:
+#
+#   $ mkdir /tmp/pypi
+#   $ cp dist/* /tmp/pypi
+#   $ python -m pip install piprepo
+#   $ piprepo build /tmp/pypi
+#   $ python -m pip install -v drain-swamp --index-url=file:///tmp/pypi/simple
+#
+# Note that cibuildwheel recommends not shipping wheels for pre-release versions
+# of Python: https://cibuildwheel.readthedocs.io/en/stable/options/#prerelease-pythons
+# So we don't.
+
+name: "Kits"
+
+on:
+  push:
+    branches:
+      # Don't build kits all the time, but do if the branch is about kits.
+      - "**/*kit*"
+  workflow_dispatch:
+  repository_dispatch:
+    types:
+      - build-kits
+
+defaults:
+  run:
+    shell: bash
+
+env:
+  PIP_DISABLE_PIP_VERSION_CHECK: 1
+
+permissions:
+  contents: read
+
+concurrency:
+  group: "${{ github.workflow }}-${{ github.ref }}"
+  cancel-in-progress: true
+
+jobs:
+  wheels:
+    name: "${{ matrix.py }} ${{ matrix.os }} ${{ matrix.arch }} wheels"
+    runs-on: ${{ matrix.os }}-latest
+    env:
+      MATRIX_ID: "${{ matrix.py }}-${{ matrix.os }}-${{ matrix.arch }}"
+    strategy:
+      matrix:
+        include:
+          # To change the matrix, edit the choices, then process this file with cog:
+          #
+          # $ make workflows
+          #
+          # which runs:
+          #
+          # $ python -m pip install cogapp
+          # $ python -m cogapp -crP .github/workflows/kit.yml
+          #
+          # Choices come from the table on https://pypi.org/project/cibuildwheel/
+          #
+          # [[[cog
+          #   #----- vvv Choices for the matrix vvv -----
+          #
+          #   # Operating systems:
+          #   oss = ["ubuntu", "macos", "windows"]
+          #
+          #   # For each OS, what arch to use with cibuildwheel:
+          #   os_archs = {
+          #       "ubuntu": ["x86_64", "i686", "aarch64"],
+          #       "macos": ["arm64", "x86_64"],
+          #       "windows": ["x86", "AMD64"],
+          #   }
+          #   # PYVERSIONS. Available versions:
+          #   # https://github.com/actions/python-versions/blob/main/versions-manifest.json
+          #   # PyPy versions are handled further below in the "pypy" step.
+          #   pys = ["cp38", "cp39", "cp310", "cp311", "cp312"]
+          #
+          #   # Some OS/arch combinations need overrides for the Python versions:
+          #   os_arch_pys = {
+          #     ("macos", "arm64"): ["cp38", "cp39", "cp310", "cp311", "cp312"],
+          #   }
+          #
+          #   #----- ^^^ ---------------------- ^^^ -----
+          #
+          #   import json
+          #   for the_os in oss:
+          #       for the_arch in os_archs[the_os]:
+          #           for the_py in os_arch_pys.get((the_os, the_arch), pys):
+          #               them = {
+          #                   "os": the_os,
+          #                   "py": the_py,
+          #                   "arch": the_arch,
+          #               }
+          #               print(f"- {json.dumps(them)}")
+          # ]]]
+          - {"os": "ubuntu", "py": "cp39", "arch": "x86_64"}
+          - {"os": "ubuntu", "py": "cp310", "arch": "x86_64"}
+          - {"os": "ubuntu", "py": "cp311", "arch": "x86_64"}
+          - {"os": "ubuntu", "py": "cp312", "arch": "x86_64"}
+          - {"os": "ubuntu", "py": "cp313", "arch": "x86_64"}
+          - {"os": "ubuntu", "py": "cp39", "arch": "i686"}
+          - {"os": "ubuntu", "py": "cp310", "arch": "i686"}
+          - {"os": "ubuntu", "py": "cp311", "arch": "i686"}
+          - {"os": "ubuntu", "py": "cp312", "arch": "i686"}
+          - {"os": "ubuntu", "py": "cp313", "arch": "i686"}
+          - {"os": "ubuntu", "py": "cp39", "arch": "aarch64"}
+          - {"os": "ubuntu", "py": "cp310", "arch": "aarch64"}
+          - {"os": "ubuntu", "py": "cp311", "arch": "aarch64"}
+          - {"os": "ubuntu", "py": "cp312", "arch": "aarch64"}
+          - {"os": "ubuntu", "py": "cp313", "arch": "aarch64"}
+          # - {"os": "macos", "py": "cp38", "arch": "arm64"}
+          # - {"os": "macos", "py": "cp39", "arch": "arm64"}
+          # - {"os": "macos", "py": "cp310", "arch": "arm64"}
+          # - {"os": "macos", "py": "cp311", "arch": "arm64"}
+          # - {"os": "macos", "py": "cp312", "arch": "arm64"}
+          # - {"os": "macos", "py": "cp38", "arch": "x86_64"}
+          # - {"os": "macos", "py": "cp39", "arch": "x86_64"}
+          # - {"os": "macos", "py": "cp310", "arch": "x86_64"}
+          # - {"os": "macos", "py": "cp311", "arch": "x86_64"}
+          # - {"os": "macos", "py": "cp312", "arch": "x86_64"}
+          # - {"os": "windows", "py": "cp38", "arch": "x86"}
+          # - {"os": "windows", "py": "cp39", "arch": "x86"}
+          # - {"os": "windows", "py": "cp310", "arch": "x86"}
+          # - {"os": "windows", "py": "cp311", "arch": "x86"}
+          # - {"os": "windows", "py": "cp312", "arch": "x86"}
+          # - {"os": "windows", "py": "cp38", "arch": "AMD64"}
+          # - {"os": "windows", "py": "cp39", "arch": "AMD64"}
+          # - {"os": "windows", "py": "cp310", "arch": "AMD64"}
+          # - {"os": "windows", "py": "cp311", "arch": "AMD64"}
+          # - {"os": "windows", "py": "cp312", "arch": "AMD64"}
+        # [[[end]]] (checksum: a6ca53e9c620c9e5ca85e7322122056c)
+      fail-fast: false
+
+    steps:
+      - name: "Setup QEMU"
+        if: matrix.os == 'ubuntu'
+        uses: docker/setup-qemu-action@68827325e0b33c7199eb31dd4e31fbe9023e06e3
+        with:
+          platforms: arm64
+
+      - name: "Check out the repo"
+        uses: actions/checkout@v4
+        with:
+          # fetch all branches and tags instead of only fetching the ref/SHA that triggered the workflow
+          fetch-depth: 0
+
+      - name: "Install Python 3.9"
+        uses: actions/setup-python@v5
+        with:
+          # PYVERSIONS
+          python-version: "3.9"
+          # cache: pip
+          # cache-dependency-path: 'requirements/*.lnk'
+
+      - name: "Install tools"
+        run: |
+          python -m pip install -r requirements/kit.lnk
+
+      - name: "Build wheels"
+        env:
+          CIBW_BUILD: ${{ matrix.py }}-*
+          CIBW_ARCHS: ${{ matrix.arch }}
+          CIBW_ENVIRONMENT: PIP_DISABLE_PIP_VERSION_CHECK=1
+          CIBW_PRERELEASE_PYTHONS: True
+        run: |
+          python -m cibuildwheel --output-dir wheelhouse
+
+      - name: "List wheels"
+        run: |
+          ls -al wheelhouse/
+
+      - name: "Upload wheels"
+        uses: actions/upload-artifact@v4
+        with:
+          name: dist-${{ env.MATRIX_ID }}
+          path: wheelhouse/*.whl
+          retention-days: 7
+
+  sdist:
+    name: "Source distribution"
+    runs-on: ubuntu-latest
+    steps:
+      - name: "Check out the repo"
+        uses: actions/checkout@v4
+        with:
+          # fetch all branches and tags instead of only fetching the ref/SHA that triggered the workflow
+          fetch-depth: 0
+
+      # https://stackoverflow.com/questions/66349002/get-latest-tag-git-describe-tags-when-repo-is-cloned-with-depth-1
+      # echo "tag=$(git describe --tags `git rev-list --tags --max-count=1`)" >> $GITHUB_OUTPUT
+      - name: Get latest tag
+        id: vars
+        run: |
+          echo "tag=$(git describe --tags)" >> $GITHUB_OUTPUT
+
+      - name: "Install Python 3.9"
+        uses: actions/setup-python@v5
+        with:
+          # PYVERSIONS
+          python-version: "3.9"
+          cache: pip
+          cache-dependency-path: 'requirements/*.lnk'
+
+      - name: "Install tools"
+        run: |
+          python -m pip install -r requirements/kit.pip
+
+      - name: "Build sdist"
+        env:
+          RELEASE_VERSION: ${{ steps.vars.outputs.tag }}
+        run: |
+          echo "python -m build -C--kind=$RELEASE_VERSION"
+          python -m build -C--kind="$RELEASE_VERSION"
+
+      - name: "List tarballs"
+        run: |
+          ls -al dist/
+
+      - name: "Upload sdist"
+        uses: actions/upload-artifact@v4
+        with:
+          name: dist-sdist
+          path: dist/*.tar.gz
+          retention-days: 7
+
+  pypy:
+    name: "PyPy wheel"
+    runs-on: ubuntu-latest
+    steps:
+      - name: "Check out the repo"
+        uses: actions/checkout@v4
+        with:
+          # fetch all branches and tags instead of only fetching the ref/SHA that triggered the workflow
+          fetch-depth: 0
+
+      - name: "Install PyPy"
+        uses: actions/setup-python@v5
+        with:
+          python-version: "pypy-3.9" # Minimum of PyPy PYVERSIONS
+          cache: pip
+          cache-dependency-path: 'requirements/*.lnk'
+
+      - name: "Install requirements"
+        run: |
+          pypy3 -m pip install -r requirements/kit.lnk
+
+      - name: "Build wheel"
+        env:
+          DIST_EXTRA_CONFIG: extra.cfg
+        run: |
+          # One wheel works for all PyPy versions. PYVERSIONS
+          # yes, this is weird syntax: https://github.com/pypa/build/issues/202
+          echo -e "[bdist_wheel]\npython_tag=pp39.pp310" > $DIST_EXTRA_CONFIG
+          pypy3 -m build -w
+
+      - name: "List wheels"
+        run: |
+          ls -al dist/
+
+      - name: "Upload wheels"
+        uses: actions/upload-artifact@v4
+        with:
+          name: dist-pypy
+          path: dist/*.whl
+          retention-days: 7
+
+  sign:
+    # This signs our artifacts, but we don't use the signatures for anything
+    # yet.  Someday maybe PyPI will have a way to upload and verify them.
+    name: "Sign artifacts"
+    needs:
+      - wheels
+      - sdist
+      - pypy
+    runs-on: ubuntu-latest
+    permissions:
+      id-token: write
+    steps:
+      - name: "Download artifacts"
+        uses: actions/download-artifact@v4
+        with:
+          pattern: dist-*
+          merge-multiple: true
+
+      - name: "Sign artifacts"
+        uses: sigstore/gh-action-sigstore-python@v2.1.1
+        with:
+          inputs: drain-swamp-*.*
+
+      - name: "List files"
+        run: |
+          ls -alR
+
+      - name: "Upload signatures"
+        uses: actions/upload-artifact@v4
+        with:
+          name: signatures
+          path: |
+            *.crt
+            *.sig
+            *.sigstore
+          retention-days: 7

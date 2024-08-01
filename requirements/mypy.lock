@@ -4,5 +4,7 @@ mypy-extensions==1.0.0
     # via mypy
 tomli==2.0.1
     # via mypy
+types-setuptools==70.1.0.20240627
+    # via -r requirements/mypy.in
 typing-extensions==4.11.0
     # via mypy

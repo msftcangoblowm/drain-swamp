@@ -6,3 +6,4 @@
 # -c pins.in
 
 mypy
+types-setuptools

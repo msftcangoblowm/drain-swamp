@@ -71,15 +71,12 @@ Example ``pyproject.toml``. specifies an additional folder, ``ci``.
 from __future__ import annotations
 
 import copy
+import dataclasses
+import importlib.util
 import logging
 import os
-import pkgutil
+import pathlib
 from collections.abc import Sequence
-from dataclasses import (
-    InitVar,
-    dataclass,
-    field,
-)
 from pathlib import (
     Path,
     PurePath,
@@ -115,7 +112,9 @@ def is_piptools():
     :returns: True if pip-tools installed otherwise False
     :rtype: bool
     """
-    return pkgutil.find_loader("piptools") is not None
+    spec = importlib.util.find_spec("piptools")
+    is_package = spec is not None
+    return is_package
 
 
 def _create_symlinks_relative(src: str, dest: str, cwd_path: str) -> None:
@@ -355,7 +354,7 @@ def strip_inline_comments(val):
     return ret
 
 
-@dataclass
+@dataclasses.dataclass
 class InFile:
     """
     :ivar relpath: Relative path to requirements file
@@ -384,8 +383,8 @@ class InFile:
 
     relpath: str
     stem: str
-    constraints: set[str] = field(default_factory=set)
-    requirements: set[str] = field(default_factory=set)
+    constraints: set[str] = dataclasses.field(default_factory=set)
+    requirements: set[str] = dataclasses.field(default_factory=set)
 
     def __post_init__(self):
         """relpath given as a Path, convert into a str.
@@ -527,7 +526,7 @@ class InFile:
         return ret
 
 
-@dataclass
+@dataclasses.dataclass
 class InFiles:
     """Container of InFile
 
@@ -547,7 +546,7 @@ class InFiles:
     :raises:
 
        - :py:exc:`TypeError` -- in_files unsupported type, expecting
-         :py:class:`collections.abc.Sequence` [ :py:class:`pathlib.Path` ]
+         ``Sequence[Path]``
 
        - :py:exc:`ValueError` -- An element within in_files is not
          relative to folder, cwd
@@ -559,10 +558,10 @@ class InFiles:
 
     """
 
-    cwd: Path
-    in_files: InitVar[Sequence[Path]]
-    _files: set[InFile] = field(init=False, default_factory=set)
-    _zeroes: set[InFile] = field(init=False, default_factory=set)
+    cwd: pathlib.Path
+    in_files: dataclasses.InitVar[Sequence[pathlib.Path]]
+    _files: set[InFile] = dataclasses.field(init=False, default_factory=set)
+    _zeroes: set[InFile] = dataclasses.field(init=False, default_factory=set)
 
     def __post_init__(self, in_files):
         """Read in and initial pass over ``.in`` files

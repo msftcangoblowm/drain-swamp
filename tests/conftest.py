@@ -18,8 +18,6 @@ from drain_swamp.backend_abc import (
 
 from .wd_wrapper import WorkDir
 
-pytest_plugins: str = "sphinx.testing.fixtures"
-
 
 class FileRegression:
     """

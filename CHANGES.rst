@@ -12,18 +12,37 @@ Changelog
 
    - Confirm setuptools-scm file finders are being called?
 
-   - add gha
-
    - self hosted package server. See article
    https://safjan.com/Create%20Self-Hosted%20Python%20Package%20Repository/
 
    Known regressions
    ..................
 
+   - tox does not pass in config_settings. Try to read in DS_CONFIG_SETTINGS
+
    Commit items for NEXT VERSION
    ..............................
 
 .. scriv-start-here
+
+.. _changes_1-1-0:
+
+Version 1.1.0 — 2024-08-01
+--------------------------
+
+- style: fantastic four helicopter jump skiing
+- feat: build backend support for DS_CONFIG_SETTINGS
+- fix(lock_toggle): py314 deprecation warning for pkgutil.find_loader
+- fix(mypy.in): add typing stub dependency types-setuptools
+- fix(pip.lock): resolve dependency conflict typing-extensions
+- docs(snip): fix param reference parsing issue
+- refactor(lock_toggle): sphinx friendly dataclass
+- ci: add .github workflows
+- ci(tox-test.ini): add separate tox file for running tests
+- test(conftest): remove pytest_plugins sphinx.testing.fixtures
+- docs(MANIFEST.in): remove exclude src/_version.py
+- docs(objects-python-missing): to inventory add entry for dataclasses.InitVar
+- docs(README.rst): remove non-vanilla ReStructuredText
 
 .. _changes_1-0-1:
 
