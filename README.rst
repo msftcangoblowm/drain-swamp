@@ -38,6 +38,7 @@ That's a lot of boilerplate code ... gone! Not all, but most.
 **New in 1.1.x**
 
 tox-test.ini; tox.ini; gha; build backend DS_CONFIG_SETTINGS support;
+add gha variable DRAINSWAMP_SET_LOCK;
 
 **New in 1.0.x**
 

@@ -22,6 +22,7 @@ env:
   PIP_DISABLE_PIP_VERSION_CHECK: 1
   COVERAGE_IGOR_VERBOSE: 1
   FORCE_COLOR: 1    # Get colored test output
+  LOCK_SUFFIX: ${{ vars.DRAINSWAMP_SET_LOCK == "1" && ".lock" || ".unlock" }}
 
 permissions:
   contents: write
@@ -64,19 +65,20 @@ jobs:
           # cache: pip
           # cache-dependency-path: 'requirements/*.lnk'
           allow-prereleases: true
-      - name: "Install tools"
+      - name: "Install dependencies"
         run: |
           set -xe
-          python -m pip install -r requirements/kit.lnk
-          python -m pip install -r requirements/prod.lnk
-          python -m pip install -r requirements/dev.lnk
+          python -m pip install -r requirements/kit$LOCK_SUFFIX
+          python -m pip install -r requirements/prod$LOCK_SUFFIX
+          python -m pip install -r requirements/dev$LOCK_SUFFIX
       - name: "Build sdist and whl"
         env:
           RELEASE_VERSION: ${{ steps.vars.outputs.tag }}
+          SET_LOCK: ${{ vars.DRAINSWAMP_SET_LOCK }}
         run: |
           set -xe
-          echo "python -m build -C--kind=$RELEASE_VERSION"
-          python -m build -C--kind="$RELEASE_VERSION"
+          echo "python -m build -C--kind=$RELEASE_VERSION -C--set-lock=$SET_LOCK"
+          python -m build -C--kind="$RELEASE_VERSION -C--set-lock=$SET_LOCK"
       - name: "Install"
         run: |
           set -xe
@@ -87,7 +89,7 @@ jobs:
           set -xe
           pytest --showlocals --quiet --cov=drain_swamp --cov-report=xml --cov-config=pyproject.toml tests
       - name: "Upload to Codecov"
-        uses: codecov/codecov-action@v4.3.0
+        uses: codecov/codecov-action@v4.5.0
         with:
           name: unittest-py3.9
           token: ${{ secrets.CODECOV_TOKEN }}

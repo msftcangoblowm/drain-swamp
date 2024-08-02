@@ -19,6 +19,7 @@ defaults:
 
 env:
   PIP_DISABLE_PIP_VERSION_CHECK: 1
+  LOCK_SUFFIX: ${{ vars.DRAINSWAMP_SET_LOCK == "1" && ".lock" || ".unlock" }}
 
 permissions:
   contents: read
@@ -47,7 +48,7 @@ jobs:
 
       - name: "Install dependencies"
         run: |
-          python -m pip install -r requirements/tox.lnk
+          python -m pip install -r requirements/tox$LOCK_SUFFIX
 
       - name: "Tox lint"
         run: |
@@ -66,13 +67,13 @@ jobs:
         with:
           python-version: "3.9" # Minimum of PYVERSIONS, but at least 3.9
           # cache: pip
-          cache-dependency-path: 'requirements/*.lnk'
+          # cache-dependency-path: 'requirements/*.lnk'
 
       - name: "Install dependencies"
         run: |
           # Runs on 3.9, but hashes supported by pip-tools is
           # not supported by setuptools. So don't expect hashes
-          python -m pip install -r requirements/tox.lnk
+          python -m pip install -r requirements/tox$LOCK_SUFFIX
 
       - name: "Tox mypy"
         run: |
@@ -91,7 +92,7 @@ jobs:
         with:
           python-version: "3.9" # Doc version from PYVERSIONS
           # cache: pip
-          cache-dependency-path: 'requirements/*.lnk'
+          # cache-dependency-path: 'requirements/*.lnk'
 
       - name: "Show environment"
         run: |
@@ -103,7 +104,7 @@ jobs:
       - name: "Install dependencies"
         run: |
           set -xe
-          python -m pip install -r requirements/tox.lnk
+          python -m pip install -r requirements/tox$LOCK_SUFFIX
 
       - name: "Tox docs"
         run: |

@@ -25,6 +25,15 @@ Changelog
 
 .. scriv-start-here
 
+.. _changes_1-1-1:
+
+Version 1.1.1 — 2024-08-02
+--------------------------
+
+- ci: create github repository variable vars.DRAINSWAMP_SET_LOCK
+- ci: workflows bypass .lnk symlinks env variable LOCK_SUFFIX and SET_LOCK
+- ci(testsuite): refresh dependency locks .lnk before run tests
+
 .. _changes_1-1-0:
 
 Version 1.1.0 — 2024-08-01
