@@ -22,7 +22,7 @@ env:
   PIP_DISABLE_PIP_VERSION_CHECK: 1
   COVERAGE_IGOR_VERBOSE: 1
   FORCE_COLOR: 1    # Get colored test output
-  LOCK_SUFFIX: ${{ vars.DRAINSWAMP_SET_LOCK == "1" && ".lock" || ".unlock" }}
+  LOCK_SUFFIX: ${{ vars.DRAINSWAMP_SET_LOCK == '1' && '.lock' || '.unlock' }}
 
 permissions:
   contents: write

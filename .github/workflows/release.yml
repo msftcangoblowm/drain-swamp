@@ -17,7 +17,7 @@ defaults:
 env:
   PIP_DISABLE_PIP_VERSION_CHECK: 1
   DEST_FOLDER: dist/
-  LOCK_SUFFIX: ${{ vars.DRAINSWAMP_SET_LOCK == "1" && ".lock" || ".unlock" }}
+  LOCK_SUFFIX: ${{ vars.DRAINSWAMP_SET_LOCK == '1' && '.lock' || '.unlock' }}
 
 permissions:
   contents: read  # This is required for actions/checkout

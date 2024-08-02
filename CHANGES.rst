@@ -25,6 +25,13 @@ Changelog
 
 .. scriv-start-here
 
+.. _changes_1-1-2:
+
+Version 1.1.2 — 2024-08-02
+--------------------------
+
+- ci: fix terniary condition use single quotes not double quotes
+
 .. _changes_1-1-1:
 
 Version 1.1.1 — 2024-08-02

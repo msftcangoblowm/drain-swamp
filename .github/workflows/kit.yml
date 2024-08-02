@@ -37,7 +37,7 @@ defaults:
 
 env:
   PIP_DISABLE_PIP_VERSION_CHECK: 1
-  LOCK_SUFFIX: ${{ vars.DRAINSWAMP_SET_LOCK == "1" && ".lock" || ".unlock" }}
+  LOCK_SUFFIX: ${{ vars.DRAINSWAMP_SET_LOCK == '1' && '.lock' || '.unlock' }}
 
 permissions:
   contents: read
