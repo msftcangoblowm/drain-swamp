@@ -143,12 +143,14 @@ def before_version_infer(config_settings: dict[str, Any]) -> str | None:
     is_set_lock = _is_set_lock(config_settings, default=None)
     parent_dir = _parent_dir(config_settings)
 
-    log.info(f"{mod_path} is_set_lock: {is_set_lock} parent_dir {parent_dir}")
+    msg_info = f"{mod_path} is_set_lock: {is_set_lock} parent_dir {parent_dir}"
+    log.info(msg_info)
 
     try:
         inst = BackendType.load_factory(cwd, parent_dir=parent_dir)
         log.info(
-            f"{mod_path} inst.path_config: {inst.path_config} abs?: {inst.path_config.is_absolute()}"
+            f"{mod_path} inst.path_config: {inst.path_config} "
+            f"abs?: {inst.path_config.is_absolute()}"
         )
         refresh_links(inst, is_set_lock=is_set_lock)
     except PyProjectTOMLReadError:

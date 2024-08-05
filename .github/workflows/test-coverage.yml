@@ -77,8 +77,8 @@ jobs:
           SET_LOCK: ${{ vars.DRAINSWAMP_SET_LOCK }}
         run: |
           set -xe
-          echo "python -m build -C--kind=$RELEASE_VERSION -C--set-lock=$SET_LOCK"
-          python -m build -C--kind="$RELEASE_VERSION -C--set-lock=$SET_LOCK"
+          echo "python -m build -C--kind='current' -C--set-lock='$SET_LOCK'"
+          python -m build -C--kind="current" -C--set-lock="$SET_LOCK"
       - name: "Install"
         run: |
           set -xe

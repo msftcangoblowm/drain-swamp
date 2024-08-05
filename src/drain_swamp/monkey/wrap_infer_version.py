@@ -53,73 +53,24 @@ infer_version sets the dist.metadata.version. Would like to do more ...
 """
 
 import logging
-import os
+import sys
 from pathlib import Path
 
-import drain_swamp.monkey.plugins as package_plugins
-
+from ..parser_in import TomlParser
+from .config_settings import ConfigSettings
 from .hooks.manager import (  # noqa: F401
     after,
     before,
     get_plugin_manager,
 )
-from .patch_pyproject_reading import ReadPyproject
+from .wrap_get_version import (
+    SEM_VERSION_FALLBACK_SANE,
+    write_to_file,
+)
 
 log = logging.getLogger("drain_swamp.monkey.wrap_infer_version")
 
 __all__ = ("run_build_plugins",)
-
-
-def _get_config_settings():
-    """Environment variable DS_CONFIG_SETTINGS contains an absolute
-    path to a .toml file containing plugins' key/value pairs
-
-    If :code:`python -m build` config setting cli options would be
-    passed thru, by setuptools, this function would be unnecessary
-
-    setuptools currently lacks this expected feature
-
-    :returns:
-
-       config settings dict. What normally would be supplied as
-       :code:`python -m build` config setting cli options
-
-    :rtype: dict[str, typing.Any]
-    """
-    msg_warn = (
-        "Expected env variable, DS_CONFIG_SETTINGS. Should contain "
-        "path to .toml file. File contains project.name, project.version, "
-        "tool.config-settings.kind and tool.config-settings.set-lock"
-    )
-    toml_path = os.environ.get("DS_CONFIG_SETTINGS", None)
-    if toml_path is not None:
-        path_f = Path(toml_path)
-        is_exists = path_f.exists() and path_f.is_file()
-        if is_exists:
-            """Attempt to read toml file. section tool.config-settings.
-            Get all key/value pairs
-            """
-            try:
-                pyproj_data = ReadPyproject()(path=path_f, tool_name="config-settings")
-            except LookupError:
-                d_section = {}
-                log.warning(msg_warn)
-            else:
-                # from setuptools_scm._integration.toml import TOML_RESULT
-                d_section = pyproj_data.section
-
-                # No config settings. Log warning
-                if len(d_section.keys()) == 0:
-                    log.warning(msg_warn)
-                else:  # pragma: no cover
-                    pass
-
-        else:  # pragma: no cover
-            d_section = {}
-    else:  # pragma: no cover
-        d_section = {}
-
-    return d_section
 
 
 def inspect_pm(pm) -> None:  # pragma: no cover
@@ -161,6 +112,10 @@ def run_build_plugins(d_config_settings):
     :type d_config_settings: collections.abc.Mapping[str, typing.Any]
     """
     mod_path = "drain_swamp.monkey.wrap_infer_version:run_build_plugins"
+
+    # late load module
+    import drain_swamp.monkey.plugins as package_plugins
+
     # Can register more pluggy specs with _register_hooks
     # If positional arg not a types.ModuleType raises TypeError
     pm = get_plugin_manager(package_plugins)
@@ -237,6 +192,28 @@ def infer_version(dist):
         pass
 
     # Until setuptools implements passing config-settings into subprocess
-    d_config_settings = _get_config_settings()
+    cs = ConfigSettings()
+    d_config_settings = cs.read()
+    del cs
 
-    run_build_plugins(d_config_settings)
+    # Ensure an initial version file exists. The version within can be incorrect
+    #    reverse search for a pyproject.toml
+    path_cwd = Path.cwd()
+    path_f = path_cwd.joinpath("pyproject.toml")
+    tp = TomlParser(path_f)
+    is_config_file_not_found = tp.d_pyproject_toml is None
+    if is_config_file_not_found:
+        # no pyproject.toml or has parsing issues
+        mod_path = "drain_swamp.monkey.wrap_infer_version::infer_version"
+        msg = f"{mod_path} pyproject.toml either not found or parsing had issues"
+        log.warning(msg)
+        sys.exit(1)
+    else:
+        # after reverse search lookup, found a pyproject.toml
+        config_path = str(tp.path_file)
+        write_to_file(
+            config_path,
+            SEM_VERSION_FALLBACK_SANE,
+            is_only_not_exists=True,
+        )
+        run_build_plugins(d_config_settings)

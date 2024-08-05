@@ -2,8 +2,8 @@
 .. moduleauthor:: Dave Faulkmore <https://mastodon.social/@msftcangoblowme>
 
 .. py:data:: __all__
-   :type: tuple[str, str, str, str, str]
-   :value: ("Snip", "PyProjectTOMLParseError", "BackendNotSupportedError", \
+   :type: tuple[str, str, str, str]
+   :value: ("PyProjectTOMLParseError", "BackendNotSupportedError", \
     "PyProjectTOMLReadError", "MissingRequirementsFoldersFiles")
 
    Package level exports
@@ -28,10 +28,8 @@ from .exceptions import (
     PyProjectTOMLParseError,
     PyProjectTOMLReadError,
 )
-from .snip import Snip
 
 __all__ = (
-    "Snip",
     "PyProjectTOMLParseError",
     "BackendNotSupportedError",
     "PyProjectTOMLReadError",

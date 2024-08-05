@@ -162,6 +162,7 @@ def write_to_file(
     str_ver: str,
     write_to: str | None = None,
     dist_name: str | None = None,
+    is_only_not_exists: bool | None = False,
 ) -> None:
     """Write version_file
 
@@ -181,6 +182,8 @@ def write_to_file(
        Default None. pyproject.toml section [tool.[name]] Unspecified --> pipenv-unlock
 
     :type dist_name: str | None
+    :param is_only_not_exists: Default False. Write file only if it does not already exit
+    :type is_only_not_exists: bool | None
     :raises:
 
        - :py:exc:`LookupError` -- Either pyproject.toml missing or
@@ -190,6 +193,11 @@ def write_to_file(
          to version file skipped
 
     """
+    if is_only_not_exists is None or not isinstance(is_only_not_exists, bool):
+        is_only_not_exists = False
+    else:  # pragma: no cover
+        pass
+
     kwargs = {}
     path_file_on_root = Path(name)
     path_root = path_file_on_root.parent
@@ -262,4 +270,10 @@ def write_to_file(
             # str(Version("0.0.1")) --> "0.0.1"
             str_ver_clean = str(ver_clean)
             assert str_ver_clean is not None and isinstance(str_ver_clean, str)
-            write_version_files(str_ver_clean, path_root, str_write_to, version_file)
+            write_version_files(
+                str_ver_clean,
+                path_root,
+                str_write_to,
+                version_file,
+                is_only_not_exists=is_only_not_exists,
+            )

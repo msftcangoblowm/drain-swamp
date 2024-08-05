@@ -1,6 +1,7 @@
 import copy
 import re
 import shutil
+import sys
 from collections.abc import Sequence
 from pathlib import (
     Path,
@@ -10,6 +11,7 @@ from typing import Any
 
 import pytest
 
+from drain_swamp._run_cmd import run_cmd
 from drain_swamp.backend_abc import (
     get_optionals_cli,
     get_optionals_pyproject_toml,
@@ -63,6 +65,25 @@ def file_regression(file_regression: "FileRegression") -> FileRegression:
     return FileRegression(file_regression)
 
 
+@pytest.hookimpl(hookwrapper=True)
+def pytest_runtest_makereport(item, call):
+    """
+    attach each test's TestReport to the test Item so fixtures can
+    decide how to finalize based on the test result.
+
+    fixtures can access the TestReport from the `request` fixture at
+    `request.node.test_report`.
+
+    .. seealso::
+
+       https://stackoverflow.com/a/70598731
+
+    """
+    test_report = (yield).get_result()
+    if test_report.when == "call":
+        item.test_report = test_report
+
+
 @pytest.fixture()
 def has_logging_occurred():
     """Display caplog capture text
@@ -114,7 +135,7 @@ def has_logging_occurred():
 
 
 @pytest.fixture()
-def prepare_folders_files():
+def prepare_folders_files(request):
     """Prepare folders and files within folder"""
 
     set_folders = set()
@@ -150,12 +171,13 @@ def prepare_folders_files():
     yield _method
 
     # cleanup
-    for abspath_folder in set_folders:
-        shutil.rmtree(abspath_folder, ignore_errors=True)
+    if request.node.test_report.outcome == "passed":
+        for abspath_folder in set_folders:
+            shutil.rmtree(abspath_folder, ignore_errors=True)
 
 
 @pytest.fixture()
-def prep_pyproject_toml():
+def prep_pyproject_toml(request):
     """cli doesn't offer a ``parent_dir`` option to bypass ``--path``.
     Instead copy and rename the test ``pyproject.toml`` to the ``tmp_path``
 
@@ -189,14 +211,15 @@ def prep_pyproject_toml():
     yield _method
 
     # cleanup
-    for path_delete_me in lst_delete_me:
-        if (
-            path_delete_me is not None
-            and issubclass(type(path_delete_me), PurePath)
-            and path_delete_me.exists()
-            and path_delete_me.is_file()
-        ):
-            path_delete_me.unlink()
+    if request.node.test_report.outcome == "passed":
+        for path_delete_me in lst_delete_me:
+            if (
+                path_delete_me is not None
+                and issubclass(type(path_delete_me), PurePath)
+                and path_delete_me.exists()
+                and path_delete_me.is_file()
+            ):
+                path_delete_me.unlink()
 
 
 @pytest.fixture()
@@ -342,23 +365,28 @@ def wd(tmp_path: Path) -> WorkDir:
 
 
 @pytest.fixture
-def get_section_dict():
-    """Read config settings from .toml file and get section"""
+def verify_tag_version():
+    """Verify version file contains a given semantic version str
 
-    def _method(path_dir, toml_contents):
-        import os
+    :param cwd: package base folder
+    :type cwd: pathlib.Path
+    :param sem_ver_str: expected semantic version
+    :type sem_ver_str: str
+    :returns: True if versions match otherwise False
+    :rtype: bool
+    """
 
-        from drain_swamp.monkey.wrap_infer_version import _get_config_settings
+    def _method(cwd, sem_ver_str):
+        p_bin_dir = Path(sys.executable).parent
+        drainswamp_path = str(p_bin_dir.joinpath("drain-swamp"))
+        cmd = [
+            drainswamp_path,
+            "tag",
+        ]
+        t_ret = run_cmd(cmd, cwd=cwd)
+        out, err, exit_code, exc = t_ret
+        is_eq = out == sem_ver_str
 
-        path_toml = path_dir.joinpath("setuptools-build.toml")
-        path_toml.write_text(toml_contents)
-
-        env_key = "DS_CONFIG_SETTINGS"
-        toml_path = str(path_toml)
-        os.environ[env_key] = toml_path
-
-        d_section = _get_config_settings()
-
-        return d_section
+        return is_eq
 
     return _method

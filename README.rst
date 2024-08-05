@@ -35,16 +35,14 @@ That's a lot of boilerplate code ... gone! Not all, but most.
 
 * Python 3.9 through 3.12, PyPy
 
+**New in 1.2.x**
+
+generate version file if missing;
+
 **New in 1.1.x**
 
 tox-test.ini; tox.ini; gha; build backend DS_CONFIG_SETTINGS support;
 add gha variable DRAINSWAMP_SET_LOCK;
-
-**New in 1.0.x**
-
-build plugin manager and plugins; build uses plugins; entrypoint scm-version;
-version file native support; drain-swamp tag; semantic version str sane fallback;
-license apache2.0 --> AGPLv3+;
 
 Extensions
 -----------

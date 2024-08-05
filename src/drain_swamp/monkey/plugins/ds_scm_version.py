@@ -52,9 +52,11 @@ from importlib.metadata import (
     PackageNotFoundError,
     metadata,
 )
+from pathlib import Path
 from typing import Any
 
 from drain_swamp._run_cmd import run_cmd
+from drain_swamp.monkey.config_settings import ConfigSettings
 from drain_swamp.monkey.hooks import markers
 from drain_swamp.monkey.hooks.constants import HOOK_NAMESPACE
 
@@ -129,12 +131,22 @@ def on_version_infer(config_settings: dict[str, Any]) -> str | None:
 
     pluggy will inspect this method's signature. So keep it!
     """
+    mod_path = "backend plugin ds_scm_version"
+
+    # Use absolute path. Relative path would silently fail
+    p_bin_dir = Path(sys.executable).parent
+    scm_version_path = str(p_bin_dir.joinpath("scm-version"))
+
     is_installed = _is_package_installed("drain_swamp")
     ret = None
     with warnings.catch_warnings(record=True) as w:
         kind = _kind(config_settings)
         if len(w) != 0:
             ret = str(w[0].message)
+
+    log.info(f"{mod_path} kind: {kind!r}")
+    config_settings_path = ConfigSettings.get_abs_path()
+    log.info(f"{mod_path} config_settings_path: {config_settings_path}")
 
     if ret is not None:
         return ret
@@ -150,7 +162,7 @@ def on_version_infer(config_settings: dict[str, Any]) -> str | None:
             else:
                 # ../cli_scm_version.py entrypoint
                 cmd = [
-                    "scm-version",
+                    scm_version_path,
                 ]
             cmd.extend(["get", "--is-write"])
             t_out = run_cmd(cmd, cwd=None)
@@ -186,7 +198,7 @@ def on_version_infer(config_settings: dict[str, Any]) -> str | None:
             else:
                 # ../cli_scm_version.py entrypoint
                 cmd = [
-                    "scm-version",
+                    scm_version_path,
                 ]
             cmd.extend(["write", kind])
             t_out = run_cmd(cmd, cwd=None)

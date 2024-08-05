@@ -14,6 +14,7 @@ from unittest.mock import patch
 
 import pytest
 
+from drain_swamp.monkey.config_settings import ConfigSettings
 from drain_swamp.monkey.plugins.ds_scm_version import (
     _is_package_installed,
     _kind,
@@ -113,9 +114,7 @@ ids_kind_arg_filter_normal = (
     testdata_kind_arg_filter_normal,
     ids=ids_kind_arg_filter_normal,
 )
-def test_kind_arg_filter_normal(
-    toml_contents, fallback, expected_kind, tmp_path, get_section_dict
-):
+def test_kind_arg_filter_normal(toml_contents, fallback, expected_kind, tmp_path):
     # pytest --showlocals --log-level INFO -k "test_kind_arg_filter_normal" tests
     # d_section not a dict
     invalids = (
@@ -127,7 +126,7 @@ def test_kind_arg_filter_normal(
         actual_kind = _kind(invalid, fallback=fallback_clean)
         assert actual_kind == fallback_clean
 
-    d_section = get_section_dict(tmp_path, toml_contents)
+    d_section = ConfigSettings.get_section_dict(tmp_path, toml_contents)
     actual_kind = _kind(d_section, fallback=fallback)
     assert actual_kind == expected_kind
 
@@ -174,11 +173,9 @@ ids_kind_arg_filter_whitespace = (
     testdata_kind_arg_filter_whitespace,
     ids=ids_kind_arg_filter_whitespace,
 )
-def test_kind_arg_filter_whitespace(
-    toml_contents, fallback, expected_kind, tmp_path, get_section_dict
-):
+def test_kind_arg_filter_whitespace(toml_contents, fallback, expected_kind, tmp_path):
     # pytest --showlocals --log-level INFO -k "test_kind_arg_filter_whitespace" tests
-    d_section = get_section_dict(tmp_path, toml_contents)
+    d_section = ConfigSettings.get_section_dict(tmp_path, toml_contents)
     with pytest.warns(UserWarning) as record:
         actual_kind = _kind(d_section, fallback=fallback)
         warn_msg_expected = (

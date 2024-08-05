@@ -218,8 +218,8 @@ jobs:
           RELEASE_VERSION: ${{ steps.vars.outputs.tag }}
           SET_LOCK: ${{ vars.DRAINSWAMP_SET_LOCK }}
         run: |
-          echo "python -m build -C--kind=$RELEASE_VERSION -C--set-lock=$SET_LOCK"
-          python -m build -C--kind="$RELEASE_VERSION -C--set-lock=$SET_LOCK"
+          echo "python -m build -C--kind=current -C--set-lock=$SET_LOCK"
+          python -m build -C--kind="current" -C--set-lock="$SET_LOCK"
 
       - name: "List tarballs"
         run: |

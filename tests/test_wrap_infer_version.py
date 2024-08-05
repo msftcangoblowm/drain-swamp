@@ -13,18 +13,22 @@
 
 import logging
 import logging.config
-import os
-import subprocess
+import shutil
 import sys
 from pathlib import Path
+from types import SimpleNamespace
+from unittest.mock import patch
 
 import pytest
+from setuptools_scm._version_cls import _version_as_tuple
 
+from drain_swamp._run_cmd import run_cmd
 from drain_swamp.constants import (
     LOGGING,
     g_app_name,
 )
-from drain_swamp.monkey.wrap_infer_version import _get_config_settings
+from drain_swamp.monkey.config_settings import ConfigSettings
+from drain_swamp.monkey.wrap_infer_version import infer_version
 
 from .wd_wrapper import WorkDir
 
@@ -44,13 +48,39 @@ def wd(wd: WorkDir) -> WorkDir:
     return wd
 
 
+testdata_dist_get_cmdline_options = (
+    (
+        Path(__file__).parent.joinpath(
+            "_project",
+            "install_minimum.pyproject_toml",
+        ),
+        "complete_awesome_perfect",
+        "0.2.0",
+        "0.2.1",
+    ),
+)
+ids_dist_get_cmdline_options = (
+    "write config_settings .toml file to pass in kwargs to build plugins",
+)
+
+
+@pytest.mark.parametrize(
+    "p_toml_file, app_name, commit_version_str, kind",
+    testdata_dist_get_cmdline_options,
+    ids=ids_dist_get_cmdline_options,
+)
 def test_dist_get_cmdline_options(
+    p_toml_file,
+    app_name,
+    commit_version_str,
+    kind,
     prep_pyproject_toml,
     prepare_folders_files,
     caplog,
     has_logging_occurred,
     wd: WorkDir,
     monkeypatch: pytest.MonkeyPatch,
+    verify_tag_version,
 ):
     """Can access command line options using Distribution.get_cmdline_options
 
@@ -71,9 +101,11 @@ def test_dist_get_cmdline_options(
 
     p_base = wd.cwd.parent
     logger.info(f"wd.cwd: {wd.cwd}")
+    assert wd.cwd.exists() and wd.cwd.is_dir()
+
     logger.info(f"sys.executable: {sys.executable}")
-    kind = "0.2.1"
-    app_name = "complete_awesome_perfect"
+    logger.info(f"""scm-version path: {shutil.which("scm-version")}""")
+
     f_name = f"{app_name}-{kind}.tar.gz"
 
     # prepare
@@ -84,16 +116,9 @@ def test_dist_get_cmdline_options(
         "requirements/*.lnk\n"
         "src/*.egg-info/*\n"
         "src/*/_version.py\n"
-        "setuptools-build.toml\n\n"
+        f"{ConfigSettings.FILE_NAME_DEFAULT}\n\n"
     )
     wd.write(".gitignore", msg_gitignore)
-
-    #    pyproject.toml
-    p_toml_file = Path(__file__).parent.joinpath(
-        "_project",
-        "install_minimum.pyproject_toml",
-    )
-    prep_pyproject_toml(p_toml_file, wd.cwd)
 
     #    empty files
     req_seq = (
@@ -126,14 +151,15 @@ def test_dist_get_cmdline_options(
 
     #    src/complete_awesome_perfect/_version.py
     str_version_file = (
-        """__version__ = version = '0.2.0'\n"""
-        """__version_tuple__ = version_tuple = (0, 2, 0)\n\n"""
+        f"""__version__ = version = '{commit_version_str}'\n"""
+        "__version_tuple__ = version_tuple = "
+        f"""{str(_version_as_tuple(commit_version_str))}\n\n"""
     )
     path_f = path_dir_dest.joinpath("_version.py")
     path_f.write_text(str_version_file)
 
     wd.add_and_commit()
-    wd("git tag --no-sign -m 'plz' 0.2.0")
+    wd(f"git tag --no-sign -m 'skeleton package' {commit_version_str}")
 
     # monkeypatch.chdir(p_package_base)
 
@@ -148,20 +174,28 @@ def test_dist_get_cmdline_options(
     set-lock="0"
     EOF
     """
-    toml_path = str(p_base.joinpath("setuptools-build.toml"))
+    toml_path = str(p_base.joinpath(ConfigSettings.FILE_NAME_DEFAULT))
     toml_contents = (
         "[project]\n"
         f"""name = "{app_name}"\n"""
         """version = "99.99.99a1.dev6"\n"""
-        "[tool.config-settings]\n"
+        f"[tool.{ConfigSettings.SECTION_NAME}]\n"
         f"""kind="{kind}"\n"""
         """set-lock="0"\n\n"""
     )
-    Path(toml_path).write_text(toml_contents)
+    names = (
+        ConfigSettings.FILE_NAME_DEFAULT,
+        None,
+        1.234,
+    )
+    for file_name in names:
+        # modifies os.environ AND writes config settings file
+        cs = ConfigSettings(file_name=file_name)
+        cs.write(p_base, toml_contents)
 
-    # plugins: refresh_links (needs set-lock), cli_scm_version.py (needs kind)
-    env = os.environ.copy()
-    env |= {"DS_CONFIG_SETTINGS": toml_path}
+    env = None
+    assert ConfigSettings.get_abs_path() == toml_path
+
     cwd = wd.cwd
     cmd = (
         sys.executable,
@@ -172,22 +206,73 @@ def test_dist_get_cmdline_options(
         f"-C--kind='{kind}'",  # unfortunately not passed on by setuptools
         "-C--set-lock='0'",  # unfortunately not passed on by setuptools
     )
-    logger.info(f"DS_CONFIG_SETTINGS: {env.get('DS_CONFIG_SETTINGS')}")
-    try:
-        proc = subprocess.run(cmd, cwd=cwd, env=env)
-    except subprocess.CalledProcessError as e:
-        logger.warn(f"ERROR build failed code {e.returncode} {e.output}")
-        raise
-    else:
-        # logger.info(f"proc.stdout {proc.stdout!r}")
-        # proc.stderr(f"proc.stderr {proc.stderr!r}")
-        assert has_logging_occurred(caplog)
-        assert proc.returncode == 0
-        path_dist_dir = cwd.joinpath("dist", f_name)
-        assert path_dist_dir.exists()
+
+    # prepare
+    #    pyproject.toml
+    prep_pyproject_toml(p_toml_file, wd.cwd)
+
+    # plugins: refresh_links (needs set-lock), cli_scm_version.py (needs kind)
+    t_ret = run_cmd(cmd, cwd=cwd, env=env)
+    out, err, exit_code, exc = t_ret
+    logger.info(f"out {out!r}")
+    logger.info(f"err {err!r}")
+    logger.info(list(cwd.glob("**/*.tar.gz")))
+
+    assert has_logging_occurred(caplog)
+    assert exc is None
+    assert exit_code == 0
+    path_dist_dir = cwd.joinpath("dist", f_name)
+    assert path_dist_dir.exists()
+
+    # logger.info(f"version file contents:\n{path_f.read_text()}")
+    assert verify_tag_version(wd.cwd, kind) is True
 
 
-testdata_get_config_settings = (
+def test_infer_version_fail(
+    wd,
+    caplog,
+    has_logging_occurred,
+):
+    # pytest --showlocals --log-level INFO -k "test_infer_version_fail" tests
+    LOGGING["loggers"][g_app_name]["propagate"] = True
+    logging.config.dictConfig(LOGGING)
+    logger = logging.getLogger(name=g_app_name)
+    logger.addHandler(hdlr=caplog.handler)
+    caplog.handler.level = logger.level
+
+    app_name = "complete_awesome_perfect"
+    kind = "0.0.2"
+
+    cwd = wd.cwd
+    cmd = (
+        sys.executable,
+        "-m",
+        "build",
+        "--no-isolation",
+        "--sdist",
+        f"-C--kind='{kind}'",  # unfortunately not passed on by setuptools
+        "-C--set-lock='0'",  # unfortunately not passed on by setuptools
+    )
+    t_ret = run_cmd(cmd, cwd=cwd)
+    out, err, exit_code, exc = t_ret
+    assert exit_code == 1
+    msg_expected = (
+        "does not appear to be a Python project: no pyproject.toml or setup.py"
+    )
+    assert out.endswith(msg_expected)
+
+    # No pyproject.toml --> SystemExit
+    ns_dist = SimpleNamespace()
+    ns_dist.metadata = SimpleNamespace()
+    ns_dist.metadata.name = app_name
+    with (
+        patch(f"{g_app_name}.monkey.wrap_infer_version.Path.cwd", return_value=cwd),
+        pytest.raises(SystemExit),
+    ):
+        infer_version(ns_dist)
+
+
+testdata_config_settings_read = (
     (
         (
             "[project]\n"
@@ -205,7 +290,7 @@ testdata_get_config_settings = (
             "[project]\n"
             """name = "great-package"\n"""
             """version = "99.99.99a1.dev6"\n"""
-            "[tool.config-settings]\n"
+            f"[tool.{ConfigSettings.SECTION_NAME}]\n"
             """kind="current"\n"""
             """set-lock="0"\n\n"""
         ),
@@ -217,13 +302,13 @@ testdata_get_config_settings = (
             "[project]\n"
             """name = "great-package"\n"""
             """version = "99.99.99a1.dev6"\n"""
-            "[tool.config-settings]\n"
+            f"[tool.{ConfigSettings.SECTION_NAME}]\n"
         ),
         0,
         True,
     ),
 )
-ids_get_config_settings = (
+ids_config_settings_read = (
     "Incorrect section title. Expecting tool.config-settings",
     "Has section 2 keys",
     "Has section 0 keys",
@@ -232,10 +317,10 @@ ids_get_config_settings = (
 
 @pytest.mark.parametrize(
     "toml_contents, section_key_count, has_log_warning",
-    testdata_get_config_settings,
-    ids=ids_get_config_settings,
+    testdata_config_settings_read,
+    ids=ids_config_settings_read,
 )
-def test_get_config_settings(
+def test_config_settings_read(
     toml_contents,
     section_key_count,
     has_log_warning,
@@ -251,19 +336,56 @@ def test_get_config_settings(
     caplog.handler.level = logger.level
 
     # prepare
-    path_toml = tmp_path.joinpath("setuptools-build.toml")
-    path_toml.write_text(toml_contents)
+    cs = ConfigSettings()
+    cs.write(tmp_path, toml_contents)
+
+    path_toml = tmp_path.joinpath(ConfigSettings.FILE_NAME_DEFAULT)
     assert path_toml.exists() and path_toml.is_file()
 
-    env_key = "DS_CONFIG_SETTINGS"
-    toml_path = str(path_toml)
-    os.environ[env_key] = toml_path
-    assert os.environ.get(env_key) == toml_path
+    ConfigSettings.set_abs_path(path_toml)
 
     # act
-    d_section = _get_config_settings()
+    cs = ConfigSettings()
+    d_section = cs.read()
     actual_count = len(d_section.keys())
     assert actual_count == section_key_count
 
     if has_log_warning:
         assert has_logging_occurred(caplog)
+
+
+@pytest.mark.parametrize(
+    "toml_contents, section_key_count, has_log_warning",
+    testdata_config_settings_read,
+    ids=ids_config_settings_read,
+)
+def test_config_settings_set_abs_path(
+    toml_contents,
+    section_key_count,
+    has_log_warning,
+    tmp_path,
+    caplog,
+    has_logging_occurred,
+):
+    # pytest --showlocals --log-level INFO -k "test_get_config_settings" tests
+    # prepare
+    ConfigSettings.remove_abs_path()
+
+    path_toml = tmp_path.joinpath(ConfigSettings.FILE_NAME_DEFAULT)
+    path_toml.write_text(toml_contents)
+    assert path_toml.exists() and path_toml.is_file()
+
+    toml_path = str(path_toml)
+
+    invalids = (
+        None,
+        0.1234,
+    )
+    for invalid in invalids:
+        ConfigSettings.set_abs_path(invalid)
+        assert ConfigSettings.get_abs_path() is None
+
+    valids = (path_toml, str(path_toml))
+    for valid in valids:
+        ConfigSettings.set_abs_path(valid)
+        assert ConfigSettings.get_abs_path() == toml_path

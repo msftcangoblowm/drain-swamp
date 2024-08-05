@@ -25,6 +25,23 @@ Changelog
 
 .. scriv-start-here
 
+.. _changes_1-2-0:
+
+Version 1.2.0 — 2024-08-05
+--------------------------
+
+- style: watchmen Dr Manhatten stands by does nothing expresses academic curiousity
+- feat: add param is_only_not_exists. Create nonexistent version file during write
+- fix: version file is generated, git no track. During build, not exists, create it
+- fix: in build backend, lazy load plugins after ensuring existence of version file
+- fix(build plugins): subprocess cmd use absolute path
+- fix(wrap_infer_version): add reverse search for config file
+- refactor: remove package exports except exceptions
+- refactor: config_settings hack encapsulate in class ConfigSettings
+- tests(conftest): fixture finalize remove resources only on success
+- tests(conftest): add fixture to verify version file semantic version str
+- ci: missing requirements include
+
 .. _changes_1-1-2:
 
 Version 1.1.2 — 2024-08-02

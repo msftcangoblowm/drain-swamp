@@ -28,4 +28,5 @@ def write_version_files(
     root: Path,
     write_to: str | None,
     version_file: str | None,
+    is_only_not_exists: bool | None = False,
 ) -> None: ...

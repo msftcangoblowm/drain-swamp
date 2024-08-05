@@ -33,6 +33,7 @@ from drain_swamp.constants import (
     LOGGING,
     g_app_name,
 )
+from drain_swamp.monkey.config_settings import ConfigSettings
 from drain_swamp.monkey.plugins.ds_refresh_links import (
     _is_set_lock,
     _parent_dir,
@@ -96,23 +97,10 @@ ids_is_set_lock = (
     testdata_is_set_lock,
     ids=ids_is_set_lock,
 )
-def test_is_set_lock(toml_contents, is_lock_expected, tmp_path, get_section_dict):
+def test_is_set_lock(toml_contents, is_lock_expected, tmp_path):
     # pytest --showlocals --log-level INFO -k "test_is_set_lock" tests
     # prepare
-    d_section = get_section_dict(tmp_path, toml_contents)
-    """
-    path_toml = tmp_path.joinpath("setuptools-build.toml")
-    path_toml.write_text(toml_contents)
-    assert path_toml.exists() and path_toml.is_file()
-
-    env_key = "DS_CONFIG_SETTINGS"
-    toml_path = str(path_toml)
-    os.environ[env_key] = toml_path
-    assert os.environ.get(env_key) == toml_path
-
-    d_section = _get_config_settings()
-    """
-    pass
+    d_section = ConfigSettings.get_section_dict(tmp_path, toml_contents)
 
     # default is unsupported type --> unlocked
     actual = _is_set_lock(d_section, default=None)
@@ -156,7 +144,7 @@ ids_parent_dir = ("config_settings toml has placeholder for tmp_path",)
     testdata_parent_dir,
     ids=ids_parent_dir,
 )
-def test_parent_dir(toml_contents, tmp_path, get_section_dict):
+def test_parent_dir(toml_contents, tmp_path):
     # pytest --showlocals --log-level INFO -k "test_parent_dir" tests
     str_tmp_path = str(tmp_path)
 
@@ -180,7 +168,7 @@ def test_parent_dir(toml_contents, tmp_path, get_section_dict):
 
     # normal usage
     contents_including_path = toml_contents.format(str_tmp_path)
-    d_section = get_section_dict(tmp_path, contents_including_path)
+    d_section = ConfigSettings.get_section_dict(tmp_path, contents_including_path)
     actual = _parent_dir(d_section)
     assert issubclass(type(actual), PurePath)
     assert actual == tmp_path
@@ -299,7 +287,6 @@ def test_plugin_refresh_links_normal(
     prepare_folders_files,
     prep_pyproject_toml,
     path_project_base,
-    get_section_dict,
     caplog,
     has_logging_occurred,
 ):
@@ -354,7 +341,7 @@ def test_plugin_refresh_links_normal(
         ),
     )
     for toml_contents in configs:
-        d_section = get_section_dict(tmp_path, toml_contents)
+        d_section = ConfigSettings.get_section_dict(tmp_path, toml_contents)
 
         inst = BackendType.load_factory(
             path_config,
@@ -398,7 +385,6 @@ def test_plugin_refresh_links_normal(
 
 def test_plugin_refresh_links_exceptions(
     tmp_path,
-    get_section_dict,
     prep_pyproject_toml,
     caplog,
     has_logging_occurred,
@@ -432,7 +418,7 @@ def test_plugin_refresh_links_exceptions(
 
     path_config = None
     for toml_contents in configs:
-        d_section = get_section_dict(tmp_path, toml_contents)
+        d_section = ConfigSettings.get_section_dict(tmp_path, toml_contents)
         if path_config is not None and path_config.exists():
             path_config.unlink()
 
@@ -470,7 +456,7 @@ def test_plugin_refresh_links_exceptions(
     for path_pyproject_toml, expected_error_msg in pyproject_tomls:
         for toml_contents in configs:
             # prepare
-            d_section = get_section_dict(tmp_path, toml_contents)
+            d_section = ConfigSettings.get_section_dict(tmp_path, toml_contents)
             path_config = prep_pyproject_toml(path_pyproject_toml, tmp_path)
             assert path_config.exists() and path_config.is_file()
             with patch(
@@ -526,7 +512,7 @@ def test_plugin_refresh_links_exceptions(
             "Either no pyproject.toml section, tool.setuptools.dynamic "
             "or no dependencies key"
         )
-        d_section = get_section_dict(tmp_path, toml_contents)
+        d_section = ConfigSettings.get_section_dict(tmp_path, toml_contents)
         if path_config is not None and path_config.exists():
             path_config.unlink()
 

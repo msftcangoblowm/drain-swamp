@@ -85,6 +85,8 @@ jobs:
         run: |
           set -xe
           python -m pip install -r requirements/tox$LOCK_SUFFIX
+          python -m pip install -r requirements/prod$LOCK_SUFFIX
+          python -m pip install -r requirements/kit$LOCK_SUFFIX
 
       - name: "Refresh dependency lock .lnk files"
         env:

@@ -178,6 +178,7 @@ def write_version_files(
     root,
     write_to,
     version_file,
+    is_only_not_exists=False,
 ):
     """Write the _version.py file
 
@@ -191,6 +192,8 @@ def write_version_files(
     :type write_to: str | None
     :param version_file: target relative path from pyproject.toml
     :type version_file: str | None
+    :param is_only_not_exists: Default False. Write file only if it does not already exit
+    :type is_only_not_exists: bool | None
     :raises:
 
        - :py:exc:`ValueError` -- unsupported template file format.
@@ -201,17 +204,39 @@ def write_version_files(
        Moved from setuptools_scm._get_version_impl
 
     """
+    if is_only_not_exists is None or not isinstance(is_only_not_exists, bool):
+        is_only_not_exists = False
+    else:  # pragma: no cover
+        pass
+
+    def is_do_it(abs_path):
+        nonlocal is_only_not_exists
+        path_abs = Path(abs_path)
+        if is_only_not_exists is False:
+            ret = True
+        else:
+            if not Path(path_abs).exists():
+                ret = True
+            else:
+                ret = False
+
+        return ret
+
     if write_to is not None:
         # For testing?!
-        try:
-            dump_version(
-                root=root,
-                version=version,
-                write_to=write_to,
-                template=None,
-            )
-        except ValueError:
-            raise
+        is_run = is_do_it(write_to)
+        if is_run:
+            try:
+                dump_version(
+                    root=root,
+                    version=version,
+                    write_to=write_to,
+                    template=None,
+                )
+            except ValueError:
+                raise
+        else:  # pragma: no cover
+            pass
     else:  # pragma: no cover
         pass
 
@@ -220,13 +245,17 @@ def write_version_files(
         version_file = Path(version_file)
         assert not version_file.is_absolute(), f"{version_file=}"
         target = root.joinpath(version_file)
-        try:
-            write_version_to_path(
-                target,
-                template=None,
-                version=version,
-            )
-        except ValueError:  # pragma: no cover
-            raise
+        is_run = is_do_it(target)
+        if is_run:
+            try:
+                write_version_to_path(
+                    target,
+                    template=None,
+                    version=version,
+                )
+            except ValueError:  # pragma: no cover
+                raise
+        else:  # pragma: no cover
+            pass
     else:  # pragma: no cover
         pass

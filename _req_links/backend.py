@@ -39,13 +39,15 @@ from __future__ import annotations
 import copy
 import sys
 from collections.abc import Mapping
+from pathlib import Path
 
 from setuptools import build_meta as _orig
 from setuptools.build_meta import *  # noqa: F401 F403
 
-from drain_swamp.monkey.wrap_infer_version import (
-    _get_config_settings,
-    run_build_plugins,
+from drain_swamp.monkey.config_settings import ConfigSettings
+from drain_swamp.monkey.wrap_get_version import (
+    SEM_VERSION_FALLBACK_SANE,
+    write_to_file,
 )
 
 
@@ -112,7 +114,8 @@ def get_requires_for_build_sdist(config_settings=None):
 
     if config_settings is None or not isinstance(config_settings, Mapping):
         # tox does not pass in config_settings, check DS_CONFIG_SETTINGS
-        d_config_settings_tox = _get_config_settings()
+        cs = ConfigSettings()
+        d_config_settings_tox = cs.read()
         if d_config_settings_tox is not None:
             d_config_settings = copy.deepcopy(d_config_settings_tox)
         else:
@@ -125,6 +128,13 @@ def get_requires_for_build_sdist(config_settings=None):
             sys.exit(exit_code)
     else:  # pragma: no cover
         d_config_settings = copy.deepcopy(config_settings)
+
+    # Ensure an initial version file exists. The version within can be incorrect
+    path_cwd = Path.cwd()
+    path_f = path_cwd.joinpath("pyproject.toml")
+    write_to_file(str(path_f), SEM_VERSION_FALLBACK_SANE, is_only_not_exists=True)
+
+    from drain_swamp.monkey.wrap_infer_version import run_build_plugins
 
     run_build_plugins(d_config_settings)
 

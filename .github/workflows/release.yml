@@ -57,7 +57,7 @@ jobs:
         SET_LOCK: ${{ vars.DRAINSWAMP_SET_LOCK }}
       run: |
         echo "python -m build -C--kind=$RELEASE_VERSION -C--set-lock=$SET_LOCK"
-        python -m build -C--kind="$RELEASE_VERSION -C--set-lock=$SET_LOCK"
+        python -m build -C--kind="$RELEASE_VERSION" -C--set-lock="$SET_LOCK"
 
     - name: Store the distribution packages
       uses: actions/upload-artifact@v4
