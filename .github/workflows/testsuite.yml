@@ -83,17 +83,18 @@ jobs:
 
       - name: "Install dependencies"
         run: |
-          set -xe
           python -m pip install -r requirements/tox$LOCK_SUFFIX
           python -m pip install -r requirements/prod$LOCK_SUFFIX
           python -m pip install -r requirements/kit$LOCK_SUFFIX
 
-      - name: "Refresh dependency lock .lnk files"
+      # Create generated files: version file and .lnk files. sdist tarball ignored
+      - name: "Build sdist to run plugins. Create generated files"
         env:
           SET_LOCK: ${{ vars.DRAINSWAMP_SET_LOCK }}
         run: |
           set -xe
-          python src/drain_swamp/cli_unlock.py refresh --set-lock=$SET_LOCK
+          echo "python -m build -C--kind='current' -C--set-lock='$SET_LOCK'"
+          python -m build -C--kind="current" -C--set-lock="$SET_LOCK"
 
       - name: "Run tox for ${{ matrix.python-version }}"
         run: |

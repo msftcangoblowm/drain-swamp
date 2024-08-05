@@ -133,10 +133,7 @@ else:
     pass
 # pep366 ...done
 
-from .constants import (
-    __version_app,
-    g_app_name,
-)
+from .constants import g_app_name
 from .igor_utils import (
     build_package,
     edit_for_release,
@@ -278,7 +275,6 @@ EPILOG_CHEATS = """
 @click.group(
     context_settings={"help_option_names": ["-h", "--help"]},
 )
-@click.version_option(version=__version_app)
 def main():
     """Command-line for drain-swamp. Prints usage"""
 

@@ -438,6 +438,13 @@ class SemVersioning(unittest.TestCase):
             project_name_actual = uri.split(".")[0]
             self.assertNotIn("_", project_name_actual)
 
+        # package_name contains hyphens. Gets converted to underscores
+        str_url = sv.readthedocs_url(g_app_name)
+        protocol_len = len("https://")
+        uri = str_url[protocol_len:]
+        project_name_actual = uri.split(".")[0]
+        self.assertEqual(project_name_actual, project_name)
+
         for v_in, v_expected, anchor in testdata_valids:
             # clean up semantic version str
             v_actual, _ = sanitize_tag(v_in)

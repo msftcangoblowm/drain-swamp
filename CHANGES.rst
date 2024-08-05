@@ -25,6 +25,16 @@ Changelog
 
 .. scriv-start-here
 
+.. _changes_1-2-1:
+
+Version 1.2.1 — 2024-08-05
+--------------------------
+
+- fix(entrypoints): remove support for --version option
+- refactor: add module constants_maybe. Move constants.__version_app constants.__url__
+- ci(tox-test): remove py314
+- ci: build sdist to run build plugins to recreate generated files
+
 .. _changes_1-2-0:
 
 Version 1.2.0 — 2024-08-05

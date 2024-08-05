@@ -4,10 +4,10 @@
 package level constants
 
 .. py:data:: __all__
-   :type: tuple[str, str, str, str, str, str, str, str, str, str, str]
+   :type: tuple[str, str, str, str, str, str, str, str, str]
    :value: ("g_app_name", "package_name", "SUFFIX_IN", "SUFFIX_LOCKED", \
-   "SUFFIX_UNLOCKED", "SUFFIX_SYMLINK", "__version_app", "__url__", \
-   "PATH_PIP_COMPILE", "PROG_LOCK", "PROG_UNLOCK")
+   "SUFFIX_UNLOCKED", "SUFFIX_SYMLINK", "PATH_PIP_COMPILE", "PROG_LOCK", \
+   "PROG_UNLOCK")
 
    Module exports
 
@@ -49,22 +49,6 @@ package level constants
 .. py:data:: SUFFIX_SYMLINK
    :type: str
    :value: ".lnk"
-
-.. py:data:: __version_app
-   :type: str
-
-   Official app version. Semantic versioning fully supported. So pre and post releases,
-   release candidate, and dev releases are possible
-
-   tagged post releases are encouraged. Cuz that means used
-   :command:`git rebase` to fix a problem at when it originally occured
-   rather than applying the fix and ignoring the past
-
-.. py:data:: __url__
-   :type: str
-
-   rtd URL to for current tagged version. This is not used for anything.
-   Just here for completeness.
 
 .. py:data:: PATH_PIP_COMPILE
    :type: pathlib.Path
@@ -128,12 +112,6 @@ import re
 import sys
 from pathlib import Path
 
-from ._version import __version__
-from .version_semantic import (
-    SemVersion,
-    sanitize_tag,
-)
-
 __all__ = (
     "g_app_name",
     "package_name",
@@ -141,8 +119,6 @@ __all__ = (
     "SUFFIX_LOCKED",
     "SUFFIX_UNLOCKED",
     "SUFFIX_SYMLINK",
-    "__version_app",
-    "__url__",
     "PATH_PIP_COMPILE",
     "PROG_LOCK",
     "PROG_UNLOCK",
@@ -156,13 +132,6 @@ SUFFIX_IN = ".in"
 SUFFIX_LOCKED = ".lock"
 SUFFIX_UNLOCKED = ".unlock"
 SUFFIX_SYMLINK = ".lnk"
-
-# Removes epoch and local. Fixes version
-__version_app, local = sanitize_tag(__version__)
-
-sv = SemVersion()
-sv.parse_ver(__version__, local=local)
-__url__ = sv.readthedocs_url(g_app_name, is_latest=False)
 
 # Required only for pytest
 DEBUG = False

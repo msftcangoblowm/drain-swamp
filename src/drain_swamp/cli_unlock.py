@@ -86,7 +86,6 @@ from .backend_setuptools import BackendSetupTools  # noqa: F401
 from .constants import (
     SUFFIX_LOCKED,
     SUFFIX_UNLOCKED,
-    __version_app,
 )
 from .exceptions import (
     BackendNotSupportedError,
@@ -181,7 +180,6 @@ EPILOG_REFRESH = """
 @click.group(
     context_settings={"help_option_names": ["-h", "--help"]},
 )
-@click.version_option(version=__version_app)
 def main():
     """Command-line for pipenv-unlock. Prints usage"""
 

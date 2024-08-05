@@ -82,7 +82,6 @@ EXIT CODES
 @click.group(
     context_settings={"help_option_names": ["-h", "--help"]},
 )
-@click.version_option(version="0.0.1")
 def main():
     """Command-line for scm-version. Prints usage"""
 
