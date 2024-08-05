@@ -38,6 +38,7 @@ That's a lot of boilerplate code ... gone! Not all, but most.
 **New in 1.2.x**
 
 generate version file if missing; ci workflows recreate generated files;
+docs use available version str;
 
 **New in 1.1.x**
 

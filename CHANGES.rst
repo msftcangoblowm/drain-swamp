@@ -25,6 +25,13 @@ Changelog
 
 .. scriv-start-here
 
+.. _changes_1-2-2:
+
+Version 1.2.2 — 2024-08-05
+--------------------------
+
+- docs(conf.py): use version from version file otherwise version from snippet
+
 .. _changes_1-2-1:
 
 Version 1.2.1 — 2024-08-05

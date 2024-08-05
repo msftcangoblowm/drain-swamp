@@ -5,22 +5,45 @@ from pathlib import Path
 from packaging.version import parse
 from sphinx_pyproject import SphinxConfig
 
-from drain_swamp.constants import __version__ as proj_version
 from drain_swamp.pep518_read import find_project_root
 
 path_docs = Path(__file__).parent
 path_package_base = path_docs.parent
 sys.path.insert(0, str(path_package_base))  # Needed ??
 
+# @@@ editable
+copyright = "2024–2024, Dave Faulkmore"
+# The short X.Y.Z version.
+version = "1.2.2"
+# The full version, including alpha/beta/rc tags.
+release = "1.2.2"
+# The date of release, in "monthname day, year" format.
+release_date = "August 5, 2024"
+# @@@ end
+
+v = parse(release)
+version_short = f"{v.major}.{v.minor}"
+# version_xyz = f"{v.major}.{v.minor}.{v.micro}"
+version_xyz = version
+
 # pyproject.toml search algo. Credit/Source: https://pypi.org/project/black/
 srcs = (path_package_base,)
 t_root = find_project_root(srcs)
+
+try:
+    from drain_swamp.constants_maybe import __version__ as version_semantic_full
+except ImportError:
+    # set during each tagged release
+    version_long = version_xyz
+else:
+    # version file is generated during python -m build --sdist
+    version_long = version_semantic_full
 
 config = SphinxConfig(
     # Path(__file__).parent.parent.joinpath("pyproject.toml"),
     t_root[0] / "pyproject.toml",
     globalns=globals(),
-    config_overrides={"version": proj_version},  # dynamic version setuptools_scm
+    config_overrides={"version": version_long},
 )
 
 # This project is a fork from "Sphinx External ToC"
@@ -30,22 +53,7 @@ proj_authors = config.author
 
 slug = re.sub(r"\W+", "-", proj_project.lower())
 proj_master_doc = config.get("master_doc")
-
-# @@@ editable
-copyright = "2024–2024, Dave Faulkmore"
-# The short X.Y.Z version.
-version = "1.2.1"
-# The full version, including alpha/beta/rc tags.
-release = "1.2.1"
-# The date of release, in "monthname day, year" format.
-release_date = "August 5, 2024"
-# @@@ end
-
-v = parse(release)
-version_short = f"{v.major}.{v.minor}"
-# version_xyz = f"{v.major}.{v.minor}.{v.micro}"
-version_xyz = version
-project = f"{proj_project} {version}"
+project = f"{proj_project} {version_xyz}"
 
 ###############
 # Dynamic
