@@ -21,7 +21,7 @@ dynamic = [
     "version",
 ]
 license = {file = "LICENSE"}
-description = "turn on/off dependency lock and packaging stuff"
+description = "Python build backend with build plugins and dependency lock switch"
 keywords = ["pipenv", "pip", "pip-tools", "dependency lock"]
 readme = "README.rst"
 requires-python = ">=3.9"

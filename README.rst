@@ -1,44 +1,18 @@
 drain-swamp
 ==============
 
-Python packaging automation is ripe for exploit. Lets drain the swamp!
+Python build backend with build plugins and dependency lock switch
 
 |  |last-commit| |codecov| |license|
 |  |test-status| |quality-status| |docs|
 |  |kit| |versions| |black|
 |  |stars| |mastodon-msftcangoblowm|
 
-Code in Makefile or python scripts should be reduced or removed
-entirely, in favor of packaged, unittested, and well documented code.
-
-Authors and maintainers deal with lots of repos. Too often
-boilerplate gets copy and pasted into each package, becoming:
-
-- an eye sore
-- completely untested code
-- small variations leak in
-- code quality and feature improvements are less likely to happen
-
-Drain swamp focuses on:
-
-- pyproject.toml dependencies locks
-- semantic versioning -- current, tag (in version file), semantic version str
-- build Python package uses plugins
-
-updating
-
-- Sphinx ``docs/conf.py``
-- CHANGES.rst
-- NOTICE.txt
-
-This is done skillfully, applying a generic technique, snippets. Static
-config files become dynamic, encouraging automation.
-
-That's a lot of boilerplate code ... gone! Not all, but most.
+|feature banner|
 
 .. PYVERSIONS
 
-* Python 3.9 through 3.12, PyPy
+\* Python 3.9 through 3.12, PyPy
 
 **New in 1.2.x**
 
@@ -49,6 +23,86 @@ docs use available version str; badges; cease ignoring version file;
 
 tox-test.ini; tox.ini; gha; build backend DS_CONFIG_SETTINGS support;
 add gha variable DRAINSWAMP_SET_LOCK;
+
+What swamp?
+------------
+
+Code in Makefile or python scripts should be reduced or removed
+entirely, in favor of packaged, unittested, and well documented code.
+
+These files are the favorite target for those placing obfuscated code
+triggering malware.
+
+Lets call this hiding place, *the swamp*
+
+drain-swamp has build plugins. Ideal for creating generated files like:
+
+- setuptools-scm version file
+
+- dependency lock and unlock files
+
+Isn't protobuf also compiled? Great fit for a build plugin
+
+Boilerplate
+""""""""""""
+
+Authors and maintainers deal with many packages. Boilerplate code is
+copy+paste into multiple packages.
+
+- an eye sore
+- completely untested code
+- small variations leak in
+- code quality and feature improvements are less likely to happen
+
+drain-swamp started out to reduce this
+
+Updating docs
+""""""""""""""
+
+updates
+
+- Sphinx ``docs/conf.py``
+- CHANGES.rst
+- NOTICE.txt
+
+This is done skillfully, applying a generic technique, snippets. Static
+config files become dynamic, encouraging automation.
+
+flexible semantic versioning
+"""""""""""""""""""""""""""""
+
+In the build workflow, setting the version tag comes last, not before the build.
+
+When building, the semantic version would come from the version file.
+Which makes it's way into the sdist tarball
+
+.. code:: shell
+
+   python -m build -C--kind="0.5.1a4.dev6" -C--set-lock="0"
+
+One of our build plugins will update the version file.
+
+Lets check the license. Hmmm Apache2.0 abandonware, that's a great
+reason to turn the dependency lock off.
+
+It's slightly more messy than this, the jist is, config settings gets
+passed to all build plugins.
+
+**kind** can be:
+
+*current* (or *now*) -- get semantic version from git
+
+*tag* -- semantic version str from version file
+
+a semantic version str -- so have full control over what it becomes
+
+There is no bump version. Cuz we adults and semantic version str
+isn't limited to *major.minor.patch*
+
+Nor does changelog entries with *feat* and *fix* lines necessitate a
+major or minor release bump.
+
+bump version is the opposite, dumbing things down.
 
 Extensions
 -----------
@@ -128,7 +182,7 @@ Get from version file
 
 0.5.2
 
-Writes a semantic version str to version file. :code:`drain-swamp pretag`
+Write a semantic version str to version file. :code:`drain-swamp pretag`
 to check/fix semantic version str
 
 .. code-block:: shell
@@ -218,7 +272,7 @@ In a temporary folder, created a file, ``some.conf`` with contents,
 Replace the contents within the snippet, with id *i_am_a_snippet_co*,
 with *contents_new*.
 
-textwrap.dedent("""\ means, remove any indention and escape
+textwrap.dedent("""\\ means, remove any indention and escape
 ignore the preceding newline
 
 Snip constructor parameter, is_quiet, turns off logging
@@ -239,7 +293,7 @@ and an eye sore.
 Code within ``Makefile`` or ``igor.py`` needs to brought under control.
 Like a cancer, waiting to be exploited, less is more.
 
-Ideally cut out in its entirely; preferably, as much as reasonable.
+Ideally, cut out entirely or as much as is reasonable.
 
 File formats -- supported
 
@@ -282,3 +336,6 @@ Lines starting with pound sign **#** are considered comments:
     :alt: drain-swamp coverage percentage
 .. |black| image:: https://img.shields.io/badge/code%20style-black-000000.svg
    :target: https://github.com/ambv/black
+
+.. |feature banner| image:: /docs/_static/drain-swamp-banner-640-320.svg
+   :alt: drain-swamp features build plugins and dependency lock switch

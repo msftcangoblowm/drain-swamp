@@ -1,6 +1,8 @@
 root: index
 subtrees:
 - entries:
+  - file: overview
+- entries:
   - file: getting_started/index
     entries:
     - file: getting_started/drain-swamp-files

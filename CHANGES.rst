@@ -25,6 +25,16 @@ Changelog
 
 .. scriv-start-here
 
+.. _changes_1-2-4:
+
+Version 1.2.4 — 2024-08-06
+--------------------------
+
+- docs(pdf): missing index page. Move contents index --> overview
+- docs: add banner
+- docs: rewrite front page of docs
+- style: update project description
+
 .. _changes_1-2-3:
 
 Version 1.2.3 — 2024-08-06
