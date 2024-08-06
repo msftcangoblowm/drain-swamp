@@ -53,6 +53,7 @@ infer_version sets the dist.metadata.version. Would like to do more ...
 """
 
 import logging
+import os
 import sys
 from pathlib import Path
 
@@ -155,6 +156,25 @@ def run_build_plugins(d_config_settings):
     pass
 
 
+def _rage_quit(is_maybe_none, msg):
+    """Check if None otherwise raise SystemExit exception
+    :param is_maybe_none:
+    :type is_maybe_none: typing.Any | None
+    :param msg: Log message if condition is False
+    :type msg: str
+    :raises:
+
+       - :py:exc:`SystemExit` -- No point in continuing
+
+    """
+    is_definitely_none = is_maybe_none is None
+    if is_definitely_none:
+        log.warning(msg)
+        sys.exit(1)
+    else:
+        pass
+
+
 def infer_version(dist):
     """Sets the dist.metadata.version
 
@@ -196,24 +216,35 @@ def infer_version(dist):
     d_config_settings = cs.read()
     del cs
 
-    # Ensure an initial version file exists. The version within can be incorrect
-    #    reverse search for a pyproject.toml
-    path_cwd = Path.cwd()
+    mod_path = "drain_swamp.monkey.wrap_infer_version::infer_version"
+
+    """Normally called from within a virtual environment (venv).
+    Seems to provide environment variable: PWD, OLDPWD
+
+    If not called from within a venv, fallback is cwd
+    """
+    # print(f"os.environ: {os.environ!r}")
+    project_abspath = os.environ.get("PWD", Path.cwd())
+
+    msg = (
+        f"{mod_path} virtual environment did not provide PWD "
+        "environment variable. Where is package base or pyproject.toml?"
+    )
+    _rage_quit(project_abspath, msg)
+
+    path_cwd = Path(project_abspath)
     path_f = path_cwd.joinpath("pyproject.toml")
+
     tp = TomlParser(path_f)
-    is_config_file_not_found = tp.d_pyproject_toml is None
-    if is_config_file_not_found:
-        # no pyproject.toml or has parsing issues
-        mod_path = "drain_swamp.monkey.wrap_infer_version::infer_version"
-        msg = f"{mod_path} pyproject.toml either not found or parsing had issues"
-        log.warning(msg)
-        sys.exit(1)
-    else:
-        # after reverse search lookup, found a pyproject.toml
-        config_path = str(tp.path_file)
-        write_to_file(
-            config_path,
-            SEM_VERSION_FALLBACK_SANE,
-            is_only_not_exists=True,
-        )
-        run_build_plugins(d_config_settings)
+
+    msg = f"{mod_path} pyproject.toml either not found or parsing had issues"
+    _rage_quit(tp.d_pyproject_toml, msg)
+
+    config_path = str(tp.path_file)
+
+    write_to_file(
+        config_path,
+        SEM_VERSION_FALLBACK_SANE,
+        is_only_not_exists=True,
+    )
+    run_build_plugins(d_config_settings)

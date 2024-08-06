@@ -22,6 +22,7 @@
 
 __package__ = __name__
 
+from .constants_maybe import __version_app as __version__  # noqa: F401
 from .exceptions import (
     BackendNotSupportedError,
     MissingRequirementsFoldersFiles,

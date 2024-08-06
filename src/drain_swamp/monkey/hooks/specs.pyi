@@ -28,7 +28,7 @@ class HookspecMarker:
         warn_on_impl: Warning | None = None,
     ) -> Callable[[_F], _F]: ...
 
-hook_spec: HookspecMarker
+hook_spec: HookspecMarker  # noqa: E305
 
 @hook_spec
 def ds_before_version_infer(config_settings: dict[str, Any]) -> str | None: ...

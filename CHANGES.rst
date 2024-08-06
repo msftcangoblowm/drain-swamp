@@ -25,6 +25,20 @@ Changelog
 
 .. scriv-start-here
 
+.. _changes_1-2-3:
+
+Version 1.2.3 — 2024-08-06
+--------------------------
+
+- fix(wrap_infer_version): get package folder from env variable or Path.cwd
+- refactor: version accessible from package. rtd needs
+- ci(rtd): cease ignoring generated version file
+- ci(pre-commit): exclude version file
+- style: exclude version file from isort black flake8
+- style: flake-pyi vs black gentlemenly tussle over trifles
+- style: decorator kwarg quoted str, mistaken for a doc string Y020
+- docs(README): add badges
+
 .. _changes_1-2-2:
 
 Version 1.2.2 — 2024-08-05

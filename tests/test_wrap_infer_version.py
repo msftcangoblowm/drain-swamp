@@ -16,8 +16,6 @@ import logging.config
 import shutil
 import sys
 from pathlib import Path
-from types import SimpleNamespace
-from unittest.mock import patch
 
 import pytest
 from setuptools_scm._version_cls import _version_as_tuple
@@ -28,7 +26,7 @@ from drain_swamp.constants import (
     g_app_name,
 )
 from drain_swamp.monkey.config_settings import ConfigSettings
-from drain_swamp.monkey.wrap_infer_version import infer_version
+from drain_swamp.monkey.wrap_infer_version import _rage_quit
 
 from .wd_wrapper import WorkDir
 
@@ -228,22 +226,34 @@ def test_dist_get_cmdline_options(
     assert verify_tag_version(wd.cwd, kind) is True
 
 
+testdata_infer_version_fail = (
+    (
+        "0.0.2",
+        "0",
+        1,
+        "does not appear to be a Python project: no pyproject.toml or setup.py",
+    ),
+)
+ids_infer_version_fail = ("missing pyproject.toml. build fails",)
+
+
+@pytest.mark.parametrize(
+    "kind, set_lock, exit_code_expected, msg_fragment_expected",
+    testdata_infer_version_fail,
+    ids=ids_infer_version_fail,
+)
 def test_infer_version_fail(
+    kind,
+    set_lock,
+    exit_code_expected,
+    msg_fragment_expected,
     wd,
     caplog,
     has_logging_occurred,
 ):
     # pytest --showlocals --log-level INFO -k "test_infer_version_fail" tests
-    LOGGING["loggers"][g_app_name]["propagate"] = True
-    logging.config.dictConfig(LOGGING)
-    logger = logging.getLogger(name=g_app_name)
-    logger.addHandler(hdlr=caplog.handler)
-    caplog.handler.level = logger.level
 
-    app_name = "complete_awesome_perfect"
-    kind = "0.0.2"
-
-    cwd = wd.cwd
+    # missing pyproject.toml build calls infer_version. Which runs build plugins
     cmd = (
         sys.executable,
         "-m",
@@ -251,25 +261,21 @@ def test_infer_version_fail(
         "--no-isolation",
         "--sdist",
         f"-C--kind='{kind}'",  # unfortunately not passed on by setuptools
-        "-C--set-lock='0'",  # unfortunately not passed on by setuptools
+        f"-C--set-lock='{set_lock}'",  # unfortunately not passed on by setuptools
     )
-    t_ret = run_cmd(cmd, cwd=cwd)
+    t_ret = run_cmd(cmd, cwd=wd.cwd)
     out, err, exit_code, exc = t_ret
-    assert exit_code == 1
-    msg_expected = (
-        "does not appear to be a Python project: no pyproject.toml or setup.py"
-    )
-    assert out.endswith(msg_expected)
+    assert exit_code == exit_code_expected
+    assert out.endswith(msg_fragment_expected)
 
-    # No pyproject.toml --> SystemExit
-    ns_dist = SimpleNamespace()
-    ns_dist.metadata = SimpleNamespace()
-    ns_dist.metadata.name = app_name
-    with (
-        patch(f"{g_app_name}.monkey.wrap_infer_version.Path.cwd", return_value=cwd),
-        pytest.raises(SystemExit),
-    ):
-        infer_version(ns_dist)
+    # _rage_quit
+    #    Called by drain_swamp.monkey.wrap_infer_version::infer_version
+    #    If 1st arg is None, log a warning and quit
+    msg = "Hello World"
+    with pytest.raises(SystemExit):
+        #    logs a warning
+        _rage_quit(None, msg)
+    _rage_quit("Not None", msg)
 
 
 testdata_config_settings_read = (

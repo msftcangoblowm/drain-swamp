@@ -267,9 +267,14 @@ def test_scm_version_fail(
     path_config = prep_pyproject_toml(p_toml_file, wd.cwd)
     config_abspath = str(path_config)
 
-    with patch(
-        "drain_swamp.monkey.wrap_get_version._get_version",
-        return_value=None,
-    ):
-        sem_ver_str = scm_version(config_abspath)
-        assert sem_ver_str == SEM_VERSION_FALLBACK_SANE
+    valids = (
+        (None, SEM_VERSION_FALLBACK_SANE),
+        ("0.0.2", "0.0.2"),
+    )
+    for valid, expected in valids:
+        with patch(
+            "drain_swamp.monkey.wrap_get_version._get_version",
+            return_value=valid,
+        ):
+            sem_ver_str = scm_version(config_abspath)
+            assert sem_ver_str == expected

@@ -433,18 +433,24 @@ def test_print_cheats(path_project_base, prep_pyproject_toml, tmp_path):
         assert isinstance(out, str)
         assert len(out.strip()) != 0
 
-        with (
-            patch(
-                f"{g_app_name}.igor_utils._get_branch",
-                return_value="important_branch",
-            ),
-            contextlib.redirect_stdout(io.StringIO()) as f,
-        ):
-            print_cheats(path_cwd, kind)
-        out = f.getvalue()
-        assert out is not None
-        assert isinstance(out, str)
-        assert len(out.strip()) != 0
+        branches = (
+            "important_branch",
+            "master",
+            "main",
+        )
+        for branch in branches:
+            with (
+                patch(
+                    f"{g_app_name}.igor_utils._get_branch",
+                    return_value=branch,
+                ),
+                contextlib.redirect_stdout(io.StringIO()) as f,
+            ):
+                print_cheats(path_cwd, kind)
+            out = f.getvalue()
+            assert out is not None
+            assert isinstance(out, str)
+            assert len(out.strip()) != 0
 
 
 testdata_get_version_file_path = (

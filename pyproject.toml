@@ -210,6 +210,7 @@ autodoc_typehints = 'signature'
 
 [tool.black]
 include = '\.pyi?$'
+extend-exclude = '''(src/drain_swamp/\_version.py)'''
 
 [tool.blackdoc]
 skip_string_normalization = true
@@ -224,6 +225,9 @@ include_trailing_comma = true
 ensure_newline_before_comments = true
 line_length = 88
 supported_extensions = ["py", "pyi"]
+skip = [
+    "src/drain_swamp/_version.py",
+]
 
 [tool.flake8]
 max_line_length = 88
@@ -238,6 +242,9 @@ extend_ignore = [
     "E301",
     "E302",
     "E501",
+]
+exclude = [
+    "src/drain_swamp/_version.py",
 ]
 
 [tool.twine]

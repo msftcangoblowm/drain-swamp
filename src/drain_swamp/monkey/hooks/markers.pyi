@@ -33,4 +33,4 @@ class HookimplMarker:
         wrapper: bool = False,
     ) -> Callable[[_F], _F]: ...
 
-hook_impl: HookimplMarker
+hook_impl: HookimplMarker  # noqa: E305

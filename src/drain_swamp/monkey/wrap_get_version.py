@@ -147,14 +147,14 @@ def scm_version(relative_to, sane_default=SEM_VERSION_FALLBACK_SANE):
 
     # Apply sane default if no override, no version_file, and no fallback
     if scm_ver is None:
-        scm_ver = sane_default
-    else:  # pragma: no cover
-        pass
+        ret = sane_default
+    else:
+        ret = scm_ver
 
-    msg_info = f"INFO {mod_path} parsed version: {scm_ver} "
+    msg_info = f"INFO {mod_path} parsed version: {ret} "
     log.info(msg_info)
 
-    return scm_ver
+    return ret
 
 
 def write_to_file(

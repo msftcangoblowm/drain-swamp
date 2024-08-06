@@ -28,9 +28,13 @@ there is no reason to allow this fyi only package info to be the cause of failur
 
    Module exports
 
+.. todo:: lookup module
+
+   Lookup in pyproject.toml for the dotted path of version file. Then
+   atttempt to import it
+
 """
 
-from ._version import __version__
 from .constants import g_app_name
 from .version_semantic import (
     SemVersion,
@@ -42,9 +46,16 @@ __all__ = (
     "__url__",
 )
 
-# Removes epoch and local. Fixes version
-__version_app, local = sanitize_tag(__version__)
+try:
+    # hardcoded import is bad
+    from ._version import __version__
+except (ModuleNotFoundError, ImportError):  # pragma: no cover
+    __version_app = "unreleased"
+    __url__ = None
+else:
+    # Removes epoch and local. Fixes version
+    __version_app, local = sanitize_tag(__version__)
 
-sv = SemVersion()
-sv.parse_ver(__version__, local=local)
-__url__ = sv.readthedocs_url(g_app_name, is_latest=False)
+    sv = SemVersion()
+    sv.parse_ver(__version__, local=local)
+    __url__ = sv.readthedocs_url(g_app_name, is_latest=False)

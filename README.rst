@@ -3,6 +3,11 @@ drain-swamp
 
 Python packaging automation is ripe for exploit. Lets drain the swamp!
 
+|  |last-commit| |codecov| |license|
+|  |test-status| |quality-status| |docs|
+|  |kit| |versions| |black|
+|  |stars| |mastodon-msftcangoblowm|
+
 Code in Makefile or python scripts should be reduced or removed
 entirely, in favor of packaged, unittested, and well documented code.
 
@@ -38,7 +43,7 @@ That's a lot of boilerplate code ... gone! Not all, but most.
 **New in 1.2.x**
 
 generate version file if missing; ci workflows recreate generated files;
-docs use available version str;
+docs use available version str; badges; cease ignoring version file;
 
 **New in 1.1.x**
 
@@ -244,3 +249,36 @@ Lines starting with pound sign **#** are considered comments:
 - bash
 - pyproject.toml
 - Linux config files
+
+.. |last-commit| image:: https://img.shields.io/github/last-commit/msftcangoblowm/drain-swamp/master
+    :target: https://github.com/msftcangoblowm/drain-swamp/pulse
+    :alt: last commit to gauge activity
+.. |test-status| image:: https://github.com/msftcangoblowm/drain-swamp/actions/workflows/testsuite.yml/badge.svg?branch=master&event=push
+    :target: https://github.com/msftcangoblowm/drain-swamp/actions/workflows/testsuite.yml
+    :alt: Test suite status
+.. |quality-status| image:: https://github.com/msftcangoblowm/drain-swamp/actions/workflows/quality.yml/badge.svg?branch=master&event=push
+    :target: https://github.com/msftcangoblowm/drain-swamp/actions/workflows/quality.yml
+    :alt: Quality check status
+.. |docs| image:: https://readthedocs.org/projects/drain-swamp/badge/?version=latest&style=flat
+    :target: https://drain-swamp.readthedocs.io/
+    :alt: Documentation
+.. |kit| image:: https://img.shields.io/pypi/v/drain-swamp
+    :target: https://pypi.org/project/drain-swamp/
+    :alt: PyPI status
+.. |versions| image:: https://img.shields.io/pypi/pyversions/drain-swamp.svg?logo=python&logoColor=FBE072
+    :target: https://pypi.org/project/drain-swamp/
+    :alt: Python versions supported
+.. |license| image:: https://img.shields.io/github/license/msftcangoblowm/drain-swamp
+    :target: https://pypi.org/project/drain-swamp/blob/master/LICENSE
+    :alt: License
+.. |stars| image:: https://img.shields.io/github/stars/msftcangoblowm/drain-swamp.svg?logo=github
+    :target: https://github.com/msftcangoblowm/drain-swamp/stargazers
+    :alt: GitHub stars
+.. |mastodon-msftcangoblowm| image:: https://img.shields.io/mastodon/follow/112019041247183249
+    :target: https://mastodon.social/@msftcangoblowme
+    :alt: msftcangoblowme on Mastodon
+.. |codecov| image:: https://codecov.io/gh/msftcangoblowm/drain-swamp/branch/master/graph/badge.svg?token=13dL2Owydg
+    :target: https://codecov.io/gh/msftcangoblowm/drain-swamp
+    :alt: drain-swamp coverage percentage
+.. |black| image:: https://img.shields.io/badge/code%20style-black-000000.svg
+   :target: https://github.com/ambv/black

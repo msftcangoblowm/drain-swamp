@@ -133,7 +133,6 @@ dmypy.json
 
 # Removed from project
 retired/
-src/drain_swamp/_version.py
 .coverage
 .coverage-*
 requirements/*.lnk
