@@ -7,7 +7,7 @@ Python build backend with build plugins and dependency lock switch
 
 .. PYVERSIONS
 
-\* Python 3.9 through 3.12, PyPy
+\* Python 3.9 through 3.13, PyPy
 
 **New in 1.2.x**
 

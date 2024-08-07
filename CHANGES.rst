@@ -25,6 +25,15 @@ Changelog
 
 .. scriv-start-here
 
+.. _changes_1-2-8:
+
+Version 1.2.8 — 2024-08-07
+--------------------------
+
+- docs: tests confirm py313 support. Update pyproject.toml classifiers
+- docs: reorder badges
+- docs: add badges downloads implementations
+
 .. _changes_1-2-7:
 
 Version 1.2.7 — 2024-08-07

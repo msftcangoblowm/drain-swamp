@@ -3,16 +3,18 @@ drain-swamp
 
 Python build backend with build plugins and dependency lock switch
 
-|  |last-commit| |codecov| |license|
-|  |test-status| |quality-status| |docs|
-|  |kit| |versions| |black|
-|  |stars| |mastodon-msftcangoblowm|
+|  |kit| |codecov| |license|
+|  |last-commit| |test-status| |quality-status| |docs|
+|  |versions| |implementations|
+|  |black|
+|  |downloads| |stars|
+|  |mastodon-msftcangoblowm|
 
 |feature banner|
 
 .. PYVERSIONS
 
-\* Python 3.9 through 3.12, PyPy
+\* Python 3.9 through 3.13, PyPy
 
 **New in 1.2.x**
 
@@ -336,6 +338,8 @@ Lines starting with pound sign **#** are considered comments:
     :alt: drain-swamp coverage percentage
 .. |black| image:: https://img.shields.io/badge/code%20style-black-000000.svg
    :target: https://github.com/ambv/black
+.. |downloads| image:: https://img.shields.io/pypi/dm/drain-swamp
+.. |implementations| image:: https://img.shields.io/pypi/implementation/drain-swamp
 
 .. |feature banner| image:: /docs/_static/drain-swamp-banner-640-320.svg
    :alt: drain-swamp features build plugins and dependency lock switch
