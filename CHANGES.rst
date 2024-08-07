@@ -25,6 +25,16 @@ Changelog
 
 .. scriv-start-here
 
+.. _changes_1-2-6:
+
+Version 1.2.6 — 2024-08-07
+--------------------------
+
+- ci(python-nightly): upgrade ubuntu focal 20.04 --> jammy 22.04
+- ci(workflows): actions commit sha instead of version tag
+- ci(workflows): resume cache python package
+- ci(tox): add gh section
+
 .. _changes_1-2-5:
 
 Version 1.2.5 — 2024-08-06

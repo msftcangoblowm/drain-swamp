@@ -31,20 +31,26 @@ concurrency:
 
 jobs:
   tests:
-    name: "${{ matrix.python-version }}"
-    # Choose a recent Ubuntu that deadsnakes still builds all the versions for.
-    # For example, deadsnakes doesn't provide 3.10 nightly for 22.04 (jammy)
-    # because jammy ships 3.10, and deadsnakes doesn't want to clobber it.
-    # https://launchpad.net/~deadsnakes/+archive/ubuntu/nightly/+packages
-    # https://github.com/deadsnakes/issues/issues/234
-    # bionic: 18, focal: 20, jammy: 22
-    runs-on: ubuntu-20.04
+    name: "${{ matrix.python-version }} on ${{ matrix.os-short }}"
+    runs-on: "${{ matrix.os }}"
     # If it doesn't finish in an hour, it's not going to. Don't spin for six
     # hours needlessly.
     timeout-minutes: 60
 
     strategy:
       matrix:
+        os:
+          # Choose a recent Ubuntu that deadsnakes still builds all the versions for.
+          # For example, deadsnakes doesn't provide 3.10 nightly for 22.04 (jammy)
+          # because jammy ships 3.10, and deadsnakes doesn't want to clobber it.
+          # https://launchpad.net/~deadsnakes/+archive/ubuntu/nightly/+packages
+          # https://github.com/deadsnakes/issues/issues/234
+          # See https://github.com/deadsnakes/nightly for the source of the nightly
+          # builds.
+          # bionic: 18, focal: 20, jammy: 22, noble: 24
+          - "ubuntu-22.04"
+        os-short:
+          - "ubuntu"
         python-version:
           # When changing this list, be sure to check the [gh] list in
           # tox.ini so that tox will run properly. PYVERSIONS
@@ -52,6 +58,7 @@ jobs:
           # https://launchpad.net/~deadsnakes/+archive/ubuntu/nightly/+packages
           - "3.12-dev"
           - "3.13-dev"
+          - "3.14-dev"
           # https://github.com/actions/setup-python#available-versions-of-pypy
           - "pypy-3.9-nightly"
           - "pypy-3.10-nightly"
@@ -59,7 +66,7 @@ jobs:
 
     steps:
       - name: "Check out the repo"
-        uses: "actions/checkout@v4"
+        uses: actions/checkout@692973e3d937129bcbf40652eb9f2f61becf3332 # v4.1.7
 
       - name: Get latest tag
         id: vars
@@ -67,13 +74,13 @@ jobs:
           echo "tag=$(git describe --tags)" >> $GITHUB_OUTPUT
 
       - name: "Install ${{ matrix.python-version }} with deadsnakes"
-        uses: deadsnakes/action@6c8b9b82fe0b4344f4b98f2775fcc395df45e494
+        uses: deadsnakes/action@6c8b9b82fe0b4344f4b98f2775fcc395df45e494 # v3.1.0
         if: "!startsWith(matrix.python-version, 'pypy-')"
         with:
           python-version: "${{ matrix.python-version }}"
 
       - name: "Install ${{ matrix.python-version }} with setup-python"
-        uses: "actions/setup-python@v5"
+        uses: actions/setup-python@39cd14951b08e74b54015e9e001cdefcf80e669f # v5.1.1
         if: "startsWith(matrix.python-version, 'pypy-')"
         with:
           python-version: "${{ matrix.python-version }}"
