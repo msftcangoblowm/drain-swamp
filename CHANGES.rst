@@ -25,6 +25,14 @@ Changelog
 
 .. scriv-start-here
 
+.. _changes_1-2-9:
+
+Version 1.2.9 — 2024-08-07
+--------------------------
+
+- docs: be explicit supported tested platforms
+- docs: add badge platforms
+
 .. _changes_1-2-8:
 
 Version 1.2.8 — 2024-08-07

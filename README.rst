@@ -6,7 +6,7 @@ Python build backend with build plugins and dependency lock switch
 |  |kit| |codecov| |license|
 |  |last-commit| |test-status| |quality-status| |docs|
 |  |versions| |implementations|
-|  |black|
+|  |platforms| |black|
 |  |downloads| |stars|
 |  |mastodon-msftcangoblowm|
 
@@ -340,6 +340,9 @@ Lines starting with pound sign **#** are considered comments:
    :target: https://github.com/ambv/black
 .. |downloads| image:: https://img.shields.io/pypi/dm/drain-swamp
 .. |implementations| image:: https://img.shields.io/pypi/implementation/drain-swamp
+.. |platforms| image:: https://img.shields.io/badge/platform-linux-lightgrey
+
+.. https://img.shields.io/badge/platform-windows%20%7C%20macos%20%7C%20linux-lightgrey
 
 .. |feature banner| image:: /docs/_static/drain-swamp-banner-640-320.svg
    :alt: drain-swamp features build plugins and dependency lock switch

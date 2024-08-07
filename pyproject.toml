@@ -38,6 +38,7 @@ classifiers = [
     "Programming Language :: Python :: Implementation :: PyPy",
     "Topic :: Software Development :: Build Tools",
     "Typing :: Typed",
+    "Operating System :: POSIX :: Linux",
 ]
 # Contact by mastodon please
 authors = [
