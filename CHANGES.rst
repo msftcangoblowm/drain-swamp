@@ -25,6 +25,14 @@ Changelog
 
 .. scriv-start-here
 
+.. _changes_1-2-7:
+
+Version 1.2.7 — 2024-08-07
+--------------------------
+
+- ci(coverage): fix codecov-action commit sha
+- ci(testsuite): py314 not available yet
+
 .. _changes_1-2-6:
 
 Version 1.2.6 — 2024-08-07
