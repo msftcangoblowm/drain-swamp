@@ -6,7 +6,7 @@ importlib-metadata==7.1.0
     # via build
 packaging==24.0
     # via build
-pip-tools @ git+https://github.com/jazzband/pip-tools.git@53309647980e2a4981db54c0033f98c61142de0b
+pip-tools==7.4.1
     # via -r requirements/pip-tools.in
 pyproject-hooks==1.0.0
     # via

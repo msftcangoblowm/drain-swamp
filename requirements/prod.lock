@@ -10,7 +10,7 @@ packaging==24.0
     # via
     #   build
     #   setuptools-scm
-pip-tools @ git+https://github.com/jazzband/pip-tools.git@53309647980e2a4981db54c0033f98c61142de0b
+pip-tools==7.4.1
     # via -r requirements/prod.in
 pluggy==1.5.0
     # via -r requirements/prod.in

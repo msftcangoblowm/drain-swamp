@@ -25,6 +25,13 @@ Changelog
 
 .. scriv-start-here
 
+.. _changes_1-3-2:
+
+Version 1.3.2 — 2024-08-11
+--------------------------
+
+- fix: pypi requires tag version. Downgrade pip-tools to tag version
+
 .. _changes_1-3-1:
 
 Version 1.3.1 — 2024-08-11

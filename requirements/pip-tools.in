@@ -4,7 +4,5 @@
 -c pip.in
 
 # pip-tools commit 53309647980e2a4981db54c0033f98c61142de0b
-# Supposed to fix the absolute path issue, but didn't. Currently no tagged release
-# containing the supposed fix.
-# Temporarily removed from: prod.in and pip-tools.in
-pip-tools @ git+https://github.com/jazzband/pip-tools.git@53309647980e2a4981db54c0033f98c61142de0b
+# Supposed to fix the absolute path issue, but didn't
+pip-tools
