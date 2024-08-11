@@ -25,6 +25,14 @@ Changelog
 
 .. scriv-start-here
 
+.. _changes_1-3-3:
+
+Version 1.3.3 — 2024-08-11
+--------------------------
+
+- fix: fileinput module requires to print each line
+- docs: add extension sphinx-copybutton
+
 .. _changes_1-3-2:
 
 Version 1.3.2 — 2024-08-11

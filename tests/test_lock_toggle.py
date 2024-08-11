@@ -838,6 +838,19 @@ def test_postprocess_abspath_to_relpath(tmp_path, prepare_folders_files):
         "sphobjinv==2.3.1.1\n"
         f"    # via -r {tmp_path!s}/docs/requirements.in\n\n"
     )
+    expected = (
+        "#\n"
+        "click==8.1.7\n"
+        "    # via\n"
+        "    #   -c docs/../requirements/prod.in\n"
+        "    #   click-log\n"
+        "    #   scriv\n"
+        "    #   sphinx-external-toc-strict\n"
+        "    #   uvicorn\n"
+        "sphobjinv==2.3.1.1\n"
+        "    # via -r docs/requirements.in\n\n"
+    )
+
     path_doc_lock = tmp_path.joinpath("docs", "requirements.lock")
     path_doc_lock.write_text(lines)
 
@@ -849,3 +862,4 @@ def test_postprocess_abspath_to_relpath(tmp_path, prepare_folders_files):
     contents = path_doc_lock.read_text()
     is_not_occur_once = str(tmp_path) not in contents
     assert is_not_occur_once is True
+    assert contents == expected

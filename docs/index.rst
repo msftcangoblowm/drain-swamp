@@ -11,7 +11,7 @@ Python build backend with build plugins and dependency lock switch
 
 **New in 1.3.x**
 
-post process .lock files paths relative;
+post process .lock files paths relative; docs copy button extension;
 
 **New in 1.2.x**
 

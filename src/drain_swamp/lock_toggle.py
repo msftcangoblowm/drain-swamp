@@ -77,6 +77,7 @@ import importlib.util
 import logging
 import os
 import pathlib
+import sys
 from collections.abc import Sequence
 from pathlib import (
     Path,
@@ -270,10 +271,11 @@ def _postprocess_abspath_to_relpath(path_out, path_parent):
             is_lock_requirement_line = line.startswith("    # ")
             if is_lock_requirement_line:
                 # process line
-                line = line.replace(f"{path_parent!s}/", "")
+                line_modified = line.replace(f"{path_parent!s}/", "")
+                sys.stdout.write(line_modified)
             else:  # pragma: no cover
                 # do not modify line
-                pass
+                sys.stdout.write(line)
 
 
 def lock_compile(inst):
@@ -346,7 +348,15 @@ def lock_compile(inst):
         else:  # pragma: no cover
             pass
 
-        run_cmd(cmd, cwd=inst.parent_dir)
+        t_ret = run_cmd(cmd, cwd=inst.parent_dir)
+        _, err, exit_code, exc = t_ret
+
+        if exit_code != 0:  # pragma: no cover
+            msg_info = f"{str_func_name} pip-compile exit code {exit_code} {err} {exc}"
+            _logger.warning(msg_info)
+        else:  # pragma: no cover
+            pass
+
         path_out = Path(out_path)
         is_confirm = path_out.exists() and path_out.is_file()
         if is_confirm:
@@ -362,6 +372,11 @@ def lock_compile(inst):
             yield path_out
         else:
             # File not created. Darn you pip-compile!
+            if is_module_debug:  # pragma: no cover
+                msg_info = f"{str_func_name} pip-compile did not create: {out_path}"
+                _logger.warning(msg_info)
+            else:  # pragma: no cover
+                pass
             yield from ()
 
     yield from ()

@@ -23,7 +23,7 @@ charset-normalizer==3.3.2
     #   sphinx-external-toc-strict
 click==8.1.7
     # via
-    #   -c /home/faulkmore/Downloads/git_decimals/drain_swamp/docs/../requirements/prod.in
+    #   -c docs/../requirements/prod.in
     #   click-log
     #   scriv
     #   sphinx-external-toc-strict
@@ -119,7 +119,7 @@ rpds-py==0.18.0
     #   jsonschema
     #   referencing
 scriv==1.5.1
-    # via -r /home/faulkmore/Downloads/git_decimals/drain_swamp/docs/requirements.in
+    # via -r docs/requirements.in
 six==1.16.0
     # via
     #   livereload
@@ -131,19 +131,19 @@ snowballstemmer==2.2.0
     #   sphinx-external-toc-strict
 sphinx==7.2.6
     # via
-    #   -r /home/faulkmore/Downloads/git_decimals/drain_swamp/docs/requirements.in
+    #   -r docs/requirements.in
     #   myst-parser
     #   sphinx-autobuild
     #   sphinx-external-toc-strict
     #   sphinx-paramlinks
 sphinx-autobuild==2024.2.4
-    # via -r /home/faulkmore/Downloads/git_decimals/drain_swamp/docs/requirements.in
+    # via -r docs/requirements.in
 sphinx-external-toc-strict==1.1.7
-    # via -r /home/faulkmore/Downloads/git_decimals/drain_swamp/docs/requirements.in
+    # via -r docs/requirements.in
 sphinx-paramlinks==0.6.0
-    # via -r /home/faulkmore/Downloads/git_decimals/drain_swamp/docs/requirements.in
+    # via -r docs/requirements.in
 sphinx-pyproject==0.3.0
-    # via -r /home/faulkmore/Downloads/git_decimals/drain_swamp/docs/requirements.in
+    # via -r docs/requirements.in
 sphinxcontrib-applehelp==1.0.8
     # via
     #   sphinx
@@ -169,7 +169,7 @@ sphinxcontrib-serializinghtml==1.1.10
     #   sphinx
     #   sphinx-external-toc-strict
 sphobjinv==2.3.1
-    # via -r /home/faulkmore/Downloads/git_decimals/drain_swamp/docs/requirements.in
+    # via -r docs/requirements.in
 strictyaml==1.7.3
     # via sphinx-external-toc-strict
 tomli==2.0.1
