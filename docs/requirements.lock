@@ -134,9 +134,12 @@ sphinx==7.2.6
     #   -r docs/requirements.in
     #   myst-parser
     #   sphinx-autobuild
+    #   sphinx-copybutton
     #   sphinx-external-toc-strict
     #   sphinx-paramlinks
 sphinx-autobuild==2024.2.4
+    # via -r docs/requirements.in
+sphinx-copybutton==0.5.2
     # via -r docs/requirements.in
 sphinx-external-toc-strict==1.1.7
     # via -r docs/requirements.in

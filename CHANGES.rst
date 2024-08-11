@@ -25,6 +25,13 @@ Changelog
 
 .. scriv-start-here
 
+.. _changes_1-3-4:
+
+Version 1.3.4 — 2024-08-11
+--------------------------
+
+- docs: fix add requirement sphinx-copybutton
+
 .. _changes_1-3-3:
 
 Version 1.3.3 — 2024-08-11
