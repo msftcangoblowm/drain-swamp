@@ -18,12 +18,21 @@ Changelog
    Known regressions
    ..................
 
-   - tox does not pass in config_settings. Try to read in DS_CONFIG_SETTINGS
+   - tox does not pass in config_settings. Read in DS_CONFIG_SETTINGS
 
    Commit items for NEXT VERSION
    ..............................
 
 .. scriv-start-here
+
+.. _changes_1-3-0:
+
+Version 1.3.0 — 2024-08-11
+--------------------------
+
+- feat: .lock files post process paths absolute --> relative
+- docs(index): remove table of contents at bottom of page
+- docs(overview): hide page section title
 
 .. _changes_1-2-9:
 

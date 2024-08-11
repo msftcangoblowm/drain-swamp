@@ -10,7 +10,7 @@ packaging==24.0
     # via
     #   build
     #   setuptools-scm
-pip-tools==7.4.1
+pip-tools==7.4.2.dev57
     # via -r requirements/prod.in
 pluggy==1.5.0
     # via -r requirements/prod.in

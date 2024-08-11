@@ -34,6 +34,7 @@ from drain_swamp.lock_toggle import (
     InFiles,
     _create_symlinks_relative,
     _maintain_symlink,
+    _postprocess_abspath_to_relpath,
     lock_compile,
     refresh_links,
     unlock_compile,
@@ -812,3 +813,39 @@ def test_refresh_links(
 
     # assert has_logging_occurred(caplog)
     pass
+
+
+def test_postprocess_abspath_to_relpath(tmp_path, prepare_folders_files):
+    # pytest --showlocals --log-level INFO -k "test_postprocess_abspath_to_relpath" tests
+    # prepare
+    #    .in
+    seq_create_in_files = (
+        "requirements/prod.in",
+        "docs/requirements.in",
+    )
+    prepare_folders_files(seq_create_in_files, tmp_path)
+
+    #    .lock
+    lines = (
+        "#\n"
+        "click==8.1.7\n"
+        "    # via\n"
+        f"    #   -c {tmp_path!s}/docs/../requirements/prod.in\n"
+        "    #   click-log\n"
+        "    #   scriv\n"
+        "    #   sphinx-external-toc-strict\n"
+        "    #   uvicorn\n"
+        "sphobjinv==2.3.1.1\n"
+        f"    # via -r {tmp_path!s}/docs/requirements.in\n\n"
+    )
+    path_doc_lock = tmp_path.joinpath("docs", "requirements.lock")
+    path_doc_lock.write_text(lines)
+
+    # act
+    _postprocess_abspath_to_relpath(path_doc_lock, tmp_path)
+
+    # verify
+    #    Within file contents, absolute path of parent folder is absent
+    contents = path_doc_lock.read_text()
+    is_not_occur_once = str(tmp_path) not in contents
+    assert is_not_occur_once is True

@@ -72,6 +72,7 @@ from __future__ import annotations
 
 import copy
 import dataclasses
+import fileinput
 import importlib.util
 import logging
 import os
@@ -247,6 +248,34 @@ def _maintain_symlink(path_cwd, abspath_src):
         raise
 
 
+def _postprocess_abspath_to_relpath(path_out, path_parent):
+    """Within a lock file (contents), if an absolute path make relative
+    by removing parent path
+
+    To see the lock file format
+
+    .. code-block:: shell
+
+       pip-compile --dry-run docs/requirements.in
+
+    :param path_out: Absolute path of the requirements file
+    :type path_out: pathlib.Path
+    :param path_parent: Absolute path to the parent folder of the requirements file
+    :type path_parent: pathlib.Path
+    """
+    files = (path_out,)
+    # py310 encoding="utf-8"
+    with fileinput.input(files, inplace=True) as f:
+        for line in f:
+            is_lock_requirement_line = line.startswith("    # ")
+            if is_lock_requirement_line:
+                # process line
+                line = line.replace(f"{path_parent!s}/", "")
+            else:  # pragma: no cover
+                # do not modify line
+                pass
+
+
 def lock_compile(inst):
     """In a subprocess, call :command:`pip-compile` to create ``.lock`` files
 
@@ -255,7 +284,7 @@ def lock_compile(inst):
        Backend subclass instance which has folders property containing
        ``collections.abc.Sequence[Path]``
 
-    :type inst: BackendType
+    :type inst: drain_swamp.backend_abc.BackendType
     :returns: Generator of abs path to ``.lock`` files
     :rtype: collections.abc.Generator[pathlib.Path, None, None]
     :raises:
@@ -318,7 +347,8 @@ def lock_compile(inst):
             pass
 
         run_cmd(cmd, cwd=inst.parent_dir)
-        is_confirm = Path(out_path).exists() and Path(out_path).is_file()
+        path_out = Path(out_path)
+        is_confirm = path_out.exists() and path_out.is_file()
         if is_confirm:
             if is_module_debug:  # pragma: no cover
                 msg_info = f"{str_func_name} yield: {out_path!s}"
@@ -326,7 +356,10 @@ def lock_compile(inst):
             else:  # pragma: no cover
                 pass
 
-            yield Path(out_path)
+            # post processing
+            _postprocess_abspath_to_relpath(path_out, inst.parent_dir)
+
+            yield path_out
         else:
             # File not created. Darn you pip-compile!
             yield from ()
@@ -361,7 +394,7 @@ class InFile:
     :vartype relpath: str
     :ivar stem:
 
-       Requirements file stem. Later ``.unlock`` suffix is added
+       Requirements file stem. Later, appends suffix ``.unlock``
 
     :vartype stem: str
     :ivar constraints:
@@ -400,6 +433,7 @@ class InFile:
     @staticmethod
     def check_path(cwd, path_to_check) -> None:
         """Check Path. Should not be a str
+
         :param cwd: Package base folder
         :type cwd: pathlib.Path
         :param path_to_check: Hopefully a relative Path

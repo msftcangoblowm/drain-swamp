@@ -1,5 +1,13 @@
+.. raw:: html
+
+   <div style="visibility: hidden;">
+
 Overview
 =========
+
+.. raw:: html
+
+   </div>
 
 |feature banner|
 
