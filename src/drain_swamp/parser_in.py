@@ -9,10 +9,14 @@
 
    Module exports
 
+.. py:data:: _logger
+   :type: logging.Logger
+
+   Module level logger
+
 """
 
-from __future__ import annotations
-
+import logging
 import sys
 from pathlib import (
     Path,
@@ -20,6 +24,7 @@ from pathlib import (
 )
 from typing import TYPE_CHECKING
 
+from .constants import g_app_name
 from .exceptions import (
     PyProjectTOMLParseError,
     PyProjectTOMLReadError,
@@ -38,6 +43,9 @@ else:  # pragma: no cover
 
 __package__ = "drain_swamp"
 __all__ = ("TomlParser",)
+
+_logger = logging.getLogger(f"{g_app_name}.parser_in")
+is_module_debug = False
 
 
 class TomlParser:
@@ -245,3 +253,54 @@ class TomlParser:
                 raise PyProjectTOMLParseError(msg_exc_pyproject_toml)
 
         return d_ret
+
+    @classmethod
+    def read(
+        cls,
+        path_config,
+    ):
+        """Read the current contents of ``pyproject.toml`` file
+
+        :param path_config: ``pyproject.toml`` folder path
+        :type path_config: pathlib.Path
+        :returns: ``pyproject.toml`` dict and resolved path to file
+        :rtype: tuple[dict[str, typing.Any], pathlib.Path]
+        :raises:
+
+           - :py:exc:`drain_swamp.exceptions.PyProjectTOMLParseError` --
+             either not found or cannot be parsed
+
+           - :py:exc:`drain_swamp.exceptions.PyProjectTOMLReadError` --
+             Either not a file or lacks read permission
+
+        """
+        # Expects a Path. get_pyproject_toml call won't create a TypeError
+        if is_module_debug:  # pragma: no cover
+            msg_info = f"{cls.__name__}.read path_config: {path_config!r}"
+            _logger.info(msg_info)
+        else:  # pragma: no cover
+            pass
+
+        is_type_ng = path_config is None or not (
+            isinstance(path_config, str) or issubclass(type(path_config), PurePath)
+        )
+
+        # Avoids TypeError during resolve_pyproject_toml call
+        if is_type_ng:
+            msg_exc = "pyproject.toml is either not a file or lacks r/w permission"
+            raise PyProjectTOMLReadError(msg_exc)
+        else:  # pragma: no cover
+            pass
+
+        try:
+            # raise TypeError, FileNotFoundError, or PyProjectTOMLParseError
+            tp = cls(
+                path_config,
+                raise_exceptions=True,
+            )
+            d_pyproject_toml = tp.d_pyproject_toml
+            path_f = tp.path_file
+        except (PyProjectTOMLParseError, PyProjectTOMLReadError):
+            raise
+
+        return d_pyproject_toml, path_f

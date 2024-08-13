@@ -39,6 +39,7 @@ from drain_swamp.monkey.plugins.ds_refresh_links import (
     _parent_dir,
     before_version_infer,
 )
+from drain_swamp.parser_in import TomlParser
 
 testdata_is_set_lock = (
     (
@@ -464,7 +465,7 @@ def test_plugin_refresh_links_exceptions(
                 return_value=tmp_path,
             ):
                 try:
-                    d_pyproject_toml, path_f = BackendType.read(tmp_path)
+                    d_pyproject_toml, path_f = TomlParser.read(tmp_path)
                 except (PyProjectTOMLParseError, PyProjectTOMLReadError):
                     d_pyproject_toml = None
                 assert d_pyproject_toml is not None

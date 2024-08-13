@@ -39,10 +39,7 @@ from drain_swamp.constants import (
     LOGGING,
     g_app_name,
 )
-from drain_swamp.exceptions import (
-    PyProjectTOMLParseError,
-    PyProjectTOMLReadError,
-)
+from drain_swamp.exceptions import PyProjectTOMLReadError
 from drain_swamp.parser_in import TomlParser
 from drain_swamp.snip import ReplaceResult
 
@@ -773,36 +770,6 @@ def test_ensure_folder(tmp_path):
     for invalid in invalids:
         with pytest.raises(TypeError):
             ensure_folder(invalid)
-
-
-testdata_read = (
-    pytest.param(
-        Path(__file__).parent.joinpath("_bad_files", "backend_only.pyproject_toml"),
-        marks=pytest.mark.xfail(raises=PyProjectTOMLParseError),
-    ),
-    pytest.param(
-        Path(__file__).parent.joinpath("_good_files", "nonexistent.pyproject_toml"),
-        marks=pytest.mark.xfail(raises=PyProjectTOMLReadError),
-    ),
-)
-ids_read = (
-    "unparsable pyproject-toml",
-    "no such pyproject-toml",
-)
-
-
-@pytest.mark.parametrize(
-    "path_toml_src",
-    testdata_read,
-    ids=ids_read,
-)
-def test_read(path_toml_src, tmp_path, prep_pyproject_toml):
-    # pytest --showlocals --log-level INFO -k "test_read" -v tests
-    if not path_toml_src.exists():
-        path_f = tmp_path
-    else:
-        path_f = prep_pyproject_toml(path_toml_src, tmp_path)
-    BackendType.read(path_f)
 
 
 testdata_is_locked = (

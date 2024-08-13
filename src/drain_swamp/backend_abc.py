@@ -632,55 +632,6 @@ class BackendType(abc.ABC):
     PYPROJECT_TOML_SECTION_NAME: ClassVar[str]
 
     @staticmethod
-    def read(
-        path_config,
-    ):
-        """Read the current contents of ``pyproject.toml`` file
-
-        :param path_config: ``pyproject.toml`` folder path
-        :type path_config: pathlib.Path
-        :returns: ``pyproject.toml`` dict and resolved path to file
-        :rtype: tuple[dict[str, typing.Any], pathlib.Path]
-        :raises:
-
-           - :py:exc:`drain_swamp.exceptions.PyProjectTOMLParseError` --
-             either not found or cannot be parsed
-
-           - :py:exc:`drain_swamp.exceptions.PyProjectTOMLReadError` --
-             Either not a file or lacks read permission
-
-        """
-        # Expects a Path. get_pyproject_toml call won't create a TypeError
-        if is_module_debug:  # pragma: no cover
-            _logger.info(f"BackendType.read path_config: {path_config!r}")
-        else:  # pragma: no cover
-            pass
-
-        is_type_ng = path_config is None or not (
-            isinstance(path_config, str) or issubclass(type(path_config), PurePath)
-        )
-
-        # Avoids TypeError during resolve_pyproject_toml call
-        if is_type_ng:
-            msg_exc = "pyproject.toml is either not a file or lacks r/w permission"
-            raise PyProjectTOMLReadError(msg_exc)
-        else:  # pragma: no cover
-            pass
-
-        try:
-            # raise TypeError, FileNotFoundError, or PyProjectTOMLParseError
-            tp = TomlParser(
-                path_config,
-                raise_exceptions=True,
-            )
-            d_pyproject_toml = tp.d_pyproject_toml
-            path_f = tp.path_file
-        except (PyProjectTOMLParseError, PyProjectTOMLReadError):
-            raise
-
-        return d_pyproject_toml, path_f
-
-    @staticmethod
     def load_factory(
         path_config,
         required=None,
@@ -744,7 +695,7 @@ class BackendType(abc.ABC):
             pass
 
         # May raise PyProjectTOMLParseError or PyProjectTOMLReadError
-        d_pyproject_toml, path_f = BackendType.read(path_override)
+        d_pyproject_toml, path_f = TomlParser.read(path_override)
 
         str_backend = BackendType.determine_backend(d_pyproject_toml)
         lst_registered = list(BackendType.get_registered())
@@ -1344,7 +1295,7 @@ class BackendType(abc.ABC):
             pass
 
         try:
-            d_pyproject_toml, path_f = BackendType.read(path_config)
+            d_pyproject_toml, path_f = TomlParser.read(path_config)
         except (PyProjectTOMLParseError, PyProjectTOMLReadError):
             raise
 

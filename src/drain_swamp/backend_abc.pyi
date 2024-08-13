@@ -73,10 +73,6 @@ class BackendType(abc.ABC):
     PYPROJECT_TOML_SECTION_NAME: ClassVar[str]
 
     @staticmethod
-    def read(
-        path_config: Path,
-    ) -> tuple[dict[str, Any], Path]: ...
-    @staticmethod
     def load_factory(
         path_config: Path,
         required: tuple[str, Path] | None = None,

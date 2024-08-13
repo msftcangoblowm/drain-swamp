@@ -174,3 +174,35 @@ def test_pyproject_toml_search_fail(tmp_path):
     for invalid in invalids:
         tp = TomlParser(path_f, raise_exceptions=invalid)
         assert tp.d_pyproject_toml is None
+
+
+testdata_toml_parser_read = (
+    pytest.param(
+        Path(__file__).parent.joinpath("_bad_files", "backend_only.pyproject_toml"),
+        marks=pytest.mark.xfail(raises=PyProjectTOMLParseError),
+    ),
+    pytest.param(
+        Path(__file__).parent.joinpath("_good_files", "nonexistent.pyproject_toml"),
+        marks=pytest.mark.xfail(raises=PyProjectTOMLReadError),
+    ),
+)
+ids_toml_parser_read = (
+    "unparsable pyproject-toml",
+    "no such pyproject-toml",
+)
+
+
+@pytest.mark.parametrize(
+    "path_toml_src",
+    testdata_toml_parser_read,
+    ids=ids_toml_parser_read,
+)
+def test_toml_parser_read(path_toml_src, tmp_path, prep_pyproject_toml):
+    # pytest --showlocals --log-level INFO -k "test_toml_parser_read" -v tests
+    if not path_toml_src.exists():
+        path_f = tmp_path
+    else:
+        path_f = prep_pyproject_toml(path_toml_src, tmp_path)
+
+    # Either could raise PyProjectTOMLParseError or PyProjectTOMLReadError
+    d_pyproject_toml, path_resolved = TomlParser.read(path_f)

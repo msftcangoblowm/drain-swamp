@@ -31,6 +31,7 @@ Changelog
    Commit items for NEXT VERSION
    ..............................
 
+   - refactor: move BackendType.read --> TomlParser.read
    - refactor: add check is_package_installed. Remove redundant checks
 
 .. scriv-start-here
