@@ -5,7 +5,6 @@ from drain_swamp.monkey.hooks import markers
 
 logger: logging.Logger
 
-def is_package_installed(app_name: str) -> bool: ...
 def _kind(
     config_settings: dict[str, Any] | None, fallback: str | None = "tag"
 ) -> str: ...

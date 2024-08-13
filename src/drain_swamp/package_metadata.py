@@ -42,6 +42,7 @@ from importlib.metadata import (
     metadata,
 )
 
+from ._package_installed import is_package_installed
 from .check_type import is_ok
 from .constants import g_app_name
 from .parser_in import TomlParser
@@ -51,17 +52,6 @@ _logger = logging.getLogger(f"{g_app_name}.package_metadata")
 __package__ = "drain_swamp"
 __all__ = ("PackageMetadata",)
 AUTHOR_NAME_FALLBACK = "Anonymous"
-
-
-def is_package_installed(app_name):
-    try:
-        metadata(app_name)
-    except PackageNotFoundError:
-        ret = False
-    else:
-        ret = True
-
-    return ret
 
 
 @cache

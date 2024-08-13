@@ -436,7 +436,9 @@ def test_lock_unlock_and_back_with_patch(
         )
 
         # Call cli func blind; no BackendType.is_locked
-        with patch(f"{g_app_name}.lock_toggle.is_piptools", return_value=False):
+        with patch(
+            f"{g_app_name}.lock_toggle.is_package_installed", return_value=False
+        ):
             result = runner.invoke(func, cmd)
 
         logger.info(result.output)

@@ -26,6 +26,7 @@ from unittest.mock import (
 
 import pytest
 
+from drain_swamp._package_installed import is_package_installed
 from drain_swamp.constants import (
     LOGGING,
     g_app_name,
@@ -46,10 +47,7 @@ from drain_swamp.igor_utils import (
     write_version_file,
 )
 from drain_swamp.version_file.dump_version import write_version_files
-from drain_swamp.version_semantic import (
-    _is_setuptools_scm,
-    _scm_key,
-)
+from drain_swamp.version_semantic import _scm_key
 
 
 def test_update_file(tmp_path, prep_pyproject_toml):
@@ -388,7 +386,7 @@ def test_pretag(ver, expected):
 def test_get_current_version(path_project_base):
     """Get the current version of this package. Requires package setuptools-scm"""
     ver = get_current_version(path_project_base())
-    if _is_setuptools_scm():
+    if is_package_installed("setuptools_scm"):
         assert isinstance(ver, str)
     else:
         assert ver is None

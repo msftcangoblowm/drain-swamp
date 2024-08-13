@@ -96,6 +96,7 @@ except ImportError:  # pragma: no cover
     from setuptools.extern.packaging.version import InvalidVersion  # type: ignore
     from setuptools.extern.packaging.version import Version as Version  # type: ignore
 
+from ._package_installed import is_package_installed
 from ._run_cmd import run_cmd
 from .parser_in import TomlParser
 from .version_file._overrides import (
@@ -112,42 +113,6 @@ __all__ = (
 
 _map_release = types.MappingProxyType({"alpha": "a", "beta": "b", "candidate": "rc"})
 _logger = logging.getLogger("drain_swamp.version_semantic")
-
-
-def _is_package(package_name):
-    """Check if package installed
-
-    :param package_name: package name to check if installed
-    :type package_name: str
-    :returns: True if package installed otherwise False
-    :rtype: str
-    :meta private:
-    """
-    from importlib.metadata import (
-        PackageNotFoundError,
-        version,
-    )
-
-    try:
-        version("setuptools-scm")
-    except PackageNotFoundError:
-        bol_ret = False
-    else:
-        bol_ret = True
-
-    return bol_ret
-
-
-def _is_setuptools_scm():
-    """Without importing package, check setuptools-scm package is installed
-
-    :returns: True if setuptools-scm package is installed otherwise False
-    :rtype: bool
-    :meta private:
-    """
-    ret = _is_package("setuptools-scm")
-
-    return ret
 
 
 def _path_or_cwd(val):
@@ -511,7 +476,7 @@ def _current_version(path=None):
     path_cwd = _path_or_cwd(path)
 
     # Check setuptools-scm package is installed
-    if not _is_setuptools_scm():
+    if not is_package_installed("setuptools-scm"):
         return None
     else:  # pragma: no cover
         pass
@@ -520,7 +485,7 @@ def _current_version(path=None):
     # Replaces:
     # cmd = [sys.executable, "setup.py", "--version"]
     # cmd = [sys.executable, "-m", "setuptools_scm"]
-    if _is_package("drain_swamp"):
+    if is_package_installed("drain_swamp"):
         # thru entrypoint
         cmd = ("scm-version", "get")
     else:  # pragma: no cover

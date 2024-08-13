@@ -73,7 +73,6 @@ from __future__ import annotations
 import copy
 import dataclasses
 import fileinput
-import importlib.util
 import logging
 import os
 import pathlib
@@ -84,6 +83,7 @@ from pathlib import (
     PurePath,
 )
 
+from ._package_installed import is_package_installed
 from ._run_cmd import run_cmd
 from .constants import (
     PATH_PIP_COMPILE,
@@ -103,20 +103,6 @@ __all__ = (
 
 _logger = logging.getLogger(f"{g_app_name}.lock_toggle")
 is_module_debug = False
-
-
-def is_piptools():
-    """Check whether package pip-tools is installed. If not the
-    :command:`pip-compile` would not be available
-
-    This function is patchable
-
-    :returns: True if pip-tools installed otherwise False
-    :rtype: bool
-    """
-    spec = importlib.util.find_spec("piptools")
-    is_package = spec is not None
-    return is_package
 
 
 def _create_symlinks_relative(src: str, dest: str, cwd_path: str) -> None:
@@ -296,7 +282,7 @@ def lock_compile(inst):
 
     """
     str_func_name = f"{g_app_name}.lock_toggle.lock_compile"
-    assert is_piptools()
+    assert is_package_installed("pip-tools") is True
 
     # store pairs
     lst_pairs = []

@@ -48,38 +48,16 @@ from __future__ import annotations
 import logging
 import sys
 import warnings
-from importlib.metadata import (
-    PackageNotFoundError,
-    metadata,
-)
 from pathlib import Path
 from typing import Any
 
+from drain_swamp._package_installed import is_package_installed
 from drain_swamp._run_cmd import run_cmd
 from drain_swamp.monkey.config_settings import ConfigSettings
 from drain_swamp.monkey.hooks import markers
 from drain_swamp.monkey.hooks.constants import HOOK_NAMESPACE
 
 log = logging.getLogger(__name__)
-
-
-def _is_package_installed(app_name):
-    """Check if package is installed
-
-    :param app_name: Accepts either package name or app name. No need for check
-    :type app_name: str
-    :returns: True package is installed otherwise False
-    :rtype: bool
-    """
-    # metadata is hardened; accepts either package name or app name
-    try:
-        metadata(app_name)
-    except PackageNotFoundError:
-        ret = False
-    else:
-        ret = True
-
-    return ret
 
 
 def _kind(config_settings, fallback="tag"):
@@ -137,7 +115,7 @@ def on_version_infer(config_settings: dict[str, Any]) -> str | None:
     p_bin_dir = Path(sys.executable).parent
     scm_version_path = str(p_bin_dir.joinpath("scm-version"))
 
-    is_installed = _is_package_installed("drain_swamp")
+    is_installed = is_package_installed("drain_swamp")
     ret = None
     with warnings.catch_warnings(record=True) as w:
         kind = _kind(config_settings)

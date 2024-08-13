@@ -15,11 +15,11 @@ from pathlib import Path
 
 import pytest
 
+from drain_swamp._package_installed import is_package_installed
 from drain_swamp.package_metadata import (
     AUTHOR_NAME_FALLBACK,
     PackageMetadata,
     get_author_and_email,
-    is_package_installed,
 )
 
 

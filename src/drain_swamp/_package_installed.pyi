@@ -1,0 +1,3 @@
+__all__ = ("is_package_installed",)
+
+def is_package_installed(app_name: str) -> bool: ...

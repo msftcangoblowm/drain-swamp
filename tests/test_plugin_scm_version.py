@@ -16,7 +16,6 @@ import pytest
 
 from drain_swamp.monkey.config_settings import ConfigSettings
 from drain_swamp.monkey.plugins.ds_scm_version import (
-    _is_package_installed,
     _kind,
     on_version_infer,
 )
@@ -37,33 +36,6 @@ def wd(wd: WorkDir) -> WorkDir:
     wd.add_command = "git add ."
     wd.commit_command = "git commit --no-verify --no-gpg-sign -m test-{reason}"
     return wd
-
-
-testdata_is_package_installed = (
-    (
-        "drain_swamp",
-        True,
-    ),
-    (
-        "asdfsadfsadfsadfasdfasdfsadfsaddsafdsafdsafdsafdsafdsaf",
-        False,
-    ),
-)
-ids_is_package_installed = (
-    "Installed package",
-    "not installed package",
-)
-
-
-@pytest.mark.parametrize(
-    "pkg_name, is_installed_expected",
-    testdata_is_package_installed,
-    ids=ids_is_package_installed,
-)
-def test_is_package_installed(pkg_name, is_installed_expected):
-    # pytest --showlocals --log-level INFO -k "test_is_package_installed" tests
-    actual = _is_package_installed(pkg_name)
-    assert actual == is_installed_expected
 
 
 testdata_kind_arg_filter_normal = (

@@ -8,6 +8,12 @@ Changelog
    Feature request
    .................
 
+   - rtd installs does not build or run a workflow. Does rtd give any workaround?
+
+   - pipenv-unlock lock --> pipenv-unlock refresh
+     in pyproject.toml, set to .lock not .lnk
+     This is a UX issue
+
    - Makefile target to add the environment variable with path to a config_settings toml file
 
    - Confirm setuptools-scm file finders are being called?
@@ -18,10 +24,14 @@ Changelog
    Known regressions
    ..................
 
+   - scm-version write in version_tuple semantic version str missing local
+
    - tox does not pass in config_settings. Read in DS_CONFIG_SETTINGS
 
    Commit items for NEXT VERSION
    ..............................
+
+   - refactor: add check is_package_installed. Remove redundant checks
 
 .. scriv-start-here
 
