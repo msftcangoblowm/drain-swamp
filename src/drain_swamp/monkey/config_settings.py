@@ -16,15 +16,28 @@
 
 import logging
 import os
+import sys
 from pathlib import (
     Path,
     PurePath,
 )
+from typing import TYPE_CHECKING
 
+if sys.version_info >= (3, 11):  # pragma: no cover
+    try:
+        import tomllib
+    except ImportError:
+        # Help users on older alphas
+        if not TYPE_CHECKING:
+            import tomli as tomllib
+else:  # pragma: no cover
+    import tomli as tomllib
+
+from .constants import g_app_name
 from .patch_pyproject_reading import ReadPyproject
 
 __all__ = ("ConfigSettings",)
-log = logging.getLogger("drain_swamp.monkey.config_settings")
+log = logging.getLogger(f"{g_app_name}.monkey.config_settings")
 
 
 class ConfigSettings:
@@ -161,11 +174,6 @@ class ConfigSettings:
         :rtype: dict[str, typing.Any]
         """
         cls = type(self)
-        msg_warn = (
-            "Expected env variable, DS_CONFIG_SETTINGS. Should contain "
-            "path to .toml file. File contains project.name, project.version, "
-            "tool.config-settings.kind and tool.config-settings.set-lock"
-        )
         toml_path = cls.get_abs_path()
         if toml_path is not None:
             path_f = Path(toml_path)
@@ -178,8 +186,12 @@ class ConfigSettings:
                     pyproj_data = ReadPyproject()(
                         path=path_f, tool_name=cls.SECTION_NAME
                     )
-                except LookupError:
+                except (LookupError, tomllib.TOMLDecodeError) as e:
                     d_section = {}
+                    msg_warn = (
+                        f"Either no section {cls.SECTION_NAME} or "
+                        f"config_settings toml is invalid. {e}"
+                    )
                     log.warning(msg_warn)
                 else:
                     # from setuptools_scm._integration.toml import TOML_RESULT
@@ -187,6 +199,12 @@ class ConfigSettings:
 
                     # No config settings. Log warning
                     if len(d_section.keys()) == 0:
+                        msg_warn = (
+                            "Expected env variable, DS_CONFIG_SETTINGS. Should contain "
+                            "path to .toml file. File contains project.name, "
+                            "project.version, tool.config-settings.kind and "
+                            "tool.config-settings.set-lock"
+                        )
                         log.warning(msg_warn)
                     else:  # pragma: no cover
                         pass

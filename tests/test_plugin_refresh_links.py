@@ -37,6 +37,7 @@ from drain_swamp.monkey.config_settings import ConfigSettings
 from drain_swamp.monkey.plugins.ds_refresh_links import (
     _is_set_lock,
     _parent_dir,
+    _snippet_co,
     before_version_infer,
 )
 from drain_swamp.parser_in import TomlParser
@@ -124,6 +125,58 @@ def test_is_set_lock(toml_contents, is_lock_expected, tmp_path):
     assert actual is True
 
 
+testdata_snippet_co = (
+    (
+        {"--snip": "12345"},
+        "--snip",
+        "12345",
+    ),
+    (
+        {"snip": "12345"},
+        "snip",
+        "12345",
+    ),
+    (
+        {"--snip-co": "12345"},
+        "--snip-co",
+        "12345",
+    ),
+    (
+        {"snip-co": "12345"},
+        "snip-co",
+        "12345",
+    ),
+    (
+        ("snip-co", "12345"),
+        "snip-co",
+        None,
+    ),
+)
+ids_snippet_co = (
+    "with hyphens. snip",
+    "without hyphens. snip",
+    "with hyphens. snip-co",
+    "without hyphens. snip-co",
+    "config_settings is not a Mapping",
+)
+
+
+@pytest.mark.parametrize(
+    "config_settings, key, expected_val",
+    testdata_snippet_co,
+    ids=ids_snippet_co,
+)
+def test_snippet_co(config_settings, key, expected_val):
+    # pytest --showlocals --log-level INFO -k "test_snippet_co" tests
+    val_actual = _snippet_co(config_settings, default=None)
+    if expected_val is None:
+        assert val_actual is None
+    else:
+        assert val_actual is not None
+        assert isinstance(val_actual, str)
+        assert val_actual == expected_val
+
+
 testdata_parent_dir = (
     (
         (
@@ -199,6 +252,7 @@ testdata_refresh = (
             "requirements/pip.lnk",
             "requirements/manage.lnk",
         ),
+        None,
         True,
     ),
     (
@@ -224,6 +278,7 @@ testdata_refresh = (
             "requirements/tox.lnk",
             "requirements/manage.lnk",
         ),
+        None,
         False,
     ),
     (
@@ -263,18 +318,91 @@ testdata_refresh = (
             "requirements/manage.lnk",
             "docs/requirements.lnk",
         ),
+        None,
         False,
+    ),
+    (
+        Path(__file__).parent.joinpath(
+            "_good_files", "complete-manage-pip-prod-unlock.pyproject_toml"
+        ),
+        (
+            "requirements/prod.in",
+            "requirements/pins.in",
+            "requirements/pip.in",
+            "requirements/tox.in",
+            "requirements/manage.in",
+        ),
+        (
+            "requirements/prod.unlock",
+            "requirements/pip.unlock",
+            "requirements/tox.unlock",
+            "requirements/manage.unlock",
+            "requirements/prod.lock",
+            "requirements/pip.lock",
+            "requirements/tox.lock",
+            "requirements/manage.lock",
+        ),
+        (
+            "requirements/prod.lnk",
+            "requirements/pip.lnk",
+            "requirements/tox.lnk",
+            "requirements/manage.lnk",
+        ),
+        "nonexistent_snippet",
+        True,
+    ),
+    (
+        Path(__file__).parent.joinpath("_bad_files", "snippet-nested.pyproject_toml"),
+        (
+            "requirements/prod.in",
+            "requirements/pins.in",
+            "requirements/pip.in",
+            "requirements/tox.in",
+            "requirements/manage.in",
+            "requirements/pip-tools.in",
+            "requirements/dev.in",
+            "docs/requirements.in",
+        ),
+        (
+            "requirements/prod.unlock",
+            "requirements/pip.unlock",
+            "requirements/tox.unlock",
+            "requirements/manage.unlock",
+            "requirements/pip-tools.unlock",
+            "requirements/dev.unlock",
+            "docs/requirements.unlock",
+            "requirements/prod.lock",
+            "requirements/pip.lock",
+            "requirements/tox.lock",
+            "requirements/manage.lock",
+            "requirements/pip-tools.lock",
+            "requirements/dev.lock",
+            "docs/requirements.lock",
+        ),
+        (
+            "requirements/prod.lnk",
+            "requirements/pip.lnk",
+            "requirements/tox.lnk",
+            "requirements/manage.lnk",
+            "requirements/pip-tools.lnk",
+            "requirements/dev.lnk",
+            "docs/requirements.lnk",
+        ),
+        None,
+        True,
     ),
 )
 ids_refresh = (
     "missing tox (MissingRequirementsFoldersFiles)",
     "manage and tox",
     "constraint path needs to be resolved",
+    "dependencies ok. snippet_co no match. Cannot update snippet",
+    "dependencies ok. snippet malformed. Cannot update snippet",
 )
 
 
 @pytest.mark.parametrize(
-    "path_pyproject_toml, seq_create_in_files, seq_create_lock_files, seq_expected, str_returned",
+    "path_pyproject_toml, seq_create_in_files, seq_create_lock_files, seq_expected, snippet_co, str_returned",
     testdata_refresh,
     ids=ids_refresh,
 )
@@ -283,6 +411,7 @@ def test_plugin_refresh_links_normal(
     seq_create_in_files,
     seq_create_lock_files,
     seq_expected,
+    snippet_co,
     str_returned,
     tmp_path,
     prepare_folders_files,
@@ -329,19 +458,22 @@ def test_plugin_refresh_links_normal(
             """name = "great-package"\n"""
             """version = "99.99.99a1.dev6"\n"""
             "[tool.config-settings]\n"
-            """kind="current"\n"""
-            """set-lock="0"\n\n"""
+            """kind = "current"\n"""
+            """set-lock = "0"\n"""
         ),
         (
             "[project]\n"
             """name = "great-package"\n"""
             """version = "99.99.99a1.dev6"\n"""
             "[tool.config-settings]\n"
-            """kind="current"\n"""
-            """set-lock="1"\n\n"""
+            """kind = "current"\n"""
+            """set-lock = "1"\n"""
         ),
     )
     for toml_contents in configs:
+        if snippet_co is not None:
+            toml_contents += f"""snip-co = "{snippet_co}"\n"""
+
         d_section = ConfigSettings.get_section_dict(tmp_path, toml_contents)
 
         inst = BackendType.load_factory(
@@ -372,6 +504,7 @@ def test_plugin_refresh_links_normal(
                 assert str_msg is not None
                 assert isinstance(str_msg, str)
                 logger.info(str_msg)
+                assert has_logging_occurred(caplog)
             else:
                 # success
                 assert str_msg is None

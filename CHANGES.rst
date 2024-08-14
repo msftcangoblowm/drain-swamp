@@ -10,10 +10,6 @@ Changelog
 
    - rtd installs does not build or run a workflow. Does rtd give any workaround?
 
-   - pipenv-unlock lock --> pipenv-unlock refresh
-     in pyproject.toml, set to .lock not .lnk
-     This is a UX issue
-
    - Makefile target to add the environment variable with path to a config_settings toml file
 
    - Confirm setuptools-scm file finders are being called?
@@ -31,10 +27,17 @@ Changelog
    Commit items for NEXT VERSION
    ..............................
 
-   - refactor: move BackendType.read --> TomlParser.read
-   - refactor: add check is_package_installed. Remove redundant checks
-
 .. scriv-start-here
+
+.. _changes_1-4-0:
+
+Version 1.4.0 — 2024-08-14
+--------------------------
+
+- feat: pipenv-unlock refresh and in plugin set dependency suffix to .lnk
+- fix(config_settings): catch and log warning on malformed toml exception
+- refactor: move BackendType.read --> TomlParser.read
+- refactor: add check is_package_installed. Remove redundant checks
 
 .. _changes_1-3-4:
 

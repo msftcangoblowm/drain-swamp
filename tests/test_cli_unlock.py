@@ -864,6 +864,7 @@ testdata_create_links_set_lock = (
             "requirements/manage.lock",
         ),
         "1",
+        None,
         0,
     ),
     (
@@ -886,6 +887,7 @@ testdata_create_links_set_lock = (
             "requirements/manage.lock",
         ),
         "0",
+        None,
         0,
     ),
     (
@@ -908,18 +910,77 @@ testdata_create_links_set_lock = (
             "requirements/manage.lock",
         ),
         None,
+        None,
         0,
+    ),
+    (
+        Path(__file__).parent.joinpath(
+            "_good_files", "complete-manage-pip-prod-unlock.pyproject_toml"
+        ),
+        (
+            "requirements/prod.in",
+            "requirements/pip.in",
+            "requirements/manage.in",
+        ),
+        (
+            "requirements/prod.unlock",
+            "requirements/pip.unlock",
+            "requirements/manage.unlock",
+        ),
+        (
+            "requirements/prod.lock",
+            "requirements/pip.lock",
+            "requirements/manage.lock",
+        ),
+        None,
+        "nonexistent_snippet",
+        9,
+    ),
+    (
+        Path(__file__).parent.joinpath("_bad_files", "snippet-nested.pyproject_toml"),
+        (
+            "requirements/prod.in",
+            "requirements/pip.in",
+            "requirements/manage.in",
+            "requirements/pip-tools.in",
+            "requirements/dev.in",
+            "requirements/manage.in",
+            "docs/requirements.in",
+        ),
+        (
+            "requirements/prod.unlock",
+            "requirements/pip.unlock",
+            "requirements/manage.unlock",
+            "requirements/pip-tools.unlock",
+            "requirements/dev.unlock",
+            "requirements/manage.unlock",
+            "docs/requirements.unlock",
+        ),
+        (
+            "requirements/prod.lock",
+            "requirements/pip.lock",
+            "requirements/manage.lock",
+            "requirements/pip-tools.lock",
+            "requirements/dev.lock",
+            "requirements/manage.lock",
+            "docs/requirements.lock",
+        ),
+        None,
+        None,
+        8,
     ),
 )
 ids_create_links_set_lock = (
     "set symlink to dependency locked",
     "set symlink to dependency unlocked",
     "set symlink to current lock state",
+    "dependencies ok. snippet_co no match. Cannot update snippet",
+    "dependencies ok. snippet malformed. Cannot update snippet",
 )
 
 
 @pytest.mark.parametrize(
-    "path_pyproject_toml, seq_in, seq_unlock, seq_lock, set_lock, expected",
+    "path_pyproject_toml, seq_in, seq_unlock, seq_lock, set_lock, snippet_co, expected",
     testdata_create_links_set_lock,
     ids=ids_create_links_set_lock,
 )
@@ -929,6 +990,7 @@ def test_create_links_set_lock(
     seq_unlock,
     seq_lock,
     set_lock,
+    snippet_co,
     expected,
     caplog,
     tmp_path,
@@ -982,14 +1044,27 @@ def test_create_links_set_lock(
             "--path",
             tmp_dir_path,
         ]
+
         if set_lock is not None and isinstance(set_lock, str):
             func_cmd.extend(["--set-lock", set_lock])
+
+        if snippet_co is not None and isinstance(snippet_co, str):
+            func_cmd.extend(["--snip", snippet_co])
 
         with patch(
             f"{g_app_name}.cli_unlock.BackendType.load_factory",
             return_value=inst,
         ):
             result = runner.invoke(create_links, func_cmd)
+
+        logger.info(f"out&err: {result.output}")
+        logger.info(f"exc: {result.exception}")
+        tb = result.exc_info[2]
+        # msg_info = f"traceback: {pprint(traceback.format_tb(tb))}"
+        msg_info = f"traceback: {traceback.format_tb(tb)}"
+        logger.info(msg_info)
+
+        assert has_logging_occurred(caplog)
 
         #    prove symlinks created
         for unlock_relpath in seq_in:
@@ -1007,7 +1082,7 @@ def test_create_links_set_lock(
 
 
 @pytest.mark.parametrize(
-    "path_pyproject_toml, seq_in, seq_unlock, seq_lock, set_lock, expected",
+    "path_pyproject_toml, seq_in, seq_unlock, seq_lock, set_lock, snippet_co, expected",
     testdata_create_links_set_lock,
     ids=ids_create_links_set_lock,
 )
@@ -1017,6 +1092,7 @@ def test_create_links_missing_files(
     seq_unlock,
     seq_lock,
     set_lock,
+    snippet_co,
     expected,
     caplog,
     tmp_path,

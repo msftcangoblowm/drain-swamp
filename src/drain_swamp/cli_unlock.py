@@ -102,6 +102,11 @@ from .snip import (
     ReplaceResult,
     Snip,
 )
+from .snippet_pyproject_toml import (
+    SNIPPET_NO_MATCH,
+    SNIPPET_VALIDATE_FAIL,
+    snippet_replace_suffixes,
+)
 
 # taken from pyproject.toml
 entrypoint_name = "pipenv-unlock"  # noqa: F401
@@ -174,6 +179,10 @@ EPILOG_REFRESH = """
 6 -- The pyproject.toml depends on the requirements folders and files. Create them
 
 7 -- In pyproject.toml no section, tool.setuptools.dynamic
+
+8 -- The snippet is invalid. Either nested snippets or start stop token out of order. Fix the snippet then try again
+
+9 -- In pyproject.toml, there is no snippet with that snippet code
 """
 
 
@@ -689,7 +698,15 @@ def dependencies_unlock(path, required, optionals, additional_folders, snippet_c
     type=click.BOOL,
     help=help_set_lock,
 )
-def create_links(path, is_set_lock):
+@click.option(
+    "-s",
+    "--snip",
+    "snippet_co",
+    default=None,
+    type=click.STRING,
+    help=help_snippet_co,
+)
+def create_links(path, is_set_lock, snippet_co):
     """From *.lock *.unlock files create symlink files *.lnk
 
     In ``pyproject.toml``,
@@ -776,6 +793,17 @@ def create_links(path, is_set_lock):
         )
         click.secho(msg_exc, fg="red", err=True)
         sys.exit(7)
+
+    path_config = inst.path_config
+    err_or_none = snippet_replace_suffixes(path_config, snippet_co=snippet_co)
+    if err_or_none == ReplaceResult.VALIDATE_FAIL:
+        click.secho(SNIPPET_VALIDATE_FAIL, fg="red", err=True)
+        sys.exit(8)
+    elif err_or_none == ReplaceResult.NO_MATCH:
+        click.secho(SNIPPET_NO_MATCH.format(snippet_co), fg="red", err=True)
+        sys.exit(9)
+    else:  # pragma: no cover
+        pass
 
 
 if __name__ == "__main__":  # pragma: no cover
