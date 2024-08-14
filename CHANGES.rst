@@ -20,6 +20,8 @@ Changelog
    Known regressions
    ..................
 
+   - test build sdist to detect issue with build backend
+
    - scm-version write in version_tuple semantic version str missing local
 
    - tox does not pass in config_settings. Read in DS_CONFIG_SETTINGS
@@ -34,6 +36,7 @@ Changelog
 Version 1.4.0 — 2024-08-14
 --------------------------
 
+- fix(config_settings): fix module import dotted path
 - feat: pipenv-unlock refresh and in plugin set dependency suffix to .lnk
 - fix(config_settings): catch and log warning on malformed toml exception
 - refactor: move BackendType.read --> TomlParser.read

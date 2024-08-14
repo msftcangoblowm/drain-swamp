@@ -33,7 +33,7 @@ if sys.version_info >= (3, 11):  # pragma: no cover
 else:  # pragma: no cover
     import tomli as tomllib
 
-from .constants import g_app_name
+from ..constants import g_app_name
 from .patch_pyproject_reading import ReadPyproject
 
 __all__ = ("ConfigSettings",)

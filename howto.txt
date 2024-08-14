@@ -65,6 +65,7 @@
       $ git switch master
       $ git merge -S -m "Your merge commit message" [source_branch]
     - Check web connection then push. Don't trigger a release until a tag push
+    - check build sdist **BEFORE** push. Catch issues in build backend
       $ git push
 - Start the kits:
     - Build drain-swamp
