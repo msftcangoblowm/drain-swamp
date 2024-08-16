@@ -212,18 +212,48 @@ def test_dist_get_cmdline_options(
     # plugins: refresh_links (needs set-lock), cli_scm_version.py (needs kind)
     t_ret = run_cmd(cmd, cwd=cwd, env=env)
     out, err, exit_code, exc = t_ret
+    logger.info("WILL FAIL, with exit code 1, if in dependency hell")
+    msg_info = (
+        "Test deals with passing config_settings thru to build plugin "
+        "subprocess. Cannot resolve or detect dependency hell"
+    )
+    logger.info(msg_info)
+    msg_info = (
+        "Advice on resolving dependency hell. In local virtual "
+        "environment, each package, will have a 2nd meta data package. "
+        "Within which is file, METADATA. In this file, edit the "
+        "dependency versions. Run tests locally."
+        "Once tests pass. Update requirements/ and docs/ .lock files. "
+        "publish a release and install the release to your local virtual environment"
+    )
+    logger.info(msg_info)
     logger.info(f"out {out!r}")
     logger.info(f"err {err!r}")
     logger.info(list(cwd.glob("**/*.tar.gz")))
 
     assert has_logging_occurred(caplog)
     assert exc is None
-    assert exit_code == 0
-    path_dist_dir = cwd.joinpath("dist", f_name)
-    assert path_dist_dir.exists()
 
-    # logger.info(f"version file contents:\n{path_f.read_text()}")
-    assert verify_tag_version(wd.cwd, kind) is True
+    condition = "Missing dependencies" in out
+    if condition:
+        """Chicken and egg situation. drain-swamp may just need a
+        release to resolve issue"""
+        idx = out.index("Missing dependencies")
+        whats_missing = out[idx:]
+        whats_missing = whats_missing.replace("\n", " ")
+        reason = (
+            "Missing dependencies which might be resolvable by "
+            f"publishing a release. {whats_missing}"
+        )
+        # If condition met, execution stops at xfail line
+        pytest.xfail(reason)
+    else:
+        assert exit_code == 0
+        path_dist_dir = cwd.joinpath("dist", f_name)
+        assert path_dist_dir.exists()
+
+        # logger.info(f"version file contents:\n{path_f.read_text()}")
+        assert verify_tag_version(wd.cwd, kind) is True
 
 
 testdata_infer_version_fail = (

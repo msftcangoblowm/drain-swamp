@@ -8,7 +8,7 @@ Changelog
    Feature request
    .................
 
-   - rtd installs does not build or run a workflow. Does rtd give any workaround?
+   - docs/code/index.rst rewrite. Organize modules and add missing
 
    - Makefile target to add the environment variable with path to a config_settings toml file
 
@@ -20,9 +20,14 @@ Changelog
    Known regressions
    ..................
 
+   - rtd installs does not build or run a workflow. Does rtd give any workaround?
+     Resolve rtd issue before migrate sphinx-external-toc-strict to use drain-swamp
+
    - test build sdist to detect issue with build backend
 
    - scm-version write in version_tuple semantic version str missing local
+
+   - semantic version tuple look into edge case support for pre+post+dev and pre+post
 
    - tox does not pass in config_settings. Read in DS_CONFIG_SETTINGS
 
@@ -31,9 +36,21 @@ Changelog
 
 .. scriv-start-here
 
-.. _changes_1-4-0:
+.. _changes_1-5-0:
 
-Version 1.4.0 — 2024-08-14
+Version 1.5.0 — 2024-08-16
+--------------------------
+
+- feat: upgrade dependencies sphinx-external-toc-strict zipp typing-extensions
+- fix(version_semantic): get_version recognize definition of release level ambiguous
+- fix: resolve dependency hell sphinx-external-toc-strict zipp typing-extensions
+- docs: add dependencies sphinx-design sphinx-tabs sphinx-favicon
+- docs: improve page elements appearance. Use card grid tabs
+- test: when missing dependencies build fail --> pytest.xfail
+
+.. _changes_1-4-0post0:
+
+Version 1.4.0post0 — 2024-08-14
 --------------------------
 
 - fix(config_settings): fix module import dotted path

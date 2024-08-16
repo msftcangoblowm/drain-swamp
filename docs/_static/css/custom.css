@@ -1,0 +1,27 @@
+/* https://github.com/hakuhodo-technologies/scope-rl/blob/main/docs/_static/css/custom.css */
+.top-page-title-title {
+  font-size: 40px;
+  text-align: center;
+  padding-top: 20%;
+}
+
+.top-page-title-desc {
+  font-size: 20px;
+  text-align: center;
+  padding-top: 5%;
+  padding-bottom: 5%;
+  padding-left: 5%;
+  padding-right: 5%;
+}
+
+.white-space-20px {
+  padding: 20px;
+}
+
+.white-space-5px {
+  padding: 5px;
+}
+
+table.docutils div.line-block {
+    margin-left: 0;
+}

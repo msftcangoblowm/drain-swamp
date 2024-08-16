@@ -12,3 +12,6 @@ sphobjinv   # cross-references inventories, objects.inv
 sphinx-external-toc-strict
 scriv       # for writing GitHub releases
 sphinx-copybutton
+sphinx_design
+sphinx-tabs
+sphinx-favicon

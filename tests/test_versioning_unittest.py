@@ -255,6 +255,26 @@ class PackageVersioning(unittest.TestCase):
             self.assertEqual(v_post, expected_post)
             self.assertEqual(expect_info[-2], "post")
 
+        # edge cases
+        dev_edges = (
+            ("1.2.3rc1.post0.dev9", "1.2.3rc1.post0.dev9", 0),  # pre not stored!
+            ("1.4.0.post1.dev0", "1.4.0.post1.dev0", 1),
+        )
+        for dev_pre in dev_edges:
+            expected_post = dev_pre[2]
+            expected, _ = sanitize_tag(dev_pre[1])
+            expect_info, expect_dev = get_version(expected)
+
+            v = Version(expected)
+
+            v_post = v.post
+            v_post_is = v.is_postrelease
+            v_pre_is = v.is_prerelease
+            self.assertTrue(v_post_is)
+            self.assertTrue(v_pre_is)
+            self.assertEqual(v_post, expected_post)
+            self.assertEqual(expect_info[-2], "post")
+
     def test_v_remove(self):
         """Remove epoch and local and v prefix from semantic version str"""
         for v_in, expected in testdata_v:

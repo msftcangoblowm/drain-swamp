@@ -166,6 +166,7 @@ language = "en"
 needs_sphinx = "1.7"
 templates_path = ["_templates",]
 html_static_path = ["_static",]
+html_css_files = ["css/custom.css",]
 # https://www.sphinx-doc.org/en/master/usage/markdown.html
 source_suffix = [".md", ".rst"]
 master_doc = "index"
@@ -184,6 +185,9 @@ extensions = [
     "sphinx_external_toc_strict",
     "myst_parser",
     "sphinx_copybutton",
+    "sphinx_design",
+    "sphinx_tabs.tabs",
+    "sphinx_favicon",
 ]
 linkcheck_ignore = [
     "https://github.com/crdoconnor/strictyaml/blob/dfd93f9740ebd5e7150029bc3d89ea102bcddf00/strictyaml/representation.py#L48",

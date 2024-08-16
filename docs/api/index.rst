@@ -5,48 +5,81 @@ The commands and respective options
 
 Your howto.txt file informs when to use these commands
 
-.. csv-table:: Semantic version str
-   :header: "command", "desc"
-   :widths: auto
+.. card:: version
+   :text-align: left
+   :shadow: none
 
-   "scm-version get", "get version from source code manager"
-   "drain-swamp tag", "get version from version file"
-   "scm-version write", "write semantic version str to version file"
-   "drain-swamp pretag", "Print the sanitized semantic version str"
+   .. csv-table::
+      :header: "command", "desc"
+      :widths: auto
 
+      "scm-version get", "| get scm version
+      | 0.0.1post0.dev4+g123456-d20241212"
+      "drain-swamp tag", "| get version from version file
+      | 0.0.1post0"
+      "scm-version write", "write semantic version str to version file"
+      :doc:`drain-swamp pretag <drain-swamp-pretag>`, "Print/fix a semantic version str"
 
-.. csv-table:: Updating package docs
-   :header: "command", "desc"
-   :widths: auto
+.. raw:: html
 
-   "drain-swamp seed", "called immediately before drain-swamp edits"
-   "drain-swamp edits", "updates doc?/conf.py, NOTICE.txt, and CHANGES.rst"
-   "drain-swamp list", "list snippets in doc?/conf.py"
+   <div class="white-space-5px"></div>
 
+.. card:: Update package docs
+   :text-align: left
+   :shadow: none
 
-.. csv-table:: dependency locks
-   :header: "command", "desc"
-   :widths: auto
+   .. csv-table::
+      :header: "command", "desc"
+      :widths: auto
 
-   "pipenv-unlock is_lock", "0 is locked; 1 is unlocked"
-   "pipenv-unlock lock", "same as pip-compile. Creates .lock files"
-   "pipenv-unlock unlock", "same as pip-compile. Creates .unlock files"
-   "pipenv-unlock refresh", "creates/refreshes package dependency lock .lnk symlinks"
+      :doc:`drain-swamp seed <drain-swamp-seed>`, "called immediately before drain-swamp edits"
+      :doc:`drain-swamp edits <drain-swamp-seed>`, "updates doc?/conf.py, NOTICE.txt, and CHANGES.rst"
+      :doc:`drain-swamp list <drain-swamp-list>`, "list snippets in doc?/conf.py"
 
+.. raw:: html
 
-.. csv-table:: misc
-   :header: "command", "desc"
-   :widths: auto
+   <div class="white-space-5px"></div>
 
-   "drain-swamp cheats", "Prints helpful notes aids in kitting and publishing"
+.. card:: Dependency locks
+   :text-align: left
+   :shadow: none
 
+   .. csv-table::
+      :header: "command", "desc"
+      :widths: auto
 
-.. csv-table:: depreciated or avoid
-   :header: "command", "desc"
-   :widths: auto
+      :doc:`pipenv-unlock is_lock <pipenv-unlock-is_lock>`, "| 0 is locked
+      | 1 is unlocked"
+      :doc:`pipenv-unlock lock <pipenv-unlock-lock>`, "same as pip-compile. Creates .lock files"
+      :doc:`pipenv-unlock unlock <pipenv-unlock-unlock>`, "recursively assembles .in --> .unlock files"
+      "pipenv-unlock refresh", "| creates/refreshes package dependency lock .lnk symlinks
+      | updates pyproject.toml dependencys' suffix"
 
-   "drain-swamp build", "previous build package command"
-   "drain-swamp current", "prior impl of scm-version current"
+.. raw:: html
 
+   <div class="white-space-5px"></div>
 
-.. tableofcontents::
+.. card:: Misc
+   :text-align: left
+   :shadow: none
+
+   .. csv-table::
+      :header: "command", "desc"
+      :widths: auto
+
+      :doc:`drain-swamp cheats <drain-swamp-cheats>`, "Prints helpful notes aids in kitting and publishing"
+
+.. raw:: html
+
+   <div class="white-space-5px"></div>
+
+.. card:: Deprecated / outdated
+   :text-align: left
+   :shadow: none
+
+   .. csv-table::
+      :header: "command", "desc"
+      :widths: auto
+
+      :doc:`drain-swamp build <drain-swamp-build>`, "previous build package command"
+      :doc:`drain-swamp current <drain-swamp-current>`, "prior impl of scm-version current"

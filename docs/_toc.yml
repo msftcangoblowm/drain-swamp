@@ -5,6 +5,7 @@ subtrees:
 - entries:
   - file: getting_started/index
     entries:
+    - file: getting_started/installation
     - file: getting_started/drain-swamp-files
     - file: getting_started/pipenv-unlock
     - file: getting_started/setuptools-scm

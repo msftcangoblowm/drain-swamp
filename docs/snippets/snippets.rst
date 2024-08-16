@@ -8,38 +8,83 @@ The only requirement is the file format should recognize pound symbol ``#`` as a
 snippet code
 -------------
 
-.. code-block:: text
+A snippet is a dynamic block in an otherwise static file.
 
-   snippet code == snippet_co == snippet id
+The snippet code identifies each snippet. If there is only one snippet,
+it's optional. To future proof it, best practice is to set a snippet
+code. There is no down side besides ...
 
-**Code** is more accurate than id. A code is an alphanumeric string, preferrable a cringe
-cultural reference, rather than an unique integer number.
+i'm going to make you watch really horrible movies!
 
-without id
-"""""""""""
+The snippet code should be a cringe cultural reference. Will also see
+this in the changelog.
 
-A snippet **without** a snippet_co
+In a changelog, an entry line seldomly uses ``- style:``. Especially not
+as the first line.
 
-.. code:: text
+And it's sorta awkward seeing it in a changelog.
 
-   before snippet
-   # @@@ editable
-   code block
-   # @@@ end
-   after snippet
+Heh! Changelogs aren't supposed to be for entertainment
 
-with id
-""""""""
+.. card::
+   :shadow: none
 
-A snippet **with** a snippet_co
+   A snippet **without** a snippet_co
+   ^^^
 
-.. code:: text
+   .. code:: text
 
-   before snippet
-   # @@@ i_am_a_snippet_co
-   code block
-   # @@@ end
-   after snippet
+      before snippet
+      # @@@ editable
+      code block
+      # @@@ end
+      after snippet
+
+   +++
+
+   | If only one, can provide a snippet code or not.
+   | At your discretion.
+   | In the future, could this static file ever use more snippets?
+
+.. card::
+   :shadow: none
+
+   A snippet **with** a snippet_co
+   ^^^
+
+   .. code:: text
+
+      before snippet
+      # @@@ i_am_a_snippet_co
+      code block
+      # @@@ end
+      after snippet
+
+   +++
+
+   If there are multiple snippets, identifies the unique snippet
+
+.. card::
+   :shadow: none
+
+   Multiple snippets in one file
+   ^^^
+
+   .. code:: text
+
+      before snippet
+      # @@@ i_am_a_snippet_co
+      code block
+      # @@@ end
+      some more content
+      # @@@ i_am_another_snippet_co
+      code block
+      # @@@ end
+      after snippet
+
+| Don't nest snippets
+| Don't mismatch begin/end tags
+| markdown not supported
 
 replace example
 ----------------

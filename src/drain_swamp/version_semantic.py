@@ -441,9 +441,11 @@ def get_version(ver, is_use_final=False):
     elif not _v.is_prerelease and _v.is_postrelease:
         releaselevel = "post"
         serial = _v.post
-    elif _v.is_prerelease and _v.is_postrelease:  # pragma: no cover
-        # impossible
-        pass
+    elif _v.is_prerelease and _v.is_postrelease:
+        # "1.4.0.post1.dev0"
+        # "1.2.3rc1.post0.dev9"
+        releaselevel = "post"
+        serial = _v.post
     else:  # pragma: no cover
         pass
 
