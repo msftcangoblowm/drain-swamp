@@ -36,6 +36,14 @@ Changelog
 
 .. scriv-start-here
 
+.. _changes_1-5-2:
+
+Version 1.5.2 — 2024-08-16
+--------------------------
+
+- ci(gh-pages): deploy with both branch and tag protection nonviable
+- ci(gh-pages): allow workflow dispatch
+
 .. _changes_1-5-1:
 
 Version 1.5.1 — 2024-08-16

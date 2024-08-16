@@ -4,19 +4,22 @@ name: Deploy Sphinx docs to gh pages
 
 on:
   push:
-    branches:
-      - master
-    tags:
-      - '*.*.*'
+    branches: [$default-branch]
+    #tags:
+    #  - '*.*.*'
+  # Allows you to run this workflow manually from the Actions tab
+  workflow_dispatch:
 
 defaults:
   run:
     shell: bash
 
-# Cancel any in-progress job or run
+# Allow only one concurrent deployment, skipping runs queued between the run in-progress and latest queued.
+# However, do NOT cancel in-progress runs as we want to allow these production deployments to complete.
 # https://docs.github.com/en/actions/using-workflows/workflow-syntax-for-github-actions#concurrency
 concurrency:
   group: docs-${{ github.ref }}
+  cancel-in-progress: false
 
 env:
   PIP_DISABLE_PIP_VERSION_CHECK: 1
