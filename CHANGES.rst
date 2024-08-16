@@ -36,6 +36,14 @@ Changelog
 
 .. scriv-start-here
 
+.. _changes_1-5-1:
+
+Version 1.5.1 — 2024-08-16
+--------------------------
+
+- ci: add workflow gh-pages
+- ci: set concurrency group. quality docs higher priority than gh-pages
+
 .. _changes_1-5-0:
 
 Version 1.5.0 — 2024-08-16

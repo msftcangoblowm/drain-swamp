@@ -54,7 +54,7 @@ jobs:
           python -m pip install -r requirements/kit$LOCK_SUFFIX
 
       # Create generated files: version file and .lnk files. sdist tarball ignored
-      - name: "Build sdist to run plugins. Creates generated files"
+      - name: "Build sdist to run plugins. Create generated files"
         env:
           SET_LOCK: ${{ vars.DRAINSWAMP_SET_LOCK }}
         run: |
@@ -106,7 +106,9 @@ jobs:
   docs:
     name: "Build docs"
     runs-on: ubuntu-latest
-
+    concurrency:
+      group: docs-${{ github.ref }}
+      cancel-in-progress: true  # quality then gh-pages
     steps:
       - name: "Check out the repo"
         uses: actions/checkout@692973e3d937129bcbf40652eb9f2f61becf3332 # v4.1.7

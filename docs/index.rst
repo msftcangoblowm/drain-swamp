@@ -31,7 +31,7 @@
 **New in 1.5.x**
 
 resolve dependency hell; dependency conflict prevent tests fail;
-docs design elements improve presentation;
+docs design elements improve presentation; gh-pages workflow;
 
 **New in 1.4.x**
 
