@@ -387,7 +387,7 @@ def sanitize_tag(ver):
     return ret, local
 
 
-def _pre_split(_v: Version):
+def _pre_split(_v):
     """Force short prerelease
 
     short: a, b, or rc

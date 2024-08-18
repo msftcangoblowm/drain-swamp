@@ -16,7 +16,7 @@ copyright = "2024–2024, Dave Faulkmore"
 # The short X.Y.Z version.
 version = "1.5.3"
 # The full version, including alpha/beta/rc tags.
-release = "1.5.3"
+release = "1.5.3.post0"
 # The date of release, in "monthname day, year" format.
 release_date = "August 18, 2024"
 # @@@ end
@@ -146,6 +146,10 @@ intersphinx_mapping = {
     "setuptools-scm": (
         "https://setuptools-scm.readthedocs.io/en/stable",
         ("objects-setuptools-scm.inv", "objects-setuptools-scm.txt"),
+    ),
+    "packaging": (
+        "https://packaging.pypa.io/en/stable",
+        ("objects-packaging.inv", "objects-packaging.txt"),
     ),
 }
 intersphinx_disabled_reftypes = ["std:doc"]

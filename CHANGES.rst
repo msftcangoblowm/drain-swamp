@@ -34,6 +34,13 @@ Changelog
 
 .. scriv-start-here
 
+.. _changes_1-5-3post0:
+
+Version 1.5.3.post0 — 2024-08-18
+--------------------------------
+
+- docs: add inventory so Sphinx recognize class packaging.version.Version
+
 .. _changes_1-5-3:
 
 Version 1.5.3 — 2024-08-18
