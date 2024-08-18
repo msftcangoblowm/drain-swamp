@@ -306,10 +306,28 @@ def _remove_v(ver):
     return ret
 
 
+def _is_ver_ok(str_v):
+    """Check version str ok
+
+    :param str_v: raw version str
+    :type str_v: str
+    :returns: True if semantic version str is valid otherwise False
+    :rtype: bool
+    """
+    try:
+        Version(str_v)
+    except InvalidVersion:
+        ret = True
+    else:
+        ret = False
+
+    return ret
+
+
 def sanitize_tag(ver):
     """Avoid reinventing the wheel, leverage Version
 
-    ``final`` is not valid
+    ``final`` is invalid
 
     :param ver: raw semantic version
     :type ver: str
@@ -331,27 +349,22 @@ def sanitize_tag(ver):
     Will fail to detect an initial untagged version e.g. '0.1.dev0.d20240213'"""
     local, str_remaining_stripped = _strip_local(str_remaining_stripped)
 
-    # Problematic
-    # '0.1.dev0.d20240213'. Untagged version. Try remove from last period
-    # 0.1.1.candidate1dev1+g4b33a80.d20240129
-    try:
-        v = Version(str_remaining_whole)
-    except InvalidVersion:
-        is_problem = True
-    else:
-        is_problem = False
+    # fix candidate --> rc
+    # '0.1.1.candidate1dev1+g4b33a80.d20240129' --> '0.1.1rc1.dev1+g4b33a80.d20240129'
+    if "candidate" in str_remaining_whole:
+        str_remaining_whole = str_remaining_whole.replace("candidate", "rc")
+        is_problem = _is_ver_ok(str_remaining_whole)
+    else:  # pragma: no cover
+        is_problem = _is_ver_ok(str_remaining_whole)
 
+    # '0.1.dev0.d20240213' --> '0.1.dev0'
     if is_problem:
         lst = str_remaining_whole.split(".")
-
         ver_try = ".".join(lst[:-1])
-        try:
-            v = Version(ver_try)
-        except InvalidVersion:
-            is_still_issue = True
-        else:  # pragma: no cover Do nothing
-            is_still_issue = False
-    else:  # pragma: no cover Do nothing
+
+        is_still_issue = _is_ver_ok(ver_try)
+    else:  # pragma: no cover
+        # Do nothing
         is_still_issue = False
 
     if is_still_issue:
@@ -360,9 +373,11 @@ def sanitize_tag(ver):
         except InvalidVersion as e:
             msg = f"Version contains invalid token. {e}"
             raise ValueError(msg) from e
-    else:  # pragma: no cover Do nothing
+    else:  # pragma: no cover
+        # Do nothing
         pass
 
+    v = Version(str_remaining_whole)
     ret = str(v)
 
     # Strip epoch and local, if exists
@@ -370,6 +385,52 @@ def sanitize_tag(ver):
     _, ret = _strip_local(ret)
 
     return ret, local
+
+
+def _pre_split(_v: Version):
+    """Force short prerelease
+
+    short: a, b, or rc
+    long: alpha, beta, candidate
+
+    :param _v: packaging module Version class
+    :type _v: packaging.version.Version
+    :returns: short prerelease string and prerelease number
+    :rtype: tuple[str, int, str] | None
+    """
+    t_pre = _v.pre
+    if t_pre is None:
+        ret = None
+    else:
+        short = t_pre[0]
+        serial = t_pre[1]
+        ret_short = None
+        ret_long = None
+
+        # ret_short means we recognize the short form, regardless of Version's opinion
+        for _, short_ in _map_release.items():
+            if short_ == short:
+                ret_short = short_
+            else:  # pragma: no cover
+                pass
+
+        if ret_short is None:  # pragma: no cover
+            # unrecognized short
+            ret = None
+            pass
+        else:  # pragma: no cover
+            for long_, short_ in _map_release.items():
+                if ret_short == short_:
+                    if long_ != "candidate":
+                        ret_long = long_
+                    else:
+                        # candidate is not a valid semantic version component
+                        ret_long = short_
+                else:  # pragma: no cover
+                    pass
+            ret = (ret_long, serial, ret_short)
+
+    return ret
 
 
 def get_version(ver, is_use_final=False):
@@ -418,36 +479,41 @@ def get_version(ver, is_use_final=False):
     _dev = _v.dev if _v.is_devrelease else None
 
     if not _v.is_prerelease and not _v.is_postrelease:
+        # not prereleases and not post
         # ``final`` means intend to bump version. Not actually valid
         releaselevel = "" if not is_use_final else "final"
         serial = 0
         _dev = None
     elif _v.is_prerelease and not _v.is_postrelease:
+        # prereleases and not post
         # Requires long
-        if _v.is_devrelease and _v.pre is None:
+        t_pre = _pre_split(_v)
+        if t_pre is None:
             # dev
             serial = 0
-            releaselevel = ""  # alpha??
+            releaselevel = ""
         else:
+            ver_long, serial, ver_short = t_pre
             # alpha beta, candidate, a, b, or rc
-            t_pre = _v.pre
-            short = t_pre[0]
-            serial = t_pre[1]
-            for long_, short_ in _map_release.items():
-                if short_ == short:
-                    releaselevel = long_
-                else:  # pragma: no cover continue
-                    pass
+            # ver_long: candidate --> rc
+            ver_long, serial, ver_short = _pre_split(_v)
+            releaselevel = ver_long
     elif not _v.is_prerelease and _v.is_postrelease:
+        # post
         releaselevel = "post"
         serial = _v.post
-    elif _v.is_prerelease and _v.is_postrelease:
-        # "1.4.0.post1.dev0"
-        # "1.2.3rc1.post0.dev9"
-        releaselevel = "post"
-        serial = _v.post
-    else:  # pragma: no cover
-        pass
+    else:
+        # prerelease and post. May or may not be dev release
+        t_pre = _pre_split(_v)
+        if t_pre is None:
+            # 1.4.0.post1.dev0
+            releaselevel = "post"
+            serial = _v.post
+        else:
+            # 1.2.3rc1.post0.dev9
+            # Keep the prerelease and lose the post details
+            ver_long, serial, ver_short = t_pre
+            releaselevel = ver_long
 
     return (_v.major, _v.minor, _v.micro, releaselevel, serial), _dev
 

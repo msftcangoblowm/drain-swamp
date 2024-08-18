@@ -46,7 +46,8 @@ authors = [
 ]
 
 [project.urls]
-Documentation = "https://drain-swamp.readthedocs.io"
+"Documentation" = "https://msftcangoblowm.github.io/drain-swamp"
+"Docs (rtd)" = "https://drain-swamp.readthedocs.io/en/stable"
 Changes = "https://raw.githubusercontent.com/msftcangoblowm/drain-swamp/master/CHANGES.rst"
 "PyPI Releases" = "https://pypi.org/project/drain-swamp"
 "Source code" = "https://github.com/msftcangoblowm/drain-swamp"

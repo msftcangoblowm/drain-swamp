@@ -20,6 +20,7 @@ Python build backend with build plugins and dependency lock switch
 
 resolve dependency hell; dependency conflict prevent tests fail;
 docs design elements improve presentation; gh-pages workflow;
+fix semantic version edge cases pre+post;
 
 **New in 1.4.x**
 

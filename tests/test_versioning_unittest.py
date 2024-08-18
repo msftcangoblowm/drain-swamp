@@ -43,7 +43,7 @@ testdata_valids = (
     ("0.1.1.rc1dev1+g4b33a80.d20240129", "0.1.1rc1.dev1", "0-1-1rc1"),
 )
 
-testdata_invalids = (("0.1.1.candidate1dev1+g4b33a80.d20240129", "0.1.1rc1.dev1"),)
+testdata_invalids = (("0.1.dev0.d20240213", "0.1.1.dev0"),)
 
 # long|short form --> long form
 testdata_releaselevel = (
@@ -73,6 +73,11 @@ class PackageVersioning(unittest.TestCase):
             (
                 (0, 0, 1),
                 {"releaselevel": "candidate", "serial": 0, "dev": None},
+                "0.0.1rc0",
+            ),
+            (
+                (0, 0, 1),
+                {"releaselevel": "rc", "serial": 0, "dev": None},
                 "0.0.1rc0",
             ),
             (
@@ -141,12 +146,14 @@ class PackageVersioning(unittest.TestCase):
         valids = (
             ("1!1.0.1a1.dev1", "1.0.1a1.dev1"),
             ("1.0.1a1.dev1+4b33a80.4b33a80", "1.0.1a1.dev1"),
+            ("1.0.1.alpha1.dev1+4b33a80.4b33a80", "1.0.1a1.dev1"),
+            ("1.2.3rc1.post0.dev9+g4b33a80.d20241212", "1.2.3rc1.post0.dev9"),
         )
         for orig, expected in valids:
             actual, _ = sanitize_tag(orig)
             self.assertEqual(actual, expected)
 
-    def test_get_version(self):
+    def test_get_version_normal(self):
         """Used for display only. Allows release level, final"""
         # Flip the logic backwards
         finals = (
@@ -156,17 +163,25 @@ class PackageVersioning(unittest.TestCase):
         )
         for final in finals:
             for args, kwargs, actual in self.vals:
+                # compensate for ``candidate`` being invalid semantic version component
+                if kwargs["releaselevel"] == "candidate":
+                    releaselevel_in = "rc"
+                else:
+                    releaselevel_in = kwargs["releaselevel"]
+
                 expect_info, expect_dev = get_version(
                     actual,
                     is_use_final=final,
                 )
+                self.assertEqual(args, expect_info[:3])
                 self.assertEqual(kwargs["dev"], expect_dev)
                 self.assertEqual(kwargs["serial"], expect_info[-1])
-                if len(kwargs["releaselevel"]) == 0:
+
+                if len(releaselevel_in) == 0:
                     self.assertEqual(len(expect_info[-2]), 0)
                 else:
-                    self.assertEqual(kwargs["releaselevel"], expect_info[-2])
-                self.assertEqual(args, expect_info[:3])
+                    # has pre-release component
+                    self.assertEqual(releaselevel_in, expect_info[-2])
 
         # Allow final
         actual = "1.0.1"
@@ -189,6 +204,7 @@ class PackageVersioning(unittest.TestCase):
             ("0.1.1.b1dev1+g4b33a80.d20240129", "0.1.1b1.dev1"),
             ("0.1.1.beta1dev1+g4b33a80.d20240129", "0.1.1b1.dev1"),
             ("0.1.1.rc1dev1+g4b33a80.d20240129", "0.1.1rc1.dev1"),
+            ("0.1.1.candidate1dev1+g4b33a80.d20240129", "0.1.1rc1.dev1"),
         )
 
         for dev_pre in dev_pres:
@@ -200,21 +216,22 @@ class PackageVersioning(unittest.TestCase):
             v_pre = v.pre
             v_pre_is = v.is_prerelease
             v_dev = v.dev
-
-            # long format
-            pre = expect_info[-2]
-            self.assertIn(pre, _map_release.keys())
-
-            found_k = None
-            for k, v in _map_release.items():
-                if pre == k:
-                    found_k = k
-
             self.assertEqual(expect_dev, v_dev)
 
-            self.assertIsNotNone(found_k)
-            # pre is long format. So ``alpha`` rather than ``a``
-            self.assertEqual(pre, found_k)
+            pre = expect_info[-2]
+            if pre == "rc":
+                # ``rc`` long format is invalid semantic version str
+                self.assertIn(pre, _map_release.values())
+            else:
+                self.assertIn(pre, _map_release.keys())
+
+                found_k = None
+                for k, v in _map_release.items():
+                    if pre == k and pre != "rc":
+                        found_k = k
+                self.assertIsNotNone(found_k)
+                # pre is long format. So ``alpha`` rather than ``a``
+                self.assertEqual(pre, found_k)
 
         # Has dev and no releaselevel
         dev_pres = (
@@ -224,56 +241,77 @@ class PackageVersioning(unittest.TestCase):
         )
         for dev_pre in dev_pres:
             expected, _ = sanitize_tag(dev_pre[1])
-            expect_info, expect_dev = get_version(expected)
-
             v = Version(expected)
 
             v_pre = v.pre
             v_pre_is = v.is_prerelease
             v_dev = v.dev
+
+            expect_info, expect_dev = get_version(expected)
+
             self.assertEqual(expect_dev, v_dev)
             self.assertIsNone(v_pre)
 
         # post only
         dev_pres = (
-            ("0.1.1.post0+g4b33a80.d20240129", "0.1.1.post0", 0),
-            ("0.1.1.post8", "0.1.1.post8", 8),
-            ("0.1.1.post5", "0.1.1post5", 5),
+            ("0.1.1.post0+g4b33a80.d20240129", "0.1.1.post0", 0, False),
+            ("0.1.1.post8", "0.1.1.post8", 8, False),
+            ("0.1.1.post5", "0.1.1post5", 5, False),
+            ("1.4.0.post1.dev0", "1.4.0.post1.dev0", 1, True),
         )
-        for dev_pre in dev_pres:
-            expected_post = dev_pre[2]
-            expected, _ = sanitize_tag(dev_pre[1])
-            expect_info, expect_dev = get_version(expected)
+        for t_ver in dev_pres:
+            is_pre = t_ver[3]
+            expected_post = t_ver[2]
+            expected, _ = sanitize_tag(t_ver[0])
 
             v = Version(expected)
-
             v_post = v.post
             v_post_is = v.is_postrelease
             v_pre_is = v.is_prerelease
             self.assertTrue(v_post_is)
-            self.assertFalse(v_pre_is)
+            self.assertEqual(v_pre_is, is_pre)
+
+            t_expect_info, expect_dev = get_version(expected)
             self.assertEqual(v_post, expected_post)
-            self.assertEqual(expect_info[-2], "post")
+            self.assertEqual(t_expect_info[-2], "post")
 
         # edge cases
         dev_edges = (
             ("1.2.3rc1.post0.dev9", "1.2.3rc1.post0.dev9", 0),  # pre not stored!
-            ("1.4.0.post1.dev0", "1.4.0.post1.dev0", 1),
+            ("1.2.3.rc1.post0.dev9", "1.2.3rc1.post0.dev9", 0),  # pre not stored!
         )
-        for dev_pre in dev_edges:
-            expected_post = dev_pre[2]
-            expected, _ = sanitize_tag(dev_pre[1])
-            expect_info, expect_dev = get_version(expected)
+        for t_ver in dev_edges:
+            expected_post = t_ver[2]
+            ver_expected, _ = sanitize_tag(t_ver[1])
 
-            v = Version(expected)
-
-            v_post = v.post
+            v = Version(ver_expected)
+            v_pre = v.pre
             v_post_is = v.is_postrelease
             v_pre_is = v.is_prerelease
             self.assertTrue(v_post_is)
             self.assertTrue(v_pre_is)
-            self.assertEqual(v_post, expected_post)
-            self.assertEqual(expect_info[-2], "post")
+
+            t_expect_info, expect_dev = get_version(ver_expected)
+
+            # preserve pre. post is not preserved
+            # candidate --> rc. candidate is not valid semantic version str component
+            pre_actual_long = t_expect_info[-2]
+            pre_serial_actual = t_expect_info[-1]
+
+            self.assertEqual(pre_actual_long, "rc")
+            self.assertEqual(pre_serial_actual, v_pre[1])
+
+    def test_get_version_edge_cases(self):
+        """coverage not picking up the edge cases"""
+        testdata_get_version = (
+            ("1.4.0.post1.dev0", 0, 1),
+            ("1.2.3rc1.post0.dev9", 9, 1),
+        )
+        for edge_case, dev_expected, serial_expected in testdata_get_version:
+            t_expect_info, dev_actual = get_version(edge_case)
+            serial_actual = t_expect_info[-1]
+            self.assertEqual(dev_actual, dev_expected)
+            self.assertEqual(serial_actual, serial_expected)
 
     def test_v_remove(self):
         """Remove epoch and local and v prefix from semantic version str"""
@@ -639,17 +677,11 @@ class SemVersioning(unittest.TestCase):
             t_ver_actual = SemVersion.as_tuple(ver)
             self.assertEqual(t_ver_actual, t_ver_expected)
 
-        testdata_ = (
-            (
-                "0.1.1.candidate1dev1+g4b33a80.d20240129",
-                "0.1.1rc.dev0",
-                "g4b33a80.d20240129",
-            ),
-        )
-        for ver_orig, ver_, local_ in testdata_:
-            t_ver = SemVersion.as_tuple(ver_orig)
-            ver_actual = t_ver[0]
-            self.assertEqual(ver_actual, ver_orig)
+        # Version(ver_bad) --> ValueError --> (ver_bad,)
+        ver_bad = "0.1.dev0.d20240213"
+        t_ver = SemVersion.as_tuple(ver_bad)
+        ver_actual = t_ver[0]
+        self.assertEqual(ver_actual, ver_bad)
 
 
 if __name__ == "__main__":  # pragma: no cover
@@ -661,7 +693,10 @@ if __name__ == "__main__":  # pragma: no cover
        python -m unittest tests.test_versioning_unittest --locals
 
        python -m unittest tests.test_versioning_unittest \
-       -k PackageVersioning.test_get_version --locals --buffer
+       -k PackageVersioning.test_get_version_normal --locals --buffer
+
+       python -m unittest tests.test_versioning_unittest \
+       -k PackageVersioning.test_get_version_edge_cases --locals --buffer
 
        python -m unittest tests.test_versioning_unittest \
        -k PackageVersioning.test_sanitize_tag --locals --buffer

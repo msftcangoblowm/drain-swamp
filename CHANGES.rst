@@ -27,14 +27,20 @@ Changelog
 
    - scm-version write in version_tuple semantic version str missing local
 
-   - semantic version tuple look into edge case support for pre+post+dev and pre+post
-
    - tox does not pass in config_settings. Read in DS_CONFIG_SETTINGS
 
    Commit items for NEXT VERSION
    ..............................
 
 .. scriv-start-here
+
+.. _changes_1-5-3:
+
+Version 1.5.3 — 2024-08-18
+--------------------------
+
+- fix(version_semantic): edge cases pre+post. pre+post+dev and post+dev
+- docs: inform pypi docs available on both rtd and gh pages
 
 .. _changes_1-5-2:
 
