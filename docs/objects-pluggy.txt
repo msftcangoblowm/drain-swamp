@@ -1,0 +1,9 @@
+# Sphinx inventory version 2
+# Project: pluggy 1.5.0
+# Version: 1.5.0
+# The remainder of this file is compressed using zlib.
+pluggy.Result py:class 1 api_reference.html#$ -
+pluggy.HookImpl py:class 1 api_reference.html#$ -
+pluggy.PluginManager py:class 1 api_reference.html#$ -
+pluggy.HookimplMarker py:decorator 1 api_reference.html#$ -
+pluggy.HookspecMarker py:decorator 1 api_reference.html#$ -

@@ -15,6 +15,12 @@ Keep constants out of package module, ``__init__.py``
 
    Entrypoint name, not the dotted path:fcn. Entrypoint underwhich to specify additional hooks
 
+.. py:data:: DOTTED_PATH_SPECS
+   :type: str
+   :value: "drain_swamp.monkey.hooks.specs"
+
+   Dotted path to pluggy plugin specs
+
 .. py:data:: HOOK_NAMESPACE
    :type: str
    :value: "ds"
@@ -24,12 +30,6 @@ Keep constants out of package module, ``__init__.py``
       namespace
       `naming conversion <https://pluggy.readthedocs.io/en/latest/#a-complete-example>`_
 
-
-.. py:data:: DOTTED_PATH_SPECS
-   :type: str
-   :value: "drain_swamp.monkey.hooks.specs"
-
-   Dotted path to pluggy plugin specs
 
 """
 

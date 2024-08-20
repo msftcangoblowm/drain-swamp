@@ -33,15 +33,16 @@ is passed to :code:`python -m build`
    python -m build --no-isolation
 
 .. py:data:: __all__
-   :type: tuple[str, str, str]
-   :value: ("_PluggyPlugin", "_create_hook_manager", "hook_impl")
+   :type: tuple[str, str]
+   :value: ("_create_hook_manager", "hook_impl")
 
    This sub-package exports
 
 .. seealso::
 
-   https://docs.kedro.org/en/latest/hooks/introduction.html
-   https://github.com/kedro-org/kedro/blob/ab2e4798c2670639692b2097cae7604045434b18/kedro/framework/project/__init__.py#L97
+   Example plugins specs and implementation
+
+   - `kedro <https://docs.kedro.org/en/latest/hooks/introduction.html>`_
 
 """
 

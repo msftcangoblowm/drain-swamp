@@ -8,6 +8,11 @@ Changelog
    Feature request
    .................
 
+   - update workflows to detect project name. If ``drain-swamp``, build
+     use config_settings options. Otherwise do the workaround. Export
+     env variable which contain path to temp .toml file. File contain parsable
+     config_settings which can be read from a subprocess
+
    - docs/code/index.rst rewrite. Organize modules and add missing
 
    - Makefile target to add the environment variable with path to a config_settings toml file
@@ -33,6 +38,18 @@ Changelog
    ..............................
 
 .. scriv-start-here
+
+.. _changes_1-5-4:
+
+Version 1.5.4 — 2024-08-20
+--------------------------
+
+- docs(.gitattributes): inform git .inv are binary files
+- docs: add inventory for pluggy and setuptools
+- docs(linkcheck): fix broken links
+- docs: fix numerous minor issues
+- docs(code manual): toctree --> grid
+- style: carefully choose grid item icons
 
 .. _changes_1-5-3post0:
 

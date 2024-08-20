@@ -20,6 +20,9 @@ Your howto.txt file informs when to use these commands
       "scm-version write", "write semantic version str to version file"
       :doc:`drain-swamp pretag <drain-swamp-pretag>`, "Print/fix a semantic version str"
 
+   +++
+   :doc:`Version file </code/general/version_file>`
+
 .. raw:: html
 
    <div class="white-space-5px"></div>
@@ -35,6 +38,9 @@ Your howto.txt file informs when to use these commands
       :doc:`drain-swamp seed <drain-swamp-seed>`, "called immediately before drain-swamp edits"
       :doc:`drain-swamp edits <drain-swamp-seed>`, "updates doc?/conf.py, NOTICE.txt, and CHANGES.rst"
       :doc:`drain-swamp list <drain-swamp-list>`, "list snippets in doc?/conf.py"
+
+   +++
+   :ref:`Updating changelog <code/cli_igor:main>`
 
 .. raw:: html
 
@@ -54,6 +60,9 @@ Your howto.txt file informs when to use these commands
       :doc:`pipenv-unlock unlock <pipenv-unlock-unlock>`, "recursively assembles .in --> .unlock files"
       "pipenv-unlock refresh", "| creates/refreshes package dependency lock .lnk symlinks
       | updates pyproject.toml dependencys' suffix"
+
+   +++
+   :ref:`Dependencies <getting_started/pipenv-unlock:dependencies>`
 
 .. raw:: html
 

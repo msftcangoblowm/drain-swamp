@@ -1,0 +1,5 @@
+# Sphinx inventory version 2
+# Project: setuptools 70.1.1
+# Version: 70.1.1
+# The remainder of this file is compressed using zlib.
+setuptools.Distribution py:class 1 4147b093d0aea4f57757c699a0b25bbc3aab2580/setuptools/dist.py#L204 -

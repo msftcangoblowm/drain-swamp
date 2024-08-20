@@ -176,10 +176,10 @@ def before_version_infer(config_settings: dict[str, Any]) -> str | None:
     :type config_settings: dict[str, typing.Any]
     :raises:
 
-       - :py:exc:`PyProjectTOMLReadError`
-       - :py:exc:`PyProjectTOMLParseError`
-       - :py:exc:`BackendNotSupportedError`
-       - :py:exc:`MissingRequirementsFoldersFiles`
+       - :py:exc:`drain_swamp.exceptions.PyProjectTOMLReadError`
+       - :py:exc:`drain_swamp.exceptions.PyProjectTOMLParseError`
+       - :py:exc:`drain_swamp.exceptions.BackendNotSupportedError`
+       - :py:exc:`drain_swamp.exceptions.MissingRequirementsFoldersFiles`
        - :py:exc:`AssertionError`
 
     """

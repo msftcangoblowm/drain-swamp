@@ -1,7 +1,7 @@
 """
 .. moduleauthor:: Dave Faulkmore <https://mastodon.social/@msftcangoblowme>
 
-igor.py utils
+``igor.py`` utils
 
 .. py:data:: _logger
    :type: logging.Logger
@@ -9,33 +9,34 @@ igor.py utils
    Module level logger
 
 .. py:data:: __all__
-   :type: tuple[str, str, str, str, str, str]
-   :value: ("seed_changelog", "edit_for_release", "build_package", \
-   "pretag", "print_cheats", "get_tag_version", "write_version_file")
+   :type: tuple[str, str, str, str, str, str, str]
+   :value: ("seed_changelog", "edit_for_release", "build_package", "pretag", "print_cheats", "get_tag_version", "write_version_file")
+
+   Module level exports
 
 .. py:data:: SCRIV_START
    :type: str
-   :value: ".. scriv-start-here\n\n"
+   :value: ".. scriv-start-here\\n\\n"
 
-   In CHANGES.rst, token beneath which a changelog entry is written
+   In ``CHANGES.rst``, token beneath which a changelog entry is written
 
 .. py:data:: UNRELEASED
    :type: str
-   :value: "Unreleased\n----------"
+   :value: "Unreleased\\n----------"
 
-   Written into CHANGES.rst, the start of what is being called, the seed
+   Written into ``CHANGES.rst``, the start of what is being called, the seed
 
 .. py:data:: REGEX_COPYRIGHT_LINE
    :type: str
 
-   NOTICE.txt has a start and end year. Regex for grabbing both.
+   ``NOTICE.txt`` has a start and end year. Regex for grabbing both.
 
 .. py:data:: COPYRIGHT_START_YEAR_FALLBACK
    :type: int
    :value: 1970
 
-   Fallback start year. NOTICE.txt start year gets updated. Since the
-   start year is static expected to be provided in pyproject.toml
+   Fallback start year. ``NOTICE.txt`` start year gets updated. Since the
+   start year is static expected to be provided in ``pyproject.toml``
 
 """
 
@@ -460,6 +461,7 @@ class AlterEnv:
     @version_file.setter
     def version_file(self, val) -> None:
         """Version file setter
+
         :param val: relative Path to version file
         :type val: typing.Any | None
         :raises:

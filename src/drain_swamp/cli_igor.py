@@ -163,10 +163,6 @@ help_kind = (
     "version string kind: now (alias of current), current, tag, or "
     "explicit semantic version"
 )
-help_package_name = (
-    "Setuptools-scm environment variable contains the package name. "
-    """When --kind is "tag", and not provided, queries git. Better to avoid"""
-)
 
 EPILOG_SEED = """
 EXIT CODES

@@ -34,9 +34,15 @@ str; cli command options are always str
 
 .. seealso::
 
-   https://pluggy.readthedocs.io/en/latest/#a-toy-example
-   https://github.com/pytest-dev/pytest/blob/main/src/_pytest/hookspec.py
-   https://github.com/kedro-org/kedro/blob/main/kedro/framework/hooks/specs.py
+   `pluggy toy example <https://pluggy.readthedocs.io/en/latest/#a-toy-example>`_
+
+   `pytest specs <https://github.com/pytest-dev/pytest/blob/main/src/_pytest/hookspec.py>`_
+
+   `kedro specs <https://github.com/kedro-org/kedro/blob/main/kedro/framework/hooks/specs.py>`_
+
+.. py:data:: hook_spec
+
+   py:func:`pluggy.HookspecMarker` variable
 
 """
 

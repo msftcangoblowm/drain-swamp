@@ -6,7 +6,7 @@ getting started
    :padding: 2
    :gutter: 3 3 3 3
 
-   .. grid-item-card:: :material-regular:`rocket_launch;2em` Getting started
+   .. grid-item-card:: :material-twotone:`start;2em;sd-text-success` Getting started
       :class-card: sd-border-0
 
       - :doc:`installation`
@@ -15,7 +15,7 @@ getting started
       - :doc:`setuptools-scm`
 
 
-   .. grid-item-card:: :material-regular:`extension;2em` How to
+   .. grid-item-card:: :material-twotone:`hot_tub;2em;sd-text-success` How to
       :class-card: sd-border-0
 
       - :doc:`from-source`

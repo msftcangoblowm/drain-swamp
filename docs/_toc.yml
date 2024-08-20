@@ -20,15 +20,21 @@ subtrees:
     entries:
     - file: code/snip
     - file: code/cli_unlock
+    - file: code/cli_igor
+    - file: code/cli_scm_version
     - file: code/general/index
       entries:
-      - file: code/general/version
+      - file: code/general/version_file
       - file: code/general/check_type
       - file: code/general/constants
+      - file: code/general/constants_maybe
       - file: code/general/exceptions
       - file: code/general/pep518_read
       - file: code/general/parser_in
       - file: code/general/version_semantic
+      - file: code/general/package_metadata
+      - file: code/general/run_cmd
+      - file: code/general/package_installed
     - file: code/ext/index
       entries:
       - file: code/ext/pipenv_unlock/index
@@ -36,9 +42,32 @@ subtrees:
         - file: code/ext/pipenv_unlock/backend_abc
         - file: code/ext/pipenv_unlock/backend_setuptools
         - file: code/ext/pipenv_unlock/lock_toggle
+        - file: code/ext/pipenv_unlock/snippet_pyproject_toml
       - file: code/ext/drain_swamp/index
         entries:
         - file: code/ext/drain_swamp/sphinx_conf
+        - file: code/ext/drain_swamp/igor_utils
+    - file: code/version_file/index
+      entries:
+      - file: code/version_file/overrides
+      - file: code/version_file/dump_version
+    - file: code/monkey/index
+      entries:
+      - file: code/monkey/config_settings
+      - file: code/monkey/patch_pyproject_reading
+      - file: code/monkey/wrap_get_version
+      - file: code/monkey/wrap_infer_version
+      - file: code/monkey/wrap_version_keyword
+      - file: code/monkey/hooks/index
+        entries:
+        - file: code/monkey/hooks/pm_constants
+        - file: code/monkey/hooks/markers
+        - file: code/monkey/hooks/specs
+        - file: code/monkey/hooks/manager
+      - file: code/monkey/plugins/index
+        entries:
+        - file: code/monkey/plugins/refresh_links
+        - file: code/monkey/plugins/scm_version
 - caption: Articles
   entries:
   - file: snippets/snippets

@@ -53,6 +53,7 @@ def _register_hooks_entry_points(
     disabled_plugins: Iterable[str],
 ) -> None: ...
 def get_plugin_manager(
+    mod_pkg_plugins: ModuleType,
     namespace: str | None = ...,
     specs_dotted_path: str | None = ...,
     entrypoint_plugins: str | None = ...,

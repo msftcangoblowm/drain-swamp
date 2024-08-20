@@ -16,10 +16,9 @@ Utility function to retrieve the global hook_manager singleton.
 
 .. seealso::
 
-   **Avoid** reinventing the wheel
-
-   `SOURCE <https://raw.githubusercontent.com/kedro-org/kedro/main/kedro/framework/hooks/manager.py>`_
-   `LICENSE:Apache 2.0 <https://github.com/kedro-org/kedro/blob/main/LICENSE.md>`_
+   kedro manager
+   `[SOURCE] <https://raw.githubusercontent.com/kedro-org/kedro/main/kedro/framework/hooks/manager.py>`_
+   `[LICENSE:Apache 2.0] <https://github.com/kedro-org/kedro/blob/main/LICENSE.md>`_
 
 """
 
@@ -78,7 +77,7 @@ def before(hook_name, hook_impls, kwargs):  # pragma: no cover
 
     .. seealso::
 
-       https://pluggy.readthedocs.io/en/latest/api_reference.html#pluggy.PluginManager.add_hookcall_monitoring
+       `hookcall monitoring <https://pluggy.readthedocs.io/en/latest/api_reference.html#pluggy.PluginManager.add_hookcall_monitoring>`_
 
 
     """
@@ -378,7 +377,7 @@ def _register_hooks_entry_points(hook_manager, entrypoint_plugins, disabled_plug
 
 
 def get_plugin_manager(
-    mod_pkg_plugins: ModuleType,
+    mod_pkg_plugins,
     namespace=HOOK_NAMESPACE,
     specs_dotted_path=DOTTED_PATH_SPECS,
     entrypoint_plugins=_PLUGIN_HOOKS,
@@ -391,6 +390,8 @@ def get_plugin_manager(
 
     - load entrypoint hooks
 
+    :param mod_pkg_plugins: plugins subpackage module
+    :type mod_pkg_plugins: types.ModuleType
     :param namespace:
 
        Default HOOK_NAMESPACE. hook namespace, so as to support multiple

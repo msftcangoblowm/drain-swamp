@@ -1,3 +1,38 @@
+"""
+.. moduleauthor:: Dave Faulkmore <https://mastodon.social/@msftcangoblowme>
+
+Normally a snippet parser does not have any insights or understanding of the
+snippet contents. Manipulating the contents is not the best idea.
+
+This is an unavoidable exceptional case where ``UX > coding orthodoxy``
+
+The ``pyproject.toml`` snippet handles the dependency locks. lock and unlock
+updates ``pyproject.toml`` with their respective suffix. Then the refresh
+command is run which also will need to update the dependency locks' suffix
+
+``lock`` and ``unlock`` replace the entire snippet contents
+
+``refresh`` is being sly, delving into matters it hasn't the facilities
+to comprehend. Manipulating the dependency lock suffix if it ends with
+``.unlock`` or ``.lock``. But what if it's something else? Then can't guarantee
+the refresh accomplishes it's task
+
+.. py:data:: SNIPPET_NO_MATCH
+   :type: str
+
+   Warning message when no snippet found with a particular snippet id
+
+.. py:data:: SNIPPET_VALIDATE_FAIL
+   :type: str
+
+   Warning message when a snippet is invalid
+
+.. py:data:: __all__
+   :type: tuple[str, str, str]
+   :value: ("SNIPPET_NO_MATCH", "SNIPPET_VALIDATE_FAIL", "snippet_replace_suffixes")
+
+"""
+
 from .constants import (
     SUFFIX_LOCKED,
     SUFFIX_SYMLINK,

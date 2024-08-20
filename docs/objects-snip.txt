@@ -1,6 +1,6 @@
 # Sphinx inventory version 2
-# Project: drain-swamp 0.3.0
-# Version: 0.3.0
+# Project: drain-swamp 1.5.3.post0
+# Version: 1.5.3.post0
 # The remainder of this file is compressed using zlib.
 drain_swamp.BackendNotSupportedError py:exception 1 code/general/exceptions.html#$ -
 drain_swamp.exceptions.BackendNotSupportedError py:exception 1 code/general/exceptions.html#$ -
@@ -110,3 +110,8 @@ drain_swamp.backend_abc.BackendType.load_factory.params.required py:parameter 1 
 drain_swamp.backend_abc.BackendType.load_factory.params.optionals py:parameter 1 code/ext/pipenv_unlock/backend_abc#$ -
 drain_swamp.backend_abc.BackendType.load_factory.params.parent_dir py:parameter 1 code/ext/pipenv_unlock/backend_abc#$ -
 drain_swamp.backend_abc.BackendType.load_factory.params.additional_folders py:parameter 1 code/ext/pipenv_unlock/backend_abc#$ -
+code/cli_scm_version std:doc -1 code/cli_scm_version.html scm-version
+code/cli_igor std:doc -1 code/cli_igor.html drain-swamp
+code/cli_igor:main std:label -1 code/cli_igor.html#drain_swamp.cli_igor.main
+code/cli_unlock std:doc -1 code/cli_unlock.html pipenv-unlock
+code/cli_unlock:pipenv-unlock std:label -1 code/cli_unlock.html#module-drain_swamp.cli_unlock pipenv-unlock

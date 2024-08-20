@@ -707,11 +707,12 @@ def dependencies_unlock(path, required, optionals, additional_folders, snippet_c
     help=help_snippet_co,
 )
 def create_links(path, is_set_lock, snippet_co):
-    """From *.lock *.unlock files create symlink files *.lnk
+    """From .lock .unlock files create symlink files .lnk
 
     In ``pyproject.toml``,
 
     .. code-block:: text
+
        [build-system]
        requires = ["setuptools>=70.0.0", "wheel", "build", "setuptools_scm>=8"]
        build-backend = "setuptools.build_meta"

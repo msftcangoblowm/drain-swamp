@@ -132,6 +132,13 @@ obj_strictyaml: override usage := "make obj_strictyaml find=[dotted path]"
 obj_strictyaml:	_objects	## Query strictyaml Sphinx objects. make obj_strictyaml find="[dotted path]"
 obj_strictyaml:
 
+# make obj_pluggy find=pluggy.HookspecMarker
+.PHONY: obj_pluggy
+obj_pluggy: override project_name := pluggy
+obj_pluggy: override usage := "make obj_pluggy find=[dotted path]"
+obj_pluggy:	_objects	## Query pluggy Sphinx objects. make obj_pluggy find="[dotted path]"
+obj_pluggy:
+
 # Stubbornly insists on repeating on outdated files.
 # -T show tracebacks on Exception
 # -q quiet

@@ -1,17 +1,10 @@
 """
 .. moduleauthor:: Dave Faulkmore <https://mastodon.social/@msftcangoblowme>
 
-``igor.py`` deals with updating:
+From pyproject.toml, retrieve authors name and email.
 
-- Sphinx ``doc?/conf.py``
-
-- ``NOTICE.txt``
-
-- ``CHANGES.rst``
-
-Already have semantic version handler. For ``NOTICE.txt`` and
-``CHANGES.rst``, only lack the authors left name. Which is usually first
-name, in Japanese, it's the ``[last][first]`` name.
+Only retrieving the left portion of the authors name. In Japanese, that
+would be both last name and first name
 
 .. py:data:: __all__
    :type: tuple[str]
@@ -29,7 +22,6 @@ name, in Japanese, it's the ``[last][first]`` name.
    :value: "Anonymous"
 
    Fallback when unable to get author name, from either package data or pyproject.toml
-
 
 """
 

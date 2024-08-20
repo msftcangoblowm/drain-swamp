@@ -14,11 +14,11 @@ sys.path.insert(0, str(path_package_base))  # Needed ??
 # @@@ editable
 copyright = "2024–2024, Dave Faulkmore"
 # The short X.Y.Z version.
-version = "1.5.3"
+version = "1.5.4"
 # The full version, including alpha/beta/rc tags.
-release = "1.5.3.post0"
+release = "1.5.4"
 # The date of release, in "monthname day, year" format.
-release_date = "August 18, 2024"
+release_date = "August 20, 2024"
 # @@@ end
 
 v = parse(release)
@@ -132,7 +132,7 @@ intersphinx_mapping = {
         ("objects-python.inv", None),
     ),
     "snip": (
-        "https://drain-swamp.readthedocs.io/en/latest",
+        "https://drain-swamp.readthedocs.io/en/stable",
         ("objects-snip.inv", "objects-snip.txt"),
     ),
     "black": (
@@ -150,6 +150,14 @@ intersphinx_mapping = {
     "packaging": (
         "https://packaging.pypa.io/en/stable",
         ("objects-packaging.inv", "objects-packaging.txt"),
+    ),
+    "pluggy": (
+        "https://pluggy.readthedocs.io/en/latest",
+        ("objects-pluggy.inv", "objects-pluggy.txt"),
+    ),
+    "setuptools": (
+        "https://github.com/pypa/setuptools/blob",
+        ("objects-setuptools.inv", "objects-setuptools.txt"),
     ),
 }
 intersphinx_disabled_reftypes = ["std:doc"]

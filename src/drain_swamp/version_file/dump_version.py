@@ -16,7 +16,7 @@
 
    Sources:
 
-   - `[dump_version.py] <https://github.com/pypa/setuptools_scm/blob/main/src/setuptools_scm/dump_version.py>`_
+   - `[dump_version.py] <https://github.com/pypa/setuptools_scm/blob/main/src/setuptools_scm/_integration/dump_version.py>`_
    - `[_get_version_impl.py] <https://github.com/pypa/setuptools_scm/blob/main/src/setuptools_scm/_get_version_impl.py>`_
 
    `[LICENSE:MIT] <https://github.com/pypa/setuptools_scm/blob/main/LICENSE>`_

@@ -1,54 +1,53 @@
 """
 .. moduleauthor:: Dave Faulkmore <https://mastodon.social/@msftcangoblowme>
 
-``pyproject.toml``
+In ``pyproject.toml``, configure the plugin manager to execute the build plugins.
 
 .. code-block:: text
 
    [project.entry-points."setuptools.finalize_distribution_options"]
    drain_swamp = "drain_swamp.monkey.wrap_infer_version:infer_version"
 
-infer_version sets the dist.metadata.version. Would like to do more ...
-
 .. seealso::
+
+   :doc:`/getting_started/build-package`
+
+.. note:: research notes
+
+   These notes lead up to the config_settings UX issue
 
    `[alter Distribution object] <https://setuptools.pypa.io/en/latest/userguide/extension.html#customizing-distribution-options>`_
 
    Command and sub-command classes
    https://setuptools.pypa.io/en/latest/userguide/extension.html#customizing-commands
 
-.. code-block:: text
-
-   setuptools_scm._integration.setuptools.infer_version
-     _config.Configuration.from_file
-     _assign_version
-
-.. seealso::
-
    https://github.com/pypa/setuptools_scm/blob/main/src/setuptools_scm/_integration/setuptools.py
+
    https://github.com/pypa/setuptools_scm/blob/main/src/setuptools_scm/_integration/pyproject_reading.py
+
    https://github.com/pypa/setuptools_scm/blob/main/src/setuptools_scm/_config.py
+
    https://github.com/pypa/setuptools_scm/blob/main/src/setuptools_scm/_get_version_impl.py
+
    https://github.com/pypa/setuptools/blob/e9f0be98ea4faaba4a7b2d07ba994a81fde8f42f/setuptools/build_meta.py#L161
 
    https://github.com/pypa/setuptools/issues/2491
+
    https://github.com/pypa/setuptools/discussions/4083
+
    https://github.com/pypa/setuptools/issues/3896#issuecomment-1656714771
 
    SOLUTIONS
 
-   - pass config_settings through backend
-     https://github.com/pypa/setuptools/commit/fc95b3b83d6d5b561dc0a356995edf4c99785a6f
+   - `pass config_settings through backend <https://github.com/pypa/setuptools/commit/fc95b3b83d6d5b561dc0a356995edf4c99785a6f>`_
 
-   - throw away setup.cfg file
-     https://github.com/pypa/setuptools/issues/3896#issuecomment-1708513197
+   - `throw away setup.cfg file <https://github.com/pypa/setuptools/issues/3896#issuecomment-1708513197>`_
 
-     .. code-block:: shell
+.. code-block:: text
 
-        export DIST_EXTRA_CONFIG=/tmp/setuptools-build.cfg
-        echo -e '[build_ext]\nparallel = 8\n[bdist_wheel]\npy_limited_api = cp311' > $DIST_EXTRA_CONFIG
-        python -m build
-
+   setuptools_scm._integration.setuptools.infer_version
+   _config.Configuration.from_file
+   _assign_version
 
 """
 

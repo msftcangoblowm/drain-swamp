@@ -1,7 +1,7 @@
 """
 .. moduleauthor:: Dave Faulkmore <https://mastodon.social/@msftcangoblowme>
 
-Mundane :py:func:`subprocess.run` call. Blocking and not multiprocessing
+Wrapper for :py:func:`subprocess.run` calls. Blocking and not multiprocessing
 
 .. py:data:: __all__
    :type: tuple[str]
