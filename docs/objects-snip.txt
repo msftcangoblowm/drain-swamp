@@ -10,6 +10,9 @@ drain_swamp.PyProjectTOMLParseError py:exception 1 code/general/exceptions.html#
 drain_swamp.exceptions.PyProjectTOMLParseError py:exception 1 code/general/exceptions.html#$ -
 drain_swamp.PyProjectTOMLReadError py:exception 1 code/general/exceptions.html#$ -
 drain_swamp.exceptions.PyProjectTOMLReadError py:exception 1 code/general/exceptions.html#$ -
+drain_swamp.lock_toggle.InFileType py:class 1 code/ext/pipenv_unlock/lock_toggle.html#$ -
+drain_swamp.lock_toggle.InFileType.FILES py:attribute 1 code/ext/pipenv_unlock/lock_toggle.html#$ -
+drain_swamp.lock_toggle.InFileType.ZEROES py:attribute 1 code/ext/pipenv_unlock/lock_toggle.html#$ -
 drain_swamp.Snip py:class 1 code/snip/snippet.html#$ -
 drain_swamp.snip py:module 0 code/snip/snippet.html#$ -
 drain_swamp.snip.__all__ py:data 1 code/snip/snippet.html#$ -

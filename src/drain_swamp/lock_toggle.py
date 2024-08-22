@@ -72,6 +72,7 @@ from __future__ import annotations
 
 import copy
 import dataclasses
+import enum
 import fileinput
 import logging
 import os
@@ -105,7 +106,7 @@ _logger = logging.getLogger(f"{g_app_name}.lock_toggle")
 is_module_debug = False
 
 
-def _create_symlinks_relative(src: str, dest: str, cwd_path: str) -> None:
+def _create_symlinks_relative(src, dest, cwd_path):
     """Create the relative symlink
 
     src and dest are relative paths. Relative to cwd_path
@@ -432,7 +433,7 @@ class InFile:
             pass
 
     @staticmethod
-    def check_path(cwd, path_to_check) -> None:
+    def check_path(cwd, path_to_check):
         """Check Path. Should not be a str
 
         :param cwd: Package base folder
@@ -561,6 +562,44 @@ class InFile:
         return ret
 
 
+class InFileType(enum.Enum):
+    """Each .in files constaints and requirements have to be resolved.
+    This occurs recursively. Once resolved, InFile is moved from FILES --> ZEROES set
+
+    .. py:attribute:: FILES
+       :value: "_files"
+
+       .in file that has unresolved -c (constraints) and -r (requirements)
+
+    .. py:attribute:: ZEROES
+       :value: "_zeroes"
+
+       .in file that have all -c (constraints) and -r (requirements) resolved
+
+    """
+
+    FILES = "_files"
+    ZEROES = "_zeroes"
+
+    def __str__(self):
+        """Resolve to the InFiles set's name
+
+        :returns: InFiles set's name
+        :rtype: str
+        """
+        return f"{self.value}"
+
+    def __eq__(self, other):
+        """Equality check
+
+        :param other: Should be same Enum class
+        :type other: typing.Any
+        :returns: True if equal otherwise False
+        :rtype: bool
+        """
+        return self.__class__ is other.__class__ and other.value == self.value
+
+
 @dataclasses.dataclass
 class InFiles:
     """Container of InFile
@@ -604,6 +643,7 @@ class InFiles:
         :param in_files: Requirements files. Relative path to ``.in`` files
         :type in_files: collections.abc.Sequence[pathlib.Path]
         """
+        cls = type(self)
         # is a sequence
         if in_files is None or not isinstance(in_files, Sequence):
             msg_exc = f"Expecting a list[Path] got unsupported type {in_files}"
@@ -623,16 +663,15 @@ class InFiles:
             constraint_raw = []
             requirement = set()
             for line in lines:
-                is_comment = line.startswith("#")
-                is_blank_line = len(line.strip()) == 0
-                is_constraint = line.startswith("-c ")
-                if is_comment or is_blank_line:
+                if cls.line_comment_or_blank(line):
                     continue
-                elif is_constraint:
+                elif cls.is_requirement_or_constraint(line):
+                    # -r or -c are treated as equivalents
                     line_pkg = line[3:]
                     line_pkg = strip_inline_comments(line_pkg)
                     constraint_raw.append(line_pkg)
                 else:
+                    """unknown pip file options, will be considered a requirement"""
                     line_pkg = strip_inline_comments(line)
                     requirement.add(line_pkg)
 
@@ -664,11 +703,36 @@ class InFiles:
                 requirements=requirement,
             )
             if is_module_debug:  # pragma: no cover
-                _logger.info(f"in_: {repr(in_)}")
+                msg_info = f"in_: {repr(in_)}"
+                _logger.info(msg_info)
             else:  # pragma: no cover
                 pass
             # set.add an InFile
             self.files = in_
+
+    @staticmethod
+    def line_comment_or_blank(line):
+        """Comments or blank lines can be safely ignored
+
+        :param line: .in file line to check if inconsequential
+        :type line: str
+        :returns: True if a line which can be safely ignored otherwise False
+        :rtype: bool
+        """
+        is_comment = line.startswith("#")
+        is_blank_line = len(line.strip()) == 0
+        return is_comment or is_blank_line
+
+    @staticmethod
+    def is_requirement_or_constraint(line):
+        """Line identify if a requirement (-r) or constraint (-c)
+
+        :param line: .in file line is a file which should be included
+        :type line: str
+        :returns: True if a line needs to be included otherwise False
+        :rtype: bool
+        """
+        return line.startswith("-c ") or line.startswith("-r ")
 
     @property
     def files(self):
@@ -719,23 +783,33 @@ class InFiles:
         else:  # pragma: no cover
             pass
 
-    def in_generic(self, val, set_name="files"):
+    def in_generic(self, val, set_name=InFileType.FILES):
         """A generic __contains__
 
         :param val: item to check if within zeroes
         :type val: typing.Any
-        :param set_name: Default "files". Which set to search thru. zeroes or files.
-        :type set_name: str | None
+        :param set_name:
+
+           Default :py:attr:`drain_swamp.lock_toggle.InFileType.FILES`.
+           Which set to search thru. zeroes or files
+
+        :type set_name: drain_swamp.lock_toggle.InFileType | None
         :returns: True if InFile contained within zeroes otherwise False
         :rtype: bool
         """
-        if set_name is None or not isinstance(set_name, str):
-            set_name = "_files"
+        if set_name is None or not isinstance(set_name, InFileType):
+            str_set_name = str(InFileType.FILES)
         else:  # pragma: no cover
-            set_name = f"_{set_name}"
+            str_set_name = str(set_name)
+
+        if is_module_debug:  # pragma: no cover
+            msg_info = f"InFiles.in_generic InFile set name {str_set_name}"
+            _logger.info(msg_info)
+        else:  # pragma: no cover
+            pass
 
         ret = False
-        set_ = getattr(self, set_name, set())
+        set_ = getattr(self, str_set_name, set())
         for in_ in set_:
             if val is not None:
                 is_match_infile = isinstance(val, InFile) and in_ == val
@@ -764,7 +838,7 @@ class InFiles:
         :rtype: bool
         """
 
-        return self.in_generic(val, set_name="zeroes")
+        return self.in_generic(val, set_name=InFileType.ZEROES)
 
     def __contains__(self, val):
         """Check if within InFiles
@@ -776,12 +850,16 @@ class InFiles:
         """
         return self.in_generic(val)
 
-    def get_by_relpath(self, relpath, set_name="files"):
+    def get_by_relpath(self, relpath, set_name=InFileType.FILES):
         """Get the index and :py:class:`~drain_swamp.lock_toggle.InFile`
 
         :param relpath: relative path of a ``.in`` file
         :type relpath: str
-        :param set_name: Default "files". Which set to search thru. zeroes or files.
+        :param set_name:
+
+           Default :py:attr:`drain_swamp.lock_toggle.InFileType.FILES`.
+           Which set to search thru. zeroes or files.
+
         :type set_name: str | None
         :returns:
 
@@ -794,10 +872,10 @@ class InFiles:
             - :py:exc:`ValueError` -- Unsupported type. relpath is neither str nor Path
 
         """
-        if set_name is None or not isinstance(set_name, str):
-            set_name = "_files"
+        if set_name is None or not isinstance(set_name, InFileType):
+            str_set_name = str(InFileType.FILES)
         else:  # pragma: no cover
-            set_name = f"_{set_name}"
+            str_set_name = str(set_name)
 
         msg_exc = f"Expected a relative path as str or Path. Got {type(relpath)}"
         str_relpath = None
@@ -812,7 +890,7 @@ class InFiles:
             raise ValueError(msg_exc)
 
         ret = None
-        set_ = getattr(self, set_name, set())
+        set_ = getattr(self, str_set_name, set())
         for in_ in set_:
             if in_.relpath == str_relpath:
                 ret = in_
@@ -883,7 +961,9 @@ class InFiles:
 
                 if is_in_zeroes:
                     # Raises ValueError if constraint_relpath is neither str nor Path
-                    item = self.get_by_relpath(constraint_relpath, set_name="zeroes")
+                    item = self.get_by_relpath(
+                        constraint_relpath, set_name=InFileType.ZEROES
+                    )
 
                     if is_module_debug:  # pragma: no cover
                         msg_info = f"resolve_zeroes in_ (before) {in_}"

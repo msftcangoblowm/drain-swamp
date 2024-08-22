@@ -17,7 +17,10 @@ import logging
 import logging.config
 import shutil
 from collections.abc import Sequence
-from pathlib import Path
+from pathlib import (
+    Path,
+    PurePath,
+)
 from unittest.mock import patch
 
 import pytest
@@ -32,6 +35,7 @@ from drain_swamp.exceptions import MissingRequirementsFoldersFiles
 from drain_swamp.lock_toggle import (
     InFile,
     InFiles,
+    InFileType,
     _create_symlinks_relative,
     _maintain_symlink,
     _postprocess_abspath_to_relpath,
@@ -368,21 +372,34 @@ ids_methods_infiles = ("resolvable requirements constraints",)
 def test_methods_infiles(
     relpath_files,
     path_project_base,
+    caplog,
+    has_logging_occurred,
 ):
+    """Verify InFiles methods"""
     # pytest --showlocals --log-level INFO -k "test_methods_infiles" tests
+    LOGGING["loggers"][g_app_name]["propagate"] = True
+    logging.config.dictConfig(LOGGING)
+    logger = logging.getLogger(name=g_app_name)
+    logger.addHandler(hdlr=caplog.handler)
+    caplog.handler.level = logger.level
+
     assert isinstance(relpath_files, Sequence)
 
     # prepare
+    #    Absolute path to requirements .in files
     abspath_files = []
     path_cwd = path_project_base()
-    for p_f in relpath_files:
-        abspath = path_cwd.joinpath(p_f)
-        abspath_files.append(abspath)
+    for relpath_f in relpath_files:
+        assert issubclass(type(relpath_f), PurePath)
+        abspath_f = path_cwd / relpath_f
+        abspath_files.append(abspath_f)
 
+    #    Parses .in files
     files = InFiles(path_cwd, abspath_files)
+
     check_files = (
         None,
-        "files",
+        InFileType.FILES,
     )
     check_fors = (
         "requirements/tox.in",
@@ -411,6 +428,8 @@ def test_methods_infiles(
         check_for = "requirements/goose-meat.in"
         in_ = files.get_by_relpath(check_for, set_name=checks_files)
         assert in_ is None
+    # assert has_logging_occurred(caplog)
+    pass
 
 
 testdata_unlock_compile = (
@@ -863,3 +882,15 @@ def test_postprocess_abspath_to_relpath(tmp_path, prepare_folders_files):
     is_not_occur_once = str(tmp_path) not in contents
     assert is_not_occur_once is True
     assert contents == expected
+
+
+def test_infiletype():
+    # pytest --showlocals --log-level INFO -k "test_infiletype" tests
+    # __eq__
+    ift = InFileType.FILES
+    assert ift == InFileType.FILES
+    assert ift != InFileType.ZEROES
+    # __str__
+    #    InFiles._files instance attribute
+    infiles_attr_name = "_files"
+    assert str(InFileType.FILES) == infiles_attr_name

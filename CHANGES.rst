@@ -13,8 +13,6 @@ Changelog
      env variable which contain path to temp .toml file. File contain parsable
      config_settings which can be read from a subprocess
 
-   - docs/code/index.rst rewrite. Organize modules and add missing
-
    - Makefile target to add the environment variable with path to a config_settings toml file
 
    - Confirm setuptools-scm file finders are being called?
@@ -24,6 +22,11 @@ Changelog
 
    Known regressions
    ..................
+
+   - py310 regression. backport of code from py313
+     Caused by https://github.com/pypy/pypy/pull/5003
+     mentioned in https://github.com/pypy/pypy/issues/5004
+     affects python-nightly.yml py310 Error in sys.excepthook TypeError: PatchedTracebackException.format() got an unexpected keyword argument 'colorize'
 
    - rtd installs does not build or run a workflow. Does rtd give any workaround?
      Resolve rtd issue before migrate sphinx-external-toc-strict to use drain-swamp
@@ -38,6 +41,17 @@ Changelog
    ..............................
 
 .. scriv-start-here
+
+.. _changes_1-6-0:
+
+Version 1.6.0 — 2024-08-22
+--------------------------
+
+- fix(lock_toggle): recognize .in files options -c and -r
+- refactor(lock_toggle): enum.Enum to identify sets InFiles._files and InFiles._zeroes
+- refactor(lock_toggle): add .in file line pattern match functions
+- ci(python-nightly): tox run only tests folder
+- docs: add favicons 200x200 svg and 180x180 apple-touch-icon
 
 .. _changes_1-5-4:
 

@@ -14,11 +14,11 @@ sys.path.insert(0, str(path_package_base))  # Needed ??
 # @@@ editable
 copyright = "2024–2024, Dave Faulkmore"
 # The short X.Y.Z version.
-version = "1.5.4"
+version = "1.6.0"
 # The full version, including alpha/beta/rc tags.
-release = "1.5.4"
+release = "1.6.0"
 # The date of release, in "monthname day, year" format.
-release_date = "August 20, 2024"
+release_date = "August 22, 2024"
 # @@@ end
 
 v = parse(release)
@@ -185,4 +185,14 @@ linkcheck_request_headers = {
 # in conf.py --> nitpicky = True
 nitpick_ignore = [
     ("py:class", "ValidatorType"),
+]
+
+favicons = [
+    {"rel": "icon", "href": "icon-drain-swamp-200x200.svg", "type": "image/svg+xml"},
+    {
+        "rel": "apple-touch-icon",
+        "sizes": "180x180",
+        "href": "apple-touch-icon-180x180.png",
+        "type": "image/png",
+    },
 ]

@@ -16,15 +16,15 @@ Python build backend with build plugins and dependency lock switch
 
 \* Python 3.9 through 3.13, PyPy
 
+**New in 1.6.x**
+
+recognize .in files options -r and -c; tox test only folder tests; favicons;
+
 **New in 1.5.x**
 
 resolve dependency hell; dependency conflict prevent tests fail;
 docs design elements improve presentation; gh-pages workflow;
 fix semantic version edge cases pre+post;
-
-**New in 1.4.x**
-
-on symlink refresh set pyproject.toml dependencys' suffix to .lnk;
 
 What swamp?
 ------------
