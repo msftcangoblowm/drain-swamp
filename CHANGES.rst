@@ -42,6 +42,13 @@ Changelog
 
 .. scriv-start-here
 
+.. _changes_1-6-1:
+
+Version 1.6.1 — 2024-08-22
+--------------------------
+
+- ci(python-nightly): try py312 and py313 tagged not nightly
+
 .. _changes_1-6-0:
 
 Version 1.6.0 — 2024-08-22
