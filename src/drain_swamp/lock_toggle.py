@@ -103,7 +103,7 @@ __all__ = (
 )
 
 _logger = logging.getLogger(f"{g_app_name}.lock_toggle")
-is_module_debug = False
+is_module_debug = True
 
 
 def _create_symlinks_relative(src, dest, cwd_path):
@@ -1055,8 +1055,9 @@ class InFiles:
                     pass
 
                 if is_file:
-                    contents = "\n".join(list(in_.requirements))
-                    contents = f"{contents}\n"
+                    sep = os.linesep
+                    contents = sep.join(list(in_.requirements))
+                    contents = f"{contents}{sep}"
                     abspath_unlocked.write_text(contents)
                     yield abspath_unlocked
                 else:  # pragma: no cover

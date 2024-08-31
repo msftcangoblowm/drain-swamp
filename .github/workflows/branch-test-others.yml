@@ -67,6 +67,7 @@ jobs:
 
       - name: "Install dependencies -- build"
         run: |
+          set -xe
           python -m pip install -r requirements/kit$LOCK_SUFFIX
 
       # Create generated files: version file and .lnk files. sdist tarball ignored
