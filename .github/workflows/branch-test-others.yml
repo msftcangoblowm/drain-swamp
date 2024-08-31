@@ -70,14 +70,12 @@ jobs:
           set -xe
           python -m pip install -r requirements/kit$LOCK_SUFFIX
 
-      # Create generated files: version file and .lnk files. sdist tarball ignored
-      - name: "Build sdist to run plugins. Create generated files"
+      - name: Refresh .lnk files. Avoid build. Not run in subprocess
         env:
           SET_LOCK: ${{ vars.DRAINSWAMP_SET_LOCK }}
         run: |
           set -xe
-          echo "python -m build -C--kind='current' -C--set-lock='$SET_LOCK'"
-          python -m build -C--kind="current" -C--set-lock="$SET_LOCK"
+          python src/drain_swamp/cli_unlock.py refresh --set-lock="$SET_LOCK"
 
       - name: "Run tox for ${{ matrix.python-version }}"
         run: |

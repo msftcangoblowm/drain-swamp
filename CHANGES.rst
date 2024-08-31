@@ -42,7 +42,7 @@ Changelog
    Commit items for NEXT VERSION
    ..............................
 
-   - ci(branch-test-others): build package before tox
+   - ci(branch-test-others): refresh .lnk rather than build package
    - ci(branch-test-others): fix requirement file suffix
    - fix(cli_igor): seed changelog add check file not found and missing start token
 
