@@ -17,6 +17,7 @@ defaults:
 
 env:
   PIP_DISABLE_PIP_VERSION_CHECK: 1
+  LOCK_SUFFIX: ${{ vars.DRAINSWAMP_SET_LOCK == '1' && '.lock' || '.unlock' }}
 
 permissions:
   contents: read
@@ -61,7 +62,7 @@ jobs:
       - name: "Install dependencies"
         run: |
           set -xe
-          python -m pip install -r requirements/tox.pip
+          python -m pip install -r requirements/tox$LOCK_SUFFIX
 
       - name: "Run tox for ${{ matrix.python-version }}"
         run: |
