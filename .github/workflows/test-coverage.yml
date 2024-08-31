@@ -90,7 +90,7 @@ jobs:
           set -xe
           pytest --showlocals --quiet --cov=drain_swamp --cov-report=xml --cov-config=pyproject.toml tests
       - name: "Upload to Codecov"
-        uses: codecov/codecov-action@e28ff129e5465c2c0dcc6f003fc735cb6ae0c673 # 4.5.0
+        uses: codecov/codecov-action@4b21c320b5517fc6ffd4406a28e66325c721dc20 # 4.5.0
         with:
           name: unittest-py3.9
           token: ${{ secrets.CODECOV_TOKEN }}

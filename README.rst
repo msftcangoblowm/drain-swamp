@@ -19,6 +19,7 @@ Python build backend with build plugins and dependency lock switch
 **New in 1.6.x**
 
 recognize .in files options -r and -c; tox test only folder tests; favicons;
+workflow for branches to test MacOS and Windows;
 
 **New in 1.5.x**
 

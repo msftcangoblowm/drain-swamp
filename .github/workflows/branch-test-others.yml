@@ -1,0 +1,92 @@
+# Licensed under the Apache License: http://www.apache.org/licenses/LICENSE-2.0
+# For details: https://github.com/msftcangoblowm/drain-swamp/blob/main/NOTICE.txt
+# For contributors working in a branch, not main/master, test on Windows and MacOS
+# Quick, not exhaustive. Minimum interpreter versions
+name: "branch only test"
+
+on:
+  push:
+    branches:
+      - '**'
+      - '!master'
+  workflow_dispatch:
+
+defaults:
+  run:
+    shell: bash
+
+env:
+  PIP_DISABLE_PIP_VERSION_CHECK: 1
+
+permissions:
+  contents: read
+
+jobs:
+  tests-other:
+    name: "${{ matrix.python-version }} on ${{ matrix.os }}"
+    if:
+      ${{ !(contains('-notests', github.ref) || contains('refs/heads/master', github.ref)) }}
+    runs-on: "${{ matrix.os }}"
+    # If it doesn't finish in an hour, it's not going to. Don't spin for six
+    # hours needlessly.
+    timeout-minutes: 60
+    strategy:
+      matrix:
+        os:
+          - macos-latest
+          - windows-latest
+        python-version:
+          - "3.9"
+          - "3.12"
+          - "3.13"
+      fail-fast: false
+
+    steps:
+      - name: "Check out the repo"
+        uses: actions/checkout@692973e3d937129bcbf40652eb9f2f61becf3332 # v4.1.7
+
+      - name: "Install ${{ matrix.python-version }} with setup-python"
+        uses: actions/setup-python@39cd14951b08e74b54015e9e001cdefcf80e669f # v5.1.1
+        if: "startsWith(matrix.python-version, 'pypy-')"
+        with:
+          python-version: "${{ matrix.python-version }}"
+
+      - name: "Show diagnostic info"
+        run: |
+          set -xe
+          python -VV
+          python -m site
+          env
+
+      - name: "Install dependencies"
+        run: |
+          set -xe
+          python -m pip install -r requirements/tox.pip
+
+      - name: "Run tox for ${{ matrix.python-version }}"
+        run: |
+          python -m tox -- -rfsEX
+
+      - name: "Retry tox for ${{ matrix.python-version }}"
+        if: failure()
+        run: |
+          # `exit 1` makes sure that the job remains red with flaky runs
+          python -m tox -- -rfsEX --lf -vvvvv && exit 1
+
+  # This job aggregates test results. It's the required check for branch protection.
+  # https://github.com/marketplace/actions/alls-green#why
+  # https://github.com/orgs/community/discussions/33579
+  success:
+    name: Jobs successful
+    # The tests didn't run if the branch name includes "-notests"
+    if:
+      ${{ !(contains('-notests', github.ref) || contains('refs/heads/master', github.ref)) }}
+    needs:
+      - tests-other
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Decide whether the needed jobs succeeded or failed
+        uses: re-actors/alls-green@05ac9388f0aebcb5727afa17fcccfecd6f8ec5fe
+        with:
+          jobs: ${{ toJSON(needs) }}

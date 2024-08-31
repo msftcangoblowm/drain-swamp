@@ -8,6 +8,8 @@ Changelog
    Feature request
    .................
 
+   - changelog missing a start-here comment, print warning onto stderr
+
    - update workflows to detect project name. If ``drain-swamp``, build
      use config_settings options. Otherwise do the workaround. Export
      env variable which contain path to temp .toml file. File contain parsable
@@ -41,6 +43,14 @@ Changelog
    ..............................
 
 .. scriv-start-here
+
+.. _changes_1-6-2:
+
+Version 1.6.2 — 2024-08-31
+--------------------------
+
+- ci(coverage): update codecov/codecov-action to latest commit
+- ci(branch-test-others): add workflow for branches to test on MacOS and Windows
 
 .. _changes_1-6-1:
 
