@@ -42,6 +42,8 @@ Changelog
    Commit items for NEXT VERSION
    ..............................
 
+   - fix(cli_igor): seed changelog add check file not found and missing start token
+
 .. scriv-start-here
 
 .. _changes_1-6-2:

@@ -168,6 +168,8 @@ EPILOG_SEED = """
 EXIT CODES
 
 0 -- always
+1 -- missing start token
+2 -- file not found or permissions issue
 
 """
 
@@ -304,10 +306,19 @@ def seed(path):
     else:  # pragma: no cover
         pass
 
-    with contextlib.redirect_stderr(io.StringIO()) as f_stream:
-        seed_changelog(path)
+    f_stream = io.StringIO()
+    with contextlib.redirect_stderr(f_stream):
+        exit_code = seed_changelog(path)
     str_err = f_stream.getvalue()
-    click.echo(str_err)
+
+    # always a msg printed onto strerr
+    click.echo(str_err, err=True)
+
+    is_exit_code = exit_code != 0
+    if is_exit_code:
+        sys.exit(exit_code)
+    else:  # pragma: no cover
+        pass
 
 
 @main.command(

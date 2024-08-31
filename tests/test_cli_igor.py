@@ -61,39 +61,85 @@ def test_cli_main():
     assert f"Command-line for {entrypoint_name}. Prints usage" in result.stdout
 
 
-def test_seed(tmp_path, prep_pyproject_toml):
-    """To CHANGES.rst, add seed, later to be replaced by a changelog versioned entry"""
-    # prepare
-    path_change_rst = Path(__file__).parent.joinpath(
-        "_changelog_files",
-        "CHANGES-empty.rst",
-    )
+testdata_seed = (
+    (
+        Path(__file__).parent.joinpath(
+            "_changelog_files",
+            "CHANGES-empty.rst",
+        ),
+        0,
+        "Updating ",
+    ),
+    (
+        Path(__file__).parent.joinpath(
+            "_changelog_files",
+            "CHANGES-missing-start-token.rst",
+        ),
+        1,
+        "Start token not found. In CHANGES.rst, add token, ",
+    ),
+)
+ids_seed = (
+    "normal skeleton",
+    "start token missing",
+)
 
-    runner = CliRunner()
+
+@pytest.mark.parametrize(
+    "path_change_rst, exit_code_excepted, stderr_msg",
+    testdata_seed,
+    ids=ids_seed,
+)
+def test_seed_cli(
+    path_change_rst,
+    exit_code_excepted,
+    stderr_msg,
+    tmp_path,
+    prep_pyproject_toml,
+):
+    """To CHANGES.rst, add seed, later to be replaced by a changelog versioned entry"""
+    # pytest --showlocals --log-level INFO -k "test_seed_cli" tests
+    runner = CliRunner(mix_stderr=False)
     with runner.isolated_filesystem(temp_dir=tmp_path) as tmp_dir_path:
         path_tmp_dir = Path(tmp_dir_path)
+        start_token = "Nothing yet."
         cmd = ["--path", path_tmp_dir]
 
-        # without prepare
-        result = runner.invoke(seed, cmd)
+        # without prepare. No CHANGES.rst file
         expected = "Provide an absolute path to a file. Got, "
-        actual = result.stdout
+        result = runner.invoke(seed, cmd)
+        exit_code_actual = result.exit_code
+        actual = result.stderr
+
+        assert exit_code_actual == 2
         assert expected in actual
 
         # prepare
-        path_empty = prep_pyproject_toml(
+        path_changelog = prep_pyproject_toml(
             path_change_rst, path_tmp_dir, rename="CHANGES.rst"
         )
-        existing_text = path_empty.read_text()
+        contents_before = path_changelog.read_text()
 
+        # act
         result = runner.invoke(seed, cmd)
-        expected_out = "Updating "
-        actual_out = result.stdout
-        assert expected_out in actual_out
+        exit_code_actual = result.exit_code
+        actual_out = result.stderr
 
-        actual_text = path_empty.read_text()
-        assert existing_text != actual_text
-        assert "Nothing yet." in actual_text
+        # verify
+        #    exit code
+        assert exit_code_actual == exit_code_excepted
+
+        #    received expected error msg
+        assert stderr_msg in actual_out
+
+        #    check if changes occurred
+        contents_after = path_changelog.read_text()
+        if exit_code_actual == 0:
+            assert contents_before != contents_after
+            assert start_token in contents_after
+        else:
+            assert contents_before == contents_after
+            assert start_token not in contents_after
 
 
 def test_build_cli(prep_pyproject_toml, tmp_path):

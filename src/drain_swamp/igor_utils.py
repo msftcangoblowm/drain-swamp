@@ -135,15 +135,44 @@ def seed_changelog(path_cwd):
 
     :param path_cwd: Current working directory path
     :type path_cwd: pathlib.Path
+    :returns:
+
+       0 success
+       1 missing start token
+       2 file not found or permissions issue
+
+    :rtype: int
     """
     path_changelog = path_cwd.joinpath("CHANGES.rst")
     pattern = re.escape(SCRIV_START)
     replacement = f"{UNRELEASED}\n\nNothing yet.\n\n\n" + SCRIV_START
-    update_file(
-        path_changelog,
-        pattern,
-        replacement,
-    )
+
+    # Check if pattern exists
+    if not (path_changelog.exists() and path_changelog.is_file()):
+        msg_warn = f"Provide an absolute path to a file. Got, {path_changelog!s}"
+        print(msg_warn, file=sys.stderr)
+        ret = 2
+    else:
+        contents = path_changelog.read_text()
+
+        prog = re.compile(pattern)
+        lst_matches = re.findall(prog, contents)
+        if len(lst_matches) == 0:
+            msg_warn = (
+                f"Start token not found. In CHANGES.rst, add token, {SCRIV_START}"
+            )
+            print(msg_warn, file=sys.stderr)
+            ret = 1
+        else:
+            # prints "Updating " to stderr
+            update_file(
+                path_changelog,
+                pattern,
+                replacement,
+            )
+            ret = 0
+
+    return ret
 
 
 def edit_for_release(path_cwd, kind, snippet_co=None):

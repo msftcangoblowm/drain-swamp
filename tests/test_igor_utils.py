@@ -85,17 +85,66 @@ def test_update_file(tmp_path, prep_pyproject_toml):
     assert "Nothing yet." in actual_text
 
 
-def test_seed_changelog(tmp_path, prep_pyproject_toml):
-    path_change_rst = Path(__file__).parent.joinpath(
-        "_changelog_files",
-        "CHANGES-empty.rst",
-    )
+testdata_seed_changelog = (
+    (
+        Path(__file__).parent.joinpath(
+            "_changelog_files",
+            "CHANGES-empty.rst",
+        ),
+        0,
+    ),
+    (
+        Path(__file__).parent.joinpath(
+            "_changelog_files",
+            "CHANGES-missing-start-token.rst",
+        ),
+        1,
+    ),
+)
+ids_seed_changelog = (
+    "normal skeleton",
+    "start token missing",
+)
+
+
+@pytest.mark.parametrize(
+    "path_change_rst, exit_code_expected",
+    testdata_seed_changelog,
+    ids=ids_seed_changelog,
+)
+def test_seed_changelog(
+    path_change_rst,
+    exit_code_expected,
+    tmp_path,
+    prep_pyproject_toml,
+):
+    """Look for start token below add a seed token."""
+    # pytest --showlocals --log-level INFO -k "test_seed_changelog" tests
+    expected_token = "Nothing yet."
+
+    # no prepare
+    exit_code_actual = seed_changelog(tmp_path)
+    assert exit_code_actual == 2
+
+    # prepare
     path_empty = prep_pyproject_toml(path_change_rst, tmp_path, rename="CHANGES.rst")
-    existing_text = path_empty.read_text()
-    seed_changelog(tmp_path)
-    actual_text = path_empty.read_text()
-    assert existing_text != actual_text
-    assert "Nothing yet." in actual_text
+    contents_before = path_empty.read_text()
+
+    # act
+    exit_code_actual = seed_changelog(tmp_path)
+
+    # Verify
+    #    expected exit code
+    assert exit_code_actual == exit_code_expected
+
+    #    check file state
+    contents_after = path_empty.read_text()
+    if exit_code_actual == 0:
+        assert contents_before != contents_after
+        assert expected_token in contents_after
+    else:
+        assert contents_before == contents_after
+        assert expected_token not in contents_after
 
 
 testdata_edit_for_release = (
