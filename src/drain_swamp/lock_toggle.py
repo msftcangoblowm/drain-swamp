@@ -103,7 +103,7 @@ __all__ = (
 )
 
 _logger = logging.getLogger(f"{g_app_name}.lock_toggle")
-is_module_debug = True
+is_module_debug = False
 
 
 def _create_symlinks_relative(src, dest, cwd_path):
@@ -1129,8 +1129,8 @@ def refresh_links(inst, is_set_lock=None):
 
     :param inst:
 
-       Backend subclass instance which has folders property containing
-       ``collections.abc.Sequence[pathlib.Path]``
+       Backend subclass instance. Contains: dependencies, optional
+       dependencies, and various paths
 
     :type inst: BackendType
     :param is_set_lock:

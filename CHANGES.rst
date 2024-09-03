@@ -8,7 +8,8 @@ Changelog
    Feature request
    .................
 
-   - changelog missing a start-here comment, print warning onto stderr
+   - On Windows, refresh links fails. Combining dependencies relative path with cwd path
+     Use __debug__ to turn on module level logging AND send the logging to stdout
 
    - update workflows to detect project name. If ``drain-swamp``, build
      use config_settings options. Otherwise do the workaround. Export
@@ -42,11 +43,20 @@ Changelog
    Commit items for NEXT VERSION
    ..............................
 
-   - ci(branch-test-others): refresh .lnk rather than build package
-   - ci(branch-test-others): fix requirement file suffix
-   - fix(cli_igor): seed changelog add check file not found and missing start token
-
 .. scriv-start-here
+
+.. _changes_1-6-3:
+
+Version 1.6.3 — 2024-09-03
+--------------------------
+
+- feat: add BackendType repr
+- feat(_run_cmd): add Windows safe resolve_path
+- feat(_run_cmd): cmd str support
+- ci(branch-test-others): refresh .lnk rather than build package
+- ci(branch-test-others): fix requirement file suffix
+- fix(cli_igor): seed changelog add check file not found and missing start token
+- test: remove non-regression pytest.xfail
 
 .. _changes_1-6-2:
 

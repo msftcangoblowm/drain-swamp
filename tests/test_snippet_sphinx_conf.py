@@ -25,9 +25,9 @@ from drain_swamp.constants import g_app_name
 from drain_swamp.snippet_sphinx_conf import SnipSphinxConf
 
 testdata_snip_sphinx_conf_init = (
-    pytest.param(None, marks=pytest.mark.xfail(raises=NotADirectoryError)),
-    pytest.param("doc", marks=pytest.mark.xfail(raises=FileNotFoundError)),
-    pytest.param("docs", marks=pytest.mark.xfail(raises=FileNotFoundError)),
+    (None, pytest.raises(NotADirectoryError)),
+    ("doc", pytest.raises(FileNotFoundError)),
+    ("docs", pytest.raises(FileNotFoundError)),
 )
 ids_snip_sphinx_conf_init = (
     "No doc/ or docs/ sub-folder",
@@ -37,22 +37,24 @@ ids_snip_sphinx_conf_init = (
 
 
 @pytest.mark.parametrize(
-    "a_folder",
+    "a_folder, expectation",
     testdata_snip_sphinx_conf_init,
     ids=ids_snip_sphinx_conf_init,
 )
-def test_snip_sphinx_conf_init(a_folder, tmp_path):
-    """Sphinx [sub-folder]/conf.py does not exist exceptions"""
+def test_snip_sphinx_conf_init(a_folder, expectation, tmp_path):
+    """Sphinx [sub-folder]/conf.py does not exist exceptions."""
+    # pytest --showlocals --log-level INFO -k "test_snip_sphinx_conf_init" tests
     if a_folder is not None and isinstance(a_folder, str):
         path_docs = tmp_path.joinpath(a_folder)
         path_docs.mkdir()
 
-    SnipSphinxConf(path=tmp_path)
+    with expectation:
+        SnipSphinxConf(path=tmp_path)
 
 
 testdata_now_to_str = (
-    pytest.param(None, marks=pytest.mark.xfail(raises=TypeError)),
-    pytest.param(1.2345, marks=pytest.mark.xfail(raises=TypeError)),
+    (None, pytest.raises(TypeError)),
+    (1.2345, pytest.raises(TypeError)),
 )
 ids_now_to_str = (
     "None",
@@ -61,17 +63,20 @@ ids_now_to_str = (
 
 
 @pytest.mark.parametrize(
-    "format_str",
+    "format_str, expectation",
     testdata_now_to_str,
     ids=ids_now_to_str,
 )
-def test_now_to_str(format_str, path_project_base):
+def test_now_to_str(format_str, expectation, path_project_base):
+    """Test now_to_str."""
     assert isinstance(SnipSphinxConf.now(), datetime)
     # strftime / strptime format str
-    SnipSphinxConf.now_to_str(format_str)
+    with expectation:
+        SnipSphinxConf.now_to_str(format_str)
 
 
 def test_snip_sphinx_conf_properties(path_project_base):
+    """SnipSphinxConf properties."""
     sc = SnipSphinxConf(path=path_project_base)
 
     # SnipSphinxConf.now getter

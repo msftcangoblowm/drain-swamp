@@ -4,22 +4,45 @@
 Wrapper for :py:func:`subprocess.run` calls. Blocking and not multiprocessing
 
 .. py:data:: __all__
-   :type: tuple[str]
-   :value: ("run_cmd",)
+   :type: tuple[str, str]
+   :value: ("run_cmd", "resolve_path")
 
    Module exports
 
 """
 
 import os
+import platform
+import shlex
+import shutil
 import subprocess
 from collections.abc import Sequence
 from pathlib import (
     Path,
     PurePath,
+    PurePosixPath,
+    PureWindowsPath,
 )
 
-__all__ = ("run_cmd",)
+__all__ = ("run_cmd", "resolve_path")
+
+
+def resolve_path(str_cmd):
+    """Windows safe resolve executable path
+
+    :param str_cmd: Relative path to executable
+    :type str_cmd: str
+    :returns: Windows safe absolute path to executable
+    :rtype: str
+    """
+    str_path = shutil.which(str_cmd)
+    is_win = platform.system().lower() == "windows"
+    if is_win:  # pragma: no cover
+        ret = str(PureWindowsPath(str_path))
+    else:
+        ret = str(PurePosixPath(str_path))
+
+    return ret
 
 
 def run_cmd(cmd, cwd=None, env=None):
@@ -38,7 +61,11 @@ def run_cmd(cmd, cwd=None, env=None):
         - :py:exc:`TypeError` -- Unsupported type for 1st arg cmd
 
     """
-    if not isinstance(cmd, Sequence):
+    if isinstance(cmd, str):
+        cmd = shlex.split(cmd)
+    elif isinstance(cmd, Sequence):
+        cmd = [os.fspath(x) for x in cmd]
+    else:
         msg_warn = f"expected 1st param cmd to be a Sequence got {type(cmd)}"
         raise TypeError(msg_warn)
 
@@ -81,14 +108,17 @@ def run_cmd(cmd, cwd=None, env=None):
     else:
         # warning level log messages bleed to stdout
         str_out = proc.stdout
-        if str_out is None or len(str_out.rstrip()) == 0:
+        str_err = proc.stderr
+        is_empty_stdout = str_out is None or len(str_out.rstrip()) == 0
+        is_empty_stderr = str_err is None or len(str_err.rstrip()) == 0
+
+        if is_empty_stdout:
             str_out = None
         else:
             str_out = str_out.rstrip()
 
         # Exception details written to stderr
-        str_err = proc.stderr
-        if str_err is None or len(str_err.rstrip()) == 0:
+        if is_empty_stderr:
             str_err = None
         else:
             str_err = str_err.rstrip()

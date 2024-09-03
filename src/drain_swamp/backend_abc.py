@@ -42,10 +42,13 @@ from __future__ import annotations
 
 import abc
 import logging
+import platform
 import sys
 from pathlib import (
     Path,
     PurePath,
+    PurePosixPath,
+    PureWindowsPath,
 )
 from typing import (
     TYPE_CHECKING,
@@ -54,6 +57,11 @@ from typing import (
 )
 from unittest.mock import MagicMock
 
+from ._repr import (
+    repr_dict_str_path,
+    repr_path,
+    repr_set_path,
+)
 from .check_type import (
     is_iterable_not_str,
     is_ok,
@@ -1212,6 +1220,44 @@ class BackendType(abc.ABC):
             ret = f".{suffix}"
         else:
             ret = suffix
+
+        return ret
+
+    def __repr__(self) -> str:
+        """Fallback :py:func:`repr` implementation. For display of the
+        instance state, not for recreating an instance.
+
+        :returns: instance state
+        :rtype: str
+        """
+        # Subclass, not the ABC class. backend is implied by the subclass
+        cls = type(self)
+        is_win = platform.system().lower() == "windows"
+
+        ret = (
+            f"<{cls.__name__} "
+            f"""{repr_path("path_config", self.path_config)}"""
+            f"""{repr_path("parent_dir", self.parent_dir)}"""
+            f"""{repr_dict_str_path("optionals", self.optionals)}"""
+            f"""{repr_set_path("folders_implied", self.folders_implied)}"""
+            f"""{repr_set_path("folders_additional", self.folders_additional)}"""
+        )
+
+        t_required = self.required
+        if t_required is not None:
+            req_name, req_path = t_required
+            if is_win:  # pragma: no cover
+                req_purepath = PureWindowsPath(req_path)
+                ret += f"required=('{req_name!s}', {req_purepath!r})"
+            else:  # pragma: no cover
+                req_purepath = PurePosixPath(req_path)
+                ret += f"required=('{req_name!s}', {req_purepath!r})"
+        else:
+            # t_required is None when pyproject.toml contains static dependencies
+            # Remove <comma><space> token
+            ret = ret[:-2]
+
+        ret += ">"
 
         return ret
 

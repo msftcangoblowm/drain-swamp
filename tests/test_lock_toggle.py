@@ -17,6 +17,7 @@ import logging
 import logging.config
 import shutil
 from collections.abc import Sequence
+from contextlib import nullcontext as does_not_raise
 from pathlib import (
     Path,
     PurePath,
@@ -43,6 +44,31 @@ from drain_swamp.lock_toggle import (
     refresh_links,
     unlock_compile,
 )
+
+
+@pytest.fixture
+def cleanup_symlinks(tmp_path):
+    def func(seq_expected, is_verify):
+        """Verify symlinks optional"""
+        for relpath_expected in seq_expected:
+            abspath_expected = tmp_path.joinpath(relpath_expected)
+            is_symlinks_exist = (
+                abspath_expected.exists() and abspath_expected.is_symlink()
+            )
+            is_very_verify = (
+                is_verify is not None
+                and isinstance(is_verify, bool)
+                and is_verify is True
+            )
+            if is_very_verify:
+                assert is_symlinks_exist
+            if is_symlinks_exist:
+                # clean up symlink
+                abspath_expected.unlink()
+                assert not abspath_expected.exists()
+
+    return func
+
 
 testdata_lock_compile = (
     (
@@ -204,23 +230,29 @@ def test_resolve_one_iteration(
 
 testdata_resolve_loop = (
     (
-        Path("requirements/prod.in"),
-        Path("requirements/pins.in"),
-        Path("requirements/pip.in"),
+        (
+            Path("requirements/prod.in"),
+            Path("requirements/pins.in"),
+            Path("requirements/pip.in"),
+        ),
+        does_not_raise(),
     ),
     (
-        Path("requirements/manage.in"),
-        Path("requirements/tox.in"),
-        Path("requirements/prod.in"),
-        Path("requirements/pins.in"),
+        (
+            Path("requirements/manage.in"),
+            Path("requirements/tox.in"),
+            Path("requirements/prod.in"),
+            Path("requirements/pins.in"),
+        ),
+        does_not_raise(),
     ),
-    pytest.param(
+    (
         (
             Path("requirements/manage.in"),
             Path("requirements/prod.in"),
             Path("requirements/pins.in"),
         ),
-        marks=pytest.mark.xfail(raises=MissingRequirementsFoldersFiles),
+        pytest.raises(MissingRequirementsFoldersFiles),
     ),
 )
 ids_resolve_loop = (
@@ -231,17 +263,18 @@ ids_resolve_loop = (
 
 
 @pytest.mark.parametrize(
-    "relpath_files",
+    "relpath_files, expectation",
     testdata_resolve_loop,
     ids=ids_resolve_loop,
 )
 def test_resolve_loop(
     relpath_files,
+    expectation,
     path_project_base,
     caplog,
     has_logging_occurred,
 ):
-    """Resolve constraints raising error is unresolvable constraints"""
+    """Resolve constraints raising error is unresolvable constraints."""
     # pytest --showlocals --log-level INFO -k "test_resolve_loop" tests
     LOGGING["loggers"][g_app_name]["propagate"] = True
     logging.config.dictConfig(LOGGING)
@@ -259,13 +292,16 @@ def test_resolve_loop(
         abspath_files.append(abspath)
 
     # act
-    files = InFiles(path_cwd, abspath_files)
-    files.resolution_loop()
-    #  No remaining InFile with unresolved constraints
-    assert len(files._files) == 0
+    with expectation:
+        files = InFiles(path_cwd, abspath_files)
+        files.resolution_loop()
+    # verify
+    if isinstance(expectation, does_not_raise):
+        #  No remaining InFile with unresolved constraints
+        assert len(files._files) == 0
 
-    # assert has_logging_occurred(caplog)
-    pass
+        # assert has_logging_occurred(caplog)
+        pass
 
 
 testdata_infile = (
@@ -321,6 +357,7 @@ def test_cls_infiles_exceptions(
     tmp_path,
     path_project_base,
 ):
+    """Verify InFiles exceptions."""
     # pytest --showlocals --log-level INFO -k "test_cls_infiles" tests
     path_cwd = path_project_base()
     # Expecting a sequence or sequence contains unsupported type
@@ -347,7 +384,7 @@ def test_cls_infiles_exceptions(
         InFiles(path_cwd, in_files)
 
     # constraints file does not exist
-    abspath_file_0.write_text("-c requirements/secrets-to-time-travel.in\n\n")
+    abspath_file_0.write_text("-r requirements/secrets-to-time-travel.in\n\n")
     in_files = (abspath_file_0,)
     with pytest.raises(MissingRequirementsFoldersFiles):
         InFiles(tmp_path, in_files)
@@ -375,7 +412,7 @@ def test_methods_infiles(
     caplog,
     has_logging_occurred,
 ):
-    """Verify InFiles methods"""
+    """Verify InFiles methods."""
     # pytest --showlocals --log-level INFO -k "test_methods_infiles" tests
     LOGGING["loggers"][g_app_name]["propagate"] = True
     logging.config.dictConfig(LOGGING)
@@ -444,7 +481,7 @@ testdata_unlock_compile = (
             "requirements/manage.in",
         ),
         (),
-        marks=pytest.mark.xfail(raises=MissingRequirementsFoldersFiles),
+        pytest.raises(MissingRequirementsFoldersFiles),
     ),
     (
         Path(__file__).parent.joinpath(
@@ -457,6 +494,7 @@ testdata_unlock_compile = (
             "requirements/manage.in",
         ),
         (),
+        does_not_raise(),
     ),
     (
         Path(__file__).parent.joinpath("_good_files", "complete.pyproject_toml"),
@@ -471,6 +509,7 @@ testdata_unlock_compile = (
             "docs/requirements.in",
         ),
         (),
+        does_not_raise(),
     ),
 )
 ids_unlock_compile = (
@@ -481,7 +520,7 @@ ids_unlock_compile = (
 
 
 @pytest.mark.parametrize(
-    "path_config, seq_create_these, additional_folders",
+    "path_config, seq_create_these, additional_folders, expectation",
     testdata_unlock_compile,
     ids=ids_unlock_compile,
 )
@@ -489,6 +528,7 @@ def test_unlock_compile(
     path_config,
     seq_create_these,
     additional_folders,
+    expectation,
     tmp_path,
     prepare_folders_files,
     prep_pyproject_toml,
@@ -496,6 +536,7 @@ def test_unlock_compile(
     caplog,
     has_logging_occurred,
 ):
+    """Create .unlock files."""
     # pytest --showlocals --log-level INFO -k "test_unlock_compile" tests
     LOGGING["loggers"][g_app_name]["propagate"] = True
     logging.config.dictConfig(LOGGING)
@@ -531,16 +572,19 @@ def test_unlock_compile(
     expected_count = len(expected)
 
     # unlock_compile
-    gen = unlock_compile(inst)
-    unlock_files = list(gen)
-    unlock_files_count = len(unlock_files)
-    assert expected_count - 1 == unlock_files_count
+    with expectation:
+        gen = unlock_compile(inst)
+        unlock_files = list(gen)
+    if isinstance(expectation, does_not_raise):
+        unlock_files_count = len(unlock_files)
+        assert expected_count - 1 == unlock_files_count
 
-    # assert has_logging_occurred(caplog)
-    pass
+        # assert has_logging_occurred(caplog)
+        pass
 
 
 def test_create_symlinks_relative(tmp_path, prepare_folders_files, caplog):
+    """.lnk files symlinks are relative, not absolute."""
     # pytest --showlocals --log-level INFO -k "test_create_symlinks_relative" tests
     LOGGING["loggers"][g_app_name]["propagate"] = True
     logging.config.dictConfig(LOGGING)
@@ -612,32 +656,7 @@ def test_create_symlinks_relative(tmp_path, prepare_folders_files, caplog):
 
 
 testdata_refresh = (
-    pytest.param(
-        Path(__file__).parent.joinpath(
-            "_good_files", "complete-manage-pip-prod-unlock.pyproject_toml"
-        ),
-        (
-            "requirements/prod.in",
-            "requirements/pins.in",
-            "requirements/pip.in",
-            "requirements/manage.in",
-        ),
-        (
-            "requirements/prod.lock",
-            "requirements/pip.lock",
-            "requirements/manage.lock",
-            "requirements/prod.unlock",
-            "requirements/pip.unlock",
-            "requirements/manage.unlock",
-        ),
-        (
-            "requirements/prod.lnk",
-            "requirements/pip.lnk",
-            "requirements/manage.lnk",
-        ),
-        marks=pytest.mark.xfail(raises=MissingRequirementsFoldersFiles),
-    ),
-    pytest.param(
+    (
         Path(__file__).parent.joinpath(
             "_bad_files", "static_dependencies.pyproject_toml"
         ),
@@ -664,7 +683,32 @@ testdata_refresh = (
             "requirements/tox.lnk",
             "requirements/manage.lnk",
         ),
-        marks=pytest.mark.xfail(raises=AssertionError),
+        pytest.raises(AssertionError),
+    ),
+    (
+        Path(__file__).parent.joinpath(
+            "_good_files", "complete-manage-pip-prod-unlock.pyproject_toml"
+        ),
+        (
+            "requirements/prod.in",
+            "requirements/pins.in",
+            "requirements/pip.in",
+            "requirements/manage.in",
+        ),
+        (
+            "requirements/prod.lock",
+            "requirements/pip.lock",
+            "requirements/manage.lock",
+            "requirements/prod.unlock",
+            "requirements/pip.unlock",
+            "requirements/manage.unlock",
+        ),
+        (
+            "requirements/prod.lnk",
+            "requirements/pip.lnk",
+            "requirements/manage.lnk",
+        ),
+        pytest.raises(MissingRequirementsFoldersFiles),
     ),
     (
         Path(__file__).parent.joinpath(
@@ -689,6 +733,7 @@ testdata_refresh = (
             "requirements/tox.lnk",
             "requirements/manage.lnk",
         ),
+        does_not_raise(),
     ),
     (
         Path(__file__).parent.joinpath("_good_files", "complete.pyproject_toml"),
@@ -727,6 +772,7 @@ testdata_refresh = (
             "requirements/manage.lnk",
             "docs/requirements.lnk",
         ),
+        does_not_raise(),
     ),
 )
 ids_refresh = (
@@ -738,7 +784,7 @@ ids_refresh = (
 
 
 @pytest.mark.parametrize(
-    "path_pyproject_toml, seq_create_in_files, seq_create_lock_files, seq_expected",
+    "path_pyproject_toml, seq_create_in_files, seq_create_lock_files, seq_expected, expectation",
     testdata_refresh,
     ids=ids_refresh,
 )
@@ -747,13 +793,18 @@ def test_refresh_links(
     seq_create_in_files,
     seq_create_lock_files,
     seq_expected,
+    expectation,
     tmp_path,
     prepare_folders_files,
     prep_pyproject_toml,
     path_project_base,
     caplog,
     has_logging_occurred,
+    cleanup_symlinks,
 ):
+    """Test refresh .lnk files.
+
+    Assumes .lock or .unlock files exists."""
     # pytest --showlocals --log-level INFO -k "test_refresh_links" tests
     LOGGING["loggers"][g_app_name]["propagate"] = True
     logging.config.dictConfig(LOGGING)
@@ -814,27 +865,45 @@ def test_refresh_links(
         with pytest.raises(TypeError):
             refresh_links(inst, is_set_lock=invalid)
 
+    # None
+    valid = None
+    with expectation as excinfo:
+        refresh_links(inst, is_set_lock=valid)
+    if excinfo is None:
+        excinfo_type = None
+    else:
+        excinfo_type = excinfo.type
+    is_applies_only_to_none = False
+    if excinfo_type is not None and excinfo_type == AssertionError:
+        cleanup_symlinks(seq_expected, False)
+        is_applies_only_to_none = True
+    elif excinfo_type is not None and excinfo_type == MissingRequirementsFoldersFiles:
+        cleanup_symlinks(seq_expected, False)
+    else:
+        cleanup_symlinks(seq_expected, True)
+
+    if is_applies_only_to_none is True:
+        cm = does_not_raise()
+    else:
+        cm = expectation
+
     valids = (
-        None,
         True,
         False,
     )
     for valid in valids:
-        refresh_links(inst, is_set_lock=valid)
+        with cm:
+            refresh_links(inst, is_set_lock=valid)
 
-        # verify symlinks
-        for relpath_expected in seq_expected:
-            abspath_expected = tmp_path.joinpath(relpath_expected)
-            assert abspath_expected.exists() and abspath_expected.is_symlink()
-            # clean up symlink
-            abspath_expected.unlink()
-            assert not abspath_expected.exists()
+            # verify symlinks
+            cleanup_symlinks(seq_expected, False)
 
     # assert has_logging_occurred(caplog)
     pass
 
 
 def test_postprocess_abspath_to_relpath(tmp_path, prepare_folders_files):
+    """When creating .lock files post processer abs path --> relative path."""
     # pytest --showlocals --log-level INFO -k "test_postprocess_abspath_to_relpath" tests
     # prepare
     #    .in
@@ -885,6 +954,7 @@ def test_postprocess_abspath_to_relpath(tmp_path, prepare_folders_files):
 
 
 def test_infiletype():
+    """Explore InFileType enum."""
     # pytest --showlocals --log-level INFO -k "test_infiletype" tests
     # __eq__
     ift = InFileType.FILES

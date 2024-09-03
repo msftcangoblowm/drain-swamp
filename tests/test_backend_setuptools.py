@@ -15,8 +15,8 @@ Unittest for module, drain_swamp.backend_setupttools
 import logging
 import logging.config
 import sys
+from contextlib import nullcontext as does_not_raise
 from pathlib import Path
-from unittest.mock import patch
 
 import pytest
 
@@ -51,12 +51,13 @@ else:  # pragma: no cover
 testdata_load_factory_good = (
     (
         Path(__file__).parent.joinpath("_good_files", "complete.pyproject_toml"),
+        does_not_raise(),
         "setuptools",
     ),
-    pytest.param(
+    (
         Path(__file__).parent.joinpath("_good_files", "requires-none.pyproject_toml"),
+        pytest.raises(MissingRequirementsFoldersFiles),
         "setuptools",
-        marks=pytest.mark.xfail(raises=MissingRequirementsFoldersFiles),
     ),
 )
 ids_load_factory_good = (
@@ -66,12 +67,13 @@ ids_load_factory_good = (
 
 
 @pytest.mark.parametrize(
-    "path_config, backend_expected",
+    "path_config, expectation, backend_expected",
     testdata_load_factory_good,
     ids=ids_load_factory_good,
 )
 def test_load_factory_good(
     path_config,
+    expectation,
     backend_expected,
     tmp_path,
     caplog,
@@ -79,6 +81,7 @@ def test_load_factory_good(
     prepare_folders_files,
     prep_pyproject_toml,
 ):
+    """BackendType factory works with supported build backends."""
     # pytest --showlocals --log-level INFO -k "test_load_factory_good" tests
     LOGGING["loggers"][g_app_name]["propagate"] = True
     logging.config.dictConfig(LOGGING)
@@ -86,11 +89,12 @@ def test_load_factory_good(
     logger.addHandler(hdlr=caplog.handler)
     caplog.handler.level = logger.level
 
-    # prepare -- create folders and files
+    # prepare
+    #    create folders and files
     tp = TomlParser(path_config)
     d_pyproject_toml = tp.d_pyproject_toml
 
-    # prepare -- optionals
+    #    optionals
     d_optionals = dict()
     get_optionals_pyproject_toml(
         d_optionals,
@@ -102,13 +106,14 @@ def test_load_factory_good(
     logger.info(f"prepare optionals: {seq_prepare_these}")
     prepare_folders_files(seq_prepare_these, tmp_path)
 
-    # prepare -- required
+    #    required
     t_required = get_required_pyproject_toml(
         d_pyproject_toml,
         tmp_path,
         is_bypass=True,
     )
-    logger.info(f"prepare required (t_required): {t_required}")
+    msg_info = f"prepare required (t_required): {t_required}"
+    logger.info(msg_info)
     if (
         t_required is not None
         and isinstance(t_required, Sequence)
@@ -135,6 +140,7 @@ def test_load_factory_good(
 
     # Confirm backend name
     inst_backend = BackendType.load_factory(path_f, parent_dir=tmp_path)
+
     assert inst_backend.path_config == path_f
     assert inst_backend.parent_dir != path_f
     assert issubclass(type(inst_backend), BackendType)
@@ -182,26 +188,28 @@ def test_load_factory_good(
 
         """raises MissingRequirementsFoldersFiles if both required or
         optionals are missing"""
-        str_lines_all = inst_backend.compose(suffix)
-        if len(str_lines_all) == 0:
-            assert len(set_from_parts) == 0
-        else:
-            lines_all = str_lines_all.split("\n")
-            set_from_all = set(lines_all)
+        with expectation:
+            str_lines_all = inst_backend.compose(suffix)
+        if isinstance(expectation, does_not_raise):
+            if len(str_lines_all) == 0:
+                assert len(set_from_parts) == 0
+            else:
+                lines_all = str_lines_all.split("\n")
+                set_from_all = set(lines_all)
 
-            assert set_from_all == set_from_parts
+                assert set_from_all == set_from_parts
 
 
 testdata_load_factory_bad = (
-    pytest.param(
+    (
         Path(__file__).parent.joinpath("_bad_files", "backend_only.pyproject_toml"),
-        marks=pytest.mark.xfail(raises=PyProjectTOMLParseError),
+        pytest.raises(PyProjectTOMLParseError),
     ),
-    pytest.param(
+    (
         Path(__file__).parent.joinpath(
             "_good_files", "backend-unsupported.pyproject_toml"
         ),
-        marks=pytest.mark.xfail(raises=BackendNotSupportedError),
+        pytest.raises(BackendNotSupportedError),
     ),
 )
 ids_load_factory_bad = (
@@ -211,12 +219,13 @@ ids_load_factory_bad = (
 
 
 @pytest.mark.parametrize(
-    "path_config",
+    "path_config, expectation",
     testdata_load_factory_bad,
     ids=ids_load_factory_bad,
 )
 def test_load_factory_bad(
     path_config,
+    expectation,
     tmp_path,
     prep_pyproject_toml,
 ):
@@ -224,57 +233,5 @@ def test_load_factory_bad(
     # prepare
     prep_pyproject_toml(path_config, tmp_path)
     # act
-    BackendType.load_factory(path_config, parent_dir=tmp_path)
-
-
-testdata_load_factory_avert_disaster = (
-    pytest.param(
-        Path(__file__).parent.joinpath("_good_files", "requires-none.pyproject_toml"),
-        None,
-        marks=pytest.mark.xfail(raises=PyProjectTOMLParseError),
-    ),
-    pytest.param(
-        Path(__file__).parent.joinpath("_good_files", "requires-none.pyproject_toml"),
-        1.2345,
-        marks=pytest.mark.xfail(raises=PyProjectTOMLParseError),
-    ),
-    pytest.param(
-        Path(__file__).parent.joinpath("_good_files", "requires-none.pyproject_toml"),
-        Path(__file__).parent.joinpath("conftest.py"),
-        marks=pytest.mark.xfail(raises=PyProjectTOMLParseError),
-    ),
-)
-ids_load_factory_avert_disaster = (
-    "parent_dir None",
-    "not a PurePath, got float",
-    "parent_dir file not a folder",
-)
-
-
-@pytest.mark.parametrize(
-    "path_config, parent_dir",
-    testdata_load_factory_avert_disaster,
-    ids=ids_load_factory_avert_disaster,
-)
-def test_load_factory_avert_disaster(
-    path_config,
-    parent_dir,
-    tmp_path,
-):
-    # pytest --showlocals --log-level INFO -k "test_load_factory_avert_disaster" tests
-    """pytest-mock exists, but why bother with additional dependencies"""
-    with (
-        patch(
-            f"{g_app_name}.backend_setuptools.BackendSetupTools.path_config",
-            return_value=tmp_path,
-        ),
-    ):
-        """During testing normal for parent_dir option to be set to temp
-        folder, so requirements files are relative to there instead of the
-        pytest tests subfolder where the pyproject.toml resides
-
-        Not settint it would be bad. And we are not setting it here. mock.patch
-        it to avoid strange absolute paths to requirements files and file
-        exists checks failing
-        """
-        BackendType.load_factory(path_config, parent_dir=parent_dir)
+    with expectation:
+        BackendType.load_factory(path_config, parent_dir=tmp_path)

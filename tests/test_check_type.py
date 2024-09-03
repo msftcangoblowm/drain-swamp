@@ -5,20 +5,25 @@
 
 Unittest for module, check_type
 
+Unit test -- Module
+
 .. code-block:: shell
 
-   pytest --showlocals --log-level INFO tests/test_check_type.py
-   pytest --showlocals --cov="drain_swamp" --cov-report=term-missing tests/test_check_type.py
+   python -m coverage run --source='drain_swamp.check_type' -m pytest \
+   --showlocals tests/test_check_type.py && coverage report \
+   --data-file=.coverage --include="**/check_type.py"
 
-Needs a config file to specify exact files to include / omit from report.
-Will fail with exit code 1 even with 100% coverage
+Integration test
 
-.. seealso::
+.. code-block:: shell
 
-   https://github.com/pytest-dev/pytest-cov/issues/373#issuecomment-1472861775
+   make coverage
+   pytest --showlocals --cov="drain_swamp" --cov-report=term-missing \
+   --cov-config=pyproject.toml tests
 
 """
 
+from contextlib import nullcontext as does_not_raise
 from pathlib import Path
 
 import pytest
@@ -58,28 +63,25 @@ def test_is_ok(mystr, expected):
 
 
 testdata_is_relative_required = (
-    pytest.param(None, None, False, marks=pytest.mark.xfail(raises=TypeError)),
-    pytest.param(None, 1.12345, False, marks=pytest.mark.xfail(raises=TypeError)),
-    pytest.param(None, 1, False, marks=pytest.mark.xfail(raises=TypeError)),
-    pytest.param(
-        None, "Hello world!", False, marks=pytest.mark.xfail(raises=TypeError)
-    ),
-    pytest.param(None, (), False, marks=pytest.mark.xfail(raises=ValueError)),
-    pytest.param(None, [], False, marks=pytest.mark.xfail(raises=ValueError)),
-    pytest.param(
-        None, (None, 1.12345, 1), False, marks=pytest.mark.xfail(raises=ValueError)
-    ),
-    (None, (SUFFIX_IN,), False),
-    ("requirements/horse.in", (SUFFIX_IN,), False),
-    (Path("requirements/horse.in"), (SUFFIX_IN,), True),
-    (Path("requirements/horse.in"), ("in",), True),
-    (Path("requirements/horse.in"), (".pip",), False),
+    (None, None, pytest.raises(TypeError), False),
+    (None, 1.12345, pytest.raises(TypeError), False),
+    (None, 1, pytest.raises(TypeError), False),
+    (None, "Hello world!", pytest.raises(TypeError), False),
+    (None, (), pytest.raises(ValueError), False),
+    (None, [], pytest.raises(ValueError), False),
+    (None, (None, 1.12345, 1), pytest.raises(ValueError), False),
+    (None, (SUFFIX_IN,), does_not_raise(), False),
+    ("requirements/horse.in", (SUFFIX_IN,), does_not_raise(), False),
+    (Path("requirements/horse.in"), (SUFFIX_IN,), does_not_raise(), True),
+    (Path("requirements/horse.in"), ("in",), does_not_raise(), True),
+    (Path("requirements/horse.in"), (".pip",), does_not_raise(), False),
     (
         Path("requirements/horse.pip"),
         (SUFFIX_IN,),
+        does_not_raise(),
         False,
     ),
-    (Path("requirements/horse.in"), (".tar", ".gz"), False),
+    (Path("requirements/horse.in"), (".tar", ".gz"), does_not_raise(), False),
 )
 ids_is_relative_required = (
     "ext unsupported type None",
@@ -100,14 +102,17 @@ ids_is_relative_required = (
 
 
 @pytest.mark.parametrize(
-    "relative_path, exts, expected",
+    "relative_path, exts, expectation, expected",
     testdata_is_relative_required,
     ids=ids_is_relative_required,
 )
-def test_is_relative_required(relative_path, exts, expected):
+def test_is_relative_required(relative_path, exts, expectation, expected):
+    """Test is_relative_required."""
     # pytest --showlocals --log-level INFO -k "test_is_relative_required" tests
-    actual = is_relative_required(path_relative=relative_path, extensions=exts)
-    assert actual == expected
+    with expectation:
+        actual = is_relative_required(path_relative=relative_path, extensions=exts)
+    if isinstance(expectation, does_not_raise):
+        assert actual == expected
 
 
 testdata_click_bool = (

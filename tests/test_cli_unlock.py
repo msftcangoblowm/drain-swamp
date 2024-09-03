@@ -764,7 +764,8 @@ def test_create_links_exceptions(
             tmp_dir_path,
         ]
         result = runner.invoke(create_links, func_cmd)
-        assert result.exit_code == 3
+        exit_code_actual = result.exit_code
+        assert exit_code_actual == 3
 
         # malformed toml / backend only --> PyProjectTOMLParseError
         path_pyproject_toml_4 = Path(__file__).parent.joinpath(
@@ -773,7 +774,8 @@ def test_create_links_exceptions(
         expected = 4
         path_f = prep_pyproject_toml(path_pyproject_toml_4, path_tmp_dir)
         result = runner.invoke(create_links, func_cmd)
-        assert result.exit_code == expected
+        exit_code_actual = result.exit_code
+        assert exit_code_actual == expected
 
         # unsupported backend (5) -- note BackendType.load_factory call is wrong
         path_pyproject_toml_5 = Path(__file__).parent.joinpath(
@@ -783,7 +785,8 @@ def test_create_links_exceptions(
         #    prepare
         path_f = prep_pyproject_toml(path_pyproject_toml_5, path_tmp_dir)
         result = runner.invoke(create_links, func_cmd)
-        assert result.exit_code == expected
+        exit_code_actual = result.exit_code
+        assert exit_code_actual == expected
 
         # Path is expected to be a folder, not a file (2)
         path_pyproject_toml_7 = Path(__file__).parent.joinpath(
@@ -806,7 +809,8 @@ def test_create_links_exceptions(
             return_value=inst,
         ):
             result = runner.invoke(create_links, func_cmd)
-            assert result.exit_code == expected
+            exit_code_actual = result.exit_code
+            assert exit_code_actual == expected
 
         """static dependencies (7)
 
@@ -825,7 +829,8 @@ def test_create_links_exceptions(
             return_value=inst,
         ):
             result = runner.invoke(create_links, func_cmd)
-            assert result.exit_code == expected
+            exit_code_actual = result.exit_code
+            assert exit_code_actual == expected
 
             """
             logger.info(f"result.output: {result.output}")

@@ -17,6 +17,7 @@
 from __future__ import annotations
 
 import logging
+import os
 
 from .backend_abc import BackendType
 from .constants import g_app_name
@@ -288,7 +289,8 @@ class BackendSetupTools(BackendType):
         ret = []
         ret.extend(list(self.compose_dependencies_line(suffix)))
         ret.extend(list(self.compose_optional_lines(suffix)))
-        lines = "\n".join(ret)
+        sep = os.linesep
+        lines = sep.join(ret)
 
         return lines
 

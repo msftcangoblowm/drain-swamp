@@ -739,13 +739,18 @@ def create_links(path, is_set_lock, snippet_co):
        The root directory [default: pyproject.toml directory]
 
     :type path: pathlib.Path
-
     :param is_set_lock:
 
        Default None use current state. 0 make symlinks to ``.lock`` files; 1 set make
        symlinks to ``.unlock`` files.
 
     :type is_set_lock: int | None
+    :param snippet_co:
+
+       Snippet code, within a file, unique id of an editable region, aka snippet.
+       Only necessary if allows for multiple snippets
+
+    :type snippet_co: str | None
     """
     # resolve causing conversion into a str. Should be Path
     if isinstance(path, str):  # pragma: no cover
@@ -772,6 +777,12 @@ def create_links(path, is_set_lock, snippet_co):
         # raise click.ClickException(msg_exc)
         click.secho(str(e), fg="red", err=True)
         sys.exit(5)
+
+    if __debug__:  # pragma: no cover
+        modpath = "drain_swamp.cli_unlock.create_links"
+        print(f"{modpath} inst: {inst.__repr__()}")
+    else:  # pragma: no cover
+        pass
 
     """Create the .lnk (lock dependency state) symlinks
     This normally occurs during package build time

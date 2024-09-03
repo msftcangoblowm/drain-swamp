@@ -12,6 +12,7 @@ Build environment for taking current or tag version
 
 import logging
 import logging.config
+from contextlib import nullcontext as does_not_raise
 from pathlib import Path
 
 import pytest
@@ -30,6 +31,7 @@ testdata_version_file_read_normal = (
             "complete-manage-pip-prod-unlock.pyproject_toml",
         ),
         "src/complete_awesome_perfect/_version.py",
+        does_not_raise(),
         "0.0.5",
     ),
     (
@@ -38,16 +40,17 @@ testdata_version_file_read_normal = (
             "complete-version-txt.pyproject_toml",
         ),
         "VERSION.txt",
+        does_not_raise(),
         "0.0.5",
     ),
-    pytest.param(
+    (
         Path(__file__).parent.joinpath(
             "_bad_files",
             "complete-version-other.pyproject_toml",
         ),
         "VERSION.rst",
+        pytest.raises(ValueError),
         None,
-        marks=pytest.mark.xfail(raises=ValueError),
     ),
 )
 ids_version_file_read_normal = (
@@ -58,13 +61,14 @@ ids_version_file_read_normal = (
 
 
 @pytest.mark.parametrize(
-    "path_config_src, version_file_relpath, kind_expected",
+    "path_config_src, version_file_relpath, expectation, kind_expected",
     testdata_version_file_read_normal,
     ids=ids_version_file_read_normal,
 )
 def test_version_file_read_normal(
     path_config_src,
     version_file_relpath,
+    expectation,
     kind_expected,
     tmp_path,
     prep_pyproject_toml,
@@ -126,25 +130,26 @@ def test_version_file_read_normal(
     prepare_folders_files(seq_empties, path_cwd)
 
     # act
-    write_version_files(kind, path_cwd, write_to, None)
+    with expectation:
+        write_version_files(kind, path_cwd, write_to, None)
+    if isinstance(expectation, does_not_raise):
+        # verify
+        contents_actual = path_f.read_text()
+        if kind_expected is None:
+            assert contents_actual is None
+        else:
+            assert kind in contents_actual
 
-    # confirm
-    contents_actual = path_f.read_text()
-    if kind_expected is None:
-        assert contents_actual is None
-    else:
-        assert kind in contents_actual
+        # next_version empty str | just whitespace | None --> no write to version_file
+        for next_version in next_versions:
+            actual = _tag_version(
+                next_version=next_version,
+                path=path_cwd,
+            )
+            assert isinstance(actual, str)
 
-    # next_version empty str | just whitespace | None --> no write to version_file
-    for next_version in next_versions:
-        actual = _tag_version(
-            next_version=next_version,
-            path=path_cwd,
-        )
-        assert isinstance(actual, str)
-
-    # assert has_logging_occurred(caplog)
-    pass
+        # assert has_logging_occurred(caplog)
+        pass
 
 
 testdata_version_file_read_special = (

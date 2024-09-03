@@ -15,11 +15,15 @@ Unittest for module, drain_swamp.backend_setupttools
 import logging
 import logging.config
 import sys
+from contextlib import nullcontext as does_not_raise
 from pathlib import (
     Path,
     PurePath,
 )
-from unittest.mock import MagicMock
+from unittest.mock import (
+    MagicMock,
+    patch,
+)
 
 import pytest
 
@@ -771,6 +775,21 @@ def test_ensure_folder(tmp_path):
         with pytest.raises(TypeError):
             ensure_folder(invalid)
 
+    # MagicMock with a return_value
+    path_config = Path(__file__).parent.joinpath(
+        "_good_files", "requires-none.pyproject_toml"
+    )
+    parent_dir = Path(__file__).parent.joinpath("conftest.py")
+    with patch(
+        f"{g_app_name}.backend_setuptools.BackendSetupTools.path_config",
+        return_value=tmp_path,
+    ):
+        inst = BackendType.load_factory(path_config, parent_dir=parent_dir)
+        # folder
+        ensure_folder(inst.parent_dir)
+        # file. Will get it's parent
+        ensure_folder(inst.path_config)
+
 
 testdata_is_locked = (
     (
@@ -825,6 +844,7 @@ testdata_is_locked2 = (
             "_good_files",
             "complete.pyproject_toml",
         ),
+        does_not_raise(),
         True,
     ),
     (
@@ -832,40 +852,52 @@ testdata_is_locked2 = (
             "_good_files",
             "complete-manage-pip-prod-unlock.pyproject_toml",
         ),
+        does_not_raise(),
         False,
     ),
-    pytest.param(
+    (
         Path(__file__).parent.joinpath(
             "_bad_files",
             "static_dependencies.pyproject_toml",
         ),
+        pytest.raises(AssertionError),
         None,
-        marks=pytest.mark.xfail(raises=AssertionError),
+    ),
+    (
+        1.1234,
+        pytest.raises(PyProjectTOMLReadError),
+        None,
+    ),
+    (
+        1,
+        pytest.raises(PyProjectTOMLReadError),
+        None,
+    ),
+    (
+        None,
+        pytest.raises(PyProjectTOMLReadError),
+        None,
     ),
 )
 ids_is_locked2 = (
     "Locked",
     "Unlocked",
     "static dependencies. no tool.setuptools.dynamic section",
+    "unsupported type float --> PyProjectTOMLReadError",
+    "unsupported type int --> PyProjectTOMLReadError",
+    "unsupported type None --> PyProjectTOMLReadError",
 )
 
 
 @pytest.mark.parametrize(
-    "path_config, expected",
+    "path_config, expectation, expected",
     testdata_is_locked2,
     ids=ids_is_locked2,
 )
-def test_is_locked(path_config, expected, tmp_path, prep_pyproject_toml):
+def test_is_locked(path_config, expectation, expected, tmp_path, prep_pyproject_toml):
+    """check state of dependency lock."""
     # pytest --showlocals --log-level INFO -k "test_is_locked" -v tests
     # path_config invalids. Must be: pathlib.Path, absolute, to a file
-    invalids = (
-        1.1234,
-        1,
-        None,
-    )
-    for invalid in invalids:
-        with pytest.raises(PyProjectTOMLReadError):
-            BackendType.is_locked(invalid)
 
     # is_file_ok fails --> PyProjectTOMLReadError
     with pytest.raises(PyProjectTOMLReadError):
@@ -875,8 +907,11 @@ def test_is_locked(path_config, expected, tmp_path, prep_pyproject_toml):
     #    does not check existance of requirements files
     path_config_in_tmp = prep_pyproject_toml(path_config, tmp_path)
 
-    actual = BackendType.is_locked(path_config_in_tmp)
-    assert actual is expected
+    with expectation:
+        actual = BackendType.is_locked(path_config_in_tmp)
+
+    if isinstance(expectation, does_not_raise):
+        assert actual is expected
 
 
 def test_resolve_symlinks(tmp_path, prep_pyproject_toml, prepare_folders_files):
