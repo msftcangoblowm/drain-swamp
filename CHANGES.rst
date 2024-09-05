@@ -45,6 +45,13 @@ Changelog
 
 .. scriv-start-here
 
+.. _changes_1-6-6:
+
+Version 1.6.6 — 2024-09-05
+--------------------------
+
+- chore: upgrade cffi. On macos, cffi build fail
+
 .. _changes_1-6-5:
 
 Version 1.6.5 — 2024-09-05

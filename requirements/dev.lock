@@ -8,7 +8,7 @@ blackdoc==0.3.9
     # via -r requirements/dev.in
 certifi==2024.2.2
     # via requests
-cffi==1.16.0
+cffi==1.17.1
     # via cryptography
 charset-normalizer==3.3.2
     # via requests
