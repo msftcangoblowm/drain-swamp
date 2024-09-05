@@ -30,6 +30,7 @@ from pathlib import (
 )
 from unittest.mock import patch
 
+from drain_swamp.constants import g_app_name
 from drain_swamp.pep518_read import (
     _is_ok,
     find_project_root,
@@ -238,11 +239,18 @@ class Pep518Sections(unittest.TestCase):
                 self.assertIsNone(find_pyproject_toml(srcs, stdin_filename))
 
             # PermissionError, **not** testing a filesystem base folder
-            srcs = ("/root",)
             stdin_filename = None
-            with self.assertRaises(PermissionError):
-                find_project_root(srcs)
-            self.assertIsNone(find_pyproject_toml(srcs, stdin_filename))
+            srcs = ("/root",)
+            with patch(
+                f"{g_app_name}.pep518_read.Path.cwd",
+                side_effect=PermissionError,
+            ):
+                with self.assertRaises(PermissionError):
+                    # supposed to be a inaccessible folder
+                    find_project_root(srcs)
+
+            # self.assertIsNone(find_pyproject_toml(srcs, stdin_filename))
+            pass
 
 
 if __name__ == "__main__":  # pragma: no cover

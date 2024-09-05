@@ -249,7 +249,8 @@ def find_pyproject_toml(path_search_start, stdin_filename):
     root was discovered"""
     try:
         path_project_root, _ = find_project_root(path_search_start, stdin_filename)
-    except PermissionError:
+    except PermissionError:  # pragma: no cover
+        # Causing PermissionError is platform.system dependent
         return None
     else:
         path_pyproject_toml = path_project_root / "pyproject.toml"

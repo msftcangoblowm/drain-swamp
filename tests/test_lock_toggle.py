@@ -37,6 +37,7 @@ from unittest.mock import patch
 
 import pytest
 
+from drain_swamp._safe_path import resolve_path
 from drain_swamp.backend_abc import BackendType
 from drain_swamp.backend_setuptools import BackendSetupTools  # noqa: F401
 from drain_swamp.constants import (
@@ -163,7 +164,10 @@ def test_lock_compile(
     expected_count = len(expected)
 
     # dry run. Thank you /bin/true
-    with (patch(f"{g_app_name}.lock_toggle.PATH_PIP_COMPILE", Path("/bin/true")),):
+    with patch(
+        f"{g_app_name}.lock_toggle.resolve_path",
+        return_value=resolve_path("true"),
+    ):
         gen_lock_files = lock_compile(inst)
         actual_count = len(list(gen_lock_files))
         assert actual_count == 0

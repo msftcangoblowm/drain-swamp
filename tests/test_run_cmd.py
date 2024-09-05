@@ -52,9 +52,10 @@ def test_run_cmd(tmp_path, prepare_folders_files):
         assert str_exc == """No such file or directory bin/true"""
 
     # executable path is correct
+    true_path = resolve_path("true")
     valids = (
-        ("/bin/true",),
-        "/bin/true",
+        (true_path,),
+        true_path,
     )
     for cmd in valids:
         t_ret = run_cmd(cmd, cwd=cwd)
@@ -68,7 +69,7 @@ def test_run_cmd(tmp_path, prepare_folders_files):
     prepare_folders_files(seq_rel_paths, tmp_path)
 
     # act
-    cmd = ("drain-swamp", "seed")
+    cmd = (resolve_path("drain-swamp"), "seed")
     t_ret = run_cmd(cmd, cwd=cwd)
     out, err, exit_code, str_exc = t_ret
 

@@ -103,6 +103,10 @@ except ImportError:  # pragma: no cover
 
 from ._package_installed import is_package_installed
 from ._run_cmd import run_cmd
+from ._safe_path import (
+    fix_relpath,
+    resolve_path,
+)
 from .parser_in import TomlParser
 from .version_file._overrides import (
     PRETEND_KEY_NAMED,
@@ -215,7 +219,8 @@ def _current_tag(path=None):
     """
     path_cwd = _path_or_cwd(path)
 
-    cmd = ["/bin/git", "describe", "--tag"]
+    executable_path = resolve_path("git")
+    cmd = (executable_path, "describe", "--tag")
     t_ret = run_cmd(cmd, cwd=path_cwd)
     out, err, exit_code, exc = t_ret
     if exc is not None:
@@ -564,7 +569,8 @@ def _current_version(path=None):
         cmd = ("scm-version", "get")
     else:  # pragma: no cover
         # thru pep366. unittest adds nothing
-        cmd = (sys.executable, "src/drain_swamp/cli_scm_version.py", "get")
+        f_relpath = fix_relpath("src/drain_swamp/cli_scm_version.py")
+        cmd = (sys.executable, f_relpath, "get")
 
     t_ret = run_cmd(cmd, cwd=path_cwd)
     out, err, exit_code, exc = t_ret
@@ -810,8 +816,9 @@ def _get_app_name(path=None):
     """
     path_cwd = _path_or_cwd(path)
 
+    executable_path = resolve_path("git")
     cmd = (
-        "/bin/git",
+        executable_path,
         "rev-parse",
         "--show-toplevel",
     )

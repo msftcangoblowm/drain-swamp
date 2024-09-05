@@ -17,6 +17,7 @@ from pathlib import Path
 
 import pytest
 
+from drain_swamp._safe_path import fix_relpath
 from drain_swamp.constants import (
     LOGGING,
     g_app_name,
@@ -30,7 +31,7 @@ testdata_version_file_read_normal = (
             "_good_files",
             "complete-manage-pip-prod-unlock.pyproject_toml",
         ),
-        "src/complete_awesome_perfect/_version.py",
+        fix_relpath("src/complete_awesome_perfect/_version.py"),
         does_not_raise(),
         "0.0.5",
     ),
@@ -155,7 +156,7 @@ testdata_version_file_read_special = (
             "_bad_files",
             "static-version.pyproject_toml",
         ),
-        "src/complete_awesome_perfect/_version.py",
+        fix_relpath("src/complete_awesome_perfect/_version.py"),
         "0.0.5",
     ),
 )

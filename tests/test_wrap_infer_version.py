@@ -3,10 +3,21 @@
 
 Unittest module :py:mod:`drain_swamp.monkey.wrap_infer_version`
 
+Unit test -- Module
+
 .. code-block:: shell
 
-   pytest --showlocals --log-level INFO tests/test_wrap_infer_version.py
-   pytest --showlocals --cov="drain_swamp" --cov-report=term-missing tests/test_wrap_infer_version.py
+   python -m coverage run --source='drain_swamp.monkey.wrap_infer_version' -m pytest \
+   --showlocals tests/test_wrap_infer_version.py && coverage report \
+   --data-file=.coverage --include="**/monkey/wrap_infer_version.py"
+
+Integration test
+
+.. code-block:: shell
+
+   make coverage
+   pytest --showlocals --cov="drain_swamp" --cov-report=term-missing \
+   --cov-config=pyproject.toml tests
 
 .. seealso::
 

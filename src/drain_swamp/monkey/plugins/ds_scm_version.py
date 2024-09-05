@@ -48,11 +48,14 @@ from __future__ import annotations
 import logging
 import sys
 import warnings
-from pathlib import Path
 from typing import Any
 
 from drain_swamp._package_installed import is_package_installed
 from drain_swamp._run_cmd import run_cmd
+from drain_swamp._safe_path import (
+    fix_relpath,
+    resolve_path,
+)
 from drain_swamp.monkey.config_settings import ConfigSettings
 from drain_swamp.monkey.hooks import markers
 from drain_swamp.monkey.hooks.constants import HOOK_NAMESPACE
@@ -111,10 +114,6 @@ def on_version_infer(config_settings: dict[str, Any]) -> str | None:
     """
     mod_path = "backend plugin ds_scm_version"
 
-    # Use absolute path. Relative path would silently fail
-    p_bin_dir = Path(sys.executable).parent
-    scm_version_path = str(p_bin_dir.joinpath("scm-version"))
-
     is_installed = is_package_installed("drain_swamp")
     ret = None
     with warnings.catch_warnings(record=True) as w:
@@ -135,12 +134,12 @@ def on_version_infer(config_settings: dict[str, Any]) -> str | None:
                 # pep366
                 cmd = [
                     sys.executable,
-                    "src/drain_swamp/cli_scm_version.py",
+                    fix_relpath("src/drain_swamp/cli_scm_version.py"),
                 ]
             else:
                 # ../cli_scm_version.py entrypoint
                 cmd = [
-                    scm_version_path,
+                    resolve_path("scm-version"),
                 ]
             cmd.extend(["get", "--is-write"])
             t_out = run_cmd(cmd, cwd=None)
@@ -171,12 +170,12 @@ def on_version_infer(config_settings: dict[str, Any]) -> str | None:
                 # pep366
                 cmd = [
                     sys.executable,
-                    "src/drain_swamp/cli_scm_version.py",
+                    fix_relpath("src/drain_swamp/cli_scm_version.py"),
                 ]
             else:
                 # ../cli_scm_version.py entrypoint
                 cmd = [
-                    scm_version_path,
+                    resolve_path("scm-version"),
                 ]
             cmd.extend(["write", kind])
             t_out = run_cmd(cmd, cwd=None)

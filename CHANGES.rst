@@ -45,6 +45,14 @@ Changelog
 
 .. scriv-start-here
 
+.. _changes_1-6-5:
+
+Version 1.6.5 — 2024-09-05
+--------------------------
+
+- feat: add safe path module
+- ci(release): update pypa/gh-action-pypi-publish
+
 .. _changes_1-6-4:
 
 Version 1.6.4 — 2024-09-05

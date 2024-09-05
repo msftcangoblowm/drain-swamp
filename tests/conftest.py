@@ -7,7 +7,6 @@ drain-swamp pytest conftest.py
 import copy
 import re
 import shutil
-import sys
 from collections.abc import Sequence
 from pathlib import (
     Path,
@@ -18,6 +17,7 @@ from typing import Any
 import pytest
 
 from drain_swamp._run_cmd import run_cmd
+from drain_swamp._safe_path import resolve_path
 from drain_swamp.backend_abc import (
     get_optionals_cli,
     get_optionals_pyproject_toml,
@@ -437,10 +437,8 @@ def verify_tag_version():
         :returns: True if versions match otherwise False
         :rtype: bool
         """
-        p_bin_dir = Path(sys.executable).parent
-        drainswamp_path = str(p_bin_dir.joinpath("drain-swamp"))
         cmd = [
-            drainswamp_path,
+            resolve_path("drain-swamp"),
             "tag",
         ]
         t_ret = run_cmd(cmd, cwd=cwd)

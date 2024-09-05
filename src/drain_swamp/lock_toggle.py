@@ -86,8 +86,8 @@ from pathlib import (
 
 from ._package_installed import is_package_installed
 from ._run_cmd import run_cmd
+from ._safe_path import resolve_path
 from .constants import (
-    PATH_PIP_COMPILE,
     SUFFIX_LOCKED,
     SUFFIX_SYMLINK,
     SUFFIX_UNLOCKED,
@@ -319,8 +319,9 @@ def lock_compile(inst):
 
     # Serial it's whats for breakfast
     for in_path, out_path in lst_pairs:
+        # str(PATH_PIP_COMPILE),
         cmd = (
-            str(PATH_PIP_COMPILE),
+            resolve_path("pip-compile"),
             "--allow-unsafe",
             "--resolver",
             "backtracking",

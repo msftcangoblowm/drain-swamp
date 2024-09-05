@@ -4,8 +4,9 @@
 Portions of a Path take into account platform must be dealt withpSafely deal with paths.
 
 .. py:data:: __all__
-   :type: tuple[str, str, str, str, str]
-   :value: ("fix_relpath", "is_linux", "is_win", "resolve_path", "resolve_joinpath")
+   :type: tuple[str, str, str, str, str, str]
+   :value: ("fix_relpath", "is_linux", "is_macos", "is_win", \
+   "resolve_path", "resolve_joinpath")
 
    Module exports
 
@@ -21,6 +22,7 @@ from pathlib import (
 __all__ = (
     "fix_relpath",
     "is_linux",
+    "is_macos",
     "is_win",
     "resolve_path",
     "resolve_joinpath",
@@ -44,12 +46,21 @@ def is_linux():  # pragma: no cover
 def is_win():
     """Check platform is Windows
 
-    Frequently called, so answer is cached
-
     :returns: True if platform is Windows
     :rtype: bool
     """
     ret = platform.system().lower() == "windows"
+
+    return ret
+
+
+def is_macos():  # pragma: no cover
+    """Check platform is MacOS
+
+    :returns: True if platform is MacOS
+    :rtype: bool
+    """
+    ret = platform.system().lower() == "darwin"
 
     return ret
 
