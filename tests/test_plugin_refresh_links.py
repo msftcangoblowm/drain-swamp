@@ -1,10 +1,21 @@
 """
 .. moduleauthor:: Dave Faulkmore <https://mastodon.social/@msftcangoblowme>
 
+Unit test -- Module
+
 .. code-block:: shell
 
-   pytest --showlocals --log-level INFO tests/test_plugin_refresh_links.py
-   pytest --showlocals --cov="drain_swamp" --cov-report=term-missing tests/test_plugin_refresh_links.py
+   python -m coverage run --source='drain_swamp.monkey.plugins.ds_refresh_links' -m pytest \
+   --showlocals tests/test_plugin_refresh_links.py && coverage report \
+   --data-file=.coverage --include="**/monkey/plugins/ds_refresh_links.py"
+
+Integration test
+
+.. code-block:: shell
+
+   make coverage
+   pytest --showlocals --cov="drain_swamp" --cov-report=term-missing \
+   --cov-config=pyproject.toml tests
 
 """
 
@@ -100,6 +111,7 @@ ids_is_set_lock = (
     ids=ids_is_set_lock,
 )
 def test_is_set_lock(toml_contents, is_lock_expected, tmp_path):
+    """Test is_set_lock."""
     # pytest --showlocals --log-level INFO -k "test_is_set_lock" tests
     # prepare
     d_section = ConfigSettings.get_section_dict(tmp_path, toml_contents)
@@ -167,6 +179,7 @@ ids_snippet_co = (
     ids=ids_snippet_co,
 )
 def test_snippet_co(config_settings, key, expected_val):
+    """Test _snippet_co."""
     # pytest --showlocals --log-level INFO -k "test_snippet_co" tests
     val_actual = _snippet_co(config_settings, default=None)
     if expected_val is None:
@@ -199,6 +212,7 @@ ids_parent_dir = ("config_settings toml has placeholder for tmp_path",)
     ids=ids_parent_dir,
 )
 def test_parent_dir(toml_contents, tmp_path):
+    """Test _parent_dir."""
     # pytest --showlocals --log-level INFO -k "test_parent_dir" tests
     str_tmp_path = str(tmp_path)
 
@@ -420,6 +434,7 @@ def test_plugin_refresh_links_normal(
     caplog,
     has_logging_occurred,
 ):
+    """Test before_version_infer normal usage."""
     # pytest --showlocals --log-level INFO -k "test_plugin_refresh_links_normal" tests
     LOGGING["loggers"][g_app_name]["propagate"] = True
     logging.config.dictConfig(LOGGING)
@@ -523,6 +538,7 @@ def test_plugin_refresh_links_exceptions(
     caplog,
     has_logging_occurred,
 ):
+    """Test before_version_infer exceptions."""
     # pytest --showlocals --log-level INFO -k "test_plugin_refresh_links_exceptions" tests
     LOGGING["loggers"][g_app_name]["propagate"] = True
     logging.config.dictConfig(LOGGING)

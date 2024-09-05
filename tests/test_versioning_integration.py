@@ -1,7 +1,7 @@
 """
 .. moduleauthor:: Dave Faulkmore <https://mastodon.social/@msftcangoblowme>
 
-Build environment for taking current or tag version
+Build environment for taking current or tag version.
 
 .. code-block:: shell
 
@@ -76,10 +76,7 @@ def test_version_file_read_normal(
     caplog,
     has_logging_occurred,
 ):
-    """version_file contains the tag version, retrieve it
-
-    Does not depend on git
-    """
+    """Version file contains the tag version, retrieve it. Does not depend on git."""
     # pytest --showlocals --log-level INFO -k "test_version_file_read_normal" tests
     LOGGING["loggers"][g_app_name]["propagate"] = True
     logging.config.dictConfig(LOGGING)
@@ -180,6 +177,7 @@ def test_version_file_read_special(
     caplog,
     has_logging_occurred,
 ):
+    """Test write_version_files."""
     # pytest --showlocals --log-level INFO -k "test_version_file_read_special" tests
     kind = "0.0.5"
     relpath_version_file = Path(version_file_relpath)
@@ -232,6 +230,7 @@ def test_version_file_read_invalid(
     prep_pyproject_toml,
     prepare_folders_files,
 ):
+    """Test version file read issues."""
     # pytest --showlocals --log-level INFO -k "test_version_file_read_invalid" tests
     path_config_src = Path(__file__).parent.joinpath(
         "_good_files",

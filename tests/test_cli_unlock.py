@@ -7,11 +7,17 @@ Unittest for entrypoint, cli_unlock
 
 .. code-block:: shell
 
-   pytest --showlocals --log-level INFO tests/test_cli_unlock.py
-   pytest --showlocals --cov="drain_swamp" --cov-report=term-missing tests/test_cli_unlock.py
+   python -m coverage run --source='drain_swamp.cli_unlock' -m pytest \
+   --showlocals tests/test_cli_unlock.py && coverage report \
+   --data-file=.coverage --include="**/cli_unlock.py"
 
-Needs a config file to specify exact files to include / omit from report.
-Will fail with exit code 1 even with 100% coverage
+Integration test
+
+.. code-block:: shell
+
+   make coverage
+   pytest --showlocals --cov="drain_swamp" --cov-report=term-missing \
+   --cov-config=pyproject.toml tests
 
 .. seealso::
 
@@ -46,7 +52,7 @@ from drain_swamp.parser_in import TomlParser
 
 
 def test_cli_main():
-    """Minimally test package version is printed"""
+    """Minimally test package version is printed."""
     runner = CliRunner()
     # --version
     """
@@ -91,6 +97,7 @@ def test_lock_unlock_successfully(
     prep_cmd_unlock_lock,
     prepare_files_empties,
 ):
+    """Test dependency lock and unlock."""
     # pytest --showlocals --log-level INFO -k "test_lock_unlock_successfully" -v tests
     LOGGING["loggers"][g_app_name]["propagate"] = True
     logging.config.dictConfig(LOGGING)
@@ -178,6 +185,7 @@ def test_lock_unlock_and_back_wo_prepare(
     caplog,
     has_logging_occurred,
 ):
+    """Test dependency lock and unlock without prepare."""
     # pytest --showlocals --log-level INFO -k "test_lock_unlock_and_back_wo_prepare" -v tests
     LOGGING["loggers"][g_app_name]["propagate"] = True
     logging.config.dictConfig(LOGGING)
@@ -326,6 +334,7 @@ def test_lock_unlock_and_back_with_prepare(
     prep_cmd_unlock_lock,
     prepare_files_empties,
 ):
+    """Test dependency lock and unlock with prepare."""
     # pytest --showlocals --log-level INFO -k "test_lock_unlock_and_back_with_prepare" -v tests
     LOGGING["loggers"][g_app_name]["propagate"] = True
     logging.config.dictConfig(LOGGING)
@@ -407,6 +416,7 @@ def test_lock_unlock_and_back_with_patch(
     prep_cmd_unlock_lock,
     prepare_files_empties,
 ):
+    """Test dependency lock and unlock with patch."""
     # pytest --showlocals --log-level INFO -k "test_lock_unlock_and_back_with_patch" -v tests
     LOGGING["loggers"][g_app_name]["propagate"] = True
     logging.config.dictConfig(LOGGING)
@@ -603,6 +613,7 @@ def test_lock_unlock_and_back_optionals(
     prep_cmd_unlock_lock,
     prepare_files_empties,
 ):
+    """Test dependency lock and unlock. Optionals."""
     # pytest --showlocals --log-level INFO -k "test_lock_unlock_and_back_optionals" -v tests
     LOGGING["loggers"][g_app_name]["propagate"] = True
     logging.config.dictConfig(LOGGING)
@@ -693,6 +704,7 @@ def test_state_is_lock(
     caplog,
     has_logging_occurred,
 ):
+    """Test state is_lock."""
     # pytest --showlocals --log-level INFO -k "test_state_is_lock" tests
     LOGGING["loggers"][g_app_name]["propagate"] = True
     logging.config.dictConfig(LOGGING)
@@ -747,6 +759,7 @@ def test_state_is_lock(
 def test_create_links_exceptions(
     caplog, tmp_path, prep_pyproject_toml, has_logging_occurred, prepare_folders_files
 ):
+    """Test create symlinks exceptions."""
     # pytest --showlocals --log-level INFO -k "test_create_links_exceptions" tests
     LOGGING["loggers"][g_app_name]["propagate"] = True
     logging.config.dictConfig(LOGGING)
@@ -1003,6 +1016,7 @@ def test_create_links_set_lock(
     has_logging_occurred,
     prepare_folders_files,
 ):
+    """Test create .lnk symlinks set_lock."""
     # pytest --showlocals --log-level INFO -k "test_create_links_set_lock" tests
     LOGGING["loggers"][g_app_name]["propagate"] = True
     logging.config.dictConfig(LOGGING)
@@ -1105,6 +1119,7 @@ def test_create_links_missing_files(
     has_logging_occurred,
     prepare_folders_files,
 ):
+    """Test create .lnk symlinks. Missing files."""
     # pytest --showlocals --log-level INFO -k "test_create_links_missing_files" tests
     LOGGING["loggers"][g_app_name]["propagate"] = True
     logging.config.dictConfig(LOGGING)

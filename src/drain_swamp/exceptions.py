@@ -22,8 +22,7 @@ __all__ = (
 
 
 class PyProjectTOMLReadError(OSError):
-    """There is an issue with the ``pyproject.toml``. Not a file or
-    insufficient permissions
+    """``pyproject.toml`` Issue, not a file or insufficient permissions.
 
     Although an :py:exc:`OSError`, it's generic. The cause of the error
     is not passed forward (aka allowed to be lost)
@@ -33,34 +32,37 @@ class PyProjectTOMLReadError(OSError):
     """
 
     def __init__(self, msg: str) -> None:
+        """Class constructor."""
         errno = None
         super().__init__(errno, msg)
 
 
 class PyProjectTOMLParseError(ValueError):
-    """No point in continuing if the ``pyproject.toml`` can't be parsed and loaded
+    """No point in continuing if the ``pyproject.toml`` can't be parsed and loaded.
 
     :ivar msg: The error message
     :vartype msg: str
     """
 
     def __init__(self, msg: str) -> None:
+        """Class constructor."""
         super().__init__(msg)
 
 
 class BackendNotSupportedError(ValueError):
-    """Do not have support yet for given Python package backend
+    """Do not have support yet for given Python package backend.
 
     :ivar msg: The error message
     :vartype msg: str
     """
 
     def __init__(self, msg: str) -> None:
+        """Class constructor."""
         super().__init__(msg)
 
 
 class MissingRequirementsFoldersFiles(AssertionError):
-    """Neglected to create/prepare requirements folders and ``.in`` files
+    """Neglected to create/prepare requirements folders and ``.in`` files.
 
     Unabated would produce an empty string snippet. Instead provide
     user feedback
@@ -70,4 +72,5 @@ class MissingRequirementsFoldersFiles(AssertionError):
     """
 
     def __init__(self, msg: str) -> None:
+        """Class constructor."""
         super().__init__(msg)

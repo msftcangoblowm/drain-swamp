@@ -1,7 +1,7 @@
 """
 .. moduleauthor:: Dave Faulkmore <https://mastodon.social/@msftcangoblowme>
 
-Get scm version, limit to setuptool-scm codebase
+Get scm version, limit to setuptool-scm codebase.
 
 """
 
@@ -114,7 +114,7 @@ def main():
     help=help_write_to,
 )
 def get_scm_version(path, is_write, write_to):
-    """scm version, setuptools-scm codebase only
+    """scm version, setuptools-scm codebase only.
 
     \f
     :param path:
@@ -185,6 +185,19 @@ def get_scm_version(path, is_write, write_to):
     help=help_write_to,
 )
 def write_scm_version(scm_ver, path, write_to):
+    """Write scm str to version file.
+
+    \f
+    :param scm_ver: version str
+    :type scm_ver: str
+    :param path:
+
+       The root directory [default: pyproject.toml directory]
+
+    :type path: pathlib.Path
+    :param write_to: During testing provide alternative version file path
+    :type write_to: str | None
+    """
     # resolve causing conversion into a str. Should be Path
     if isinstance(path, str):  # pragma: no cover
         path_cwd = Path(path)
@@ -218,4 +231,5 @@ def write_scm_version(scm_ver, path, write_to):
 
 
 if __name__ == "__main__":  # pragma: no cover
+    """Process shield."""
     main()

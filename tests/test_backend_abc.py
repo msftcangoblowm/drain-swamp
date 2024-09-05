@@ -3,12 +3,23 @@
 
 ..
 
-Unittest for module, drain_swamp.backend_setupttools
+Unittest for module, drain_swamp.backend_abc
+
+Unit test -- Module
 
 .. code-block:: shell
 
-   pytest --showlocals --log-level INFO tests/test_backend_abc.py
-   pytest --showlocals --cov="drain_swamp" --cov-report=term-missing tests/test_backend_abc.py
+   python -m coverage run --source='drain_swamp.backend_abc' -m pytest \
+   --showlocals tests/test_backend_abc.py && coverage report \
+   --data-file=.coverage --include="**/backend_abc.py"
+
+Integration test
+
+.. code-block:: shell
+
+   make coverage
+   pytest --showlocals --cov="drain_swamp" --cov-report=term-missing \
+   --cov-config=pyproject.toml tests
 
 """
 
@@ -28,6 +39,7 @@ from unittest.mock import (
 import pytest
 
 from drain_swamp._run_cmd import run_cmd
+from drain_swamp._safe_path import resolve_path
 from drain_swamp.backend_abc import (
     BackendType,
     ensure_folder,
@@ -110,6 +122,7 @@ ids_determine_backend = [
     ids=ids_determine_backend,
 )
 def test_determine_backend(path, expected):
+    """Test determine backend."""
     # pytest --showlocals --log-level INFO -k "test_determine_backend" tests
     tp = TomlParser(path)
     d_pyproject_toml = tp.d_pyproject_toml
@@ -118,6 +131,7 @@ def test_determine_backend(path, expected):
 
 
 def test_try_dict_update(tmp_path, caplog, has_logging_occurred, prepare_folders_files):
+    """Test try_dict_update."""
     # pytest --showlocals --log-level INFO -k "test_try_dict_update" -v tests
     LOGGING["loggers"][g_app_name]["propagate"] = True
     logging.config.dictConfig(LOGGING)
@@ -177,6 +191,7 @@ def test_get_required_pyproject_toml(
     tmp_path,
     prepare_folders_files,
 ):
+    """Test get_required_pyproject_toml."""
     # pytest --showlocals --log-level INFO -k "test_get_required_pyproject_toml" -v tests
     tp = TomlParser(path)
     d_pyproject_toml = tp.d_pyproject_toml
@@ -253,39 +268,53 @@ ids_get_required_cli = (
     testdata_get_required_cli,
     ids=ids_get_required_cli,
 )
+@pytest.mark.parametrize(
+    "is_prepare, is_bypass",
+    [
+        (
+            False,
+            True,
+        ),
+        (
+            True,
+            None,
+        ),
+        (
+            True,
+            1.2345,
+        ),
+        (
+            True,
+            False,
+        ),
+    ],
+    ids=[
+        "is_prepare=False, is_bypass=True",
+        "is_prepare=True, is_bypass=None",
+        "is_prepare=True, is_bypass=1.2345",
+        "is_prepare=True, is_bypass=False",
+    ],
+)
 def test_get_required_cli(
     lst_create_it,
     t_required,
     t_expected,
+    is_prepare,
+    is_bypass,
     tmp_path,
     prepare_folders_files,
 ):
+    """Test get_required_cli."""
     # pytest --showlocals --log-level INFO -k "test_get_required_cli" -v tests
-    # bypass True
-    t_actual = get_required_cli(tmp_path, required=t_required, is_bypass=True)
+    if is_prepare:
+        prepare_folders_files(lst_create_it, tmp_path)
+
+    t_actual = get_required_cli(tmp_path, required=t_required, is_bypass=is_bypass)
     if t_actual is None:
         assert t_actual is None
     else:
         assert t_actual[0] == t_expected[0]
         assert t_actual[1] == tmp_path / t_expected[1]
-
-    # bypass False
-    #    prepare
-    prepare_folders_files(lst_create_it, tmp_path)
-
-    no_cheatings = (
-        None,
-        1.12345,
-        False,
-    )
-    for is_bypass in no_cheatings:
-        t_actual = get_required_cli(tmp_path, required=t_required, is_bypass=is_bypass)
-        if t_actual is None:
-            assert t_actual is None
-        else:
-            assert isinstance(t_actual, Sequence)
-            assert t_actual[0] == t_expected[0]
-            assert t_actual[1] == tmp_path / t_expected[1]
 
 
 testdata_required = [
@@ -365,6 +394,7 @@ def test_get_required(
     caplog,
     has_logging_occurred,
 ):
+    """Test BackendType.get_required."""
     # pytest --showlocals --log-level INFO -k "test_get_required" -v tests
     LOGGING["loggers"][g_app_name]["propagate"] = True
     logging.config.dictConfig(LOGGING)
@@ -375,11 +405,13 @@ def test_get_required(
     # prepare
     prepare_folders_files(lst_create_it, tmp_path)
 
+    # act
     tp = TomlParser(path)
     d_pyproject_toml = tp.d_pyproject_toml
     t_actual = BackendType.get_required(
         d_pyproject_toml, tmp_path, required=cli_required
     )
+    # verify
     if t_actual is None:
         # assert has_logging_occurred(caplog)
         assert t_actual == t_expected
@@ -427,6 +459,7 @@ ids_get_optionals_cli = (
     ids=ids_get_optionals_cli,
 )
 def test_get_optionals_cli(d_pairs, d_expected, tmp_path, prepare_folders_files):
+    """Test get_optionals_cli."""
     # pytest --showlocals --log-level INFO -k "test_get_optionals_cli" -v tests
 
     # seq_rel_paths not a Sequence
@@ -502,6 +535,7 @@ def test_get_optionals_pyproject_toml(
     has_logging_occurred,
     prepare_folders_files,
 ):
+    """Test get_optionals_pyproject_toml."""
     # pytest --showlocals --log-level INFO -k "test_get_optionals_pyproject_toml" -v tests
     LOGGING["loggers"][g_app_name]["propagate"] = True
     logging.config.dictConfig(LOGGING)
@@ -591,6 +625,7 @@ def test_get_optionals_both(
     tmp_path,
     prepare_folders_files,
 ):
+    """Test get_optionals_pyproject_toml."""
     # pytest --showlocals --log-level INFO -k "test_get_optionals" -v tests
     tp = TomlParser(path)
     d_pyproject_toml = tp.d_pyproject_toml
@@ -652,6 +687,7 @@ def test_folders_implied_init(
     tmp_path,
     prepare_folders_files,
 ):
+    """Test folders_implied_init."""
     # pytest --showlocals --log-level INFO -k "test_folders_implied_init" -v tests
     # input lacks abs path. Including expected
 
@@ -707,6 +743,7 @@ def test_folders_additional_init(
     s_expected,
     tmp_path,
 ):
+    """Test folders_additional_init."""
     # pytest --showlocals --log-level INFO -k "test_folders_additional_init" -v tests
     # prepare
     for path_dir_implied in s_folders_implied:
@@ -743,6 +780,7 @@ def test_folders_additional_init(
 
 
 def test_ensure_folder(tmp_path):
+    """Test ensure_folder."""
     # pytest --showlocals --log-level INFO -k "test_ensure_folder" -v tests
     # folder
     path_actual = ensure_folder(tmp_path)
@@ -895,7 +933,7 @@ ids_is_locked2 = (
     ids=ids_is_locked2,
 )
 def test_is_locked(path_config, expectation, expected, tmp_path, prep_pyproject_toml):
-    """check state of dependency lock."""
+    """Check state of dependency lock."""
     # pytest --showlocals --log-level INFO -k "test_is_locked" -v tests
     # path_config invalids. Must be: pathlib.Path, absolute, to a file
 
@@ -914,47 +952,77 @@ def test_is_locked(path_config, expectation, expected, tmp_path, prep_pyproject_
         assert actual is expected
 
 
-def test_resolve_symlinks(tmp_path, prep_pyproject_toml, prepare_folders_files):
-    # pytest --showlocals --log-level INFO -k "test_resolve_symlinks" -v tests
-    path_config_src = Path(__file__).parent.joinpath(
-        "_good_files",
-        "complete-lnk-files.pyproject_toml",
-    )
-    path_f = prep_pyproject_toml(path_config_src, tmp_path)
-
-    d_ins = {
-        "prod": "requirements/prod.in",
-        "pip": "requirements/pip.in",
-        "tox": "requirements/tox.in",
-        "manage": "requirements/manage.in",
-    }
-    seq_ins = list(d_ins.values())
-    prepare_folders_files(seq_ins, tmp_path)
-
-    seq_unlocks = (
-        "requirements/prod.unlock",
-        "requirements/pip.unlock",
-        "requirements/tox.unlock",
-        "requirements/manage.unlock",
-        "requirements/prod.lock",
-        "requirements/pip.lock",
-        "requirements/tox.lock",
-        "requirements/manage.lock",
-    )
-    prepare_folders_files(seq_unlocks, tmp_path)
-
-    # order matters
-    cmds = (
+testdata_resolve_symlinks = (
+    (
+        Path(__file__).parent.joinpath(
+            "_good_files",
+            "complete-lnk-files.pyproject_toml",
+        ),
+        {
+            "prod": "requirements/prod.in",
+            "pip": "requirements/pip.in",
+            "tox": "requirements/tox.in",
+            "manage": "requirements/manage.in",
+        },
         (
-            ("pipenv-unlock", "refresh", "--path", str(tmp_path), "--set-lock", "0"),
+            "requirements/prod.unlock",
+            "requirements/pip.unlock",
+            "requirements/tox.unlock",
+            "requirements/manage.unlock",
+            "requirements/prod.lock",
+            "requirements/pip.lock",
+            "requirements/tox.lock",
+            "requirements/manage.lock",
+        ),
+    ),
+)
+
+
+@pytest.mark.parametrize(
+    "path_config_src, d_ins, seq_unlocks",
+    testdata_resolve_symlinks,
+    ids=("complete link files",),
+)
+@pytest.mark.parametrize(
+    "is_set_lock, expected",
+    (
+        (
+            "0",
             False,
         ),
         (
-            ("pipenv-unlock", "refresh", "--path", str(tmp_path), "--set-lock", "1"),
+            "1",
             True,
         ),
+    ),
+    ids=("unlock", "lock"),
+)
+def test_resolve_symlinks(
+    path_config_src,
+    d_ins,
+    seq_unlocks,
+    is_set_lock,
+    expected,
+    tmp_path,
+    prep_pyproject_toml,
+    prepare_folders_files,
+):
+    """Test and verify refresh symlinks"""
+    # pytest --showlocals --log-level INFO -k "test_resolve_symlinks" -v tests
+    path_f = prep_pyproject_toml(path_config_src, tmp_path)
+
+    seq_ins = list(d_ins.values())
+    prepare_folders_files(seq_ins, tmp_path)
+
+    prepare_folders_files(seq_unlocks, tmp_path)
+
+    cmd = (
+        resolve_path("pipenv-unlock"),
+        "refresh",
+        "--set-lock",
+        is_set_lock,
     )
-    for cmd, expected in cmds:
-        run_cmd(cmd, cwd=tmp_path)
-        actual = BackendType.is_locked(path_f)
-        assert actual is expected
+
+    run_cmd(cmd, cwd=tmp_path)
+    actual = BackendType.is_locked(path_f)
+    assert actual is expected

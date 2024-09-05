@@ -1,13 +1,25 @@
 """
 .. moduleauthor:: Dave Faulkmore <https://mastodon.social/@msftcangoblowme>
 
+Unit test -- Module
+
 .. code-block:: shell
 
-   pytest --showlocals --log-level INFO tests/test_patch_pyproject_reading.py
-   pytest --showlocals --cov="drain_swamp" --cov-report=term-missing tests/test_patch_pyproject_reading.py
+   python -m coverage run --source='drain_swamp.monkey.patch_pyproject_reading' -m pytest \
+   --showlocals tests/test_patch_pyproject_reading.py && coverage report \
+   --data-file=.coverage --include="**/monkey/patch_pyproject_reading.py"
+
+Integration test
+
+.. code-block:: shell
+
+   make coverage
+   pytest --showlocals --cov="drain_swamp" --cov-report=term-missing \
+   --cov-config=pyproject.toml tests
 
 """
 
+from contextlib import nullcontext as does_not_raise
 from pathlib import (
     Path,
     PurePath,
@@ -18,6 +30,7 @@ import pytest
 from drain_swamp.monkey.patch_pyproject_reading import (
     PyProjectData,
     ReadPyproject,
+    ReadPyprojectStrict,
 )
 
 testdata_pyproject_data = (
@@ -37,7 +50,7 @@ ids_pyproject_data = ("empty section, pyproject.toml contains only name",)
     ids=ids_pyproject_data,
 )
 def test_pyproject_data(tool_name, section, expected, project, tmp_path):
-    "From pyproject.toml confirm can get project name"
+    """From pyproject.toml confirm can get project name."""
     data = PyProjectData(tmp_path, tool_name, project, section)
     assert data.project_name == expected
 
@@ -74,6 +87,7 @@ ids_read_pyproject = (
 def test_read_pyproject(
     p_toml_file, tool_name, expected_tool_name, tmp_path, prep_pyproject_toml
 ):
+    """Call ReadPyproject __call__. Pass in kwargs."""
     # prepare
     prep_pyproject_toml(p_toml_file, tmp_path)
 
@@ -86,39 +100,87 @@ def test_read_pyproject(
     assert data.tool_name == expected_tool_name
 
 
-def test_read_pyproject_exception(tmp_path):
-    # No pyproject.toml file and no such section
-    tool_name = "Bob"
-    p_toml_file = tmp_path.joinpath("pyproject.toml")
-    with pytest.raises(LookupError):
-        ReadPyproject()(path=p_toml_file, tool_name=tool_name)
+testdata_read_pyproject_exception = (
+    (
+        "Bob",
+        Path(__file__).parent.joinpath(
+            "_good_files",
+            "full-course-meal-and-shower.pyproject_toml",
+        ),
+        pytest.raises(LookupError),
+        False,
+        False,
+    ),
+    (
+        "Bob",
+        Path(__file__).parent.joinpath(
+            "_good_files",
+            "complete-manage-pip-prod-unlock.pyproject_toml",
+        ),
+        pytest.raises(LookupError),
+        False,
+        False,
+    ),
+    (
+        "pipenv-unlock",
+        Path(__file__).parent.joinpath(
+            "_good_files",
+            "complete-manage-pip-prod-unlock.pyproject_toml",
+        ),
+        does_not_raise(),
+        True,
+        False,
+    ),
+    (
+        ["drain-swamp", "pipenv-unlock"],
+        Path(__file__).parent.joinpath(
+            "_good_files",
+            "complete-manage-pip-prod-unlock.pyproject_toml",
+        ),
+        does_not_raise(),
+        True,
+        True,
+    ),
+)
+ids_read_pyproject_exception = (
+    "Nonexistant pyproject.toml",
+    "No such section [tool.Bob]",
+    "str",
+    "Sequence[str]",
+)
 
-    # no [tool.Bob] section
-    p_toml_file = Path(__file__).parent.joinpath(
-        "_good_files",
-        "complete-manage-pip-prod-unlock.pyproject_toml",
-    )
-    with pytest.raises(LookupError):
-        ReadPyproject()(path=p_toml_file, tool_name=tool_name)
 
-    # str
-    tool_name = "pipenv-unlock"
-    data_0 = ReadPyproject()(path=p_toml_file, tool_name=tool_name)
-    assert isinstance(data_0.project, dict)
-    assert isinstance(data_0.section, dict)
-    assert data_0.project_name == "complete-awesome-perfect"
-    #    from section drain-swamp
-    assert "copyright_start_year" not in data_0.section.keys()
-    #    from section pipenv-unlock
-    assert "version_file" in data_0.section.keys()
+@pytest.mark.parametrize(
+    "tool_name, p_toml_file, expectation, in_keys_version_file, in_keys_copyright",
+    testdata_read_pyproject_exception,
+    ids=ids_read_pyproject_exception,
+)
+def test_read_pyproject_exception(
+    tool_name,
+    p_toml_file,
+    expectation,
+    in_keys_version_file,
+    in_keys_copyright,
+):
+    """ReadPyproject __call__ exceptions."""
+    # pytest --showlocals -vv --log-level INFO -k "test_read_pyproject_exception" tests
+    with expectation:
+        data_1 = ReadPyproject()(path=p_toml_file, tool_name=tool_name)
+    if isinstance(expectation, does_not_raise):
+        assert isinstance(data_1.project, dict)
+        assert isinstance(data_1.section, dict)
+        assert data_1.project_name == "complete-awesome-perfect"
+        keys = data_1.section.keys()
+        #    from section drain-swamp
+        assert in_keys_copyright == ("copyright_start_year" in keys)
+        #    from section pipenv-unlock
+        assert in_keys_version_file == ("version_file" in keys)
 
-    # # Sequence[str]
-    tool_name = ["drain-swamp", "pipenv-unlock"]
-    data_1 = ReadPyproject()(path=p_toml_file, tool_name=tool_name)
-    assert isinstance(data_1.project, dict)
-    assert isinstance(data_1.section, dict)
-    assert data_1.project_name == "complete-awesome-perfect"
-    #    from section drain-swamp
-    assert "copyright_start_year" in data_1.section.keys()
-    #    from section pipenv-unlock
-    assert "version_file" in data_1.section.keys()
+
+def test_update_dict_strict():
+    """Update a ReadPyprojectStrict dict."""
+    # pytest --showlocals -vv --log-level INFO -k "test_update_dict_strict" tests
+    d_a = {"root": "the root"}
+    d_b = {"dist_name": "george"}
+    ReadPyprojectStrict().update(d_a, d_b)
+    assert "dist_name" in d_a.keys()

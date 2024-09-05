@@ -1,13 +1,21 @@
 """
 .. moduleauthor:: Dave Faulkmore <https://mastodon.social/@msftcangoblowme>
 
+Unit test -- Module
+
 .. code-block:: shell
 
-   pytest --showlocals --log-level INFO tests/test_igor_utils.py
-   pytest --showlocals --cov="drain_swamp" --cov-report=term-missing tests/test_igor_utils.py
+   python -m coverage run --source='drain_swamp.igor_utils' -m pytest \
+   --showlocals tests/test_igor_utils.py && coverage report \
+   --data-file=.coverage --include="**/igor_utils.py"
 
-Needs a config file to specify exact files to include / omit from report.
-Will fail with exit code 1 even with 100% coverage
+Integration test
+
+.. code-block:: shell
+
+   make coverage
+   pytest --showlocals --cov="drain_swamp" --cov-report=term-missing \
+   --cov-config=pyproject.toml tests
 
 """
 
@@ -17,7 +25,11 @@ import logging
 import logging.config
 import re
 import subprocess
-from pathlib import Path
+from contextlib import nullcontext as does_not_raise
+from pathlib import (
+    Path,
+    PurePath,
+)
 from unittest.mock import (
     MagicMock,
     Mock,
@@ -49,40 +61,83 @@ from drain_swamp.igor_utils import (
 from drain_swamp.version_file.dump_version import write_version_files
 from drain_swamp.version_semantic import _scm_key
 
-
-def test_update_file(tmp_path, prep_pyproject_toml):
-    invalids = (
+testdata_update_file = (
+    (
         None,
+        None,
+        False,
+    ),
+    (
         "",
-        "   ",
+        None,
+        False,
+    ),
+    (
+        "    ",
+        None,
+        False,
+    ),
+    (
         1.2345,
-    )
+        None,
+        False,
+    ),
+    (
+        PurePath("hi/there"),
+        None,
+        False,
+    ),
+    (
+        Path(__file__).parent.joinpath(
+            "_changelog_files",
+            "CHANGES-empty.rst",
+        ),
+        "Nothing yet.",
+        True,
+    ),
+)
+ids_update_file = (
+    "None",
+    "empty string len 0",
+    "whitespace string len not 0",
+    "unsupported type float",
+    "relative path",
+    "skeleton changelog",
+)
+
+
+@pytest.mark.parametrize(
+    "rel_path, expected, is_normal",
+    testdata_update_file,
+    ids=ids_update_file,
+)
+def test_update_file(rel_path, expected, is_normal, tmp_path, prep_pyproject_toml):
+    """Test update_file."""
+    # pytest --showlocals --log-level INFO -k "test_update_file" tests
     pattern = re.escape(SCRIV_START)
     replacement = f"{UNRELEASED}\n\nNothing yet.\n\n\n" + SCRIV_START
-    for invalid in invalids:
-        out = update_file(invalid, pattern, replacement)
+
+    # act
+    if not is_normal:
+        out = update_file(rel_path, pattern, replacement)
+        # verify
         assert out is None
+    else:
+        # prepare
+        #    CHANGES.rst
+        path_empty = prep_pyproject_toml(rel_path, tmp_path, rename="CHANGES.rst")
+        existing_text = path_empty.read_text()
 
-    # not absolute Path
-    rel_path = Path("hi/there")
-    out = update_file(rel_path, pattern, replacement)
-    assert out is None
-
-    # Need a successful replacement, with differencing file content afterwards
-    path_change_rst = Path(__file__).parent.joinpath(
-        "_changelog_files",
-        "CHANGES-empty.rst",
-    )
-    path_empty = prep_pyproject_toml(path_change_rst, tmp_path, rename="CHANGES.rst")
-    existing_text = path_empty.read_text()
-    update_file(
-        path_empty,
-        pattern,
-        replacement,
-    )
-    actual_text = path_empty.read_text()
-    assert existing_text != actual_text
-    assert "Nothing yet." in actual_text
+        # act
+        update_file(
+            path_empty,
+            pattern,
+            replacement,
+        )
+        # verify
+        actual_text = path_empty.read_text()
+        assert existing_text != actual_text
+        assert expected in actual_text
 
 
 testdata_seed_changelog = (
@@ -233,6 +288,8 @@ def test_edit_for_release(
     caplog,
     has_logging_occurred,
 ):
+    """Test edit_for_release."""
+    # pytest --showlocals --log-level INFO -k "test_edit_for_release" tests
     LOGGING["loggers"][g_app_name]["propagate"] = True
     logging.config.dictConfig(LOGGING)
     logger = logging.getLogger(name=g_app_name)
@@ -292,7 +349,7 @@ def test_edit_for_release(
 
 
 def test_build_package(prep_pyproject_toml, tmp_path):
-    """Fake world fake building package"""
+    """Fake world fake building package."""
     # pytest --showlocals --log-level INFO -k "test_build_package" tests
     # Not a folder
     path_passwd = tmp_path.joinpath("password-secret.txt")
@@ -402,38 +459,54 @@ def test_build_package(prep_pyproject_toml, tmp_path):
 
 
 testdata_pretag = (
-    ("1!v1.0.1+g4b33a80.d20240129", "1.0.1"),
-    ("0.1.1.candidate1dev1+g4b33a80.d20240129", "0.1.1rc1.dev1"),
+    (
+        "1!v1.0.1+g4b33a80.d20240129",
+        "1.0.1",
+        does_not_raise(),
+    ),
+    (
+        "0.1.1.candidate1dev1+g4b33a80.d20240129",
+        "0.1.1rc1.dev1",
+        does_not_raise(),
+    ),
+    (
+        "five element spirit or nature?",
+        "Version contains invalid token. Invalid version:",
+        does_not_raise(),
+    ),
 )
 ids_pretag = (
     "with epoch locals and prepended v",
     "malformed semantic ver str raise ValueError",
+    "complete garbage str that is not a semantic version str",
 )
 
 
 @pytest.mark.parametrize(
-    "ver, expected",
+    "ver, expected, expectation",
     testdata_pretag,
     ids=ids_pretag,
 )
-def test_pretag(ver, expected):
-    """Sanitize ver str
+def test_pretag(ver, expected, expectation):
+    """Sanitize ver str.
 
     From just this unittest non-obvious how to sanitize a ver str containing an epoch.
     Shell escape doesn't work. Instead surround by single quotes"""
     # pytest --showlocals --log-level INFO -k "test_pretag" tests
-    is_success, actual = pretag(ver)
-    if is_success:
-        assert actual == expected
-    else:
-        # prints the error message
-        assert len(actual) != 0
-        # not the fixed semantic version str
-        assert actual != expected
+    with expectation:
+        is_success, actual = pretag(ver)
+    if isinstance(expectation, does_not_raise):
+        if is_success:
+            assert actual == expected
+        else:
+            # prints the error message
+            assert len(actual) != 0
+            # not the fixed semantic version str
+            assert expected in actual
 
 
 def test_get_current_version(path_project_base):
-    """Get the current version of this package. Requires package setuptools-scm"""
+    """Get the current version of this package. Requires package setuptools-scm."""
     ver = get_current_version(path_project_base())
     if is_package_installed("setuptools_scm"):
         assert isinstance(ver, str)
@@ -442,7 +515,7 @@ def test_get_current_version(path_project_base):
 
 
 def test_print_cheats(path_project_base, prep_pyproject_toml, tmp_path):
-    """prints non-vital info. Useful urls and commands"""
+    """Prints non-vital info. Useful urls and commands."""
     # pytest --showlocals --log-level INFO -k "test_print_cheats" tests
     path_cwd = path_project_base()
     kinds = ("tag", "current")
@@ -525,6 +598,7 @@ def test_get_version_file_path(
     tmp_path,
     prep_pyproject_toml,
 ):
+    """Test get_version_file_path."""
     # pytest --showlocals --log-level INFO -k "test_get_version_file_path" tests
 
     path_f = tmp_path / "pyproject.toml"
@@ -563,6 +637,7 @@ def test_alter_env(
     prepare_folders_files,
     tmp_path,
 ):
+    """Test AlterEnv."""
     # pytest --showlocals --log-level INFO -k "test_alter_env" tests
     path_cwd = path_project_base()
     # NotADirectoryError
@@ -638,6 +713,7 @@ def test_alter_env(
 
 
 def test_write_version_file(tmp_path, prep_pyproject_toml):
+    """Test write_version_file."""
     # pytest --showlocals --log-level INFO -k "test_write_version_file" tests
     # prepare
     p_toml_file = Path(__file__).parent.joinpath(
@@ -689,6 +765,7 @@ def test_write_version_file(tmp_path, prep_pyproject_toml):
 
 
 def test_get_tag_version(tmp_path, prep_pyproject_toml, prepare_folders_files):
+    """Test get_tag_version."""
     # pytest --showlocals --log-level INFO -k "test_get_tag_version" tests
     path_cwd = tmp_path / "complete_awesome_perfect"
     path_cwd.mkdir()

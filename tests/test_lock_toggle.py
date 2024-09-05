@@ -5,10 +5,21 @@
 
 Unittest for module, drain_swamp.lock_toggle
 
+Unit test -- Module
+
 .. code-block:: shell
 
-   pytest --showlocals --log-level INFO tests/test_lock_toggle.py
-   pytest --showlocals --cov="drain_swamp" --cov-report=term-missing tests/test_lock_toggle.py
+   python -m coverage run --source='drain_swamp.lock_toggle' -m pytest \
+   --showlocals tests/test_lock_toggle.py && coverage report \
+   --data-file=.coverage --include="**/lock_toggle.py"
+
+Integration test
+
+.. code-block:: shell
+
+   make coverage
+   pytest --showlocals --cov="drain_swamp" --cov-report=term-missing \
+   --cov-config=pyproject.toml tests
 
 """
 
@@ -48,8 +59,16 @@ from drain_swamp.lock_toggle import (
 
 @pytest.fixture
 def cleanup_symlinks(tmp_path):
+    """Fixture to cleanup .lnk symlinks."""
+
     def func(seq_expected, is_verify):
-        """Verify symlinks optional"""
+        """Verify symlinks optional.
+
+        :param seq_expected: Sequence of relative path
+        :type seq_expected: collections.abc.Sequence[pathlib.Path]
+        :param is_verify: True to first assert symlink exists
+        :type is_verify: bool
+        """
         for relpath_expected in seq_expected:
             abspath_expected = tmp_path.joinpath(relpath_expected)
             is_symlinks_exist = (
@@ -122,6 +141,7 @@ def test_lock_compile(
     caplog,
     has_logging_occurred,
 ):
+    """Test creating dependency lock file."""
     # pytest --showlocals --log-level INFO -k "test_lock_compile" tests
     LOGGING["loggers"][g_app_name]["propagate"] = True
     logging.config.dictConfig(LOGGING)

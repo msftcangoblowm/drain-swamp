@@ -4,45 +4,34 @@
 Wrapper for :py:func:`subprocess.run` calls. Blocking and not multiprocessing
 
 .. py:data:: __all__
-   :type: tuple[str, str]
-   :value: ("run_cmd", "resolve_path")
+   :type: tuple[str]
+   :value: ("run_cmd",)
 
    Module exports
+
+.. seealso::
+
+   :py:mod:`drain_swamp._safe_path` contains path handling helper functions
+   for dealing with:
+
+   - getting absolute path to executable
+
+   - fixing relative path
+
+   - joinpath
 
 """
 
 import os
-import platform
 import shlex
-import shutil
 import subprocess
 from collections.abc import Sequence
 from pathlib import (
     Path,
     PurePath,
-    PurePosixPath,
-    PureWindowsPath,
 )
 
-__all__ = ("run_cmd", "resolve_path")
-
-
-def resolve_path(str_cmd):
-    """Windows safe resolve executable path
-
-    :param str_cmd: Relative path to executable
-    :type str_cmd: str
-    :returns: Windows safe absolute path to executable
-    :rtype: str
-    """
-    str_path = shutil.which(str_cmd)
-    is_win = platform.system().lower() == "windows"
-    if is_win:  # pragma: no cover
-        ret = str(PureWindowsPath(str_path))
-    else:
-        ret = str(PurePosixPath(str_path))
-
-    return ret
+__all__ = ("run_cmd",)
 
 
 def run_cmd(cmd, cwd=None, env=None):

@@ -1,10 +1,13 @@
 """
 .. moduleauthor:: Dave Faulkmore <https://mastodon.social/@msftcangoblowme>
 
+Integration test
+
 .. code-block:: shell
 
-   pytest --showlocals --log-level INFO tests/test_version_file_overrides.py
-   pytest --showlocals --cov="drain_swamp" --cov-report=term-missing tests/test_version_file_overrides.py
+   make coverage
+   pytest --showlocals --cov="drain_swamp" --cov-report=term-missing \
+   --cov-config=pyproject.toml tests
 
 """
 
@@ -41,11 +44,13 @@ ids_normalize_dist_name = (
     ids=ids_normalize_dist_name,
 )
 def test_normalize_dist_name(dist_name, expected):
+    """Test normalizing dist name."""
     actual = normalize_dist_name(dist_name)
     assert actual == expected
 
 
 def test_read_named_env():
+    """Test read_named_env."""
     env_0 = os.environ.copy()
     dist_name = "AWESOME_SPECIAL_PROJECT"
     scm_ver = "0.0.1"

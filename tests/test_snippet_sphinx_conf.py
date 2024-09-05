@@ -1,13 +1,21 @@
 """
 .. moduleauthor:: Dave Faulkmore <https://mastodon.social/@msftcangoblowme>
 
+Unit test -- Module
+
 .. code-block:: shell
 
-   pytest --showlocals --log-level INFO tests/test_snippet_sphinx_conf.py
-   pytest --showlocals --cov="drain_swamp" --cov-report=term-missing tests/test_snippet_sphinx_conf.py
+   python -m coverage run --source='drain_swamp.snippet_sphinx_conf' -m pytest \
+   --showlocals tests/test_snippet_sphinx_conf.py && coverage report \
+   --data-file=.coverage --include="**/snippet_sphinx_conf.py"
 
-Needs a config file to specify exact files to include / omit from report.
-Will fail with exit code 1 even with 100% coverage
+Integration test
+
+.. code-block:: shell
+
+   make coverage
+   pytest --showlocals --cov="drain_swamp" --cov-report=term-missing \
+   --cov-config=pyproject.toml tests
 
 """
 
@@ -69,6 +77,7 @@ ids_now_to_str = (
 )
 def test_now_to_str(format_str, expectation, path_project_base):
     """Test now_to_str."""
+    # pytest --showlocals --log-level INFO -k "test_now_to_str" tests
     assert isinstance(SnipSphinxConf.now(), datetime)
     # strftime / strptime format str
     with expectation:
@@ -77,6 +86,7 @@ def test_now_to_str(format_str, expectation, path_project_base):
 
 def test_snip_sphinx_conf_properties(path_project_base):
     """SnipSphinxConf properties."""
+    # pytest --showlocals --log-level INFO -k "test_snip_sphinx_conf_properties" tests
     sc = SnipSphinxConf(path=path_project_base)
 
     # SnipSphinxConf.now getter
@@ -123,6 +133,8 @@ def test_snip_sphinx_conf_contents(
     sem_version_str,
     path_project_base,
 ):
+    """Test SnipSphinxConf.contents."""
+    # pytest --showlocals --log-level INFO -k "test_snip_sphinx_conf_contents" tests
     cmd = []
     sc = SnipSphinxConf(path=path_project_base)
 
@@ -230,6 +242,8 @@ def test_snip_sphinx_conf_replace(
     skeleton,
     tmp_path,
 ):
+    """Test SnipSphinxConf.replace."""
+    # pytest --showlocals --log-level INFO -k "test_snip_sphinx_conf_replace" tests
     path_dir = tmp_path.joinpath("docs")
     path_dir.mkdir()
 

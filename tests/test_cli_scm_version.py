@@ -1,10 +1,21 @@
 """
 .. moduleauthor:: Dave Faulkmore <https://mastodon.social/@msftcangoblowme>
 
+Unit test -- Module
+
 .. code-block:: shell
 
-   pytest --showlocals --log-level INFO tests/test_cli_scm_version.py
-   pytest --showlocals --cov="drain_swamp" --cov-report=term-missing tests/test_cli_scm_version.py
+   python -m coverage run --source='drain_swamp.cli_scm_version' -m pytest \
+   --showlocals tests/test_cli_scm_version.py && coverage report \
+   --data-file=.coverage --include="**/cli_scm_version.py"
+
+Integration test
+
+.. code-block:: shell
+
+   make coverage
+   pytest --showlocals --cov="drain_swamp" --cov-report=term-missing \
+   --cov-config=pyproject.toml tests
 
 """
 
@@ -29,7 +40,7 @@ from drain_swamp.constants import (
 
 
 def test_cli_main():
-    """Minimally test package version is printed"""
+    """Minimally test package version is printed."""
     runner = CliRunner()
     # --version
     """
@@ -47,6 +58,7 @@ def test_cli_main():
 
 
 def test_get_scm_version_missing_pyproject_toml(tmp_path, prepare_folders_files):
+    """Test write_scm_version and get_scm_version."""
     # pytest --showlocals --log-level INFO -k "test_get_scm_version_missing_pyproject_toml" tests
     runner = CliRunner()
     with runner.isolated_filesystem(temp_dir=tmp_path) as tmp_dir_path:

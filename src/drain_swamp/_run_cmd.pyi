@@ -2,12 +2,8 @@ import os
 from collections.abc import Sequence
 from pathlib import Path
 
-__all__ = (
-    "run_cmd",
-    "resolve_path",
-)
+__all__ = ("run_cmd",)
 
-def resolve_path(str_cmd: str) -> str: ...
 def run_cmd(
     cmd: Sequence[str],
     cwd: Path | None = None,

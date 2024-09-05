@@ -1,8 +1,6 @@
 """
 .. moduleauthor:: Dave Faulkmore <https://mastodon.social/@msftcangoblowme>
 
-..
-
 These :pep:`518` (aka pyproject.toml) functions are **not** app specific
 
 These functions are lifted from the black project. With minor changes:
@@ -61,7 +59,7 @@ __all__ = (
 
 
 def _is_ok(test):
-    """Check if non-empty str
+    """Check if non-empty str.
 
     Edge case: contains only whitespace --> ``False``
 
@@ -137,6 +135,13 @@ def find_project_root(srcs, stdin_filename=None):
     """
 
     def is_sequence_empty(some_sequence: Sequence[Any] | None) -> bool:
+        """Empty sequence check.
+
+        :param some_sequence: Check if not None and an empty sequence
+        :type some_sequence: collections.abc.Sequence[typing.Any] | None
+        :returns: True if a Sequence.
+        :rtype: bool
+        """
         ret = (
             some_sequence is not None
             and isinstance(some_sequence, Sequence)
@@ -145,10 +150,22 @@ def find_project_root(srcs, stdin_filename=None):
         return ret
 
     def is_none(arg: Any) -> bool:
+        """None check.
+
+        :param arg: A value to check. True if is None.
+        :type arg: typing.Any
+        """
         ret = arg is None
         return ret
 
     def is_sequence_none(some_sequence: Sequence[Any] | None) -> bool:
+        """Non-empty sequence of len 1.
+
+        :param some_sequence: Check if not None and a sequence with one item.
+        :type some_sequence: collections.abc.Sequence[typing.Any] | None
+        :returns: True if a Sequence with one item.
+        :rtype: bool
+        """
         ret = (
             some_sequence is not None
             and isinstance(some_sequence, Sequence)
@@ -216,7 +233,7 @@ def find_project_root(srcs, stdin_filename=None):
 
 
 def find_pyproject_toml(path_search_start, stdin_filename):
-    """Find the absolute filepath to a ``pyproject.toml`` if it exists
+    """Find the absolute filepath to a ``pyproject.toml`` if it exists.
 
     :param path_search_start:
 

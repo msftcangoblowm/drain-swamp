@@ -3,13 +3,21 @@
 
 pyproject.toml read table sections
 
-..
+Unit test -- Module
 
-.. seealso::
+.. code-block:: shell
 
-   coverage/inorout.py:523: CoverageWarning: Module logging_strict was previously
-   imported, but not measured (module-not-measured)
-   https://stackoverflow.com/a/18104544
+   python -m coverage run --source='drain_swamp.pep518_read' -m pytest \
+   --showlocals tests/test_pep518_read.py && coverage report \
+   --data-file=.coverage --include="**/pep518_read.py"
+
+Integration test
+
+.. code-block:: shell
+
+   make coverage
+   pytest --showlocals --cov="drain_swamp" --cov-report=term-missing \
+   --cov-config=pyproject.toml tests
 
 """
 
@@ -35,7 +43,10 @@ else:  # pragma: no cover
 
 
 class Pep518Sections(unittest.TestCase):
+    """Pep518 read tests."""
+
     def setUp(self):
+        """Setup cwd and tests folder variables."""
         if "__pycache__" in __file__:
             # cached
             self.path_tests = Path(__file__).parent.parent
@@ -45,7 +56,7 @@ class Pep518Sections(unittest.TestCase):
         self.cwd = self.path_tests.parent
 
     def test_is_ok(self):
-        """Is not None and a non-empty string
+        """Is not None and a non-empty string.
 
         Vendered from package/module, logging-strict.util.check_type
         """
@@ -65,7 +76,7 @@ class Pep518Sections(unittest.TestCase):
             self.assertTrue(out_actual)
 
     def test_find_project_root(self):
-        """Check possibilities: .git, .hg, pyproject.toml, or file system root"""
+        """Check possibilities: .git, .hg, pyproject.toml, or file system root."""
         # "pyproject.toml"
         with (
             tempfile.TemporaryDirectory() as f_d,

@@ -80,7 +80,7 @@ def get_author_and_email(app_name):
 
 
 class PackageMetadata:
-    """Access author details from either package metadata or cache
+    """Access author details from either package metadata or cache.
 
     .. py:attribute:: __slots__
        :type: tuple[str, str, str]
@@ -102,6 +102,7 @@ class PackageMetadata:
     __slots__ = ("_app_name", "_full_name", "_email", "_d_pyproject_toml")
 
     def __init__(self, app_name, path=None):
+        """Class constructor."""
         super().__init__()
         self.app_name = app_name
 
@@ -134,7 +135,7 @@ class PackageMetadata:
 
     @property
     def app_name(self):
-        """Alphanumeric + underscores. Used as a key
+        """Alphanumeric + underscores. Used as a key.
 
         :returns: app name
         :rtype: str
@@ -157,7 +158,7 @@ class PackageMetadata:
 
     @property
     def full_name(self):
-        """Author name from package metadata. So need to supply in ``pyproject.toml``
+        """Author name from package metadata. So need to supply in ``pyproject.toml``.
 
         For example,
 
@@ -198,7 +199,7 @@ class PackageMetadata:
 
     @property
     def email(self):
-        """Author email address as found in package metadata
+        """Author email address as found in package metadata.
 
         :returns:
 
@@ -216,7 +217,7 @@ class PackageMetadata:
 
     @property
     def d_pyproject_toml(self):
-        """So don't have to get ``pyproject.toml`` repeatedly
+        """So don't have to get ``pyproject.toml`` repeatedly.
 
         :returns: pyproject.toml as a dict otherwise None
         :rtype: dict[str, typing.Any] | None

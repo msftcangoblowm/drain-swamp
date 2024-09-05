@@ -1,3 +1,23 @@
+"""
+.. moduleauthor:: Dave Faulkmore <https://mastodon.social/@msftcangoblowme>
+
+Removes the need for a ``setup.py`` file.
+
+In ``pyproject.toml``,
+
+    .. code-block:: text
+
+       [project.entry-points."distutils.setup_keywords"]
+       use_scm_version = "drain_swamp.monkey.wrap_version_keyword:version_keyword"
+
+
+.. py:data:: log
+   :type: logging.Logger
+
+   Module level logger
+
+"""
+
 import logging
 
 from setuptools_scm._integration.setuptools import version_keyword as _version_keyword
@@ -10,7 +30,9 @@ log = logging.getLogger("drain_swamp.monkey.wrap_version_keyword")
 
 
 def version_keyword(dist, keyword, value):
-    """Remove the need for a ``setup.py`` file
+    """Called by entrypoint project.entry-points."distutils.setup_keywords".
+
+    With this setup. setup.py is unneeded for versioning purposes.
 
     In ``pyproject.toml``,
 

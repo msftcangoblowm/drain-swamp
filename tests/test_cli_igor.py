@@ -3,13 +3,21 @@
 
 Unittest for entrypoint, drain-swamp
 
+Unit test -- Module
+
 .. code-block:: shell
 
-   pytest --showlocals --log-level INFO tests/test_cli_igor.py
-   pytest --showlocals --cov="drain_swamp" --cov-report=term-missing tests/test_cli_igor.py
+   python -m coverage run --source='drain_swamp.cli_igor' -m pytest \
+   --showlocals tests/test_cli_igor.py && coverage report \
+   --data-file=.coverage --include="**/cli_igor.py"
 
-Needs a config file to specify exact files to include / omit from report.
-Will fail with exit code 1 even with 100% coverage
+Integration test
+
+.. code-block:: shell
+
+   make coverage
+   pytest --showlocals --cov="drain_swamp" --cov-report=term-missing \
+   --cov-config=pyproject.toml tests
 
 """
 
@@ -44,7 +52,7 @@ from drain_swamp.constants import (
 
 
 def test_cli_main():
-    """Minimally test package version is printed"""
+    """Minimally test package version is printed."""
     runner = CliRunner()
     # --version
     """
@@ -97,7 +105,7 @@ def test_seed_cli(
     tmp_path,
     prep_pyproject_toml,
 ):
-    """To CHANGES.rst, add seed, later to be replaced by a changelog versioned entry"""
+    """To CHANGES.rst, add seed, later replaced by a changelog versioned entry."""
     # pytest --showlocals --log-level INFO -k "test_seed_cli" tests
     runner = CliRunner(mix_stderr=False)
     with runner.isolated_filesystem(temp_dir=tmp_path) as tmp_dir_path:
@@ -143,9 +151,9 @@ def test_seed_cli(
 
 
 def test_build_cli(prep_pyproject_toml, tmp_path):
-    """build package -- drain-swamp only. No refresh locking.
+    """Build package -- drain-swamp only. No refresh locking.
 
-    See cmd within build backend instead
+    See cmd within build backend instead.
     """
     # pytest --showlocals --log-level INFO -k "test_build_cli" tests
     runner = CliRunner()
@@ -315,6 +323,7 @@ ids_current_version = (
     ids=ids_current_version,
 )
 def test_current_version(ret, expected_exit_code, path_project_base):
+    """Test current_version."""
     # demonstrate exit codes, but not that a ver str is returned on a successful call
     runner = CliRunner()
 
@@ -374,7 +383,7 @@ def test_snippets_list(
     tmp_path,
     caplog,
 ):
-    """drain-swamp list --> lists snippets in doc?/conf.py"""
+    """lists snippets in doc?/conf.py --> :code:`drain-swamp list`."""
     # pytest --showlocals --log-level INFO -k "test_snippets_list" tests
     LOGGING["loggers"][g_app_name]["propagate"] = True
     logging.config.dictConfig(LOGGING)
@@ -450,6 +459,7 @@ ids_cheats_exceptions = (
 def test_cheats_exceptions(
     is_tmp, kind, exit_code_expected, path_project_base, tmp_path
 ):
+    """Print cheats. Exceptions."""
     # pytest --showlocals --log-level INFO -k "test_cheats_exceptions" tests
 
     # prepare
@@ -483,6 +493,7 @@ def test_cheats_exceptions(
 
 
 def test_cheats_unusual(path_project_base, tmp_path):
+    """Test cheats unusual issues."""
     # pytest --showlocals --log-level INFO -k "test_cheats_unusual" tests
     path_cwd = path_project_base()
     runner = CliRunner()
@@ -558,7 +569,7 @@ def test_write_version_normal(
     caplog,
     has_logging_occurred,
 ):
-    """Write version file typical situation"""
+    """Write version file typical situation."""
     # pytest --showlocals --log-level INFO -k "test_write_version_normal" tests
     LOGGING["loggers"][g_app_name]["propagate"] = True
     logging.config.dictConfig(LOGGING)
@@ -654,7 +665,7 @@ def test_write_version_exceptions(
     caplog,
     has_logging_occurred,
 ):
-    """Write version file exceptions"""
+    """Write version file exceptions."""
     # pytest --showlocals --log-level INFO -k "test_write_version_exceptions" tests
     runner = CliRunner(mix_stderr=False)
     with runner.isolated_filesystem(temp_dir=tmp_path) as tmp_dir_path:
@@ -696,7 +707,7 @@ def test_tag_version(
     caplog,
     has_logging_occurred,
 ):
-    """Get semantic version from version file"""
+    """Get semantic version from version file."""
     # pytest --showlocals --log-level INFO -k "test_tag_version" tests
     LOGGING["loggers"][g_app_name]["propagate"] = True
     logging.config.dictConfig(LOGGING)

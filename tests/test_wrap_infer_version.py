@@ -1,4 +1,8 @@
 """
+.. moduleauthor:: Dave Faulkmore <https://mastodon.social/@msftcangoblowme>
+
+Unittest module :py:mod:`drain_swamp.monkey.wrap_infer_version`
+
 .. code-block:: shell
 
    pytest --showlocals --log-level INFO tests/test_wrap_infer_version.py
@@ -33,6 +37,22 @@ from .wd_wrapper import WorkDir
 
 @pytest.fixture()
 def wd(wd: WorkDir) -> WorkDir:
+    """Fixture modifies WorkDir.
+
+    - Change cwd to be a package folder
+
+    - Initializes git
+
+    - Set the git add and commit commands
+
+    .. seealso::
+
+       Credit
+       `[Author] <https://github.com/pypa/setuptools-scm/blob/main/pyproject.toml>`_
+       `[Source] <https://github.com/pypa/setuptools_scm/blob/main/testing/wd_wrapper.py>`_
+       `[License: MIT] <https://github.com/pypa/setuptools-scm/blob/main/LICENSE>`_
+
+    """
     # Create project base folder with project name
     path_new = wd.cwd / "complete_awesome_perfect"
     path_new.mkdir()
@@ -80,7 +100,7 @@ def test_dist_get_cmdline_options(
     monkeypatch: pytest.MonkeyPatch,
     verify_tag_version,
 ):
-    """Can access command line options using Distribution.get_cmdline_options
+    """Can access command line options using Distribution.get_cmdline_options.
 
     In tmp path
 
@@ -281,6 +301,7 @@ def test_infer_version_fail(
     caplog,
     has_logging_occurred,
 ):
+    """Situations where wrap_infer_version would fail."""
     # pytest --showlocals --log-level INFO -k "test_infer_version_fail" tests
 
     # missing pyproject.toml build calls infer_version. Which runs build plugins
@@ -364,6 +385,7 @@ def test_config_settings_read(
     caplog,
     has_logging_occurred,
 ):
+    """Test ConfigSettings read."""
     # pytest --showlocals --log-level INFO -k "test_get_config_settings" tests
     LOGGING["loggers"][g_app_name]["propagate"] = True
     logging.config.dictConfig(LOGGING)
@@ -403,6 +425,7 @@ def test_config_settings_set_abs_path(
     caplog,
     has_logging_occurred,
 ):
+    """Test ConfigSettings set_abs_path."""
     # pytest --showlocals --log-level INFO -k "test_get_config_settings" tests
     # prepare
     ConfigSettings.remove_abs_path()

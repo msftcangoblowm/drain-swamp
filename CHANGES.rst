@@ -45,6 +45,19 @@ Changelog
 
 .. scriv-start-here
 
+.. _changes_1-6-4:
+
+Version 1.6.4 — 2024-09-05
+--------------------------
+
+- ci: add macos to os.matrix
+- ci: update gha versions
+- chore(pre-commit): add interrogate
+- chore(tox): add interrogate target
+- docs: add interrogate package and requirements. Ensure 100% documentation.
+- test: in each test, document pytest command to get coverage for one module
+- style: update project.urls so recognized by pypi
+
 .. _changes_1-6-3:
 
 Version 1.6.3 — 2024-09-03

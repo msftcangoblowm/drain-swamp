@@ -5,10 +5,21 @@
 
 Unittest for module, drain_swamp.backend_setupttools
 
+Unit test -- Module
+
 .. code-block:: shell
 
-   pytest --showlocals --log-level INFO tests/test_backend_setuptools.py
-   pytest --showlocals --cov="drain_swamp" --cov-report=term-missing tests/test_backend_setuptools.py
+   python -m coverage run --source='drain_swamp.backend_setuptools' -m pytest \
+   --showlocals tests/test_backend_setuptools.py && coverage report \
+   --data-file=.coverage --include="**/backend_setuptools.py"
+
+Integration test
+
+.. code-block:: shell
+
+   make coverage
+   pytest --showlocals --cov="drain_swamp" --cov-report=term-missing \
+   --cov-config=pyproject.toml tests
 
 """
 
@@ -229,6 +240,7 @@ def test_load_factory_bad(
     tmp_path,
     prep_pyproject_toml,
 ):
+    """BackendType.load_factory exceptions."""
     # pytest --showlocals --log-level INFO -k "test_load_factory_bad" tests
     # prepare
     prep_pyproject_toml(path_config, tmp_path)

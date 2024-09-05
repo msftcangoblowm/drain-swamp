@@ -68,6 +68,18 @@ __all__ = (
 
 
 class PyProjectData(NamedTuple):
+    """Data class for holding contents of a section.
+
+    :cvar path: config file Path
+    :vartype path: pathlib.Path
+    :cvar tool_name: section name
+    :vartype tool_name: str
+    :cvar project: Project section contents
+    :vartype project: setuptools_scm._integration.toml.TOML_RESULT
+    :cvar section: Section contents
+    :vartype section: setuptools_scm._integration.toml.TOML_RESULT
+    """
+
     path: Path
     tool_name: str
     project: TOML_RESULT
@@ -84,9 +96,11 @@ class PyProjectData(NamedTuple):
 
 
 class ReadPyprojectBase(abc.ABC):
+    """From a pyproject.toml file, ABC for key/value pairs from a section."""
+
     @abc.abstractmethod
     def update(self, d_target, d_other):
-        """Subclass overload so can filter d_other
+        """Subclass overload so can filter d_other.
 
         :param d_target: parent dict
         :type d_target: dict[str, typing.Any]
@@ -101,7 +115,7 @@ class ReadPyprojectBase(abc.ABC):
         tool_name=["drain-swamp", "pipenv-unlock"],
         require_section=True,
     ):
-        """Read in pyproject.toml and if necessary combine multiple sections into one
+        """Read in pyproject.toml and if necessary combine multiple sections into one.
 
         Previously raised :py:exc:`FileNotFoundError` and :py:exc:`LookupError`
         instead will produce an empty dict
@@ -164,6 +178,8 @@ class ReadPyprojectBase(abc.ABC):
 
 
 class ReadPyproject(ReadPyprojectBase):
+    """Do not confine data fields. Accept whatever the section(s) contains."""
+
     def update(self, d_target, d_other):
         """
         :param d_target: parent dict
@@ -175,8 +191,10 @@ class ReadPyproject(ReadPyprojectBase):
 
 
 class ReadPyprojectStrict(ReadPyprojectBase):
+    """Confine data fields to acceptable by setuptools_scm._config.Configuration."""
+
     def update(self, d_target, d_other):
-        """Confine to only setuptools_scm._config.Configuration data fields
+        """Confine to only setuptools_scm._config.Configuration data fields.
 
         :param d_target: parent dict
         :type d_target: dict[str, typing.Any]

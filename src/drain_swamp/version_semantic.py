@@ -75,6 +75,11 @@ Move the tag past post commits
    Read only mapping. key is long name. value is abbreviation. Long
    names will be converted into the abbreviations
 
+.. py:data:: _logger
+   :type: logging.Logger
+
+   Module level logger
+
 """
 
 import importlib.util
@@ -116,7 +121,7 @@ _logger = logging.getLogger("drain_swamp.version_semantic")
 
 
 def _path_or_cwd(val):
-    """Frequently used and annoying to test multiple times
+    """Frequently used and annoying to test multiple times.
 
     Should be a Path. If anything else return cwd
 
@@ -135,7 +140,7 @@ def _path_or_cwd(val):
 
 
 def get_package_name(path):
-    """Get package name, unmodified, from pyproject.toml
+    """Get package name, unmodified, from ``pyproject.toml``.
 
     :param path: absolute path to either package base folder or ``pyproject.toml``
     :type path: pathlib.Path
@@ -158,10 +163,11 @@ def get_package_name(path):
 
 
 def _scm_key(dist_name):
-    """When want to set a specific version, setuptools-scm offers an
-    environment variable which overrides normal behavior
+    """Environment variable offer by setuptools-scm to set a specific version.
+    Acts as an normal behavior override.
 
     This is needed when wanting to create a:
+
     - tagged version
     - post-release version
     - pre-release version
@@ -228,7 +234,7 @@ def _current_tag(path=None):
 
 
 def _strip_epoch(ver):
-    """Strip epoch
+    """Strip epoch.
 
     :param ver: May contain epoch, ``v``, and local
     :type ver: str
@@ -250,7 +256,7 @@ def _strip_epoch(ver):
 
 
 def _strip_local(ver):
-    """Strip local from end of version string
+    """Strip local from end of version string.
 
     From ``0!v1.0.1.a1dev1+g4b33a80.d20240129``
 
@@ -307,7 +313,7 @@ def _remove_v(ver):
 
 
 def _is_ver_ok(str_v):
-    """Check version str ok
+    """Check version str ok.
 
     :param str_v: raw version str
     :type str_v: str
@@ -325,9 +331,9 @@ def _is_ver_ok(str_v):
 
 
 def sanitize_tag(ver):
-    """Avoid reinventing the wheel, leverage Version
+    """Avoid reinventing the wheel, leverage Version.
 
-    ``final`` is invalid
+    ``final`` is invalid.
 
     :param ver: raw semantic version
     :type ver: str
@@ -388,7 +394,7 @@ def sanitize_tag(ver):
 
 
 def _pre_split(_v):
-    """Force short prerelease
+    """Force short prerelease.
 
     short: a, b, or rc
     long: alpha, beta, candidate
@@ -434,7 +440,7 @@ def _pre_split(_v):
 
 
 def get_version(ver, is_use_final=False):
-    """Semantic version string broken into parts
+    """Semantic version string broken into parts.
 
     :param ver: A semantic version string
     :type ver: str
@@ -891,6 +897,7 @@ class SemVersion:
         path=None,
         is_use_final=False,
     ):
+        """Class constructor."""
         super().__init__()
 
         self.path_cwd = path
@@ -898,10 +905,11 @@ class SemVersion:
 
     @classmethod
     def sanitize_kind(cls, kind):
-        """Allow kind to be a version str, 'current', 'tag'
+        """Allow kind to be a version str, 'current', 'tag'.
+
         :param kind:
 
-           Default None. If None, assumes "tag". Type of desired version str.
+           Default None. If None, assumes ``"tag"``. Type of desired version str.
            Most reliable to pass in a version str if making a tagged
            version or want the tagged version. "current" will most likely
            get a development version
@@ -912,6 +920,13 @@ class SemVersion:
         """
 
         def check_is_none(val):
+            """Check if is None. If None, return ``"tag"``.
+
+            :param val: Can be anything.
+            :type val: typing.Any
+            :returns: non-None Any.
+            :rtype: str | typing.Any
+            """
             is_none = val is None
             if is_none:
                 ret = "tag"
@@ -922,7 +937,13 @@ class SemVersion:
             return ret
 
         def check_accidental_seq_str(val):
-            """Accidentily pass in a Sequence[str] rather than an str"""
+            """Accidentily pass in a Sequence[str] rather than an str.
+
+            :param val: Possibly a Sequence[str] or a str
+            :type val: typing.Any
+            :returns: If not a str, take the first sequence item.
+            :rtype: str
+            """
             is_seq_str_nonempty = (
                 val is not None
                 and isinstance(val, Sequence)
@@ -939,6 +960,13 @@ class SemVersion:
             return ret
 
         def check_seq_unsupported(val):
+            """Check sequence. Should contain non-empty str.
+
+            :param val: Value to check
+            :type val: typing.Any
+            :returns: "tag" if unsupported otherwise val
+            :rtype: str
+            """
             is_seq_str_unsupported = (
                 val is not None
                 and isinstance(val, Sequence)
@@ -955,6 +983,13 @@ class SemVersion:
             return ret
 
         def check_str(val):
+            """Check if a kind, otherwise return as is.
+
+            :param val: Any possible value
+            :type val: typing.Any
+            :returns: A Kind or return as is.
+            :rtype: str
+            """
             if val is not None and isinstance(val, str):
                 if val not in cls.KINDS:
                     # Override version str
@@ -973,6 +1008,13 @@ class SemVersion:
             return ret
 
         def check_unsupported(val):
+            """Check unsupported data type.
+
+            :param val: Any possible value
+            :type val: typing.Any
+            :returns: A Kind. Default ``"tag"``
+            :rtype: str
+            """
             # fallback --> "tag". E.g. kind = 1.2345
             if val != "tag" and val != "current" and not isinstance(val, str):
                 ret = "tag"
@@ -991,7 +1033,7 @@ class SemVersion:
 
     @property
     def path_cwd(self):
-        """Getter for absolute Path to current working directory
+        """Getter for absolute Path to current working directory.
 
         :returns: Absolute Path to current working directory
         :rtype: pathlib.Path
@@ -1000,7 +1042,7 @@ class SemVersion:
 
     @path_cwd.setter
     def path_cwd(self, val):
-        """Setter for cwd
+        """Setter for cwd.
 
         :param val: current working directory absolute Path
         :type val: typing.Any
@@ -1030,7 +1072,7 @@ class SemVersion:
 
     @is_use_final.setter
     def is_use_final(self, val):
-        """Setter for is_use_final
+        """Setter for is_use_final.
 
         :param val: Should be a bool if not defaults to False
         :type val: typing.Any
@@ -1042,7 +1084,7 @@ class SemVersion:
 
     @property
     def major(self):
-        """major version. If breaking change, in API, should be incremented
+        """major version. If breaking change, in API, should be incremented.
 
         :returns: None if not called parse_ver beforehand. Otherwise will be an int
         :rtype: int | None
@@ -1051,7 +1093,7 @@ class SemVersion:
 
     @property
     def minor(self):
-        """minor version. Incremented if a new feature or a fix occurred
+        """minor version. Incremented if a new feature or a fix occurred.
 
         :returns: None if not called parse_ver beforehand. Otherwise will be an int
         :rtype: int | None
@@ -1090,7 +1132,7 @@ class SemVersion:
 
     @releaselevel.setter
     def releaselevel(self, val):
-        """For release level, convert either short or long form into long form
+        """For release level, convert either short or long form into long form.
 
         :param val: Either short or long release level str
         :type val: str
@@ -1105,7 +1147,7 @@ class SemVersion:
 
     @property
     def releaselevel_abbr(self):
-        """Short form: a, b, rc, post
+        """Short form: a, b, rc, post.
 
         :returns: Short form. Valid in semantic version str
         :rtype: str
@@ -1132,7 +1174,7 @@ class SemVersion:
 
     @property
     def dev(self):
-        """Development version number
+        """Development version number.
 
         :returns:
 
@@ -1145,7 +1187,7 @@ class SemVersion:
 
     @property
     def release(self):
-        """Components of the release segment of the version
+        """Components of the release segment of the version.
 
         Does not include epoch or any pre-release / development / post-release
         suffixes
@@ -1157,7 +1199,7 @@ class SemVersion:
 
     @staticmethod
     def as_tuple(version_str):
-        """version tuple as written to ``_version.py`` file
+        """version tuple as written to ``_version.py`` file.
 
         :param version_str: raw version str
         :type version_str: str
@@ -1228,7 +1270,7 @@ class SemVersion:
         self._release = (major, minor, micro)
 
     def version_xyz(self):
-        """Get xyz version. Call parse_ver first
+        """Get xyz version. Call parse_ver first.
 
         :returns: xyz version str. Only None if parse_ver not called beforehand
         :rtype: str | None
@@ -1260,7 +1302,7 @@ class SemVersion:
         return ret
 
     def anchor(self):
-        """Full semantic version for display. xyz separated by hyphens
+        """Full semantic version for display. xyz separated by hyphens.
 
         :returns: None when parse_var has not been called otherwise version for display
         :rtype: str | None
@@ -1282,7 +1324,7 @@ class SemVersion:
         return ret
 
     def readthedocs_url(self, package_name, is_latest=False):
-        """Get readthedocs.io URL. Call parse_ver first
+        """Get readthedocs.io URL. Call parse_ver first.
 
         :param package_name:
 
@@ -1417,7 +1459,7 @@ class SemVersion:
 
     @property
     def __version__(self):
-        """Cleaned version available after call to version_clean
+        """Cleaned version available after call to version_clean.
 
         :returns: Cleaned version or None if version_clean has not been called
         :rtype: str | None

@@ -372,6 +372,7 @@ class AlterEnv:
     )
 
     def __init__(self, path, kind):
+        """Class constructor."""
         super().__init__()
         try:
             sv = SemVersion(path=path)
@@ -415,7 +416,8 @@ class AlterEnv:
             raise AssertionError(msg_warn) from e
 
     def modify_env(self):
-        """Get a modified :py:data:`os.environ`
+        """Get a modified :py:data:`os.environ`.
+
         Alter environment so setuptools-scm knows what the version should be
 
         :returns: Modified os.environ Pass to a subprocess
@@ -428,7 +430,7 @@ class AlterEnv:
 
     @property
     def path_cwd(self):
-        """current working directory path.
+        """Current working directory path.
 
         SemVersion does a good job at user input validation
 
@@ -439,7 +441,7 @@ class AlterEnv:
 
     @property
     def scm_key(self):
-        """setuptools-scm key
+        """Get setuptools-scm key.
 
         :returns: setuptools-scm key for forcing a particular version
         :rtype: str
@@ -448,7 +450,7 @@ class AlterEnv:
 
     @scm_key.setter
     def scm_key(self, val):
-        """Setter for scm_key. Ensure upper case and underscore, not hyphen
+        """Setter for scm_key. Ensure upper case and underscore, not hyphen.
 
         :param val: Value to be set
         :type val: typing.Any
@@ -462,7 +464,7 @@ class AlterEnv:
 
     @property
     def scm_val(self):
-        """setuptools-scm value
+        """setuptools-scm value.
 
         :returns: setuptools-scm val for forcing a particular version
         :rtype: str
@@ -480,7 +482,7 @@ class AlterEnv:
 
     @property
     def version_file(self):
-        """version file relative path
+        """Version file relative path.
 
         :returns: version file relative path
         :rtype: str | None
@@ -489,7 +491,7 @@ class AlterEnv:
 
     @version_file.setter
     def version_file(self, val) -> None:
-        """Version file setter
+        """Version file setter.
 
         :param val: relative Path to version file
         :type val: typing.Any | None
@@ -544,7 +546,7 @@ def get_tag_version(path):
 
 
 def write_version_file(path, kind, is_test=False):
-    """Writes version file. Uses vendored setuptools-scm code
+    """Writes version file. Uses vendored setuptools-scm code.
 
     From pyproject.toml requires:
 
@@ -600,7 +602,7 @@ def write_version_file(path, kind, is_test=False):
 
 
 def build_package(path, kind):
-    """Build package
+    """Build package.
 
     Replaces / obsoletes
 
@@ -663,7 +665,7 @@ def build_package(path, kind):
 
 
 def pretag(tag):
-    """Idiot check / sanitize proposed tag
+    """Idiot check / sanitize proposed tag.
 
     Validates semantic version str. Printing the fix semantic tag.
 
@@ -688,7 +690,7 @@ def pretag(tag):
 
 
 def get_current_version(path):
-    """Get current version from setuptools-scm
+    """Get current version from setuptools-scm.
 
     :param path: current working directory path
     :type path: pathlib.Path
@@ -705,7 +707,7 @@ def get_current_version(path):
 
 
 def _get_branch() -> str:
-    """From git, get the current branch name
+    """From git, get the current branch name.
 
     :returns: Branch name
     :rtype: str
@@ -716,7 +718,7 @@ def _get_branch() -> str:
 
 
 def print_cheats(path, kind):
-    """Print cheats
+    """Print cheats.
 
     :param path: current working directory path
     :type path: pathlib.Path

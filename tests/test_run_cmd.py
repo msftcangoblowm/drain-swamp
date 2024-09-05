@@ -25,13 +25,12 @@ import os
 
 import pytest
 
-from drain_swamp._run_cmd import (
-    resolve_path,
-    run_cmd,
-)
+from drain_swamp._run_cmd import run_cmd
+from drain_swamp._safe_path import resolve_path
 
 
 def test_run_cmd(tmp_path, prepare_folders_files):
+    """Test run_cmd."""
     # pytest --showlocals --log-level INFO -k "test_run_cmd" tests
     # expecting Sequence
     cwd = tmp_path

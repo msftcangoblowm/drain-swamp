@@ -1,8 +1,6 @@
 """
 .. moduleauthor:: Dave Faulkmore <https://mastodon.social/@msftcangoblowme>
 
-..
-
 Unittest for module, check_type
 
 Unit test -- Module
@@ -57,6 +55,7 @@ ids_is_ok = (
     ids=ids_is_ok,
 )
 def test_is_ok(mystr, expected):
+    """Test is_ok check."""
     # pytest --showlocals --log-level INFO -k "test_is_ok" tests
     actual = is_ok(mystr)
     assert actual == expected
@@ -139,6 +138,7 @@ ids_click_bool = (
     ids=ids_click_bool,
 )
 def test_click_bool(val, expected):
+    """Test click.Bool check."""
     # pytest --showlocals --log-level INFO -k "test_click_bool" tests
     actual = click_bool(val=val)
     assert actual is expected

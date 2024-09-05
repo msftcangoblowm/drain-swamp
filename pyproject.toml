@@ -35,10 +35,12 @@ classifiers = [
     "Programming Language :: Python :: 3.11",
     "Programming Language :: Python :: 3.12",
     "Programming Language :: Python :: 3.13",
+    "Programming Language :: Python :: Implementation :: CPython",
     "Programming Language :: Python :: Implementation :: PyPy",
     "Topic :: Software Development :: Build Tools",
     "Typing :: Typed",
     "Operating System :: POSIX :: Linux",
+    "Operating System :: MacOS",
 ]
 # Contact by mastodon please
 authors = [
@@ -46,13 +48,14 @@ authors = [
 ]
 
 [project.urls]
+# https://github.com/pypi/warehouse/blob/70eac9796fa1eae24741525688a112586eab9010/warehouse/templates/packaging/detail.html#L20-L62
 "Documentation" = "https://msftcangoblowm.github.io/drain-swamp"
 "Docs (rtd)" = "https://drain-swamp.readthedocs.io/en/stable"
-Changes = "https://raw.githubusercontent.com/msftcangoblowm/drain-swamp/master/CHANGES.rst"
+"Changes" = "https://raw.githubusercontent.com/msftcangoblowm/drain-swamp/master/CHANGES.rst"
 "PyPI Releases" = "https://pypi.org/project/drain-swamp"
 "Source code" = "https://github.com/msftcangoblowm/drain-swamp"
 "Issue tracker" = "https://github.com/msftcangoblowm/drain-swamp/issues"
-Chat = "https://mastodon.social/@msftcangoblowme"
+"Mastodon" = "https://mastodon.social/@msftcangoblowme"
 
 [tool.setuptools.packages.find]
 where = ["src"]
@@ -268,3 +271,17 @@ filterwarnings = [
 ]
 log_format = "%(asctime)s %(levelname)s %(message)s"
 log_date_format = "%Y-%m-%d %H:%M:%S"
+
+[tool.interrogate]
+color = true
+exclude = [
+    "src/drain_swamp/_version.py",
+    "docs",
+    "build",
+]
+fail-under = 95
+ignore-init-module = true
+quiet = false
+omit-covered-files = true
+# possible values 0 (minimal output), 1 (-v), 2 (-vv)
+verbose = 2

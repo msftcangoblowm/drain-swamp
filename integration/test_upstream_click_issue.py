@@ -1,3 +1,27 @@
+"""
+.. moduleauthor:: Dave Faulkmore <https://mastodon.social/@msftcangoblowme>
+
+**Underlying assumption**
+
+Throwing random data types at a click entrypoint, caused failures. Especially
+with :py:class:`pathlib.Path`.
+
+**Feedback**
+
+After bringing up the issue, turns out the shell only supports str, not random
+data types.
+
+**Conclusion**
+
+Non-issue
+
+.. code-block:: shell
+
+       python -m unittest integration.test_upstream_click_issue --locals
+
+
+"""
+
 import traceback
 import unittest
 from pathlib import Path
@@ -101,7 +125,7 @@ FAILED (failures=1)
 )
 @click.version_option(version="0.0.1")
 def main():
-    """Command-line. Prints usage"""
+    """Command-line. Prints usage."""
 
 
 @main.command(
@@ -118,8 +142,8 @@ def main():
     help=help_path,
 )
 def choke_on_non_path(path):
-    # When a relative path, gets resolved, but returns as str rather than Path
-    """
+    """When a relative path, gets resolved, but returns a str not pathlib.Path.
+
     $> cd integrations
     $> printf 'test_upstream_click_issue.py choke --path=%f' 0.1234 | xargs python
     path: /home/faulkmore/Downloads/git_decimals/drain_swamp/integration/0.123400 <class 'str'>
@@ -130,9 +154,12 @@ def choke_on_non_path(path):
 
 
 class TestChokeOnNonPath(unittest.TestCase):
+    """Demonstrate failure when sending a non-path."""
+
     def test_choke_on_this(self):
-        """This is bypassing the shell, which was the mistake. The shell
-        treats everything as a string
+        """This is bypassing the shell, which was the mistake.
+
+        The shell treats everything as a string
 
         .. seealso::
 
@@ -168,11 +195,5 @@ class TestChokeOnNonPath(unittest.TestCase):
 
 
 if __name__ == "__main__":  # pragma: no cover
-    """
-    .. code-block:: shell
-
-       python -m unittest integration.test_upstream_click_issue --locals
-
-    """
-    # main()
+    """Process shield."""
     unittest.main(tb_locals=True)

@@ -105,7 +105,7 @@ def try_dict_update(
     path_relative_x,
     is_bypass=False,
 ):
-    """Helper to add absolute paths into pass by reference set
+    """Helper to add absolute paths into pass by reference set.
 
     ``pyproject.toml`` then cli. cli has higher priority
 
@@ -146,9 +146,10 @@ def get_optionals_cli(
     path_config,
     optionals,
 ):
-    """Check sequence of relative paths, to a set, add absolute path(s)
+    """Check sequence of relative paths, to a set, add absolute path(s).
 
     Helper to make testing possible
+
     :param d_both: target and absolute paths
     :type d_both: dict[str, pathlib.Path]
     :param path_config: absolute path folder
@@ -188,6 +189,7 @@ def get_optionals_pyproject_toml(
     is_bypass=False,
 ):
     """Get options from [tool.pipenv-unlock] optionals.
+
     dict key / value is target / relative path
 
     Change the rel path into an absolute path
@@ -354,7 +356,7 @@ def get_required_cli(
     required=None,
     is_bypass=False,
 ):
-    """Process required field provided by cli
+    """Process required field provided by cli.
 
     :param path_config: absolute folder path
     :type path_config: pathlib.Path
@@ -467,7 +469,9 @@ def folders_additional_init(
     folders_implied,
     additional_folders=(),
 ):
-    """Additional folders that cannot be determined solely from the dependences or
+    """Determine additional folders, excluding those implied by dependencies.
+
+    Cannot be determined solely from the dependencies or
     optional-dependences. These additional requirements are typically for:
 
     - tox
@@ -565,7 +569,8 @@ def folders_additional_init(
 
 
 def ensure_folder(val):
-    """
+    """Ensure arg is a folder.
+
     :param val:
 
        Preferrable a Path. Can be either a file or a folder. We want the folder
@@ -647,7 +652,7 @@ class BackendType(abc.ABC):
         parent_dir=None,
         additional_folders=(),
     ):
-        """Choose factory from registered subclasses
+        """Choose factory from registered subclasses.
 
         :param path_config: ``pyproject.toml`` folder path
         :type path_config: pathlib.Path
@@ -745,7 +750,7 @@ class BackendType(abc.ABC):
         parent_dir=None,
         additional_folders=(),
     ):
-        """Called by subclass to process both cli and ``pyproject.toml`` values
+        """Called by subclass to process both cli and ``pyproject.toml`` values.
 
         :param d_pyproject_toml: pyproject.toml dict
         :type d_pyproject_toml: dict[str, typing.Any],
@@ -818,8 +823,7 @@ class BackendType(abc.ABC):
 
     @staticmethod
     def determine_backend(d_pyproject_toml):
-        """If a thin-wrapped custom build backend, must specify build
-        backend
+        """If a thin-wrapped custom build backend, must specify build backend.
 
         .. code-block:: text
 
@@ -876,7 +880,7 @@ class BackendType(abc.ABC):
         path_config,
         required=None,
     ):
-        """From pyproject.toml, retrieve which required dependencies
+        """From pyproject.toml, retrieve which required dependencies.
 
         cli priority over pyproject.toml
 
@@ -934,7 +938,7 @@ class BackendType(abc.ABC):
         path_config,
         optionals,
     ):
-        """Combined cli and pyproject.toml optionals. Does not check relative path(s)
+        """Combined cli and pyproject.toml optionals. Does not check relative path(s).
 
         cli supplements ``pyproject.toml``, not overrides completely
 
@@ -971,7 +975,7 @@ class BackendType(abc.ABC):
     @property
     @abc.abstractmethod
     def backend(self):
-        """Get the backend. This is extracted from pyproject.toml
+        """Get the backend. This is extracted from ``pyproject.toml``.
 
         :returns: pep518 backend
         :rtype: str
@@ -980,7 +984,7 @@ class BackendType(abc.ABC):
 
     @property
     def path_config(self):
-        """Path to config file
+        """Path to config file.
 
         :returns: Path to config file
         :rtype: pathlib.Path
@@ -989,7 +993,7 @@ class BackendType(abc.ABC):
 
     @property
     def parent_dir(self):
-        """override folder Path. Likely a temp folder
+        """Override folder Path. Likely a temp folder.
 
         :returns: Path override folder
         :rtype: pathlib.Path
@@ -1001,12 +1005,12 @@ class BackendType(abc.ABC):
         self,
         parent_dir=None,
     ):
-        """path_config is supposed to be the folder containing
-        ``pyproject.toml``, but it's unclear. Could be either a file or
-        a folder.
+        """Path config is supposed to be the folder containing ``pyproject.toml``.
+
+        It's unclear. Could be either a file or a folder.
 
         Sometimes prefer to override the folder location and this
-        what parent_dir is intended for
+        what parent_dir is intended for.
 
         :param parent_dir:
 
@@ -1074,7 +1078,7 @@ class BackendType(abc.ABC):
 
     @property
     def required(self):
-        """Required dependency
+        """Required dependency.
 
         :returns: dependency name and absolute path
         :rtype: tuple[str, pathlib.Path] | None
@@ -1083,8 +1087,8 @@ class BackendType(abc.ABC):
 
     @property
     def optionals(self):
-        """Absolute paths to optional dependencies ``*.in`` files. Some
-        may later not become an extra
+        """Absolute paths to optional dependencies ``*.in`` files.
+        Some may later not become an extra.
 
         :returns: optional dependency name and absolute path to ``*.in`` files
         :rtype: dict[str, pathlib.Path]
@@ -1093,9 +1097,9 @@ class BackendType(abc.ABC):
 
     @property
     def folders_implied(self):
-        """Relative Path to folders containing requirements ``.in`` files
+        """Relative Path to folders containing requirements ``.in`` files.
 
-        Derived from paths in both required and optional dependencies
+        Derived from paths in both required and optional dependencies.
 
         :returns: Unique set of relative Path to folders
         :rtype: set[pathlib.Path]
@@ -1104,8 +1108,8 @@ class BackendType(abc.ABC):
 
     @property
     def folders_additional(self):
-        """Relative Path to folders which cannot be derived from
-        required and optional dependencies alone.
+        """Relative Path to additional folders.
+        Folders which cannot be derived from required and optional dependencies alone.
 
         :returns: Unique set of relative Path to folders
         :rtype: set[pathlib.Path]
@@ -1115,8 +1119,7 @@ class BackendType(abc.ABC):
     @classmethod
     def __subclasshook__(cls, C):
         """A class wanting to be
-        :py:class:`~logging_strict.logging_yaml_abc.LoggingYamlType`,
-        minimally requires:
+        :py:class:`~drain_swamp.backend_abc.BackendType`, minimally requires:
 
         Properties:
 
@@ -1137,8 +1140,8 @@ class BackendType(abc.ABC):
         - setup -- get for free
 
         Then register itself
-        :code:`LoggingYamlType.register(AnotherDatumClass)` or subclass
-        :py:class:`~logging_strict.logging_yaml_abc.LoggingYamlType`
+        :code:`BackendType.register(AnotherBackendClass)` or subclass
+        :py:class:`~drain_swamp.backend_abc.BackendType`
 
         :param C:
 
@@ -1148,9 +1151,9 @@ class BackendType(abc.ABC):
         :returns:
 
            ``True`` implements
-           :py:class:`~logging_strict.logging_yaml_abc.LoggingYamlType`
+           :py:class:`~drain_swamp.backend_abc.BackendType`
            interface or is a subclass. ``False`` not a
-           :py:class:`~logging_strict.logging_yaml_abc.LoggingYamlType`
+           :py:class:`~drain_swamp.backend_abc.BackendType`
 
         :rtype: bool
         """
@@ -1172,8 +1175,9 @@ class BackendType(abc.ABC):
 
     @classmethod
     def get_registered(cls):
-        """The :py:mod:`abc` registry for abc
-        :py:class:`BackendType`, contains registered classes.
+        """:py:class:`~drain_swamp.backend_abc.BackendType` abc registry.
+
+        Contains registered classes.
 
         :returns: Generator of registered classes to abc, BackendType
         :rtype: collections.abc.Iterator[type[typing.Self]]
@@ -1206,7 +1210,7 @@ class BackendType(abc.ABC):
 
     @staticmethod
     def fix_suffix(suffix):
-        """Prepend period if suffix lacks it
+        """Prepend period if suffix lacks it.
 
         :param suffix:
 
@@ -1262,7 +1266,8 @@ class BackendType(abc.ABC):
         return ret
 
     def in_files(self):
-        """In both implied and additional folders, create generator of all ``.in`` files
+        """Create generator of all ``.in`` files.
+        For both implied and additional folders.
 
         :returns: All the ``.in`` files in any of the implied and additional folders
         :rtype: collections.abc.Generator[pathlib.Path, None, None]
@@ -1296,8 +1301,8 @@ class BackendType(abc.ABC):
 
     @staticmethod
     def is_locked(path_config):
-        """pyproject.toml exists and the backend is supported. Check
-        package dependency lock state.
+        """Check package dependency lock state.
+        For supported backends. Assuming ``pyproject.toml`` exists.
 
         :param path_config: absolute path to ``pyproject.toml``
         :type path_config: pathlib.Path
@@ -1354,6 +1359,7 @@ class BackendType(abc.ABC):
         unlocks = []
 
         def sorting_hat(relpath: Path) -> None:
+            """Decide whether a lock or unlock dependency. Then weight the counts."""
             nonlocal locks
             nonlocal unlocks
             nonlocal path_f
@@ -1380,7 +1386,7 @@ class BackendType(abc.ABC):
                 pass
 
         def choose_winner() -> bool:
-            """Choose winner
+            """Choose winner.
 
             Assumes suffixes are either: .unlock or .lock
 
@@ -1461,10 +1467,11 @@ class BackendType(abc.ABC):
         return ret
 
     def compose(self):
-        """subclass must make its own implementation and call,
+        """Subclass must make its own implementation and call,
         :code:`super().compose()`.
 
         Perform sanity checks
+
         :raises:
 
             - :py:exc:`drain_swamp.exceptions.MissingRequirementsFoldersFiles` --

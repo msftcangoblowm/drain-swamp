@@ -92,6 +92,7 @@ class SnipSphinxConf:
     DOC_FOLDERS = ("doc", "docs")
 
     def __init__(self, path=None):
+        """Class constructor."""
         super().__init__()
 
         # package base folder
@@ -106,7 +107,7 @@ class SnipSphinxConf:
 
     @classmethod
     def now(cls):
-        """Current datetime
+        """Current datetime.
 
         :returns: current datetime
         :rtype: datetime.datetime
@@ -115,7 +116,7 @@ class SnipSphinxConf:
 
     @classmethod
     def now_to_str(cls, strftime_str):
-        """Format datetime now
+        """Format datetime now.
 
         :param strftime_str: format str
         :type strftime_str: str
@@ -132,7 +133,7 @@ class SnipSphinxConf:
 
     @property
     def path_abs(self):
-        """Absolute path to ``doc/conf.py`` or ``docs/conf.py``
+        """Absolute path to ``doc/conf.py`` or ``docs/conf.py``.
 
         :returns: package base folder
         :rtype: pathlib.Path
@@ -140,7 +141,7 @@ class SnipSphinxConf:
         return self._path_abs
 
     def path_abs_init(self):
-        """Using from package base path or cwd, find doc/ or docs/ folder absolute path
+        """Using from package base path or cwd, find doc/ or docs/ folder absolute path.
 
         :raises:
 
@@ -174,7 +175,7 @@ class SnipSphinxConf:
 
     @property
     def path_cwd(self):
-        """Get package base folder
+        """Get package base folder.
 
         :returns: package base folder
         :rtype: pathlib.Path
@@ -183,7 +184,7 @@ class SnipSphinxConf:
 
     @path_cwd.setter
     def path_cwd(self, val):
-        """Setter of current working directory
+        """Setter of current working directory.
 
         :param val:
 
@@ -196,7 +197,7 @@ class SnipSphinxConf:
 
     @property
     def SV(self) -> SemVersion | None:
-        """Getter for SemVersion instance
+        """Getter for SemVersion instance.
 
         :returns: After call to contents, SemVersion instance is available
         :rtype: SemVersion | None
@@ -222,7 +223,9 @@ class SnipSphinxConf:
         package_name,
         copyright_start_year,
     ):
-        """Create the snippet for Sphinx ``conf.py``. This will set:
+        """Create the snippet for Sphinx ``conf.py``.
+
+        This will set:
 
         - copyright
         - version
@@ -299,7 +302,7 @@ class SnipSphinxConf:
         self._contents = contents.rstrip()
 
     def replace(self, snippet_co=None):
-        """In a Sphinx conf.py file, for a given snippet, replace contents
+        """In a Sphinx conf.py file, for a given snippet, replace contents.
 
         :param snippet_co:
 

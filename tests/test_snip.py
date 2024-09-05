@@ -3,13 +3,21 @@
 
 Unittest for module, drain_swamp.snip
 
+Unit test -- Module
+
 .. code-block:: shell
 
-   pytest --showlocals --log-level INFO tests/test_snip.py
-   pytest --showlocals --cov="drain_swamp" --cov-report=term-missing tests/test_snip.py
+   python -m coverage run --source='drain_swamp.snip' -m pytest \
+   --showlocals tests/test_snip.py && coverage report \
+   --data-file=.coverage --include="**/snip.py"
 
-Needs a config file to specify exact files to include / omit from report.
-Will fail with exit code 1 even with 100% coverage
+Integration test
+
+.. code-block:: shell
+
+   make coverage
+   pytest --showlocals --cov="drain_swamp" --cov-report=term-missing \
+   --cov-config=pyproject.toml tests
 
 """
 
@@ -196,6 +204,13 @@ def test_snip_harden(
     file_regression,
     has_logging_occurred,
 ):
+    """Test Snip.replace failure and normal usage.
+
+    .. seealso::
+
+       `FileRegressionFixture.check <https://pytest-regressions.readthedocs.io/en/latest/api.html#pytest_regressions.file_regression.FileRegressionFixture.check>`_
+
+    """
     # pytest --showlocals --log-level INFO -k "test_snip_harden" tests
     # py39+ Cannot have LOGGING.loggers.root
     LOGGING["loggers"][g_app_name]["propagate"] = True
@@ -204,7 +219,21 @@ def test_snip_harden(
     logger.addHandler(hdlr=caplog.handler)
     caplog.handler.level = logger.level
 
+    # files/folders --> FileNotFoundError --> False
+    invalids = (
+        str(tmp_path),  # a folder
+        Path("/proc/tmp/george/bob/ted/todd/dan.txt"),  # nonexistent file
+        Path("__init__.py"),  # relative file (not scary normally empty)
+    )
+    for invalid in invalids:
+        er_bad = Snip(invalid, is_quiet=is_quiet)
+        # Fails at this point, not on class construction
+        is_success = er_bad.replace(replace_text, id_=id_)
+        assert is_success is None or ReplaceResult.VALIDATE_FAIL == is_success
+
+    # prepare
     path_fname = tmp_path.joinpath(file_name)
+
     path_fnames = (
         path_fname,
         str(path_fname),
@@ -218,19 +247,9 @@ def test_snip_harden(
         with pytest.raises(ValueError):
             er_bad_val.get_file()
 
-        # files/folders --> FileNotFoundError --> False
-        invalids = (
-            str(tmp_path),  # a folder
-            Path("/proc/tmp/george/bob/ted/todd/dan.txt"),  # nonexistent file
-            Path("__init__.py"),  # relative file (not scary normally empty)
-        )
-        for invalid in invalids:
-            er_bad = Snip(invalid, is_quiet=is_quiet)
-            # Fails at this point, not on class construction
-            is_success = er_bad.replace(replace_text, id_=id_)
-            assert is_success is None or ReplaceResult.VALIDATE_FAIL == is_success
-
-        Path(mixed_f).write_text(file_contents)
+    for mixed_f in path_fnames:
+        path_f = Path(mixed_f)
+        path_f.write_text(file_contents)
         er = Snip(mixed_f, is_quiet=is_quiet)
 
         # pass in non-str
@@ -255,11 +274,11 @@ def test_snip_harden(
 
             assert has_logging_occurred(caplog)
 
-            # https://pytest-regressions.readthedocs.io/en/latest/api.html#pytest_regressions.file_regression.FileRegressionFixture.check
             file_regression.check(expected, extension=".txt", binary=False)
 
 
 def test_snip_properties():
+    """Test Snip properties."""
     # pytest --showlocals --log-level INFO -k "test_properties" tests
     is_quiet_invalids = (
         None,
@@ -291,6 +310,7 @@ def test_checks_normal_usage(
     is_quiet,
     caplog,
 ):
+    """Snippet validity checks."""
     # pytest --showlocals --log-level INFO -k "test_checks_normal_usage" tests
     LOGGING["loggers"][g_app_name]["propagate"] = True
     logging.config.dictConfig(LOGGING)
@@ -348,6 +368,7 @@ def test_checks_bad_input(
     is_quiet,
     caplog,
 ):
+    """Snippet validity checks bad input."""
     # pytest --showlocals --log-level INFO -k "test_checks_bad_input" tests
     LOGGING["loggers"][g_app_name]["propagate"] = True
     logging.config.dictConfig(LOGGING)
@@ -427,6 +448,7 @@ def test_snip_validate(
     caplog,
     tmp_path,
 ):
+    """Test Snip.validate."""
     # pytest --showlocals --log-level INFO -k "test_snip_validate" tests
     LOGGING["loggers"][g_app_name]["propagate"] = True
     logging.config.dictConfig(LOGGING)
@@ -434,7 +456,9 @@ def test_snip_validate(
     logger.addHandler(hdlr=caplog.handler)
     caplog.handler.level = logger.level
 
+    # prepare
     path_fname = tmp_path.joinpath(file_name)
+
     path_fnames = (
         path_fname,
         str(path_fname),
@@ -585,6 +609,7 @@ def test_snip_contents(
     caplog,
     has_logging_occurred,
 ):
+    """Test snippet algo."""
     # pytest --showlocals --log-level INFO -k "test_snip_contents" tests
     # pytest --showlocals --log-level INFO tests/test_snip.py::test_snip_contents["No snippets. Nothing to do"]
     LOGGING["loggers"][g_app_name]["propagate"] = True

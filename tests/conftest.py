@@ -1,3 +1,9 @@
+"""
+.. moduleauthor:: Dave Faulkmore <https://mastodon.social/@msftcangoblowme>
+
+drain-swamp pytest conftest.py
+"""
+
 import copy
 import re
 import shutil
@@ -22,7 +28,11 @@ from .wd_wrapper import WorkDir
 
 
 class FileRegression:
-    """
+    """Compare previous runs files.
+
+    :ivar file_regression: file to compare against?
+    :vartype file_regression: typing.Self
+
     .. todo:: when Sphinx<=6 is dropped
 
        Remove line starting with re.escape(" translation_progress=
@@ -41,12 +51,29 @@ class FileRegression:
     )
 
     def __init__(self, file_regression: "FileRegression") -> None:
+        """FileRegression constructor."""
         self.file_regression = file_regression
 
     def check(self, data: str, **kwargs: dict[str, Any]) -> str:
+        """Check previous run against current run file.
+
+        :param data: file contents
+        :type data: str
+        :param kwargs: keyword options are passed thru
+        :type kwargs: dict[str, typing.Any]
+        :returns: diff of file contents?
+        :rtype: str
+        """
         return self.file_regression.check(self._strip_ignores(data), **kwargs)
 
     def _strip_ignores(self, data: str) -> str:
+        """Helper to strip ignores from data.
+
+        :param data: file contents w/o ignore statements
+        :type data: str
+        :returns: sanitized file contents
+        :rtype: str
+        """
         cls = type(self)
         for ig in cls.ignores:
             data = re.sub(ig, "", data)
@@ -86,7 +113,7 @@ def pytest_runtest_makereport(item, call):
 
 @pytest.fixture()
 def has_logging_occurred():
-    """Display caplog capture text
+    """Display caplog capture text.
 
     Usage
 
@@ -114,14 +141,11 @@ def has_logging_occurred():
     """
 
     def _method(caplog) -> bool:
-        # log at all logging levels
-        # logger was first argument, but removed it
-        # import logging
-        # logger.debug('DEBUG: log entry captured')
-        # logger.info('INFO: log entry captured')
-        # logger.error('ERROR: log entry captured')
-        # logger.warning('WARNING: log entry captured')
-        # display capture log
+        """Check if there is at least one log message. Print log messages.
+
+        :returns: True if logging occurred otherwise False
+        :rtype: bool
+        """
         print("\nCAPLOG:")
         output = caplog.text.rstrip("\n").split(sep="\n")
         if output == [""]:
@@ -136,11 +160,21 @@ def has_logging_occurred():
 
 @pytest.fixture()
 def prepare_folders_files(request):
-    """Prepare folders and files within folder"""
+    """Prepare folders and files within folder."""
 
     set_folders = set()
 
     def _method(seq_rel_paths, tmp_path):
+        """Creates folders and empty files
+
+        :param seq_rel_paths: Relative file paths. Creates folders as well
+        :type seq_rel_paths:
+
+           collections.abc.Sequence[str | pathlib.Path] | collections.abc.MutableSet[str | pathlib.Path]
+
+        :param tmp_path: Start absolute path
+        :type tmp_path: pathlib.Path
+        """
         set_abs_paths = set()
         is_seq = seq_rel_paths is not None and (
             isinstance(seq_rel_paths, Sequence) or isinstance(seq_rel_paths, set)
@@ -180,20 +214,22 @@ def prepare_folders_files(request):
 def prep_pyproject_toml(request):
     """cli doesn't offer a ``parent_dir`` option to bypass ``--path``.
     Instead copy and rename the test ``pyproject.toml`` to the ``tmp_path``
-
-    :param p_toml_file:
-
-       Path to a ``pyproject.toml``. A copy will be made, original untouched
-
-    :type p_toml_file: pathlib.Path
-    :param path_dest_dir: destination tmp_path
-    :type path_dest_dir: pathlib.Path
-    :returns: Path to the copied and renamed file within it's new home, temp folder
-    :rtype: pathlib.Path
     """
     lst_delete_me = []
 
     def _method(p_toml_file, path_dest_dir, rename="pyproject.toml"):
+        """Copy and rename file. Does not necessarily have to be ``pyproject.toml``
+
+        :param p_toml_file:
+
+           Path to a ``pyproject.toml``. A copy will be made, original untouched
+
+        :type p_toml_file: pathlib.Path
+        :param path_dest_dir: destination tmp_path
+        :type path_dest_dir: pathlib.Path
+        :returns: Path to the copied and renamed file within it's new home, temp folder
+        :rtype: pathlib.Path
+        """
         if p_toml_file is not None and issubclass(type(p_toml_file), PurePath):
             # copy
             path_dest = path_dest_dir.joinpath(p_toml_file.name)
@@ -227,24 +263,9 @@ def prep_cmd_unlock_lock():
     """Prepare the cmd for:
 
     - drain_swamp.cli_unlock.dependencies_lock
+
     - drain_swamp.cli_unlock.dependencies_unlock
 
-    :param path_tmp_dir: temp folder path
-    :type path_tmp_dir: pathlib.Path
-    :param t_req:
-    :type t_req: tuple[str, pathlib.Path] | None
-    :param d_opts: cli optionals target / relative path
-    :type d_opts: dict[str, pathlib.Path]
-    :param add_folders:
-
-       relative paths to additional folders which contain ``.in`` requirements files
-
-    :type add_folders: list[pathlib.Path]
-    :returns:
-
-       cmd usable with :py:mod:`subprocess` or :py:class:`click.testing.CliRunner`
-
-    :rtype: list[str | pathlib.Path]
     """
 
     def _method(
@@ -254,6 +275,25 @@ def prep_cmd_unlock_lock():
         add_folders=(),
         snip_co=None,
     ):
+        """Prepare the cmd for pipenv-unlock [lock|unlock].
+
+        :param path_tmp_dir: temp folder path
+        :type path_tmp_dir: pathlib.Path
+        :param t_req:
+        :type t_req: tuple[str, pathlib.Path] | None
+        :param d_opts: cli optionals target / relative path
+        :type d_opts: dict[str, pathlib.Path]
+        :param add_folders:
+
+           relative paths to additional folders which contain ``.in`` requirements files
+
+        :type add_folders: list[pathlib.Path]
+        :returns:
+
+           cmd usable with :py:mod:`subprocess` or :py:class:`click.testing.CliRunner`
+
+        :rtype: list[str | pathlib.Path]
+        """
         cmd = [
             "--path",
             path_tmp_dir,
@@ -284,20 +324,22 @@ def prep_cmd_unlock_lock():
 
 @pytest.fixture()
 def prepare_files_empties(prepare_folders_files):
-    """
-    :param d_pyproject_toml: dict of a ``pyproject.toml``
-    :type d_pyproject_toml: dict[str, typing.Any]
-    :param path_dir: A temporary folder to place the file tree
-    :type path_dir: pathlib.Path
-    :param d_add_files:
-
-       Default empty dict. Additional files. Not to be confused with
-       cli optionals. Relative paths
-
-    :type d_add_files: dict[str, pathlib.Path]
-    """
+    """Fixture for preparing empty files."""
 
     def _method(d_pyproject_toml, path_dir, d_add_files={}, d_optionals={}):
+        """Prepare empty files.
+
+        :param d_pyproject_toml: dict of a ``pyproject.toml``
+        :type d_pyproject_toml: dict[str, typing.Any]
+        :param path_dir: A temporary folder to place the file tree
+        :type path_dir: pathlib.Path
+        :param d_add_files:
+
+           Default empty dict. Additional files. Not to be confused with
+           cli optionals. Relative paths
+
+        :type d_add_files: dict[str, pathlib.Path]
+        """
         # pyproject.toml optionals + additional files (w/o optionals_cli)
         d_both = copy.deepcopy(d_add_files)
         get_optionals_pyproject_toml(
@@ -340,9 +382,10 @@ def prepare_files_empties(prepare_folders_files):
 
 @pytest.fixture
 def path_project_base():
-    """Get the project base folder"""
+    """Fixture to get project base folder"""
 
     def _method():
+        """Get project base folder."""
         if "__pycache__" in __file__:
             # cached
             path_tests = Path(__file__).parent.parent
@@ -358,7 +401,23 @@ def path_project_base():
 
 @pytest.fixture()
 def wd(tmp_path: Path) -> WorkDir:
-    """https://github.com/pypa/setuptools_scm/blob/main/testing/conftest.py"""
+    """Create a workdir within tmp_path.
+
+    In another fixture, add a package base folder.
+
+    :param tmp_path: Temporary folder
+    :type tmp_path: pathlib.Path
+    :returns: WorkDir instance
+    :rtype: .wd_wrapper.WorkDir
+
+    .. seealso::
+
+       Credit
+       `[Author] <https://github.com/pypa/setuptools-scm/blob/main/pyproject.toml>`_
+       `[Source] <https://github.com/pypa/setuptools_scm/blob/main/testing/conftest.py>`_
+       `[License: MIT] <https://github.com/pypa/setuptools-scm/blob/main/LICENSE>`_
+
+    """
     target_wd = tmp_path.resolve() / "wd"
     target_wd.mkdir()
     return WorkDir(target_wd)
@@ -366,17 +425,18 @@ def wd(tmp_path: Path) -> WorkDir:
 
 @pytest.fixture
 def verify_tag_version():
-    """Verify version file contains a given semantic version str
-
-    :param cwd: package base folder
-    :type cwd: pathlib.Path
-    :param sem_ver_str: expected semantic version
-    :type sem_ver_str: str
-    :returns: True if versions match otherwise False
-    :rtype: bool
-    """
+    """Fixture to verify version file contents."""
 
     def _method(cwd, sem_ver_str):
+        """Verify version file contains a given semantic version str.
+
+        :param cwd: package base folder
+        :type cwd: pathlib.Path
+        :param sem_ver_str: expected semantic version
+        :type sem_ver_str: str
+        :returns: True if versions match otherwise False
+        :rtype: bool
+        """
         p_bin_dir = Path(sys.executable).parent
         drainswamp_path = str(p_bin_dir.joinpath("drain-swamp"))
         cmd = [

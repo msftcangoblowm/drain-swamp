@@ -119,6 +119,7 @@ def lazy_dotted_path(dotted_path):
     :raises:
 
        - :py:exc:`TypeError` -- Expecting valid dotted path
+       - :py:exc:`ValueError` -- No such module exists
 
     """
     mod_path = "drain_swamp.monkey.hooks:lazy_dotted_path"
@@ -133,12 +134,21 @@ def lazy_dotted_path(dotted_path):
     try:
         mod = sys.modules[dotted_path]
     except KeyError:
-        spec = importlib.util.find_spec(dotted_path)
-        module = importlib.util.module_from_spec(spec)
-        loader = importlib.util.LazyLoader(spec.loader)
-        # Make module with proper locking and get it inserted into sys.modules.
-        loader.exec_module(module)
-        mod = module
+        mod = None
+
+    if mod is None:
+        try:
+            spec = importlib.util.find_spec(dotted_path)
+            module = importlib.util.module_from_spec(spec)
+            loader = importlib.util.LazyLoader(spec.loader)
+            # Make module with proper locking and get it inserted into sys.modules.
+            loader.exec_module(module)
+            mod = module
+        except ModuleNotFoundError as exc:
+            msg_warn = f"{mod_path} dotted path to nonexistant module {dotted_path}"
+            raise ValueError(msg_warn) from exc
+    else:  # pragma: no cover
+        pass
 
     return mod
 

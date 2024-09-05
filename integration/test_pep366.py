@@ -1,4 +1,7 @@
-"""An integration unittest. **DO NOT** include in :code:`coverage run`.
+"""
+.. moduleauthor:: Dave Faulkmore <https://mastodon.social/@msftcangoblowme>
+
+An integration unittest. **DO NOT** include in :code:`coverage run`.
 
 This unit test must **avoid importing anything from drain_swamp** package.
 
@@ -20,7 +23,10 @@ from pathlib import Path
 
 
 class TestPep366(unittest.TestCase):
+    """Call entrypoint from code base rather than from installed package."""
+
     def setUp(self):
+        """Setup cwd and path to this unittest."""
         if "__pycache__" in __file__:
             # cached
             self.path_tests = Path(__file__).parent.parent
@@ -30,7 +36,7 @@ class TestPep366(unittest.TestCase):
         self.cwd = self.path_tests.parent
 
     def test_runs_off_source_code(self):
-        """Run from source code"""
+        """Run from source code."""
         cmds = (
             (
                 (sys.executable, "src/drain_swamp/cli_igor.py", "list"),
@@ -62,7 +68,9 @@ class TestPep366(unittest.TestCase):
                 assert is_code_match
 
     def test_with_relative_path(self):
-        """--path [relative path]
+        """Supply path option.
+
+        --path [relative path]
 
         Equivalent to
         :code:`python src/drain_swamp/cli_unlock.py is_lock --path pyproject.toml`

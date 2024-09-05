@@ -57,3 +57,10 @@ repos:
     - id: mypy
       pass_filenames: false
       entry: mypy src/drain_swamp/
+
+  - repo: https://github.com/econchick/interrogate
+    rev: 1.7.0  # or master if you're bold
+    hooks:
+      - id: interrogate
+        args: ["-v", "--fail-under=100", "--omit-covered-files"]
+        pass_filenames: false  # needed if excluding files with pyproject.toml

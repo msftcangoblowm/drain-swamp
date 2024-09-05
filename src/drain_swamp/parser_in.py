@@ -14,6 +14,11 @@
 
    Module level logger
 
+.. py:data:: is_module_debug
+   :type: bool
+
+   Module level debugging flag
+
 """
 
 import logging
@@ -72,6 +77,7 @@ class TomlParser:
     """
 
     def __init__(self, path, raise_exceptions=False):
+        """Class constructor."""
         super().__init__()
         if raise_exceptions is None or not isinstance(raise_exceptions, bool):
             raise_exceptions = False
@@ -125,7 +131,7 @@ class TomlParser:
 
     @property
     def path_file(self):
-        """Absolute Path to ``pyproject.toml``
+        """Absolute Path to ``pyproject.toml``.
 
         :returns:
 
@@ -138,7 +144,7 @@ class TomlParser:
 
     @property
     def d_pyproject_toml(self):
-        """Getter pyproject.toml dict
+        """Getter pyproject.toml dict.
 
         :returns: pyproject.toml dict. Not set if constructor raised an Exception
         :rtype: collections.abc.Mapping[str, typing.Any] | None
@@ -147,7 +153,7 @@ class TomlParser:
 
     @classmethod
     def resolve(cls, path_config):
-        """Reverse search for a ``pyproject.toml`` file
+        """Reverse search for a ``pyproject.toml`` file.
 
         Leverages reverse search algo from Python package, black
 
@@ -197,7 +203,7 @@ class TomlParser:
         return path_file
 
     def _get_pyproject_toml(self, path_config):
-        """Load pyproject.toml
+        """Load ``pyproject.toml``.
 
         Package click handles converting to :py:class:`pathlib.Path`.
 
@@ -259,7 +265,7 @@ class TomlParser:
         cls,
         path_config,
     ):
-        """Read the current contents of ``pyproject.toml`` file
+        """Read the current contents of ``pyproject.toml`` file.
 
         :param path_config: ``pyproject.toml`` folder path
         :type path_config: pathlib.Path

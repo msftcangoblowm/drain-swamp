@@ -95,12 +95,13 @@ class ConfigSettings:
     __slots__ = ("_file_name",)
 
     def __init__(self, file_name=None):
+        """Class constructor."""
         super().__init__()
         self.file_name = file_name
 
     @property
     def file_name(self):
-        """Get config settings file name. This is a temporary file
+        """Get config settings file name. This is a temporary file.
 
         :returns: config settings file name
         :rtype: str
@@ -109,7 +110,7 @@ class ConfigSettings:
 
     @file_name.setter
     def file_name(self, val):
-        """Override default config file file name
+        """Override default config file file name.
 
         :param val: Expecting a str
         :type val: typing.Any
@@ -125,7 +126,7 @@ class ConfigSettings:
 
     @classmethod
     def get_abs_path(cls):
-        """From os.environ get temporary absolute file path
+        """From os.environ get temporary absolute file path.
 
         :returns:
         :rtype: str | None
@@ -135,7 +136,7 @@ class ConfigSettings:
 
     @classmethod
     def set_abs_path(cls, val):
-        """Set absolute temporary file path to config settings .toml file
+        """Set absolute temporary file path to config settings .toml file.
 
         :param val: Expecting either str or Path. Should be absolute path
         :type val: typing.Any
@@ -154,7 +155,7 @@ class ConfigSettings:
 
     @classmethod
     def remove_abs_path(cls):
-        """Remove environment variable holding the config settings temp file path"""
+        """Remove environment variable holding the config settings temp file path."""
         del os.environ[cls.ENVIRON_KEY]
 
     def read(self):
@@ -265,7 +266,7 @@ class ConfigSettings:
 
     @classmethod
     def get_section_dict(cls, path_dir, toml_contents, file_name=None):
-        """Set the config settings and returning the section mapping
+        """Set the config settings and returning the section mapping.
 
         :param path_dir:
 

@@ -14,6 +14,11 @@ Be able to search and replace editable regions within text files
 
    Module level logger
 
+.. py:data:: is_module_debug
+   :type: bool
+
+   Module level debug flag
+
 """
 
 from __future__ import annotations
@@ -46,7 +51,7 @@ is_module_debug = True
 
 
 class ReplaceResult(Enum):
-    """Snippet replace result possibilities
+    """Snippet replace result possibilities.
 
     For membership checking, equality comparison is supported
 
@@ -82,7 +87,7 @@ class ReplaceResult(Enum):
     NO_CHANGE = auto()
 
     def __eq__(self, other):
-        """Equality check
+        """Equality check.
 
         :param other: Should be same Enum class
         :type other: typing.Any
@@ -97,7 +102,7 @@ def check_matching_tag_count(
     token_start=None,
     token_end=None,
 ):
-    """Checks tag count. Completely oblivious to overlapping tags
+    """Checks tag count. Completely oblivious to overlapping tags.
 
     Non-overlapping start/end tokens
 
@@ -154,7 +159,7 @@ def check_not_nested_or_out_of_order(
     token_start,
     token_end,
 ):
-    """Check tag pairs are not nested / out of order
+    """Check tag pairs are not nested / out of order.
 
     Assumes :py:func:`drain_swamp.snip.check_matching_tag_count`
     already checked.
@@ -234,7 +239,7 @@ def check_not_nested_or_out_of_order(
 
 
 def sanitize_id(id_=""):
-    """tokenize snippet code. alphanumeric + underscore
+    """tokenize snippet code. alphanumeric + underscore.
 
     :param id_:
 
@@ -265,8 +270,8 @@ def sanitize_id(id_=""):
 
 
 class Snip:
-    """jinja2 templates is time consuming to get the spacing right. A
-    snippet is an easier alternative
+    """jinja2 templates is time consuming to get the spacing right.
+    A snippet is an easier alternative
 
     .. py:attribute:: TOKEN_START
        :type: str
@@ -328,6 +333,7 @@ class Snip:
         fname,
         is_quiet=False,
     ):
+        """Class constructor."""
         super().__init__()
         self.is_quiet = is_quiet
 
@@ -339,7 +345,7 @@ class Snip:
 
     @property
     def path_file(self):
-        """Path has not necessarily been checked. Run thru a validator func
+        """Path has not necessarily been checked. Run thru a validator func.
 
         :returns: A raw path either relative or absolute
         :rtype: pathlib.Path
@@ -348,7 +354,9 @@ class Snip:
 
     @path_file.setter
     def path_file(self, val):
-        """Setter does not check:
+        """path_file setter
+
+        Does not check:
 
         - whether relative or absolute path
 
@@ -373,7 +381,7 @@ class Snip:
                 raise TypeError(msg_exc)
 
     def is_file_ok(self):
-        """Try to grab permitted editable files from ``pyproject.toml``
+        """Try to grab permitted editable files from ``pyproject.toml``.
 
         :returns: True if file has absolute and is permitted
         :rtype: bool
@@ -396,7 +404,7 @@ class Snip:
 
     @property
     def is_quiet(self):
-        """Whether to permit printing status to stderr
+        """Whether to permit printing status to stderr.
 
         :returns: True to not print status updates
         :rtype: bool
@@ -405,7 +413,7 @@ class Snip:
 
     @is_quiet.setter
     def is_quiet(self, val):
-        """Whether or not to suppress info logging messages
+        """Whether or not to suppress info logging messages.
 
         :param val: Should be a bool. Defaults to False
         :type val: typing.Any
@@ -418,7 +426,7 @@ class Snip:
 
     @property
     def is_infer(self):
-        """id is None or empty str. snippet_co is taken from snippet
+        """id is None or empty str. snippet_co is taken from snippet.
 
         :returns: True if infer snippet_co otherwise False
         :rtype: bool
@@ -426,7 +434,7 @@ class Snip:
         return self._is_infer
 
     def get_file(self):
-        """Read the file
+        """Read the file.
 
         :returns: file contents
         :rtype: str
@@ -675,7 +683,7 @@ class Snip:
         return ret
 
     def validate(self):
-        """validate target file contents are safe
+        """Validate target file contents are safe.
 
         All checks must pass. Over time add additional checks
 
@@ -726,7 +734,7 @@ class Snip:
 
     @property
     def snippets(self):
-        """Get all snippets. No filtering by snippet_co
+        """Get all snippets. No filtering by snippet_co.
 
         :returns: tuple of snippet_co and snippet contents
         :rtype: list[tuple[str, str]] | ReplaceResult
@@ -769,7 +777,7 @@ class Snip:
         return seq_ret
 
     def print(self):
-        """Human readable summary of snippets
+        """Human readable summary of snippets.
 
         :returns: tuple of snippet_co and snippet contents
         :rtype: list[tuple[str, str]] | ReplaceResult

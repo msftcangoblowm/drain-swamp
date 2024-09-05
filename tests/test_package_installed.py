@@ -3,10 +3,21 @@
 
 Checks if a Python package is installed
 
+Unit test -- Module
+
 .. code-block:: shell
 
-   pytest --showlocals --log-level INFO tests/test_is_package_installed.py
-   pytest --showlocals --cov="drain_swamp" --cov-report=term-missing tests/test_is_package_installed.py
+   python -m coverage run --source='drain_swamp._package_installed' -m pytest \
+   --showlocals tests/test_package_installed.py && coverage report \
+   --data-file=.coverage --include="**/_package_installed.py"
+
+Integration test
+
+.. code-block:: shell
+
+   make coverage
+   pytest --showlocals --cov="drain_swamp" --cov-report=term-missing \
+   --cov-config=pyproject.toml tests
 
 """
 

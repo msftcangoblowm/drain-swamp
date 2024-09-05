@@ -1,10 +1,22 @@
 """
 .. moduleauthor:: Dave Faulkmore <https://mastodon.social/@msftcangoblowme>
 
+Unit test -- Module
+
 .. code-block:: shell
 
-   pytest --showlocals --log-level INFO tests/test_plugin_scm_version.py
-   pytest --showlocals --cov="drain_swamp" --cov-report=term-missing tests/test_plugin_scm_version.py
+   python -m coverage run \
+   --source='drain_swamp.monkey.plugins.ds_scm_version' -m pytest \
+   --showlocals tests/test_plugin_scm_version.py && coverage report \
+   --data-file=.coverage --include="**/monkey/plugins/ds_scm_version.py"
+
+Integration test
+
+.. code-block:: shell
+
+   make coverage
+   pytest --showlocals --cov="drain_swamp" --cov-report=term-missing \
+   --cov-config=pyproject.toml tests
 
 """
 
@@ -25,6 +37,22 @@ from .wd_wrapper import WorkDir
 
 @pytest.fixture()
 def wd(wd: WorkDir) -> WorkDir:
+    """Fixture modifies WorkDir.
+
+    - Change cwd to be a package folder
+
+    - Initializes git
+
+    - Set the git add and commit commands
+
+    .. seealso::
+
+       Credit
+       `[Author] <https://github.com/pypa/setuptools-scm/blob/main/pyproject.toml>`_
+       `[Source] <https://github.com/pypa/setuptools_scm/blob/main/testing/wd_wrapper.py>`_
+       `[License: MIT] <https://github.com/pypa/setuptools-scm/blob/main/LICENSE>`_
+
+    """
     # Create project base folder with project name
     path_new = wd.cwd / "complete_awesome_perfect"
     path_new.mkdir()
@@ -87,6 +115,7 @@ ids_kind_arg_filter_normal = (
     ids=ids_kind_arg_filter_normal,
 )
 def test_kind_arg_filter_normal(toml_contents, fallback, expected_kind, tmp_path):
+    """Test _kind."""
     # pytest --showlocals --log-level INFO -k "test_kind_arg_filter_normal" tests
     # d_section not a dict
     invalids = (
@@ -146,6 +175,7 @@ ids_kind_arg_filter_whitespace = (
     ids=ids_kind_arg_filter_whitespace,
 )
 def test_kind_arg_filter_whitespace(toml_contents, fallback, expected_kind, tmp_path):
+    """Test _kind expected user warning."""
     # pytest --showlocals --log-level INFO -k "test_kind_arg_filter_whitespace" tests
     d_section = ConfigSettings.get_section_dict(tmp_path, toml_contents)
     with pytest.warns(UserWarning) as record:
@@ -164,6 +194,7 @@ def test_on_version_infer(
     prep_pyproject_toml,
     prepare_folders_files,
 ):
+    """Test on_version_infer."""
     # pytest --showlocals --log-level INFO -k "test_on_version_infer" tests
     # tag. Does not modify the version file
     kind = "tag"

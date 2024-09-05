@@ -63,7 +63,7 @@ def dump_version(
     write_to,
     template=None,
 ) -> None:
-    """Dump version file
+    """Dump version file.
 
     :param root: Absolute path of package base folder
     :type root: pathlib.Path
@@ -96,7 +96,7 @@ def _validate_template(
     target,
     template,
 ):
-    """Provide a template or use built-in templates for .py or .txt target files
+    """Provide a template or use built-in templates for .py or .txt target files.
 
     :param target: absolute path to target file
     :type target: pathlib.Path
@@ -145,7 +145,7 @@ def write_version_to_path(
     template,
     version,
 ):
-    """Write the version file
+    """Write the version file.
 
     :param target: Absolute path to _version.[suffix] file
     :type target: pathlib.Path
@@ -180,7 +180,7 @@ def write_version_files(
     version_file,
     is_only_not_exists=False,
 ):
-    """Write the _version.py file
+    """Write the _version.py file.
 
     Disabled passing in a custom template
 
@@ -192,7 +192,10 @@ def write_version_files(
     :type write_to: str | None
     :param version_file: target relative path from pyproject.toml
     :type version_file: str | None
-    :param is_only_not_exists: Default False. Write file only if it does not already exit
+    :param is_only_not_exists:
+
+       Default False. Write file only if it does not already exist
+
     :type is_only_not_exists: bool | None
     :raises:
 
@@ -210,6 +213,13 @@ def write_version_files(
         pass
 
     def is_do_it(abs_path):
+        """Decide whether to go ahead or not.
+
+        :param abs_path: Absolute path to version file
+        :type abs_path: pathlib.Path
+        :returns: True should proceed with the write version file
+        :rtype: bool
+        """
         nonlocal is_only_not_exists
         path_abs = Path(abs_path)
         if is_only_not_exists is False:

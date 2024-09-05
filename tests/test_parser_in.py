@@ -1,14 +1,23 @@
 """
 .. moduleauthor:: Dave Faulkmore <https://mastodon.social/@msftcangoblowme>
 
-..
+Unittest for module, drain_swamp.parser_in
 
-Unittest for module, drain_swamp.backend_setupttools
+Unit test -- Module
 
 .. code-block:: shell
 
-   pytest --showlocals --log-level INFO tests/test_parser_in.py
-   pytest --showlocals --cov="drain_swamp" --cov-report=term-missing tests/test_parser_in.py
+   python -m coverage run --source='drain_swamp.parser_in' -m pytest \
+   --showlocals tests/test_parser_in.py && coverage report \
+   --data-file=.coverage --include="**/parser_in.py"
+
+Integration test
+
+.. code-block:: shell
+
+   make coverage
+   pytest --showlocals --cov="drain_swamp" --cov-report=term-missing \
+   --cov-config=pyproject.toml tests
 
 """
 

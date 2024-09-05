@@ -29,7 +29,7 @@ _logger = logging.getLogger(f"{g_app_name}.backend_abc")
 
 
 class BackendSetupTools(BackendType):
-    """Support for setuptools
+    """Support for setuptools.
 
     Create an instance using the factory,
     :py:meth:`drain_swamp.backend_abc.BackendType.load_factory`
@@ -181,7 +181,8 @@ class BackendSetupTools(BackendType):
         optionals={},
         parent_dir=None,
         additional_folders=(),
-    ) -> None:
+    ):
+        """Class constructor."""
         super().__init__()
         self._path_config = path_config
 
@@ -195,12 +196,17 @@ class BackendSetupTools(BackendType):
         )
 
     @property
-    def backend(self) -> str:
+    def backend(self):
+        """Get Backend name.
+
+        :returns: Backend name
+        :rtype: str
+        """
         cls = type(self)
         return cls.BACKEND_NAME
 
     def compose_dependencies_line(self, suffix):
-        """Compose required dependency line
+        """Compose required dependency line.
 
         .. code-block:: text
 
