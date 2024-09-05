@@ -84,6 +84,7 @@ Move the tag past post commits
 
 import importlib.util
 import logging
+import re
 import sys
 import types
 import warnings
@@ -328,9 +329,41 @@ def _is_ver_ok(str_v):
     try:
         Version(str_v)
     except InvalidVersion:
-        ret = True
-    else:
         ret = False
+    else:
+        ret = True
+
+    return ret
+
+
+def outlier_sanitize(ver):
+    """Deal with particularly bad version str, ``0.1.dev0.d20240213``.
+
+    Explain the regex
+
+    .. code-block:: text
+
+       0 <escape .> 1 <escape .> dev <digits> (1 or more)
+       escape . d (once) <digits>*8
+
+    :param ver: Raw version str
+    :type ver: str
+    :returns: If this case applies, fixes otherwise leave as is
+    :rtype: str
+    """
+    pattern = r"^0\.1\.dev\d+\.d{1}\d{8}$"
+    result = re.findall(pattern, ver)
+    pattern_found = result is not None and len(result) == 1
+    if pattern_found:
+        # fix "0.1.dev0.d20240213"--> "0.0.1.dev[x]", "d20240213"
+        lst_malformed = ver.split(".")
+        ver_xyz = "0.0.1"
+        str_dev = lst_malformed[2]
+        # dev = str_dev[3:]
+        # local = lst_malformed[-1]
+        ret = f"{ver_xyz}.{str_dev}"
+    else:  # pragma: no cover
+        ret = ver
 
     return ret
 
@@ -364,23 +397,26 @@ def sanitize_tag(ver):
     # '0.1.1.candidate1dev1+g4b33a80.d20240129' --> '0.1.1rc1.dev1+g4b33a80.d20240129'
     if "candidate" in str_remaining_whole:
         str_remaining_whole = str_remaining_whole.replace("candidate", "rc")
-        is_problem = _is_ver_ok(str_remaining_whole)
+        is_good = _is_ver_ok(str_remaining_whole)
     else:  # pragma: no cover
-        is_problem = _is_ver_ok(str_remaining_whole)
+        is_good = _is_ver_ok(str_remaining_whole)
 
     # '0.1.dev0.d20240213' --> '0.1.dev0'
-    if is_problem:
-        lst = str_remaining_whole.split(".")
-        ver_try = ".".join(lst[:-1])
-
-        is_still_issue = _is_ver_ok(ver_try)
-    else:  # pragma: no cover
-        # Do nothing
+    if not is_good:
+        str_before = str_remaining_whole
+        str_after = outlier_sanitize(str_before)
+        is_same = str_before == str_after
+        if is_same:
+            is_still_issue = True
+        else:
+            is_still_issue = False
+    else:
+        str_after = str_remaining_whole
         is_still_issue = False
 
     if is_still_issue:
         try:
-            v = Version(str_remaining_whole)
+            v = Version(str_after)
         except InvalidVersion as e:
             msg = f"Version contains invalid token. {e}"
             raise ValueError(msg) from e
@@ -388,7 +424,7 @@ def sanitize_tag(ver):
         # Do nothing
         pass
 
-    v = Version(str_remaining_whole)
+    v = Version(str_after)
     ret = str(v)
 
     # Strip epoch and local, if exists
@@ -1254,7 +1290,8 @@ class SemVersion:
 
         """
         # tuple[tuple[int, int, int, str, int], int]
-        t_ver, dev = get_version(ver, is_use_final=self.is_use_final)
+        ver_0 = outlier_sanitize(ver)
+        t_ver, dev = get_version(ver_0, is_use_final=self.is_use_final)
         # releaselevel is long form: post, candidate, alpha, beta
         # releaselevel could be in short form: a, b, rc
         major, minor, micro, releaselevel, serial = t_ver

@@ -1,14 +1,27 @@
 """
+.. moduleauthor:: Dave Faulkmore <https://mastodon.social/@msftcangoblowme>
+
+Unit test -- Module
+
 .. code-block:: shell
 
-   pytest --showlocals --log-level INFO tests/test_wrap_version_keyword.py
-   pytest --showlocals --cov="drain_swamp" --cov-report=term-missing tests/test_wrap_version_keyword.py
+   python -m coverage run --source='drain_swamp.wrap_version_keyword' -m pytest \
+   --showlocals tests/test_wrap_version_keyword.py && coverage report \
+   --data-file=.coverage --include="**/wrap_version_keyword.py"
+
+Integration test
+
+.. code-block:: shell
+
+   make coverage
+   pytest --showlocals --cov="drain_swamp" --cov-report=term-missing \
+   --cov-config=pyproject.toml tests
 
 .. seealso::
 
-   https://github.com/pypa/setuptools/blob/main/setuptools/tests/test_dist.py
-   https://setuptools.pypa.io/en/latest/userguide/package_discovery.html#package-discovery-and-namespace-packages
-   https://github.com/pypa/setuptools_scm/blob/main/testing/test_integration.py
+   `[setuptools test_dist] <https://github.com/pypa/setuptools/blob/main/setuptools/tests/test_dist.py>`_
+   `[setuptools package discovery] <https://setuptools.pypa.io/en/latest/userguide/package_discovery.html#package-discovery-and-namespace-packages>`_
+   `[setuptools test integration] <https://github.com/pypa/setuptools_scm/blob/main/testing/test_integration.py>`_
 
 """
 

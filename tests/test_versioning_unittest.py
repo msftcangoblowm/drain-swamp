@@ -48,9 +48,10 @@ testdata_valids = (
     ("0.1.1.b1dev1+g4b33a80.d20240129", "0.1.1b1.dev1", "0-1-1b1"),
     ("0.1.1.beta1dev1+g4b33a80.d20240129", "0.1.1b1.dev1", "0-1-1b1"),
     ("0.1.1.rc1dev1+g4b33a80.d20240129", "0.1.1rc1.dev1", "0-1-1rc1"),
+    ("0.1.dev19.d20240213", "0.0.1.dev19", "0-0-1"),
 )
 
-testdata_invalids = (("0.1.dev0.d20240213", "0.1.1.dev0"),)
+# testdata_invalids = (("0.1.dev0.d20240213", "0.1.1.dev0"),)
 
 # long|short form --> long form
 testdata_releaselevel = (
@@ -144,6 +145,7 @@ class PackageVersioning(unittest.TestCase):
             self.assertEqual(v_actual, v_expected)
 
         # sanitize_tag and get_version both should fail
+        """
         for v_in, v_expected in testdata_invalids:
             with self.assertRaises(ValueError):
                 sanitize_tag(v_in)
@@ -151,6 +153,8 @@ class PackageVersioning(unittest.TestCase):
         for v_in, v_expected in testdata_invalids:
             with self.assertRaises(ValueError):
                 get_version(v_in, is_use_final=True)
+        """
+        pass
 
         # Strip epoch and locals
         valids = (
@@ -312,7 +316,9 @@ class PackageVersioning(unittest.TestCase):
             self.assertEqual(pre_serial_actual, v_pre[1])
 
     def test_get_version_edge_cases(self):
-        """coverage not picking up the edge cases."""
+        """The version str for get_version is reasonably formed.
+
+        Has already been filtered thru sanitize_tag or SemVersion.parse_ver"""
         testdata_get_version = (
             ("1.4.0.post1.dev0", 0, 1),
             ("1.2.3rc1.post0.dev9", 9, 1),
@@ -322,6 +328,11 @@ class PackageVersioning(unittest.TestCase):
             serial_actual = t_expect_info[-1]
             self.assertEqual(dev_actual, dev_expected)
             self.assertEqual(serial_actual, serial_expected)
+
+        # sanitize_tag or SemVersion.parse_ver are hardened front ends
+        ver = "0.1.dev0.d12345678"
+        with self.assertRaises(ValueError):
+            get_version(ver)
 
     def test_v_remove(self):
         """Remove epoch and local and v prefix from semantic version str."""
@@ -478,9 +489,16 @@ class SemVersioning(unittest.TestCase):
                 sv._local = expected
 
     def test_readthedocs_package_name(self):
-        """rtd url just because."""
+        """rtd url just because.
+
+        .. code-block:: shell
+
+           python -m unittest tests.test_versioning_unittest
+           -k SemVersioning.test_readthedocs_package_name --locals
+
+        """
         project_name = g_app_name.replace("_", "-")
-        sv = SemVersion()
+        sv_0 = SemVersion()
 
         # parse_ver never called. ver None --> latest
         is_latests = (
@@ -489,7 +507,7 @@ class SemVersioning(unittest.TestCase):
             1.2345,
         )
         for is_latest in is_latests:
-            str_url = sv.readthedocs_url(project_name, is_latest=is_latest)
+            str_url = sv_0.readthedocs_url(project_name, is_latest=is_latest)
             self.assertTrue(str_url.endswith("latest"))
             protocol_len = len("https://")
             uri = str_url[protocol_len:]
@@ -497,36 +515,36 @@ class SemVersioning(unittest.TestCase):
             self.assertNotIn("_", project_name_actual)
 
         # package_name contains hyphens. Gets converted to underscores
-        str_url = sv.readthedocs_url(g_app_name)
+        str_url = sv_0.readthedocs_url(g_app_name)
         protocol_len = len("https://")
         uri = str_url[protocol_len:]
         project_name_actual = uri.split(".")[0]
         self.assertEqual(project_name_actual, project_name)
 
         for v_in, v_expected, anchor in testdata_valids:
+            sv_1 = SemVersion()
             # clean up semantic version str
             v_actual, _ = sanitize_tag(v_in)
             self.assertEqual(v_actual, v_expected)
 
             #    parse_ver not called yet
-            sv = SemVersion()
-            self.assertIsNone(sv.version_xyz())
-            self.assertIsNone(sv.anchor())
+            self.assertIsNone(sv_1.version_xyz())
+            self.assertIsNone(sv_1.anchor())
 
-            sv.parse_ver(v_in)
+            sv_1.parse_ver(v_in)
 
-            self.assertEqual(anchor, sv.anchor())
+            self.assertEqual(anchor, sv_1.anchor())
 
             # Contains xyz, not pre or post or rc releases
-            actual_url = sv.readthedocs_url(
+            actual_url = sv_1.readthedocs_url(
                 project_name,
                 is_latest=False,
             )
-            ver_xyz = sv.version_xyz()
+            ver_xyz = sv_1.version_xyz()
             self.assertTrue(actual_url.endswith(ver_xyz))
 
             # Force get latest URL; parse_ver previously called
-            str_url = sv.readthedocs_url(project_name, is_latest=True)
+            str_url = sv_1.readthedocs_url(project_name, is_latest=True)
             self.assertTrue(str_url.endswith("latest"))
 
     def test_version_clean(self):
@@ -662,14 +680,28 @@ class SemVersioning(unittest.TestCase):
         self.assertEqual(actual, "current")
 
     def test_releaselevel(self):
-        """releaselevel setter/getter. Ensures long form."""
+        """releaselevel setter/getter. Ensures long form.
+
+        .. code-block:: shell
+
+           python -m unittest tests.test_versioning_unittest \
+           -k SemVersioning.test_releaselevel --locals --buffer
+
+        """
         sv = SemVersion()
         for short_long, long in testdata_releaselevel:
             sv.releaselevel = short_long
             self.assertEqual(sv.releaselevel, long)
 
     def test_as_tuple(self):
-        """Test version tuple."""
+        """Test version tuple.
+
+        .. code-block:: shell
+
+           python -m unittest tests.test_versioning_unittest \
+           -k SemVersioning.test_as_tuple --locals --buffer
+
+        """
         testdata_ = (
             (
                 "v0.1.1.dev0+g4b33a80.d20240129",
@@ -684,13 +716,14 @@ class SemVersioning(unittest.TestCase):
                 (0, 1, 1),
             ),
             ("v0.1.1.post0+g4b33a80.d20240129", (0, 1, 1, "g4b33a80.d20240129")),
+            ("0.1.dev11.d20240213", (0, 0, 1, "dev11")),  # unexpected format
         )
         for ver, t_ver_expected in testdata_:
             t_ver_actual = SemVersion.as_tuple(ver)
             self.assertEqual(t_ver_actual, t_ver_expected)
 
         # Version(ver_bad) --> ValueError --> (ver_bad,)
-        ver_bad = "0.1.dev0.d20240213"
+        ver_bad = "0.0.1final0.dev0"
         t_ver = SemVersion.as_tuple(ver_bad)
         ver_actual = t_ver[0]
         self.assertEqual(ver_actual, ver_bad)

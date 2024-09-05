@@ -11,25 +11,21 @@ Changelog
    - On Windows, refresh links fails. Combining dependencies relative path with cwd path
      Use __debug__ to turn on module level logging AND send the logging to stdout
 
-   - update workflows to detect project name. If ``drain-swamp``, build
+   - creat gha, not just update workflow. If ``drain-swamp``, build
      use config_settings options. Otherwise do the workaround. Export
      env variable which contain path to temp .toml file. File contain parsable
      config_settings which can be read from a subprocess
 
-   - Makefile target to add the environment variable with path to a config_settings toml file
-
    - Confirm setuptools-scm file finders are being called?
 
    - self hosted package server. See article
-   https://safjan.com/Create%20Self-Hosted%20Python%20Package%20Repository/
+     https://safjan.com/Create%20Self-Hosted%20Python%20Package%20Repository/
 
    Known regressions
    ..................
 
-   - py310 regression. backport of code from py313
-     Caused by https://github.com/pypy/pypy/pull/5003
-     mentioned in https://github.com/pypy/pypy/issues/5004
-     affects python-nightly.yml py310 Error in sys.excepthook TypeError: PatchedTracebackException.format() got an unexpected keyword argument 'colorize'
+   - in ci, linux and macos build sdist kind="current" set-lock=1 version --> 0.1.dev1
+     cause ?? Hints scm version plugin has issues
 
    - rtd installs does not build or run a workflow. Does rtd give any workaround?
      Resolve rtd issue before migrate sphinx-external-toc-strict to use drain-swamp
@@ -44,6 +40,13 @@ Changelog
    ..............................
 
 .. scriv-start-here
+
+.. _changes_1-6-7:
+
+Version 1.6.7 — 2024-09-05
+--------------------------
+
+- fix(version_semantic): fixes the zero commits semantic str
 
 .. _changes_1-6-6:
 

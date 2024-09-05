@@ -272,11 +272,13 @@ def test_build_cli(prep_pyproject_toml, tmp_path):
 
 testdata_validate_tag = (
     ("1!v1.0.1+g4b33a80.d20240129", "1.0.1", 0),
-    ("0.1.dev0.d20240213", "0.1.dev0.d20240213", 1),
+    ("0.1.dev0.d20240213", "0.0.1.dev0", 0),
+    ("0.0.1.final0.post4.dev0", "0.0.1.post4.dev0", 1),
 )
 ids_validate_tag = (
     "with epoch locals and prepended v",
     "malformed semantic ver str raise ValueError",
+    "final is not valid semantic str",
 )
 
 

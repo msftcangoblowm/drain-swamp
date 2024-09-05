@@ -3,10 +3,31 @@
 
 Build environment for taking current or tag version.
 
+Unit test -- Module
+
 .. code-block:: shell
 
-   pytest --showlocals --log-level INFO tests/test_versioning_integration.py
-   pytest --showlocals --cov="drain_swamp" --cov-report=term-missing tests/test_versioning_integration.py
+   python -m coverage run --data-file=".coverage.ver.integrate" \
+   --source='drain_swamp.version_semantic' -m pytest \
+   --showlocals tests/test_versioning_integration.py
+
+   python -m coverage run --data-file=".coverage.ver.unittest" \
+   --source='drain_swamp.version_semantic' -m pytest \
+   --showlocals tests/test_versioning_unittest.py
+
+   python -m coverage combine --data-file=.coverage \
+   .coverage.ver.integrate .coverage.ver.unittest
+
+   coverage report \
+   --data-file=.coverage --include="**/version_semantic.py"
+
+Integration test
+
+.. code-block:: shell
+
+   make coverage
+   pytest --showlocals --cov="drain_swamp" --cov-report=term-missing \
+   --cov-config=pyproject.toml tests
 
 """
 
