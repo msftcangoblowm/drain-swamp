@@ -103,7 +103,7 @@ __all__ = (
 )
 
 _logger = logging.getLogger(f"{g_app_name}.lock_toggle")
-is_module_debug = False
+is_module_debug = True
 
 
 def _create_symlinks_relative(src, dest, cwd_path):
@@ -1156,6 +1156,8 @@ def refresh_links(inst, is_set_lock=None):
 
        - :py:exc:`TypeError` -- is_set_lock unsupported type expecting None or bool
 
+       - :py:exc:`OSError` -- on Windows, malformed in file path --> PermissionError
+
     """
     is_invalid_set_lock = is_set_lock is not None and not isinstance(is_set_lock, bool)
     if is_invalid_set_lock:
@@ -1224,10 +1226,13 @@ def refresh_links(inst, is_set_lock=None):
     else:  # pragma: no cover
         pass
 
-    msg_warn = (
+    msg_warn_lock_files = (
         "{}. No corresponding .unlock / .lock files"
         "Cannot make symlink. "
         "In {}, prepare the missing folders and files"
+    )
+    msg_warn_paths_malformed = (
+        "Malformed .in file path. {exc} cwd: {path_cwd} abspath: {abspath}"
     )
     for in_ in files.zeroes:
         if in_.stem == "pins":
@@ -1244,24 +1249,36 @@ def refresh_links(inst, is_set_lock=None):
             abspath = abspath_zero.parent.joinpath(file_name)
             is_dest_file_exists = abspath.exists() and abspath.is_file()
             if not is_dest_file_exists:
-                # No dest file, so skip creating a symlink
-                msg_warn_missing_dest = msg_warn.format(abspath, path_cwd)
-                raise MissingRequirementsFoldersFiles(msg_warn_missing_dest)
+                # No lock/unlock file, so skip creating a symlink
+                msg_warn = msg_warn_lock_files.format(abspath, path_cwd)
+                raise MissingRequirementsFoldersFiles(msg_warn)
             else:
-                if is_module_debug:  # pragma: no cover
-                    msg_info = f"{mod_path} path_cwd: {path_cwd}"
-                    _logger.info(msg_info)
-                    msg_info = f"{mod_path} abspath: {abspath}"
-                    _logger.info(msg_info)
-                else:  # pragma: no cover
-                    pass
-
                 try:
                     _maintain_symlink(path_cwd, abspath)
                 except (NotADirectoryError, FileNotFoundError) as e:
-                    msg_warn_missing_dest = msg_warn.format(abspath, path_cwd)
-                    raise MissingRequirementsFoldersFiles(msg_warn_missing_dest) from e
+                    # cwd not a folder or lock/unlock file not exists
+                    msg_warn = msg_warn_lock_files.format(
+                        abspath,
+                        path_cwd,
+                    )
+                    raise MissingRequirementsFoldersFiles(msg_warn) from e
+                except OSError as e:
+                    # On Windows, malformed path to .in file
+                    d_args = {
+                        "exc": str(e),
+                        "abspath": abspath,
+                        "path_cwd": path_cwd,
+                    }
+                    msg_warn = msg_warn_paths_malformed.format(**d_args)
+                    raise OSError(msg_warn) from e
                 except Exception as e:  # pragma: no cover
                     # Sad, but not the end of the world
+                    if is_module_debug:  # pragma: no cover
+                        msg_info = f"{mod_path} path_cwd: {path_cwd}"
+                        _logger.info(msg_info)
+                        msg_info = f"{mod_path} abspath: {abspath}"
+                        _logger.info(msg_info)
+                    else:  # pragma: no cover
+                        pass
                     msg_exc = str(e)
                     _logger.warning(msg_exc)

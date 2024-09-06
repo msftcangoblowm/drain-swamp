@@ -41,6 +41,13 @@ Changelog
 
 .. scriv-start-here
 
+.. _changes_1-6-9:
+
+Version 1.6.9 — 2024-09-06
+--------------------------
+
+- style: pipenv-unlock refresh improve log messages
+
 .. _changes_1-6-8:
 
 Version 1.6.8 — 2024-09-06

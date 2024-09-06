@@ -31,12 +31,25 @@ the refresh accomplishes it's task
    :type: tuple[str, str, str]
    :value: ("SNIPPET_NO_MATCH", "SNIPPET_VALIDATE_FAIL", "snippet_replace_suffixes")
 
+.. py:data:: is_module_debug
+   :type: bool
+
+   Module debugging messages flag
+
+.. py:data:: _logger
+   :type: logging.Logger
+
+   Module level logger
+
 """
+
+import logging
 
 from .constants import (
     SUFFIX_LOCKED,
     SUFFIX_SYMLINK,
     SUFFIX_UNLOCKED,
+    g_app_name,
 )
 from .snip import (
     ReplaceResult,
@@ -54,6 +67,8 @@ __all__ = (
     "SNIPPET_VALIDATE_FAIL",
     "snippet_replace_suffixes",
 )
+is_module_debug = True
+_logger = logging.getLogger(f"{g_app_name}.snippet_pyproject_toml")
 
 
 def snippet_replace_suffixes(path_config, snippet_co=None):
@@ -75,6 +90,13 @@ def snippet_replace_suffixes(path_config, snippet_co=None):
 
     :rtype: drain_swamp.snip.ReplaceResult | None
     """
+
+    modpath = f"{g_app_name}.snippet_pyproject_toml.snippet_replace_suffixes"
+    if is_module_debug:  # pragma: no cover
+        msg_info = f"{modpath} path containing snippet {path_config!r}"
+        _logger.info(msg_info)
+    else:  # pragma: no cover
+        pass
 
     snip = Snip(path_config, is_quiet=True)
 
@@ -102,6 +124,12 @@ def snippet_replace_suffixes(path_config, snippet_co=None):
     #    replace
     is_not_same = contents_orig != contents
     if is_not_same:
+        if is_module_debug:  # pragma: no cover
+            msg_info = f"{modpath} snippet contents: {contents}"
+            _logger.info(msg_info)
+        else:  # pragma: no cover
+            pass
+
         snip.replace(contents, id_=snippet_co_actual)
     else:
         # Nothing to do. in pyproject.toml snippet. suffixes already SUFFIX_SYMLINK

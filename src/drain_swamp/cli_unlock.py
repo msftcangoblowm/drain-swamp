@@ -803,7 +803,8 @@ def create_links(path, is_set_lock, snippet_co):
     """
     try:
         refresh_links(inst, is_set_lock=is_set_lock)
-    except MissingRequirementsFoldersFiles:
+    except (MissingRequirementsFoldersFiles, OSError):
+        # OSError On Windows malformed path --> PermissionError
         msg_exc = (
             "Missing requirements folders and files. Prepare these "
             f"{traceback.format_exc()}"
@@ -818,6 +819,11 @@ def create_links(path, is_set_lock, snippet_co):
         )
         click.secho(msg_exc, fg="red", err=True)
         sys.exit(7)
+
+    if __debug__:  # pragma: no cover
+        _logger.info(f"{modpath} update snippet...")
+    else:  # pragma: no cover
+        pass
 
     path_config = inst.path_config
     err_or_none = snippet_replace_suffixes(path_config, snippet_co=snippet_co)

@@ -47,7 +47,7 @@ __all__ = (
 )
 
 _logger = logging.getLogger(f"{g_app_name}.snip")
-is_module_debug = True
+is_module_debug = False
 
 
 class ReplaceResult(Enum):

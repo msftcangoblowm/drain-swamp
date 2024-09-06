@@ -1,3 +1,4 @@
+import logging
 from pathlib import Path
 from typing import Final
 
@@ -5,6 +6,8 @@ from .snip import ReplaceResult
 
 SNIPPET_NO_MATCH: Final[str]  # noqa: F401
 SNIPPET_VALIDATE_FAIL: Final[str]  # noqa: F401
+is_module_debug: bool
+_logger: logging.Logger
 
 __all__ = (
     "SNIPPET_VALIDATE_FAIL",
