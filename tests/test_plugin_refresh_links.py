@@ -38,6 +38,7 @@ from drain_swamp import (
     PyProjectTOMLParseError,
     PyProjectTOMLReadError,
 )
+from drain_swamp._safe_path import resolve_joinpath
 from drain_swamp.backend_abc import BackendType
 from drain_swamp.backend_setuptools import BackendSetupTools  # noqa: F401
 from drain_swamp.constants import (
@@ -525,11 +526,15 @@ def test_plugin_refresh_links_normal(
                 assert str_msg is None
                 # verify symlinks -- created, w/o resolve
                 for relpath_expected in seq_expected:
-                    abspath_expected = tmp_path.joinpath(relpath_expected)
-                    assert abspath_expected.exists() and abspath_expected.is_symlink()
+                    abspath_expected = resolve_joinpath(tmp_path, relpath_expected)
+                    assert issubclass(type(abspath_expected), Path)
+                    is_exists_0 = abspath_expected.exists()
+                    is_symlink_0 = abspath_expected.is_symlink()
+                    assert is_exists_0 and is_symlink_0
                     # clean up symlink
                     abspath_expected.unlink()
-                    assert not abspath_expected.exists()
+                    is_exists_1 = abspath_expected.exists()
+                    assert not is_exists_1
 
 
 def test_plugin_refresh_links_exceptions(

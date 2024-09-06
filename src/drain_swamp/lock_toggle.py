@@ -130,6 +130,7 @@ def _create_symlinks_relative(src, dest, cwd_path):
        - :py:exc:`FileNotFoundError` -- Source file not found
        - :py:exc:`NotImplementedError` -- os.symlink not supported on this platform
        - :py:exc:`ValueError` -- destination symlink must suffix must be .lnk
+       - :py:exc:`OSError` -- opening file descriptor on folder permission denied
 
     :meta private:
 
@@ -173,10 +174,6 @@ def _create_symlinks_relative(src, dest, cwd_path):
     else:  # pragma: no cover
         pass
 
-    # Create file descriptor for tmp folder
-    # folder is rw
-    fd = os.open(str(path_parent), os.O_RDONLY)
-
     mod_path = f"{g_app_name}.lock_toggle._create_symlinks_relative"
     if is_module_debug:  # pragma: no cover
         _logger.info(f"{mod_path} parent {path_parent!r}")
@@ -186,9 +183,13 @@ def _create_symlinks_relative(src, dest, cwd_path):
         pass
 
     try:
+        # Create file descriptor for tmp folder
+        # folder is rw
+        fd = os.open(str(path_parent), os.O_RDONLY)
+
         # Create relative symlink
         os.symlink(src_name, dest_name, dir_fd=fd)
-    except NotImplementedError:
+    except (NotImplementedError, OSError):
         raise
 
 
@@ -213,6 +214,11 @@ def _maintain_symlink(path_cwd, abspath_src):
 
     :meta private:
     """
+    mod_path = f"{g_app_name}.lock_toggle._maintain_symlink"
+    msg_warn_create_relative_symlink = (
+        "{mod_path} {exc} relative path lock/unlock file: {src!r} "
+        "symlink file name: {dest!r} cwd: {path_cwd!r}"
+    )
     is_dir_bad = not path_cwd.exists() or (path_cwd.exists() and not path_cwd.is_dir())
     if is_dir_bad:
         msg_exc = "Expecting folder to already exist"
@@ -232,7 +238,16 @@ def _maintain_symlink(path_cwd, abspath_src):
 
     try:
         _create_symlinks_relative(src, dest, str(path_cwd))
-    except Exception:  # pragma: no cover
+    except Exception as e:  # pragma: no cover
+        d_kwargs = {
+            "mod_path": mod_path,
+            "exc": str(e),
+            "src": relpath_src,
+            "dest": dest,
+            "path_cwd": path_cwd,
+        }
+        msg_warn = msg_warn_create_relative_symlink.format(**d_kwargs)
+        _logger.warning(msg_warn)
         raise
 
 
@@ -1177,7 +1192,7 @@ def refresh_links(inst, is_set_lock=None):
     del gen_unlocked_files
 
     if is_module_debug:  # pragma: no cover
-        msg_info = f"{mod_path} in_files {in_files}"
+        msg_info = f"{mod_path} in_files: {in_files}"
         _logger.info(msg_info)
     else:  # pragma: no cover
         pass
@@ -1232,7 +1247,7 @@ def refresh_links(inst, is_set_lock=None):
         "In {}, prepare the missing folders and files"
     )
     msg_warn_paths_malformed = (
-        "Malformed .in file path. {exc} cwd: {path_cwd} abspath: {abspath}"
+        "Malformed .in file path. {exc} cwd: {path_cwd!r} abspath: {abspath!r}"
     )
     for in_ in files.zeroes:
         if in_.stem == "pins":
@@ -1247,7 +1262,15 @@ def refresh_links(inst, is_set_lock=None):
             abspath_zero = in_.abspath(path_cwd)
             file_name = f"{in_.stem}{suffix}"
             abspath = abspath_zero.parent.joinpath(file_name)
+
+            if is_module_debug:  # pragma: no cover
+                msg_info = f"{mod_path} abspath (before check is exists): {abspath!r}"
+                _logger.info(msg_info)
+            else:  # pragma: no cover
+                pass
+
             is_dest_file_exists = abspath.exists() and abspath.is_file()
+
             if not is_dest_file_exists:
                 # No lock/unlock file, so skip creating a symlink
                 msg_warn = msg_warn_lock_files.format(abspath, path_cwd)

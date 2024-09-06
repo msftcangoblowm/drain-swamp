@@ -41,6 +41,14 @@ Changelog
 
 .. scriv-start-here
 
+.. _changes_1-6-10:
+
+Version 1.6.10 — 2024-09-06
+---------------------------
+
+- fix(lock_toggle): move open folder file descriptor into try-except block
+- fix(safe_path): resolve_joinpath maintain Path and PurePath flavor
+
 .. _changes_1-6-9:
 
 Version 1.6.9 — 2024-09-06

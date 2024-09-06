@@ -15,6 +15,7 @@ Portions of a Path take into account platform must be dealt withpSafely deal wit
 import platform
 import shutil
 from pathlib import (
+    Path,
     PurePosixPath,
     PureWindowsPath,
 )
@@ -113,12 +114,19 @@ def resolve_joinpath(abspath_a, relpath_b):
     :param relpath_b: A posix style path. Requiring fixing before joinpath
     :type relpath_b: pathlib.PurePath | pathlib.Path
     :returns: Platform specific pure path
-    :rtype: pathlib.PureWindowsPath | pathlib.PurePosixPath
+    :rtype: pathlib.PureWindowsPath | pathlib.PurePosixPath | type[pathlib.Path]
     """
-    fix_b = fix_relpath(relpath_b)
+    str_fix_b = fix_relpath(relpath_b)
+    is_path_subclass = issubclass(type(abspath_a), Path)
     if is_win():  # pragma: no cover
-        ret = PureWindowsPath(abspath_a).joinpath(fix_b)
+        cls_pure = PureWindowsPath
     else:  # pragma: no cover
-        ret = PurePosixPath(abspath_a).joinpath(fix_b)
+        cls_pure = PurePosixPath
+
+    if is_path_subclass:
+        # WindowsPath or PosixPath
+        ret = abspath_a.joinpath(str_fix_b)
+    else:
+        ret = cls_pure(abspath_a).joinpath(str_fix_b)
 
     return ret

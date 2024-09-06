@@ -21,7 +21,10 @@ Integration test
 
 """
 
-from pathlib import PurePath
+from pathlib import (
+    Path,
+    PurePath,
+)
 from unittest.mock import patch
 
 import pytest
@@ -37,10 +40,20 @@ def test_resolve_joinpath(tmp_path):
     """Platform aware joinpath."""
     # pytest --showlocals --log-level INFO -k "test_resolve_joinpath" tests
     parts = ("src", "empty_file.txt")
-    relpath_b = PurePath("src/empty_file.txt")
-    abspath_from_joining = resolve_joinpath(tmp_path, relpath_b)
-    abspath_from_parts = tmp_path.joinpath(*parts)
-    assert abspath_from_joining == abspath_from_parts
+    abspath_types_a = (
+        PurePath(tmp_path),
+        tmp_path,  # Path
+    )
+    b_repath = "src/empty_file.txt"
+    relpaths_types_b = (
+        PurePath(b_repath),
+        Path(b_repath),
+    )
+    for abspath in abspath_types_a:
+        for relpath in relpaths_types_b:
+            abspath_from_joining = resolve_joinpath(abspath, relpath)
+            abspath_from_parts = abspath.joinpath(*parts)
+            assert abspath_from_joining == abspath_from_parts
 
 
 testdata_resolve_path = (
