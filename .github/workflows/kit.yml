@@ -117,25 +117,25 @@ jobs:
           - {"os": "ubuntu", "py": "cp312", "arch": "aarch64"}
           - {"os": "ubuntu", "py": "cp313", "arch": "aarch64"}
           # - {"os": "macos", "py": "cp38", "arch": "arm64"}
-          # - {"os": "macos", "py": "cp39", "arch": "arm64"}
-          # - {"os": "macos", "py": "cp310", "arch": "arm64"}
-          # - {"os": "macos", "py": "cp311", "arch": "arm64"}
-          # - {"os": "macos", "py": "cp312", "arch": "arm64"}
+          - {"os": "macos", "py": "cp39", "arch": "arm64"}
+          - {"os": "macos", "py": "cp310", "arch": "arm64"}
+          - {"os": "macos", "py": "cp311", "arch": "arm64"}
+          - {"os": "macos", "py": "cp312", "arch": "arm64"}
           # - {"os": "macos", "py": "cp38", "arch": "x86_64"}
-          # - {"os": "macos", "py": "cp39", "arch": "x86_64"}
-          # - {"os": "macos", "py": "cp310", "arch": "x86_64"}
-          # - {"os": "macos", "py": "cp311", "arch": "x86_64"}
-          # - {"os": "macos", "py": "cp312", "arch": "x86_64"}
+          - {"os": "macos", "py": "cp39", "arch": "x86_64"}
+          - {"os": "macos", "py": "cp310", "arch": "x86_64"}
+          - {"os": "macos", "py": "cp311", "arch": "x86_64"}
+          - {"os": "macos", "py": "cp312", "arch": "x86_64"}
           # - {"os": "windows", "py": "cp38", "arch": "x86"}
-          # - {"os": "windows", "py": "cp39", "arch": "x86"}
-          # - {"os": "windows", "py": "cp310", "arch": "x86"}
-          # - {"os": "windows", "py": "cp311", "arch": "x86"}
-          # - {"os": "windows", "py": "cp312", "arch": "x86"}
+          - {"os": "windows", "py": "cp39", "arch": "x86"}
+          - {"os": "windows", "py": "cp310", "arch": "x86"}
+          - {"os": "windows", "py": "cp311", "arch": "x86"}
+          - {"os": "windows", "py": "cp312", "arch": "x86"}
           # - {"os": "windows", "py": "cp38", "arch": "AMD64"}
-          # - {"os": "windows", "py": "cp39", "arch": "AMD64"}
-          # - {"os": "windows", "py": "cp310", "arch": "AMD64"}
-          # - {"os": "windows", "py": "cp311", "arch": "AMD64"}
-          # - {"os": "windows", "py": "cp312", "arch": "AMD64"}
+          - {"os": "windows", "py": "cp39", "arch": "AMD64"}
+          - {"os": "windows", "py": "cp310", "arch": "AMD64"}
+          - {"os": "windows", "py": "cp311", "arch": "AMD64"}
+          - {"os": "windows", "py": "cp312", "arch": "AMD64"}
         # [[[end]]] (checksum: a6ca53e9c620c9e5ca85e7322122056c)
       fail-fast: false
 

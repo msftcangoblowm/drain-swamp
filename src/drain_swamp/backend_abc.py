@@ -92,7 +92,7 @@ __all__ = ("BackendType",)
 
 _logger = logging.getLogger(f"{g_app_name}.backend_abc")
 
-is_module_debug = True
+is_module_debug = False
 
 # taken from pyproject.toml
 entrypoint_name = "pipenv-unlock"  # noqa: F401

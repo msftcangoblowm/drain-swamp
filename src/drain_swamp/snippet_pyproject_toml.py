@@ -67,7 +67,7 @@ __all__ = (
     "SNIPPET_VALIDATE_FAIL",
     "snippet_replace_suffixes",
 )
-is_module_debug = True
+is_module_debug = False
 _logger = logging.getLogger(f"{g_app_name}.snippet_pyproject_toml")
 
 

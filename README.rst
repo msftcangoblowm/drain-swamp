@@ -16,17 +16,15 @@ Python build backend with build plugins and dependency lock switch
 
 \* Python 3.9 through 3.13, PyPy
 
+**New in 1.7.x**
+
+Windows support;
+
 **New in 1.6.x**
 
 recognize .in files options -r and -c; tox test only folder tests; favicons;
 workflow for branches to test MacOS and Windows; MacOS supported;
 fix zero commits semantic str;
-
-**New in 1.5.x**
-
-resolve dependency hell; dependency conflict prevent tests fail;
-docs design elements improve presentation; gh-pages workflow;
-fix semantic version edge cases pre+post;
 
 What swamp?
 ------------
