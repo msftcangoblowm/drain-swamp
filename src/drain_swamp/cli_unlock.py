@@ -15,6 +15,7 @@ source code, as long has has required dependencies installed
 
 """
 
+import logging
 import sys
 import traceback
 from pathlib import (
@@ -81,11 +82,13 @@ else:
 
 # pep366 ...done
 
+from ._debug_mode import set_debug_mode
 from .backend_abc import BackendType
 from .backend_setuptools import BackendSetupTools  # noqa: F401
 from .constants import (
     SUFFIX_LOCKED,
     SUFFIX_UNLOCKED,
+    g_app_name,
 )
 from .exceptions import (
     BackendNotSupportedError,
@@ -107,6 +110,8 @@ from .snippet_pyproject_toml import (
     SNIPPET_VALIDATE_FAIL,
     snippet_replace_suffixes,
 )
+
+_logger = logging.getLogger(f"{g_app_name}.cli_unlock")
 
 # taken from pyproject.toml
 entrypoint_name = "pipenv-unlock"  # noqa: F401
@@ -752,9 +757,18 @@ def create_links(path, is_set_lock, snippet_co):
 
     :type snippet_co: str | None
     """
+    modpath = "drain_swamp.cli_unlock.create_links"
     # resolve causing conversion into a str. Should be Path
     if isinstance(path, str):  # pragma: no cover
         path = Path(path)
+    else:  # pragma: no cover
+        pass
+
+    # print logging to stdout if __debug__ and not test suite
+    set_debug_mode(is_ci=True)
+
+    if __debug__:  # pragma: no cover
+        _logger.info(f"{modpath} path: {path!r}")
     else:  # pragma: no cover
         pass
 
@@ -779,8 +793,7 @@ def create_links(path, is_set_lock, snippet_co):
         sys.exit(5)
 
     if __debug__:  # pragma: no cover
-        modpath = "drain_swamp.cli_unlock.create_links"
-        print(f"{modpath} inst: {inst.__repr__()}")
+        _logger.info(f"{modpath} inst: {inst.__repr__()}")
     else:  # pragma: no cover
         pass
 

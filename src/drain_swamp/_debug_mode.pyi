@@ -1,0 +1,3 @@
+__all__ = ("set_debug_mode",)
+
+def set_debug_mode(*, is_ci: bool | None = False) -> None: ...
