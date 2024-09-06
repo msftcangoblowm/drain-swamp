@@ -41,6 +41,14 @@ Changelog
 
 .. scriv-start-here
 
+.. _changes_1-6-11:
+
+Version 1.6.11 — 2024-09-06
+---------------------------
+
+- fix(lock_toggle): on Windows rather than symlink copy file
+- style(lock_toggle): log folder access permissions
+
 .. _changes_1-6-10:
 
 Version 1.6.10 — 2024-09-06

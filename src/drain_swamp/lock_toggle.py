@@ -77,6 +77,7 @@ import fileinput
 import logging
 import os
 import pathlib
+import shutil
 import sys
 from collections.abc import Sequence
 from pathlib import (
@@ -86,7 +87,10 @@ from pathlib import (
 
 from ._package_installed import is_package_installed
 from ._run_cmd import run_cmd
-from ._safe_path import resolve_path
+from ._safe_path import (
+    is_win,
+    resolve_path,
+)
 from .constants import (
     SUFFIX_LOCKED,
     SUFFIX_SYMLINK,
@@ -183,12 +187,26 @@ def _create_symlinks_relative(src, dest, cwd_path):
         pass
 
     try:
-        # Create file descriptor for tmp folder
-        # folder is rw
-        fd = os.open(str(path_parent), os.O_RDONLY)
+        str_dir = str(path_parent)
+        is_readable = os.access(str_dir, os.R_OK)
+        is_writable = os.access(str_dir, os.W_OK)
+        if is_module_debug:  # pragma: no cover
+            msg_info = f"{mod_path} {str_dir} readable?: {is_readable}"
+            _logger.info(msg_info)
+            msg_info = f"{mod_path} {str_dir} writable?: {is_writable}"
+            _logger.info(msg_info)
+        else:  # pragma: no cover
+            pass
 
-        # Create relative symlink
-        os.symlink(src_name, dest_name, dir_fd=fd)
+        if not is_win():  # pragma: no cover
+            dir_fd = os.open(str_dir, os.O_RDONLY)
+            # Create relative symlink
+            os.symlink(src_name, dest_name, dir_fd=dir_fd)
+            # don't leak a file descriptor
+            os.close(dir_fd)
+        else:  # pragma: no cover
+            # Copy and rename file instead
+            shutil.copy2(path_parent_src, path_parent_dest, follow_symlinks=False)
     except (NotImplementedError, OSError):
         raise
 
