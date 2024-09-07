@@ -37,6 +37,7 @@ import logging
 import textwrap
 
 from .constants import g_app_name
+from .monkey.patch_strftime import StrFTime
 from .package_metadata import PackageMetadata
 from .snip import (
     ReplaceResult,
@@ -122,11 +123,16 @@ class SnipSphinxConf:
         :type strftime_str: str
         :returns: datetime formatted with strftime format
         :rtype: str
+        :raises:
+
+           - :py:exc:`TypeError` -- Type issue
+
         """
         dt_now = cls.now()
+        sft = StrFTime(dt_now)
         try:
-            ret = dt_now.strftime(strftime_str)
-        except (ValueError, TypeError):
+            ret = sft.strftime(strftime_str)
+        except TypeError:
             raise
 
         return ret

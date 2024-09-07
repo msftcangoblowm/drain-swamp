@@ -41,6 +41,14 @@ Changelog
 
 .. scriv-start-here
 
+.. _changes_1-7-1:
+
+Version 1.7.1 — 2024-09-07
+--------------------------
+
+- fix: patch strftime. Platform consistency
+- test(backend_setuptools): apply platform line seperator
+
 .. _changes_1-7-0:
 
 Version 1.7.0 — 2024-09-06

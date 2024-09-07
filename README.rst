@@ -18,7 +18,7 @@ Python build backend with build plugins and dependency lock switch
 
 **New in 1.7.x**
 
-Windows support;
+Windows support; patch strftime;
 
 **New in 1.6.x**
 

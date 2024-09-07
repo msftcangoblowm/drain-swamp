@@ -20,6 +20,7 @@ Integration test
 """
 
 import subprocess
+from contextlib import nullcontext as does_not_raise
 from datetime import datetime
 from pathlib import (
     Path,
@@ -29,6 +30,11 @@ from unittest.mock import patch
 
 import pytest
 
+from drain_swamp._safe_path import (
+    is_linux,
+    is_macos,
+    is_win,
+)
 from drain_swamp.constants import g_app_name
 from drain_swamp.snippet_sphinx_conf import SnipSphinxConf
 
@@ -61,12 +67,33 @@ def test_snip_sphinx_conf_init(a_folder, expectation, tmp_path):
 
 
 testdata_now_to_str = (
-    (None, pytest.raises(TypeError)),
-    (1.2345, pytest.raises(TypeError)),
+    (
+        None,
+        pytest.raises(TypeError),
+    ),
+    (
+        1.2345,
+        pytest.raises(TypeError),
+    ),
+    (
+        "%T",
+        pytest.raises(ValueError) if is_win() else does_not_raise(),
+    ),
+    (
+        "%D",
+        pytest.raises(ValueError) if is_macos() else does_not_raise(),
+    ),
+    (
+        "%-d",
+        does_not_raise() if is_linux() else pytest.raises(ValueError),
+    ),
 )
 ids_now_to_str = (
     "None",
     "float",
+    "Windows issue. Aggregate equivalent to %H:%M:%S",
+    "MacOS issue. Aggregate equivalent to %m/%d/%Y",
+    "Linux flavor only. Day without leading zero",
 )
 
 
@@ -82,6 +109,17 @@ def test_now_to_str(format_str, expectation, path_project_base):
     # strftime / strptime format str
     with expectation:
         SnipSphinxConf.now_to_str(format_str)
+
+
+def test_now_to_str_split():
+    """Test now_to_str_split."""
+    expectation = does_not_raise()
+    dodgys = ("%T", "%D", "%-d")
+    # pytest --showlocals --log-level INFO -k "test_now_to_str_split" tests
+    assert isinstance(SnipSphinxConf.now(), datetime)
+    for dodgy in dodgys:
+        with expectation:
+            assert isinstance(SnipSphinxConf.now_to_str(dodgy), str)
 
 
 def test_snip_sphinx_conf_properties(path_project_base):

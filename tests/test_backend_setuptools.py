@@ -25,6 +25,7 @@ Integration test
 
 import logging
 import logging.config
+import os
 import sys
 from contextlib import nullcontext as does_not_raise
 from pathlib import Path
@@ -205,7 +206,7 @@ def test_load_factory_good(
             if len(str_lines_all) == 0:
                 assert len(set_from_parts) == 0
             else:
-                lines_all = str_lines_all.split("\n")
+                lines_all = str_lines_all.split(os.linesep)
                 set_from_all = set(lines_all)
 
                 assert set_from_all == set_from_parts
