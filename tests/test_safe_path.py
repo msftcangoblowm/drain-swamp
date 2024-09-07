@@ -25,15 +25,14 @@ from pathlib import (
     Path,
     PurePath,
 )
-from unittest.mock import patch
 
 import pytest
 
 from drain_swamp._safe_path import (
+    is_win,
     resolve_joinpath,
     resolve_path,
 )
-from drain_swamp.constants import g_app_name
 
 
 def test_resolve_joinpath(tmp_path):
@@ -57,36 +56,34 @@ def test_resolve_joinpath(tmp_path):
 
 
 testdata_resolve_path = (
-    (
-        True,
+    pytest.param(
         "true",
         "\\true",
+        marks=pytest.mark.skipif(not is_win(), reason="Windows platform issue"),
     ),
-    (
-        False,
+    pytest.param(
         "true",
         "/true",
+        marks=pytest.mark.skipif(is_win(), reason="MacOS and linux platform issue"),
     ),
 )
 ids_resolve_path = (
     "Windows",
-    "Linux",
+    "Linux and MacOS",
 )
 
 
 @pytest.mark.parametrize(
-    "is_set_platform_win, f_path, expected",
+    "f_path, expected",
     testdata_resolve_path,
     ids=ids_resolve_path,
 )
-def test_resolve_path(is_set_platform_win, f_path, expected):
+def test_resolve_path(f_path, expected):
     """Test resolve_path.
 
     Do not know the exact absolute path. So just check contains the
     expected components of the path
     """
     # pytest --showlocals --log-level INFO -k "test_resolve_path" tests
-
-    with patch(f"{g_app_name}._safe_path.is_win", return_value=is_set_platform_win):
-        actual = resolve_path(f_path)
-        assert expected in actual
+    actual = resolve_path(f_path)
+    assert expected in actual

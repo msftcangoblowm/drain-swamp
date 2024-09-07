@@ -34,6 +34,7 @@ from unittest.mock import patch
 import pytest
 from click.testing import CliRunner
 
+from drain_swamp._safe_path import is_win
 from drain_swamp.backend_abc import BackendType
 from drain_swamp.backend_setuptools import BackendSetupTools  # noqa: F401
 from drain_swamp.cli_unlock import (
@@ -1089,13 +1090,18 @@ def test_create_links_set_lock(
         for unlock_relpath in seq_in:
             lnk_relpath = unlock_relpath.replace(".in", ".lnk")
             path_lnk = path_tmp_dir.joinpath(lnk_relpath)
-            is_symlink = path_lnk.is_symlink()
-            is_suffix_match = path_lnk.resolve().suffix == from_suffix
-            assert (
-                is_suffix_match
-            ), f"{path_lnk} does not resolve to a {from_suffix} file"
-            # assert has_logging_occurred(caplog)
-            assert is_symlink
+            if is_win():
+                # Poor symlink support; no symlink, file copied
+                is_file = path_lnk.exists() and path_lnk.is_file()
+                assert is_file
+            else:
+                is_symlink = path_lnk.is_symlink()
+                is_suffix_match = path_lnk.resolve().suffix == from_suffix
+                assert (
+                    is_suffix_match
+                ), f"{path_lnk} does not resolve to a {from_suffix} file"
+                # assert has_logging_occurred(caplog)
+                assert is_symlink
 
         assert result.exit_code == expected
 

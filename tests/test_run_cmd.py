@@ -26,7 +26,10 @@ import os
 import pytest
 
 from drain_swamp._run_cmd import run_cmd
-from drain_swamp._safe_path import resolve_path
+from drain_swamp._safe_path import (
+    is_win,
+    resolve_path,
+)
 
 
 def test_run_cmd(tmp_path, prepare_folders_files):
@@ -49,7 +52,11 @@ def test_run_cmd(tmp_path, prepare_folders_files):
         cmd = ("bin/true",)
         t_ret = run_cmd(cmd, env=invalid, cwd=invalid)
         out, err, exit_code, str_exc = t_ret
-        assert str_exc == """No such file or directory bin/true"""
+        if is_win():
+            expected_msg = """The system cannot find the file specified"""
+        else:
+            expected_msg = """No such file or directory"""
+        assert str_exc.startswith(expected_msg)
 
     # executable path is correct
     true_path = resolve_path("true")

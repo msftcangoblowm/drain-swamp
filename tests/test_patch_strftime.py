@@ -25,11 +25,7 @@ from unittest.mock import patch
 
 import pytest
 
-from drain_swamp._safe_path import (
-    is_linux,
-    is_macos,
-    is_win,
-)
+from drain_swamp._safe_path import is_linux
 from drain_swamp.monkey.patch_strftime import (
     PatchAggregateD,
     PatchAggregateT,
@@ -98,11 +94,11 @@ testdata_unpatched_strftime = (
     ),
     (
         "%T",
-        pytest.raises(ValueError) if is_win() else does_not_raise(),
+        does_not_raise(),
     ),
     (
         "%D",
-        pytest.raises(ValueError) if is_macos() else does_not_raise(),
+        does_not_raise(),
     ),
     (
         "%-d",

@@ -30,11 +30,7 @@ from unittest.mock import patch
 
 import pytest
 
-from drain_swamp._safe_path import (
-    is_linux,
-    is_macos,
-    is_win,
-)
+from drain_swamp._safe_path import is_linux
 from drain_swamp.constants import g_app_name
 from drain_swamp.snippet_sphinx_conf import SnipSphinxConf
 
@@ -77,11 +73,11 @@ testdata_now_to_str = (
     ),
     (
         "%T",
-        pytest.raises(ValueError) if is_win() else does_not_raise(),
+        does_not_raise(),
     ),
     (
         "%D",
-        pytest.raises(ValueError) if is_macos() else does_not_raise(),
+        does_not_raise(),
     ),
     (
         "%-d",

@@ -39,6 +39,10 @@ Changelog
    Commit items for NEXT VERSION
    ..............................
 
+   - fix: strftime %D and %T works on all platforms
+   - fix: run_cmd file not found error message is platform specific
+   - test: if Windows, unlink file not symlink
+
 .. scriv-start-here
 
 .. _changes_1-7-1:

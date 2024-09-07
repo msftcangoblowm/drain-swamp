@@ -26,7 +26,6 @@ import shlex
 from .._safe_path import (
     is_linux,
     is_macos,
-    is_win,
 )
 
 __all__ = ("StrFTime",)
@@ -64,7 +63,7 @@ class PatchLeadingDay(Patch):
     """
 
     AFFECTED_TOKEN = "%-d"
-    AFFECTS = not is_linux()
+    AFFECTS = not (is_linux() and is_macos())
 
     def __call__(self, dt_a, str_part):
         """Replace bad token ``<perc><hyphen>d``.
@@ -95,13 +94,14 @@ class PatchAggregateD(Patch):
 
     .. py:attribute:: AFFECTS
        :type: bool
+       :value: False
 
-       Affects these platforms
+       Affects these platforms. Does not seem to affect MacOS.
 
     """
 
     AFFECTED_TOKEN = "%D"
-    AFFECTS = is_macos()
+    AFFECTS = False
 
     def __call__(self, dt_a, str_part):
         """Replace bad token ``<perc>D``.
@@ -137,7 +137,7 @@ class PatchAggregateT(Patch):
     """
 
     AFFECTED_TOKEN = "%T"
-    AFFECTS = is_win()
+    AFFECTS = False
 
     def __call__(self, dt_a, str_part):
         """Replace bad token ``<perc>T``.

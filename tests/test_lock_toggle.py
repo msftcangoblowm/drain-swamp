@@ -37,7 +37,10 @@ from unittest.mock import patch
 
 import pytest
 
-from drain_swamp._safe_path import resolve_path
+from drain_swamp._safe_path import (
+    is_win,
+    resolve_path,
+)
 from drain_swamp.backend_abc import BackendType
 from drain_swamp.backend_setuptools import BackendSetupTools  # noqa: F401
 from drain_swamp.constants import (
@@ -72,18 +75,19 @@ def cleanup_symlinks(tmp_path):
         """
         for relpath_expected in seq_expected:
             abspath_expected = tmp_path.joinpath(relpath_expected)
-            is_symlinks_exist = (
-                abspath_expected.exists() and abspath_expected.is_symlink()
-            )
+            if is_win():
+                is_exist = abspath_expected.exists() and abspath_expected.is_file()
+            else:
+                is_exist = abspath_expected.exists() and abspath_expected.is_symlink()
             is_very_verify = (
                 is_verify is not None
                 and isinstance(is_verify, bool)
                 and is_verify is True
             )
             if is_very_verify:
-                assert is_symlinks_exist
-            if is_symlinks_exist:
-                # clean up symlink
+                assert is_exist
+            if is_exist:
+                # clean up symlink (or file [on Windows])
                 abspath_expected.unlink()
                 assert not abspath_expected.exists()
 
@@ -649,16 +653,24 @@ def test_create_symlinks_relative(tmp_path, prepare_folders_files, caplog):
     prepare_folders_files((src,), tmp_path)
     _create_symlinks_relative(src, dest, tmp_path)
     path_dest_expected = tmp_path.joinpath("requirements", dest)
-    is_symlink = path_dest_expected.is_symlink()
-    assert is_symlink
-    assert path_dest_expected.resolve() == tmp_path.joinpath(src)
+    if is_win():
+        is_file = path_dest_expected.is_file()
+        assert is_file
+    else:
+        is_symlink = path_dest_expected.is_symlink()
+        assert is_symlink
+        assert path_dest_expected.resolve() == tmp_path.joinpath(src)
     path_dest_expected.unlink()
     assert not path_dest_expected.exists()
 
     _maintain_symlink(tmp_path, src_abspath)
-    is_symlink = path_dest_expected.is_symlink()
-    assert is_symlink
-    assert path_dest_expected.resolve() == tmp_path.joinpath(src)
+    if is_win():
+        is_file = path_dest_expected.is_file()
+        assert is_file
+    else:
+        is_symlink = path_dest_expected.is_symlink()
+        assert is_symlink
+        assert path_dest_expected.resolve() == tmp_path.joinpath(src)
     path_dest_expected.unlink()
     assert not path_dest_expected.exists()
 
