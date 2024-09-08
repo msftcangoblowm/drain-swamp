@@ -201,7 +201,7 @@ testdata_parent_dir = (
             "[tool.config-settings]\n"
             """kind="current"\n"""
             """set-lock="0"\n\n"""
-            """parent-dir="{}"\n"""
+            """parent-dir='{}'\n"""
         )
     ),
 )
@@ -214,7 +214,10 @@ ids_parent_dir = ("config_settings toml has placeholder for tmp_path",)
     ids=ids_parent_dir,
 )
 def test_parent_dir(toml_contents, tmp_path, caplog, has_logging_occurred):
-    """Test _parent_dir."""
+    """Test _parent_dir.
+
+    TOML format. For path, use single quotes. Otherwise Windows paths will not work.
+    """
     # pytest --showlocals --log-level INFO -k "test_parent_dir" tests
     LOGGING["loggers"][g_app_name]["propagate"] = True
     logging.config.dictConfig(LOGGING)
@@ -570,7 +573,7 @@ def test_plugin_refresh_links_exceptions(
             "[tool.config-settings]\n"
             """kind="current"\n"""
             """set-lock="0"\n\n"""
-            f"""parent-dir="{str(tmp_path)}"\n"""
+            f"""parent-dir='{str(tmp_path)}'\n"""
         ),
         (
             "[project]\n"
@@ -579,7 +582,7 @@ def test_plugin_refresh_links_exceptions(
             "[tool.config-settings]\n"
             """kind="current"\n"""
             """set-lock="1"\n\n"""
-            f"""parent-dir="{str(tmp_path)}"\n"""
+            f"""parent-dir='{str(tmp_path)}'\n"""
         ),
     )
 
@@ -669,7 +672,7 @@ def test_plugin_refresh_links_exceptions(
             """version = "99.99.99a1.dev6"\n"""
             "[tool.config-settings]\n"
             """kind="current"\n"""
-            f"""parent-dir="{str(tmp_path)}"\n"""
+            f"""parent-dir='{str(tmp_path)}'\n"""
         )
         path_pyproject_toml = Path(__file__).parent.joinpath(
             "_bad_files",

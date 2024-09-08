@@ -74,6 +74,9 @@ class ConfigSettings:
 
       ``set-lock = "1"``
 
+    Paths must be single quoted, not double quoted. Otherwise On Windows,
+    TOML file considered invalid
+
     :cvar SECTION_NAME: .toml file tool section name
     :vartype SECTION_NAME: str
     :cvar ENVIRON_KEY:

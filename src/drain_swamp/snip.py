@@ -14,6 +14,12 @@ Be able to search and replace editable regions within text files
 
    Module level logger
 
+.. py:data:: mod_dotted_path
+   :type: str
+   :value: "drain_swamp.snip"
+
+   Module dotted path
+
 .. py:data:: is_module_debug
    :type: bool
 
@@ -46,8 +52,9 @@ __all__ = (
     "ReplaceResult",
 )
 
-_logger = logging.getLogger(f"{g_app_name}.snip")
-is_module_debug = False
+mod_dotted_path = f"{g_app_name}.snip"
+_logger = logging.getLogger()
+is_module_debug = True
 
 
 class ReplaceResult(Enum):
@@ -130,20 +137,21 @@ def check_matching_tag_count(
     :returns: True is check successful otherwise False
     :rtype: bool
     """
+    fcn_path = f"{mod_dotted_path}.check_matching_tag_count"
     if is_ok(contents) and is_ok(token_start) and is_ok(token_end):
         start_count = contents.count(token_start)
         end_count = contents.count(token_end)
 
         if is_module_debug:  # pragma: no cover
-            _logger.debug(f"start token count: {start_count}")
-            _logger.debug(f"end token count: {end_count}")
+            _logger.debug(f"{fcn_path} start token count: {start_count}")
+            _logger.debug(f"{fcn_path} end token count: {end_count}")
         else:  # pragma: no cover
             pass
 
         is_tag_count_match = start_count == end_count
 
         if is_module_debug:  # pragma: no cover
-            _logger.debug(f"token counts match: {is_tag_count_match}")
+            _logger.debug(f"{fcn_path} token counts match: {is_tag_count_match}")
         else:  # pragma: no cover
             pass
 
@@ -183,6 +191,7 @@ def check_not_nested_or_out_of_order(
 
     """
     ret = True
+    fcn_path = f"{mod_dotted_path}.check_not_nested_or_out_of_order"
 
     if is_ok(contents) and is_ok(token_start) and is_ok(token_end):
         idx_current = 0
@@ -230,7 +239,10 @@ def check_not_nested_or_out_of_order(
         ret = False
 
         if is_module_debug:  # pragma: no cover
-            msg_info = "Either no contents, no start token, or no end token provided"
+            msg_info = (
+                f"{fcn_path} Either no contents, no start token, or no "
+                "end token provided"
+            )
             _logger.info(msg_info)
         else:  # pragma: no cover
             pass
@@ -444,8 +456,10 @@ class Snip:
            - :py:exc:`FileNotFoundError` -- file is not ok for whatever reason
 
         """
+        cls = type(self)
+        meth_path = f"{mod_dotted_path}.{cls.__name__}.get_file"
         if not self.is_file_ok() and not self.is_quiet:  # pragma: no cover
-            msg_info = f"Cannot update nonexistent file, {str(self.path_file)}"
+            msg_info = f"{meth_path} Cannot update nonexistent file, {self.path_file!r}"
             _logger.info(msg_info)
         else:  # pragma: no cover
             pass
@@ -463,7 +477,8 @@ class Snip:
         else:  # pragma: no cover
             # file not ok
             msg_exc = (
-                f"file not ok. replace editable region ... skip {str(self.path_file)}"
+                f"{meth_path} file not ok. replace editable region ... "
+                f"skip {self.path_file!r}"
             )
             raise FileNotFoundError(msg_exc)
 
@@ -504,6 +519,7 @@ class Snip:
 
         """
         cls = type(self)
+        meth_path = f"{mod_dotted_path}.{cls.__name__}.replace"
         is_log_ok = not self.is_quiet
         if replacement is None or not isinstance(replacement, str):
             msg_exc = "Unsupported type, replacement contents must be a str"
@@ -511,8 +527,9 @@ class Snip:
 
         id_ = sanitize_id(id_)
         if is_log_ok:  # pragma: no cover
-            _logger.info(f"id_ (user input; filtered): {id_}")
-            _logger.info(f"replacement (user input filtered): {replacement}")
+            _logger.info(f"{meth_path} id_ (user input; filtered): {id_}")
+            msg_info = f"{meth_path} replacement (user input filtered): {replacement!r}"
+            _logger.info(msg_info)
         else:  # pragma: no cover
             pass
 
@@ -591,7 +608,7 @@ class Snip:
                 _logger.debug(f"current id:       {matchobj.group(1)}")
                 _logger.debug(f"current contents: {matchobj.group(2)}")
                 _logger.debug(f"target id:        {id_}")
-                _logger.debug(f"replacement: {replacement}")
+                _logger.debug(f"replacement: {replacement!r}")
             else:  # pragma: no cover
                 pass
 
@@ -662,7 +679,7 @@ class Snip:
             new_text = re.sub(cls.PATTERN_W_ID, replace_fcn, text_existing)
 
             if is_log_ok:  # pragma: no cover
-                msg_info = f"text (after re.sub): {new_text}"
+                msg_info = f"{meth_path} text (after re.sub): {new_text}"
                 _logger.info(msg_info)
             else:  # pragma: no cover
                 pass
@@ -671,7 +688,7 @@ class Snip:
 
             if is_changed:
                 if is_log_ok:  # pragma: no cover
-                    msg_info = f"Updating {str(self.path_file)}"
+                    msg_info = f"{meth_path} Updating {self.path_file!r}"
                     _logger.info(msg_info)
                 else:  # pragma: no cover
                     pass
@@ -696,7 +713,7 @@ class Snip:
             contents = self.get_file()
         except (ValueError, FileNotFoundError):
             msg_exc = (
-                f"file not ok. replace editable region ... skip {str(self.path_file)}"
+                f"file not ok. replace editable region ... skip {self.path_file!r}"
             )
             _logger.warning(msg_exc)
             self._contents = None
@@ -740,6 +757,7 @@ class Snip:
         :rtype: list[tuple[str, str]] | ReplaceResult
         """
         cls = type(self)
+        meth_path = f"{mod_dotted_path}.{cls.__name__}.snippets"
 
         is_log_ok = not self.is_quiet
         # If True --> self._contents is a str | None. None if checks fail
@@ -748,7 +766,9 @@ class Snip:
         is_checks_fail = is_valid and self._contents is None
         if is_invalid_file or is_checks_fail:
             if is_log_ok:  # pragma: no cover
-                msg_info = f"Validation issue. Check file: {str(self.path_file)}"
+                msg_info = (
+                    f"{meth_path} Validation issue. Check file: {self.path_file!r}"
+                )
                 _logger.info(msg_info)
             else:  # pragma: no cover
                 pass

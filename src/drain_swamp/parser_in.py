@@ -50,7 +50,7 @@ __package__ = "drain_swamp"
 __all__ = ("TomlParser",)
 
 _logger = logging.getLogger(f"{g_app_name}.parser_in")
-is_module_debug = False
+is_module_debug = True
 
 
 class TomlParser:
@@ -171,8 +171,8 @@ class TomlParser:
            - :py:exc:`FileNotFoundError` -- Reverse search pyproject.toml not found
 
         """
-        meth_name = "resolve_pyproject_toml"
-        msg_exc_type_bad = f"Unsupported type expecting a Path. Got {type(path_config)}"
+        meth_name = f"{g_app_name}.parser_in.{cls.__name__}.resolve_pyproject_toml"
+        msg_exc_type_bad = f"Unsupported type expecting a Path. Got {path_config!r}"
         is_type_ng = path_config is None or not (
             isinstance(path_config, str) or issubclass(type(path_config), PurePath)
         )
@@ -188,17 +188,32 @@ class TomlParser:
             path_file = path_config
 
         msg_exc_no_such_file = (
-            f"In {meth_name}, positional arg, no such file {str(path_file)}"
+            f"In {meth_name}, positional arg, no such file {path_file!s}"
         )
 
         # can be a file or dir or symlink. Try to resolve
         path_dir = path_file
         t_str = (str(path_dir),)
+
+        if is_module_debug:  # pragma: no cover
+            msg_info = f"{meth_name} t_str (before find_pyproject_toml): {t_str!r}"
+            _logger.info(msg_info)
+        else:  # pragma: no cover
+            pass
+
         file_path = find_pyproject_toml(t_str, None)
         if file_path is None:
             raise FileNotFoundError(msg_exc_no_such_file)
         else:
             path_file = Path(file_path)
+
+        if is_module_debug:  # pragma: no cover
+            msg_info = (
+                f"{meth_name} path_file (after find_pyproject_toml): {path_file!r}"
+            )
+            _logger.info(msg_info)
+        else:  # pragma: no cover
+            pass
 
         return path_file
 

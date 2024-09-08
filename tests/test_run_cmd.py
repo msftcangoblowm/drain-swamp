@@ -21,6 +21,8 @@ Integration test
 
 """
 
+import logging
+import logging.config
 import os
 
 import pytest
@@ -30,11 +32,21 @@ from drain_swamp._safe_path import (
     is_win,
     resolve_path,
 )
+from drain_swamp.constants import (
+    LOGGING,
+    g_app_name,
+)
 
 
-def test_run_cmd(tmp_path, prepare_folders_files):
+def test_run_cmd(tmp_path, prepare_folders_files, caplog, has_logging_occurred):
     """Test run_cmd."""
     # pytest --showlocals --log-level INFO -k "test_run_cmd" tests
+    LOGGING["loggers"][g_app_name]["propagate"] = True
+    logging.config.dictConfig(LOGGING)
+    logger = logging.getLogger(name=g_app_name)
+    logger.addHandler(hdlr=caplog.handler)
+    caplog.handler.level = logger.level
+
     # expecting Sequence
     cwd = tmp_path
     env = os.environ
@@ -58,21 +70,6 @@ def test_run_cmd(tmp_path, prepare_folders_files):
             expected_msg = """No such file or directory"""
         assert str_exc.startswith(expected_msg)
 
-    # executable path is correct
-    if not is_win():
-        true_path = resolve_path("true")
-    else:
-        # Windows does not have executable true, but should have git
-        true_path = resolve_path("git")
-    valids = (
-        (true_path,),
-        true_path,
-    )
-    for cmd in valids:
-        t_ret = run_cmd(cmd, cwd=cwd)
-        out, err, exit_code, str_exc = t_ret
-        assert exit_code == 0
-
     # Something printed to stderr
     # prepare
     #    create CHANGES.rst
@@ -90,8 +87,12 @@ def test_run_cmd(tmp_path, prepare_folders_files):
 
     # Something printed to stdout
     executable_path = resolve_path("python")
-    cmd = f"{executable_path} -V"
-    t_ret = run_cmd(cmd, env=env)
-    out, err, exit_code, str_exc = t_ret
-    assert exit_code == 0
-    assert len(out.strip()) != 0
+    valids = (
+        (executable_path, "-V"),
+        f"{executable_path} -V",
+    )
+    for cmd in valids:
+        t_ret = run_cmd(cmd, env=env)
+        out, err, exit_code, str_exc = t_ret
+        assert exit_code == 0
+        assert len(out.strip()) != 0

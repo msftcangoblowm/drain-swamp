@@ -42,6 +42,7 @@ Changelog
    Commit items for NEXT VERSION
    ..............................
 
+   - fix: TOML format path must be single quoted
    - feat: automagically choose platform supported dependency lock copy implementation
    - feat: packaging process symlinks --> files. Check for either
    - test: On Windows, no executable true, but there might be git

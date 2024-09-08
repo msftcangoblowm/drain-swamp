@@ -67,7 +67,7 @@ __all__ = (
     "SNIPPET_VALIDATE_FAIL",
     "snippet_replace_suffixes",
 )
-is_module_debug = False
+is_module_debug = True
 _logger = logging.getLogger(f"{g_app_name}.snippet_pyproject_toml")
 
 
@@ -107,6 +107,12 @@ def snippet_replace_suffixes(path_config, snippet_co=None):
     else:  # pragma: no cover
         pass
 
+    if is_module_debug:  # pragma: no cover
+        msg_info = f"{modpath} t_out (after snippet read) {t_out!r}"
+        _logger.info(msg_info)
+    else:  # pragma: no cover
+        pass
+
     contents, snippet_co_actual = t_out
     contents_orig = contents
 
@@ -125,7 +131,9 @@ def snippet_replace_suffixes(path_config, snippet_co=None):
     is_not_same = contents_orig != contents
     if is_not_same:
         if is_module_debug:  # pragma: no cover
-            msg_info = f"{modpath} snippet contents: {contents}"
+            msg_info = (
+                f"{modpath} snippet contents(before snippet replace): {contents!r}"
+            )
             _logger.info(msg_info)
         else:  # pragma: no cover
             pass
