@@ -70,6 +70,7 @@ Example ``pyproject.toml``. specifies an additional folder, ``ci``.
 
 from __future__ import annotations
 
+import abc
 import copy
 import dataclasses
 import enum
@@ -89,6 +90,7 @@ from ._package_installed import is_package_installed
 from ._run_cmd import run_cmd
 from ._safe_path import (
     is_win,
+    resolve_joinpath,
     resolve_path,
 )
 from .constants import (
@@ -110,105 +112,388 @@ _logger = logging.getLogger(f"{g_app_name}.lock_toggle")
 is_module_debug = False
 
 
-def _create_symlinks_relative(src, dest, cwd_path):
-    """Create the relative symlink
+class DependencyLockLnkFile(abc.ABC):
+    """ABC for creating .lnk files."""
 
-    src and dest are relative paths. Relative to cwd_path
+    @classmethod
+    @abc.abstractmethod
+    def is_file(cls, abspath) -> bool:
+        """Encapsulate positive file type check implementation.
 
-    - No :py:func:`os.chdir`
+        :param abspath: Absolute path to a file or folder
+        :type abspath: pathlib.Path | pathlib.PurePath
+        :returns: True if an existing file
+        :rtype: bool
+        """
+        ...
 
-    - Does not create the folder
+    @classmethod
+    @abc.abstractmethod
+    def is_not_file(cls, abspath) -> bool:
+        """Encapsulate file type check implementation.
 
-    - Does not create the source file
+        :param abspath: Absolute path to a file or folder
+        :type abspath: pathlib.Path | pathlib.PurePath
+        :returns:
 
-    :param src: relative path to source file
-    :type src: str
-    :param dest: relative path to what will be the symlink
-    :type dest: str
-    :param cwd_path: Absolute path a folder
-    :type cwd_path: str
+           True if not a .lnk file of the type appropriate for the
+           platform implementation
 
-    :raises:
+        :rtype: bool
+        """
 
-       - :py:exc:`NotADirectoryError` -- Directory not found or not a directory
-       - :py:exc:`FileNotFoundError` -- Source file not found
-       - :py:exc:`NotImplementedError` -- os.symlink not supported on this platform
-       - :py:exc:`ValueError` -- destination symlink must suffix must be .lnk
-       - :py:exc:`OSError` -- opening file descriptor on folder permission denied
+    @staticmethod
+    @abc.abstractmethod
+    def is_support() -> bool:
+        """The platform the implementation should use.
 
-    :meta private:
+        :returns: True if implementation applies to current platform
+        :rtype: bool
+        """
+        ...
 
-    .. note::
+    def _shared_checks(self, src, dest, cwd_path):
+        """Boilerplate normally done by a constructor
 
-       :code:`tempfile.TemporaryDirectory(delete=False)` delete keyword is py312+
+        :param src: relative path to source file
+        :type src: str
+        :param dest: relative path to what will be the symlink
+        :type dest: str
+        :param cwd_path: Absolute path a folder
+        :type cwd_path: str
 
-    """
-    path_cwd = Path(cwd_path)
-    path_src = path_cwd.joinpath(src)
-    path_parent = path_src.parent
-    src_name = path_src.name
-    dest_name = Path(dest).name
-    path_parent_src = path_parent.joinpath(src_name)
-    path_parent_dest = path_parent.joinpath(dest_name)
+        :raises:
 
-    # base folder, not including subfolders
-    is_dir_bad = not path_cwd.exists() or (path_cwd.exists() and not path_cwd.is_dir())
-    if is_dir_bad:
-        msg_exc = "Expecting folder to already exist"
-        raise NotADirectoryError(msg_exc)
+           - :py:exc:`NotADirectoryError` -- Directory not found or not a directory
+           - :py:exc:`FileNotFoundError` -- Source file not found
+           - :py:exc:`ValueError` -- destination symlink must suffix must be .lnk
+           - :py:exc:`OSError` -- opening file descriptor on folder permission denied
 
-    is_not_src = not path_parent_src.exists()
-    if is_not_src:
-        msg_exc = f"Source file not found: {src} folder: {path_cwd}"
-        raise FileNotFoundError(msg_exc)
+        """
+        mod_path = f"{g_app_name}.lock_toggle.DependencyLockLnkFile._shared_checks"
 
-    # Assert dest suffixes indicate it's a .lnk file
-    if path_parent_dest.suffixes != [
-        SUFFIX_SYMLINK,
-    ]:
-        msg_exc = "Destination symlink must suffix must be .lnk"
-        raise ValueError(msg_exc)
+        path_cwd = Path(cwd_path)
 
-    # Remove dest (symlink), if it exists
-    is_dest = path_parent_dest.exists() and (
-        path_parent_dest.is_file() or path_parent_dest.is_symlink()
-    )
-    if is_dest:  # pragma: no cover
-        path_parent_dest.unlink(missing_ok=True)
-    else:  # pragma: no cover
-        pass
+        # e.g. src requirements/dev.lock or requirements\\dev.lock
+        path_src = resolve_joinpath(path_cwd, src)
 
-    mod_path = f"{g_app_name}.lock_toggle._create_symlinks_relative"
-    if is_module_debug:  # pragma: no cover
-        _logger.info(f"{mod_path} parent {path_parent!r}")
-        _logger.info(f"{mod_path} src name {src_name!r}")
-        _logger.info(f"{mod_path} dest name {dest_name!r}")
-    else:  # pragma: no cover
-        pass
+        # e.g. {tmp_path}/requirements or {tmp_path}\\requirements
+        path_parent = path_src.parent
 
-    try:
-        str_dir = str(path_parent)
-        is_readable = os.access(str_dir, os.R_OK)
-        is_writable = os.access(str_dir, os.W_OK)
+        # e.g. dev.lock
+        src_name = path_src.name
+        # e.g. dev.lnk
+        dest_name = Path(dest).name
+        # e.g. {tmp_path}\\requirements\\dev.lock
+        path_parent_src = path_parent.joinpath(src_name)
+        # e.g. {tmp_path}\\requirements\\dev.lnk
+        path_parent_dest = path_parent.joinpath(dest_name)
+
+        is_not_exists = not path_cwd.exists()
+
+        # base folder, not including subfolders
+        is_dir_bad = is_not_exists or (path_cwd.exists() and not path_cwd.is_dir())
+        if is_dir_bad:
+            msg_exc = "Expecting folder to already exist"
+            raise NotADirectoryError(msg_exc)
+
+        is_not_src = not path_parent_src.exists()
+        if is_not_src:
+            msg_exc = f"Source file not found: {src} folder: {path_cwd}"
+            raise FileNotFoundError(msg_exc)
+
+        # Assert dest suffixes indicate it's a .lnk file
+        if path_parent_dest.suffixes != [
+            SUFFIX_SYMLINK,
+        ]:
+            msg_exc = "Destination symlink must suffix must be .lnk"
+            raise ValueError(msg_exc)
+
+        # All implementations
+        self._path_parent_dest = path_parent_dest
+
+        # For symlink implementation
+        self._dir = str(path_parent)
+        self._src_name = src_name
+        self._dest_name = dest_name
+
+        # For copy implementation
+        self._path_parent_src = path_parent_src
+
+        # Folder permissions
+        is_readable = os.access(self._dir, os.R_OK)
+        is_writable = os.access(self._dir, os.W_OK)
         if is_module_debug:  # pragma: no cover
-            msg_info = f"{mod_path} {str_dir} readable?: {is_readable}"
-            _logger.info(msg_info)
-            msg_info = f"{mod_path} {str_dir} writable?: {is_writable}"
-            _logger.info(msg_info)
+            msg_info = f"{mod_path} {self._dir} readable?: {is_readable}"
+            print(msg_info, file=sys.stderr)
+            msg_info = f"{mod_path} {self._dir} writable?: {is_writable}"
+            print(msg_info, file=sys.stderr)
         else:  # pragma: no cover
             pass
 
-        if not is_win():  # pragma: no cover
-            dir_fd = os.open(str_dir, os.O_RDONLY)
-            # Create relative symlink
-            os.symlink(src_name, dest_name, dir_fd=dir_fd)
-            # don't leak a file descriptor
-            os.close(dir_fd)
+    @abc.abstractmethod
+    def __call__(self, src, dest, cwd_path):
+        """Create a file copy. Either an actual copy or a symlink
+
+        :param src: relative path to source file
+        :type src: str
+        :param dest: relative path to what will be the symlink
+        :type dest: str
+        :param cwd_path: Absolute path a folder
+        :type cwd_path: str
+        """
+        ...
+
+
+class DependencyLockSymlink(DependencyLockLnkFile):
+    """Dependency lock files are symlinks.
+
+    .. py:attribute:: IMPLEMENTATION
+       :type: str
+       :value: "os.symlink"
+
+       What to patch
+
+    """
+
+    IMPLEMENTATION = "os.symlink"
+
+    @classmethod
+    def is_file(cls, abspath) -> bool:  # pragma: no cover
+        """Encapsulate positive file/symlink check implementation.
+
+        .. note:: Could become a file
+
+           When Python builds a sdist package, symlinks are resolved;
+           symlinks --> files. :py:meth:`pathlib.Path.is_symlink`
+           is insufficient. Also check for :py:meth:`pathlib.Path.is_file`
+
+        :param abspath: Absolute path to a file or folder
+        :type abspath: pathlib.Path | pathlib.PurePath
+        :returns: True if an existing file
+        :rtype: bool
+        """
+        path_f = Path(abspath)
+        ret = path_f.exists() and (path_f.is_symlink() or path_f.is_file())
+
+        return ret
+
+    @classmethod
+    def is_not_file(cls, abspath) -> bool:  # pragma: no cover
+        """Encapsulate file type check implementation.
+
+        :param abspath: Absolute path to a file or folder
+        :type abspath: pathlib.Path | pathlib.PurePath
+        :returns: True if not a symlink
+        :rtype: bool
+        """
+        path_f = Path(abspath)
+        is_not_exists = not path_f.exists()
+        is_bad = is_not_exists or (
+            path_f.exists() and not path_f.is_symlink() and not path_f.is_file()
+        )
+        return is_bad
+
+    @staticmethod
+    def is_support() -> bool:
+        """Platform that implements symlinks with minimal trouble.
+
+        :returns: True if implementation applies to current platform
+        :rtype: bool
+        """
+        ret = not is_win()
+
+        return ret
+
+    def __call__(self, src: str, dest: str, cwd_path: str) -> None:  # pragma: no cover
+        """Create a copy by symlink.
+
+        :param src: relative path to source file
+        :type src: str
+        :param dest: relative path to what will be the symlink
+        :type dest: str
+        :param cwd_path: Absolute path a folder
+        :type cwd_path: str
+
+        :raises:
+
+           - :py:exc:`NotADirectoryError` -- Directory not found or not a directory
+           - :py:exc:`FileNotFoundError` -- Source file not found
+           - :py:exc:`ValueError` -- destination symlink must suffix must be .lnk
+           - :py:exc:`OSError` -- opening file descriptor on folder permission denied
+
+        """
+        cls = type(self)
+        mod_path = f"{g_app_name}.lock_toggle.{cls.__name__}.__call__"
+        # Raises: NotADirectoryError FileNotFoundError ValueError
+        self._shared_checks(src, dest, cwd_path)
+
+        if is_module_debug:  # pragma: no cover
+
+            _logger.info(f"{mod_path} parent {self._dir!r}")
+            _logger.info(f"{mod_path} src name {self._src_name!r}")
+            _logger.info(f"{mod_path} dest name {self._dest_name!r}")
         else:  # pragma: no cover
-            # Copy and rename file instead
-            shutil.copy2(path_parent_src, path_parent_dest, follow_symlinks=False)
-    except (NotImplementedError, OSError):
-        raise
+            pass
+
+        # Remove dest symlink, if it exists
+        if cls.is_file(self._path_parent_dest):  # pragma: no cover
+            self._path_parent_dest.unlink(missing_ok=True)
+        else:  # pragma: no cover
+            pass
+
+        """:py:func:`os.symlink` on problematic platforms should
+        raise NotImplementedError but doesn't."""
+        try:
+            dir_fd = os.open(self._dir, os.O_RDONLY)
+            #    Create relative symlink
+            os.symlink(self._src_name, self._dest_name, dir_fd=dir_fd)
+            #    Don't leak a file descriptor
+            os.close(dir_fd)
+        except OSError as exc:
+            msg_warn = (
+                f"{mod_path} {str(exc)} folder {self._dir!r} src name "
+                f"{self._src_name!r} dest name {self._dest_name!r} "
+                f"is dest({self._path_parent_dest!r}): "
+                f"{cls.is_file(self._path_parent_dest)} "
+                f"is src({self._path_parent_src!r}): "
+                f"{cls.is_file(self._path_parent_src)}"
+            )
+
+            raise OSError(msg_warn) from exc
+
+
+class DependencyLockFile(DependencyLockLnkFile):
+    """Dependency lock files are files.
+
+    .. py:attribute:: IMPLEMENTATION
+       :type: str
+       :value: "shutil.copy2"
+
+       What to patch
+
+    """
+
+    IMPLEMENTATION = "shutil.copy2"
+
+    @classmethod
+    def is_file(cls, abspath) -> bool:  # pragma: no cover
+        """Encapsulate positive file type check implementation.
+
+        :param abspath: Absolute path to a file or folder
+        :type abspath: pathlib.Path | pathlib.PurePath
+        :returns: True if an existing file
+        :rtype: bool
+        """
+        path_f = Path(abspath)
+        ret = path_f.exists() and path_f.is_file()
+
+        return ret
+
+    @classmethod
+    def is_not_file(cls, abspath) -> bool:  # pragma: no cover
+        """Encapsulate negative file type check implementation.
+
+        :param abspath: Absolute path to a file or folder
+        :type abspath: pathlib.Path | pathlib.PurePath
+        :returns: True if not a file
+        :rtype: bool
+        """
+        path_f = Path(abspath)
+        is_not_exists = not path_f.exists()
+        is_bad = is_not_exists or (path_f.exists() and not path_f.is_file())
+        return is_bad
+
+    @staticmethod
+    def is_support() -> bool:
+        """Platform that doesn't implement symlinks with minimal trouble.
+
+        :returns: True if implementation applies to current platform
+        :rtype: bool
+        """
+        ret = is_win()
+
+        return ret
+
+    def __call__(self, src: str, dest: str, cwd_path: str) -> None:  # pragma: no cover
+        """Create a copy by symlink.
+
+        :param src: relative path to source file
+        :type src: str
+        :param dest: relative path to what will be the symlink
+        :type dest: str
+        :param cwd_path: Absolute path a folder
+        :type cwd_path: str
+
+        :raises:
+
+           - :py:exc:`NotADirectoryError` -- Directory not found or not a directory
+           - :py:exc:`FileNotFoundError` -- Source file not found
+           - :py:exc:`ValueError` -- destination symlink must suffix must be .lnk
+           - :py:exc:`OSError` -- opening file descriptor on folder permission denied
+
+        """
+        cls = type(self)
+        # Raises: NotADirectoryError FileNotFoundError ValueError
+        self._shared_checks(src, dest, cwd_path)
+
+        # Remove dest file, if it exists
+        if cls.is_file(self._path_parent_dest):  # pragma: no cover
+            self._path_parent_dest.unlink(missing_ok=True)
+        else:  # pragma: no cover
+            pass
+
+        try:
+            shutil.copy2(
+                self._path_parent_src,
+                self._path_parent_dest,
+                follow_symlinks=False,
+            )
+        except OSError:
+            raise
+
+
+class DependencyLockLnkFactory:
+    """Supported implementation chooser."""
+
+    @staticmethod
+    def get_supported() -> type[DependencyLockLnkFile]:
+        """Get the supported implementation class
+
+        :returns: Supported implementation class
+        :rtype: type[drain_swamp.lock_toggle.DependencyLockLnkFile]
+        """
+        # These implementations are hardcoded
+        _impl_klasses = (DependencyLockSymlink, DependencyLockFile)
+        cls_impls = [cls_impl for cls_impl in _impl_klasses if cls_impl.is_support()]
+        impl = cls_impls[0]
+
+        return impl
+
+    def __call__(self, src: str, dest: str, cwd_path: str) -> None:
+        """Call the supported DependencyLockLnkFile subclass.
+
+        :param src: relative path to source file
+        :type src: str
+        :param dest: relative path to what will be the symlink
+        :type dest: str
+        :param cwd_path: Absolute path a folder
+        :type cwd_path: str
+        :raises:
+
+           - :py:exc:`NotADirectoryError` -- Directory not found or not a directory
+           - :py:exc:`FileNotFoundError` -- Source file not found
+           - :py:exc:`ValueError` -- destination symlink must suffix must be .lnk
+           - :py:exc:`OSError` -- opening file descriptor on folder permission denied
+
+        .. todo:: Dynamically get implementations
+
+           Troublesome, but possible, to get subclasses of DependencyLockLnkFile
+
+        """
+        cls = type(self)
+        impl = cls.get_supported()
+        impl()(src, dest, cwd_path)
 
 
 def _maintain_symlink(path_cwd, abspath_src):
@@ -255,7 +540,8 @@ def _maintain_symlink(path_cwd, abspath_src):
     dest = f"{src_stem}{SUFFIX_SYMLINK}"
 
     try:
-        _create_symlinks_relative(src, dest, str(path_cwd))
+        # Chooses supported implementation
+        DependencyLockLnkFactory()(src, dest, str(path_cwd))
     except Exception as e:  # pragma: no cover
         d_kwargs = {
             "mod_path": mod_path,

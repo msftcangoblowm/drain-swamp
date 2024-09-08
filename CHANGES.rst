@@ -8,10 +8,15 @@ Changelog
    Feature request
    .................
 
+   - When packaging, symlinks are converted into files. This change is only
+     noticed when the package is installed. Create an integration test
+     which builds and installs a package in a test venv. Confirm package
+     installs without an OSError occurring
+
    - On Windows, refresh links fails. Combining dependencies relative path with cwd path
      Use __debug__ to turn on module level logging AND send the logging to stdout
 
-   - creat gha, not just update workflow. If ``drain-swamp``, build
+   - create gha, not just update workflow. If ``drain-swamp``, build
      use config_settings options. Otherwise do the workaround. Export
      env variable which contain path to temp .toml file. File contain parsable
      config_settings which can be read from a subprocess
@@ -28,17 +33,18 @@ Changelog
      cause ?? Hints scm version plugin has issues
 
    - rtd installs does not build or run a workflow. Does rtd give any workaround?
-     Resolve rtd issue before migrate sphinx-external-toc-strict to use drain-swamp
+     Use github pages instead of rtd. Unless rtd respects workflows
 
    - test build sdist to detect issue with build backend
-
-   - scm-version write in version_tuple semantic version str missing local
 
    - tox does not pass in config_settings. Read in DS_CONFIG_SETTINGS
 
    Commit items for NEXT VERSION
    ..............................
 
+   - feat: automagically choose platform supported dependency lock copy implementation
+   - feat: packaging process symlinks --> files. Check for either
+   - test: On Windows, no executable true, but there might be git
    - fix: strftime %D and %T works on all platforms
    - fix: run_cmd file not found error message is platform specific
    - test: if Windows, unlink file not symlink

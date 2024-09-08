@@ -1,3 +1,4 @@
+import abc
 import enum
 import logging
 from collections.abc import (
@@ -8,7 +9,10 @@ from dataclasses import (
     InitVar,
     dataclass,
 )
-from pathlib import Path
+from pathlib import (
+    Path,
+    PurePath,
+)
 from typing import (
     Any,
     Final,
@@ -25,7 +29,41 @@ __all__ = (
 _logger: Final[logging.Logger]
 is_module_debug: Final[bool]
 
-def _create_symlinks_relative(src: str, dest: str, cwd_path: str) -> None: ...
+class DependencyLockLnkFile(abc.ABC):
+    @classmethod
+    @abc.abstractmethod
+    def is_file(cls, abspath: Path | PurePath) -> bool: ...
+    @classmethod
+    @abc.abstractmethod
+    def is_not_file(cls, abspath: Path | PurePath) -> bool: ...
+    @staticmethod
+    @abc.abstractmethod
+    def is_support() -> bool: ...
+    def _shared_checks(self, src: str, dest: str, cwd_path: str) -> None: ...
+    @abc.abstractmethod
+    def __call__(self, src: str, dest: str, cwd_path: str) -> None: ...
+
+class DependencyLockSymlink(DependencyLockLnkFile):
+    @classmethod
+    def is_file(cls, abspath: Path | PurePath) -> bool: ...
+    @classmethod
+    def is_not_file(cls, abspath: Path | PurePath) -> bool: ...
+    @staticmethod
+    def is_support() -> bool: ...
+    def __call__(self, src: str, dest: str, cwd_path: str) -> None: ...
+
+class DependencyLockFile(DependencyLockLnkFile):
+    @classmethod
+    def is_file(cls, abspath: Path | PurePath) -> bool: ...
+    @classmethod
+    def is_not_file(cls, abspath: Path | PurePath) -> bool: ...
+    @staticmethod
+    def is_support() -> bool: ...
+    def __call__(self, src: str, dest: str, cwd_path: str) -> None: ...
+
+class DependencyLockLnkFactory:
+    def __call__(self, src: str, dest: str, cwd_path: str) -> None: ...
+
 def _maintain_symlink(path_cwd: Path, abspath_out: Path) -> None: ...
 def lock_compile(inst: BackendType) -> Generator[Path, None, None]: ...
 def strip_inline_comments(val: str) -> str: ...

@@ -45,6 +45,7 @@ from drain_swamp.constants import (
     LOGGING,
     g_app_name,
 )
+from drain_swamp.lock_toggle import DependencyLockLnkFactory
 from drain_swamp.monkey.config_settings import ConfigSettings
 from drain_swamp.monkey.plugins.ds_refresh_links import (
     _is_set_lock,
@@ -212,9 +213,15 @@ ids_parent_dir = ("config_settings toml has placeholder for tmp_path",)
     testdata_parent_dir,
     ids=ids_parent_dir,
 )
-def test_parent_dir(toml_contents, tmp_path):
+def test_parent_dir(toml_contents, tmp_path, caplog, has_logging_occurred):
     """Test _parent_dir."""
     # pytest --showlocals --log-level INFO -k "test_parent_dir" tests
+    LOGGING["loggers"][g_app_name]["propagate"] = True
+    logging.config.dictConfig(LOGGING)
+    logger = logging.getLogger(name=g_app_name)
+    logger.addHandler(hdlr=caplog.handler)
+    caplog.handler.level = logger.level
+
     str_tmp_path = str(tmp_path)
 
     invalids = (
@@ -239,6 +246,9 @@ def test_parent_dir(toml_contents, tmp_path):
     contents_including_path = toml_contents.format(str_tmp_path)
     d_section = ConfigSettings.get_section_dict(tmp_path, contents_including_path)
     actual = _parent_dir(d_section)
+    logger.info(f"contents_including_path: {contents_including_path!r}")
+    logger.info(f"ConfigSettings.get_section_dict -> d_section: {d_section!r}")
+    assert has_logging_occurred(caplog)
     assert issubclass(type(actual), PurePath)
     assert actual == tmp_path
 
@@ -527,11 +537,13 @@ def test_plugin_refresh_links_normal(
                 # verify symlinks -- created, w/o resolve
                 for relpath_expected in seq_expected:
                     abspath_expected = resolve_joinpath(tmp_path, relpath_expected)
+
+                    # Checks .lnk file exists. Abstracts out implementation
                     assert issubclass(type(abspath_expected), Path)
-                    is_exists_0 = abspath_expected.exists()
-                    is_symlink_0 = abspath_expected.is_symlink()
-                    assert is_exists_0 and is_symlink_0
-                    # clean up symlink
+                    impl = DependencyLockLnkFactory.get_supported()
+                    assert impl.is_file(abspath_expected)
+
+                    # clean up symlink|file
                     abspath_expected.unlink()
                     is_exists_1 = abspath_expected.exists()
                     assert not is_exists_1

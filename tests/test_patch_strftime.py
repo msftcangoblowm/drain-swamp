@@ -25,7 +25,6 @@ from unittest.mock import patch
 
 import pytest
 
-from drain_swamp._safe_path import is_linux
 from drain_swamp.monkey.patch_strftime import (
     PatchAggregateD,
     PatchAggregateT,
@@ -94,15 +93,15 @@ testdata_unpatched_strftime = (
     ),
     (
         "%T",
-        does_not_raise(),
+        pytest.raises(ValueError) if PatchAggregateT.AFFECTS else does_not_raise(),
     ),
     (
         "%D",
-        does_not_raise(),
+        pytest.raises(ValueError) if PatchAggregateD.AFFECTS else does_not_raise(),
     ),
     (
         "%-d",
-        does_not_raise() if is_linux() else pytest.raises(ValueError),
+        pytest.raises(ValueError) if PatchLeadingDay.AFFECTS else does_not_raise(),
     ),
 )
 ids_unpatched_strftime = (

@@ -59,7 +59,11 @@ def test_run_cmd(tmp_path, prepare_folders_files):
         assert str_exc.startswith(expected_msg)
 
     # executable path is correct
-    true_path = resolve_path("true")
+    if not is_win():
+        true_path = resolve_path("true")
+    else:
+        # Windows does not have executable true, but should have git
+        true_path = resolve_path("git")
     valids = (
         (true_path,),
         true_path,

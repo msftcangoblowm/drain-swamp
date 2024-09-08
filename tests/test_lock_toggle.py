@@ -38,7 +38,9 @@ from unittest.mock import patch
 import pytest
 
 from drain_swamp._safe_path import (
+    fix_relpath,
     is_win,
+    resolve_joinpath,
     resolve_path,
 )
 from drain_swamp.backend_abc import BackendType
@@ -49,10 +51,12 @@ from drain_swamp.constants import (
 )
 from drain_swamp.exceptions import MissingRequirementsFoldersFiles
 from drain_swamp.lock_toggle import (
+    DependencyLockFile,
+    DependencyLockLnkFactory,
+    DependencyLockSymlink,
     InFile,
     InFiles,
     InFileType,
-    _create_symlinks_relative,
     _maintain_symlink,
     _postprocess_abspath_to_relpath,
     lock_compile,
@@ -74,11 +78,12 @@ def cleanup_symlinks(tmp_path):
         :type is_verify: bool
         """
         for relpath_expected in seq_expected:
-            abspath_expected = tmp_path.joinpath(relpath_expected)
-            if is_win():
-                is_exist = abspath_expected.exists() and abspath_expected.is_file()
-            else:
-                is_exist = abspath_expected.exists() and abspath_expected.is_symlink()
+            abspath_expected = resolve_joinpath(tmp_path, relpath_expected)
+            # Checks .lnk file exists. Abstracts out implementation
+            assert issubclass(type(abspath_expected), Path)
+            impl = DependencyLockLnkFactory.get_supported()
+            is_exist = impl.is_file(abspath_expected)
+
             is_very_verify = (
                 is_verify is not None
                 and isinstance(is_verify, bool)
@@ -467,8 +472,8 @@ def test_methods_infiles(
         InFileType.FILES,
     )
     check_fors = (
-        "requirements/tox.in",
-        Path("requirements/tox.in"),
+        fix_relpath("requirements/tox.in"),
+        Path(fix_relpath("requirements/tox.in")),
     )
     for checks_files in check_files:
         for check_for in check_fors:
@@ -483,14 +488,14 @@ def test_methods_infiles(
         # unsupported type
         invalids = (
             None,
-            ("requirements/goose-meat.in",),
+            (fix_relpath("requirements/goose-meat.in"),),
         )
         for invalid in invalids:
             with pytest.raises(ValueError):
                 files.get_by_relpath(invalid, set_name=checks_files)
 
         # nonexistent file
-        check_for = "requirements/goose-meat.in"
+        check_for = fix_relpath("requirements/goose-meat.in")
         in_ = files.get_by_relpath(check_for, set_name=checks_files)
         assert in_ is None
     # assert has_logging_occurred(caplog)
@@ -611,9 +616,43 @@ def test_unlock_compile(
         pass
 
 
-def test_create_symlinks_relative(tmp_path, prepare_folders_files, caplog):
+testdata_dependency_lock_link_files = (
+    pytest.param(
+        DependencyLockSymlink,
+        marks=pytest.mark.skipif(
+            not DependencyLockSymlink.is_support(),
+            reason="platform symlink support is troublesome",
+        ),
+    ),
+    pytest.param(
+        DependencyLockFile,
+        marks=pytest.mark.skipif(
+            not DependencyLockFile.is_support(),
+            reason="platform has non-troublesome symlink support",
+        ),
+    ),
+    DependencyLockLnkFactory.get_supported(),
+)
+ids_dependency_lock_link_files = (
+    "Symlink support is great on this platform",
+    "Symlink support is troublesome on this platform",
+    "Factory chooses the supported implementation",
+)
+
+
+@pytest.mark.parametrize(
+    "cls_impl",
+    testdata_dependency_lock_link_files,
+    ids=ids_dependency_lock_link_files,
+)
+def test_dependency_lock_link_files(
+    cls_impl,
+    tmp_path,
+    prepare_folders_files,
+    caplog,
+):
     """.lnk files symlinks are relative, not absolute."""
-    # pytest --showlocals --log-level INFO -k "test_create_symlinks_relative" tests
+    # pytest --showlocals --log-level INFO -k "test_dependency_lock_link_files" tests
     LOGGING["loggers"][g_app_name]["propagate"] = True
     logging.config.dictConfig(LOGGING)
     logger = logging.getLogger(name=g_app_name)
@@ -621,19 +660,20 @@ def test_create_symlinks_relative(tmp_path, prepare_folders_files, caplog):
     caplog.handler.level = logger.level
 
     src_abspath = tmp_path.joinpath("src.py")
+    assert not src_abspath.exists()
 
-    # NotADirectoryError (cwd)
+    #    NotADirectoryError (cwd)
     src = "hi-there"
     dest = "hello.lnk"
     with pytest.raises(NotADirectoryError):
-        _create_symlinks_relative(src, dest, src_abspath)
+        cls_impl()(src, dest, src_abspath)
 
     with pytest.raises(NotADirectoryError):
         _maintain_symlink(src_abspath, src_abspath)
 
-    # FileNotFoundError (src)
+    #    FileNotFoundError (src)
     with pytest.raises(FileNotFoundError):
-        _create_symlinks_relative(src, dest, tmp_path)
+        cls_impl()(src, dest, tmp_path)
 
     with pytest.raises(FileNotFoundError):
         _maintain_symlink(tmp_path, src_abspath)
@@ -644,49 +684,52 @@ def test_create_symlinks_relative(tmp_path, prepare_folders_files, caplog):
     path_src.touch()
     dest = "hello.txt"
     with pytest.raises(ValueError):
-        _create_symlinks_relative(src, dest, tmp_path)
+        cls_impl()(src, dest, tmp_path)
 
     # Success case
     src = "requirements/hi-there.unlock"
-    src_abspath = tmp_path.joinpath(src)
+    src_abspath = resolve_joinpath(tmp_path, src)
     dest = "hi-there.lnk"
     prepare_folders_files((src,), tmp_path)
-    _create_symlinks_relative(src, dest, tmp_path)
+    cls_impl()(src, dest, tmp_path)
     path_dest_expected = tmp_path.joinpath("requirements", dest)
-    if is_win():
-        is_file = path_dest_expected.is_file()
-        assert is_file
-    else:
-        is_symlink = path_dest_expected.is_symlink()
-        assert is_symlink
+
+    # Checks .lnk file exists. Abstracts out implementation
+    assert issubclass(type(path_dest_expected), Path)
+    impl = DependencyLockLnkFactory.get_supported()
+    is_exist = impl.is_file(path_dest_expected)
+    assert is_exist
+    if not is_win():
         assert path_dest_expected.resolve() == tmp_path.joinpath(src)
     path_dest_expected.unlink()
-    assert not path_dest_expected.exists()
+    assert impl.is_not_file(path_dest_expected)
 
     _maintain_symlink(tmp_path, src_abspath)
-    if is_win():
-        is_file = path_dest_expected.is_file()
-        assert is_file
-    else:
-        is_symlink = path_dest_expected.is_symlink()
-        assert is_symlink
+
+    assert issubclass(type(path_dest_expected), Path)
+    is_exist = impl.is_file(path_dest_expected)
+    assert is_exist
+    if not is_win():
         assert path_dest_expected.resolve() == tmp_path.joinpath(src)
+
     path_dest_expected.unlink()
-    assert not path_dest_expected.exists()
+    assert impl.is_not_file(path_dest_expected)
 
     # os.symlink not supported on this platform --> NotImplementedError
     src = "requirements/yo.lock"
-    src_abspath = tmp_path.joinpath(src)
+    src_abspath = resolve_joinpath(tmp_path, src)
     prepare_folders_files((src,), tmp_path)
     dest = "yo.lnk"
+
+    patch_this = cls_impl.IMPLEMENTATION
     with (
-        patch("os.symlink", side_effect=NotImplementedError),
-        pytest.raises(NotImplementedError),
+        patch(patch_this, side_effect=OSError),
+        pytest.raises(OSError),
     ):
-        _create_symlinks_relative(src, dest, tmp_path)
+        cls_impl()(src, dest, tmp_path)
     with (
-        patch("os.symlink", side_effect=NotImplementedError),
-        pytest.raises(NotImplementedError),
+        patch(patch_this, side_effect=OSError),
+        pytest.raises(OSError),
     ):
         _maintain_symlink(tmp_path, src_abspath)
 

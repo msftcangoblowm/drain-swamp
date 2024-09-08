@@ -30,7 +30,6 @@ from unittest.mock import patch
 
 import pytest
 
-from drain_swamp._safe_path import is_linux
 from drain_swamp.constants import g_app_name
 from drain_swamp.snippet_sphinx_conf import SnipSphinxConf
 
@@ -81,7 +80,7 @@ testdata_now_to_str = (
     ),
     (
         "%-d",
-        does_not_raise() if is_linux() else pytest.raises(ValueError),
+        does_not_raise(),
     ),
 )
 ids_now_to_str = (
@@ -99,7 +98,7 @@ ids_now_to_str = (
     ids=ids_now_to_str,
 )
 def test_now_to_str(format_str, expectation, path_project_base):
-    """Test now_to_str."""
+    """Test now_to_str. Patched, so should never fail."""
     # pytest --showlocals --log-level INFO -k "test_now_to_str" tests
     assert isinstance(SnipSphinxConf.now(), datetime)
     # strftime / strptime format str

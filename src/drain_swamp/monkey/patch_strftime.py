@@ -63,7 +63,7 @@ class PatchLeadingDay(Patch):
     """
 
     AFFECTED_TOKEN = "%-d"
-    AFFECTS = not (is_linux() and is_macos())
+    AFFECTS = not (is_linux() or is_macos())
 
     def __call__(self, dt_a, str_part):
         """Replace bad token ``<perc><hyphen>d``.
