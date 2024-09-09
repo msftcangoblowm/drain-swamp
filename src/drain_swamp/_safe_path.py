@@ -66,6 +66,22 @@ def is_macos():  # pragma: no cover
     return ret
 
 
+def _to_purepath(relpath_b):
+    """Convert a relative path to PurePath
+
+    :param relpath_b: A posix style path. Requiring fixing before joinpath
+    :type relpath_b: pathlib.PurePath | pathlib.Path | str
+    :returns: Platform specific pure path
+    :rtype: pathlib.PureWindowsPath | pathlib.PurePosixPath
+    """
+    if is_win():  # pragma: no cover
+        fix_b = PureWindowsPath(relpath_b)
+    else:  # pragma: no cover
+        fix_b = PurePosixPath(relpath_b)
+
+    return fix_b
+
+
 def resolve_path(str_cmd):
     """Windows safe resolve executable path
 
@@ -75,10 +91,7 @@ def resolve_path(str_cmd):
     :rtype: str
     """
     str_path = shutil.which(str_cmd)
-    if is_win():  # pragma: no cover
-        ret = str(PureWindowsPath(str_path))
-    else:  # pragma: no cover
-        ret = str(PurePosixPath(str_path))
+    ret = str(_to_purepath(str_path))
 
     return ret
 
@@ -94,14 +107,11 @@ def fix_relpath(relpath_b):
     ``src\\complete_awesome_perfect\\_version.py``
 
     :param relpath_b: A posix style path. Requiring fixing before joinpath
-    :type relpath_b: pathlib.PurePath | pathlib.Path
+    :type relpath_b: pathlib.PurePath | pathlib.Path | str
     :returns: Platform specific pure path
     :rtype: pathlib.PureWindowsPath | pathlib.PurePosixPath
     """
-    if is_win():  # pragma: no cover
-        fix_b = str(PureWindowsPath(relpath_b))
-    else:  # pragma: no cover
-        fix_b = str(PurePosixPath(relpath_b))
+    fix_b = str(_to_purepath(relpath_b))
 
     return fix_b
 
@@ -112,7 +122,7 @@ def resolve_joinpath(abspath_a, relpath_b):
     :param abspath_a: A correct absolute path
     :type abspath_a: pathlib.PurePath | pathlib.Path
     :param relpath_b: A posix style path. Requiring fixing before joinpath
-    :type relpath_b: pathlib.PurePath | pathlib.Path
+    :type relpath_b: pathlib.PurePath | pathlib.Path | str
     :returns: Platform specific pure path
     :rtype: pathlib.PureWindowsPath | pathlib.PurePosixPath | type[pathlib.Path]
     """

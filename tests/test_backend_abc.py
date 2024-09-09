@@ -1006,16 +1006,29 @@ def test_resolve_symlinks(
     tmp_path,
     prep_pyproject_toml,
     prepare_folders_files,
+    caplog,
+    has_logging_occurred,
 ):
     """Test and verify refresh symlinks"""
     # pytest --showlocals --log-level INFO -k "test_resolve_symlinks" -v tests
+    LOGGING["loggers"][g_app_name]["propagate"] = True
+    logging.config.dictConfig(LOGGING)
+    logger = logging.getLogger(name=g_app_name)
+    logger.addHandler(hdlr=caplog.handler)
+    caplog.handler.level = logger.level
+
+    # prepare
+    #    pyproject.toml
     path_f = prep_pyproject_toml(path_config_src, tmp_path)
 
+    #    .in
     seq_ins = list(d_ins.values())
     prepare_folders_files(seq_ins, tmp_path)
 
+    #    .lock and .unlock
     prepare_folders_files(seq_unlocks, tmp_path)
 
+    # act
     cmd = (
         resolve_path("pipenv-unlock"),
         "refresh",
@@ -1024,5 +1037,9 @@ def test_resolve_symlinks(
     )
 
     run_cmd(cmd, cwd=tmp_path)
+
+    # verify
+    logger.info("cmd: {cmd!r}")
     actual = BackendType.is_locked(path_f)
+    assert has_logging_occurred(caplog)
     assert actual is expected

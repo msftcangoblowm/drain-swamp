@@ -42,13 +42,10 @@ from __future__ import annotations
 
 import abc
 import logging
-import platform
 import sys
 from pathlib import (
     Path,
     PurePath,
-    PurePosixPath,
-    PureWindowsPath,
 )
 from typing import (
     TYPE_CHECKING,
@@ -62,6 +59,7 @@ from ._repr import (
     repr_path,
     repr_set_path,
 )
+from ._safe_path import _to_purepath
 from .check_type import (
     is_iterable_not_str,
     is_ok,
@@ -92,7 +90,7 @@ __all__ = ("BackendType",)
 
 _logger = logging.getLogger(f"{g_app_name}.backend_abc")
 
-is_module_debug = False
+is_module_debug = True
 
 # taken from pyproject.toml
 entrypoint_name = "pipenv-unlock"  # noqa: F401
@@ -1236,7 +1234,6 @@ class BackendType(abc.ABC):
         """
         # Subclass, not the ABC class. backend is implied by the subclass
         cls = type(self)
-        is_win = platform.system().lower() == "windows"
 
         ret = (
             f"<{cls.__name__} "
@@ -1250,12 +1247,8 @@ class BackendType(abc.ABC):
         t_required = self.required
         if t_required is not None:
             req_name, req_path = t_required
-            if is_win:  # pragma: no cover
-                req_purepath = PureWindowsPath(req_path)
-                ret += f"required=('{req_name!s}', {req_purepath!r})"
-            else:  # pragma: no cover
-                req_purepath = PurePosixPath(req_path)
-                ret += f"required=('{req_name!s}', {req_purepath!r})"
+            req_purepath = _to_purepath(req_path)
+            ret += f"required=('{req_name!s}', {req_purepath!r})"
         else:
             # t_required is None when pyproject.toml contains static dependencies
             # Remove <comma><space> token

@@ -465,7 +465,7 @@ def dependencies_lock(path, required, optionals, additional_folders, snippet_co)
 
     # update snippet
     fname = path / "pyproject.toml"
-    snip = Snip(fname, is_quiet=True)
+    snip = Snip(fname)
     is_success = snip.replace(new_contents, id_=snippet_co)
     if is_success == ReplaceResult.VALIDATE_FAIL:
         msg_exc = (
@@ -660,7 +660,7 @@ def dependencies_unlock(path, required, optionals, additional_folders, snippet_c
 
     # update snippet -- pyproject.toml
     fname = path / "pyproject.toml"
-    snip = Snip(fname, is_quiet=False)
+    snip = Snip(fname)
     is_success = snip.replace(new_contents, id_=snippet_co)
     if is_success == ReplaceResult.VALIDATE_FAIL:
         msg_exc = (

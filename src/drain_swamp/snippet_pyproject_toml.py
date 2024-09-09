@@ -98,7 +98,7 @@ def snippet_replace_suffixes(path_config, snippet_co=None):
     else:  # pragma: no cover
         pass
 
-    snip = Snip(path_config, is_quiet=True)
+    snip = Snip(path_config)
 
     #    get
     t_out = snip.contents(id_=snippet_co)

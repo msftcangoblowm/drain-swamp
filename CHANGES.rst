@@ -42,6 +42,9 @@ Changelog
    Commit items for NEXT VERSION
    ..............................
 
+   - refactor: where possible _to_purepath rather than PurePosixPath and PureWindowsPath
+   - fix: remove snip constructor param is_quiet
+   - fix(backend_setuptools): dependency file relative path treat as PurePosixPath
    - fix: TOML format path must be single quoted
    - feat: automagically choose platform supported dependency lock copy implementation
    - feat: packaging process symlinks --> files. Check for either

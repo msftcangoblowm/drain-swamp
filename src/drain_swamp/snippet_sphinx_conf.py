@@ -329,7 +329,7 @@ class SnipSphinxConf:
         # is_ok check avoids, TypeError
         contents = self._contents
         if contents is not None:
-            snip = Snip(self.path_abs, is_quiet=True)
+            snip = Snip(self.path_abs)
             ret = snip.replace(contents, id_=snippet_co)
         else:  # pragma: no cover
             ret = ReplaceResult.NO_CHANGE

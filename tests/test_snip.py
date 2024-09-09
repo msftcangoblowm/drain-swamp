@@ -48,7 +48,6 @@ testdata_test_snip_harden = [
         "zzzzzzzzzzzzz\nzzzzzzzzzz\nzzzzzzzzzzzzz\n",
         "zzzzzzzzzzzzz\nzzzzzzzzzz\nzzzzzzzzzzzzz\n",
         ReplaceResult.NO_MATCH,
-        False,
     ),
     (
         "with_id_key_no_key.txt",
@@ -57,7 +56,6 @@ testdata_test_snip_harden = [
         "zzzzzzzzzzzzz\n# @@@ editable\nblah blah blah\n# @@@ end\nzzzzzzzzzzzzz\n",
         "zzzzzzzzzzzzz\n# @@@ editable\nblah blah blah\n# @@@ end\nzzzzzzzzzzzzz\n",
         ReplaceResult.NO_MATCH,
-        False,
     ),
     (
         "with_id_no_key_key.txt",
@@ -66,7 +64,6 @@ testdata_test_snip_harden = [
         "zzzzzzzzzzzzz\n# @@@ editable george\nblah blah blah\n# @@@ end\nzzzzzzzzzzzzz\n",
         "zzzzzzzzzzzzz\n# @@@ editable george\nabc abc abc\n# @@@ end\nzzzzzzzzzzzzz\n",
         ReplaceResult.REPLACED,
-        False,
     ),
     (
         "with_id_no_change.txt",
@@ -75,7 +72,6 @@ testdata_test_snip_harden = [
         "zzzzzzzzzzzzz\n# @@@ editable asdf\nblah blah blah\n# @@@ end\nzzzzzzzzzzzzz\n",
         "zzzzzzzzzzzzz\n# @@@ editable asdf\nblah blah blah\n# @@@ end\nzzzzzzzzzzzzz\n",
         ReplaceResult.NO_CHANGE,
-        False,
     ),
     (
         "with_id.txt",
@@ -84,7 +80,6 @@ testdata_test_snip_harden = [
         "zzzzzzzzzzzzz\n# @@@ editable asdf\nblah blah blah\n# @@@ end\nzzzzzzzzzzzzz\n",
         "zzzzzzzzzzzzz\n# @@@ editable asdf\nabc abc abc\n# @@@ end\nzzzzzzzzzzzzz\n",
         ReplaceResult.REPLACED,
-        False,
     ),
     (
         "without_id_have_id_no_match.txt",
@@ -93,7 +88,6 @@ testdata_test_snip_harden = [
         "zzzzzzzzzzzzz\n# @@@ editable\nblah blah blah\n# @@@ end\nzzzzzzzzzzzzz\nzzzzzzzzzzzzz\n# @@@ editable george\nblah blah blah\n# @@@ end\nzzzzzzzzzzzzz\n",
         "zzzzzzzzzzzzz\n# @@@ editable\nblah blah blah\n# @@@ end\nzzzzzzzzzzzzz\nzzzzzzzzzzzzz\n# @@@ editable george\nabc abc abc\n# @@@ end\nzzzzzzzzzzzzz\n",
         ReplaceResult.REPLACED,
-        True,
     ),
     (
         "with_id_snippet_empty.txt",
@@ -102,7 +96,6 @@ testdata_test_snip_harden = [
         "zzzzzzzzzzzzz\n# @@@ editable asdf\n\n# @@@ end\nzzzzzzzzzzzzz\n",
         "zzzzzzzzzzzzz\n# @@@ editable asdf\nabc abc abc\n# @@@ end\nzzzzzzzzzzzzz\n",
         ReplaceResult.REPLACED,
-        False,
     ),
     (
         "without_id_empty_str.txt",
@@ -111,7 +104,6 @@ testdata_test_snip_harden = [
         "zzzzzzzzzzzzz\n# @@@ editable\nblah blah blah\n# @@@ end\nzzzzzzzzzzzzz\n",
         "zzzzzzzzzzzzz\n# @@@ editable\nabc abc abc\n# @@@ end\nzzzzzzzzzzzzz\n",
         ReplaceResult.REPLACED,
-        True,
     ),
     (
         "without_id_none.txt",
@@ -120,7 +112,6 @@ testdata_test_snip_harden = [
         "zzzzzzzzzzzzz\n# @@@ editable\nblah blah blah\n# @@@ end\nzzzzzzzzzzzzz\n",
         "zzzzzzzzzzzzz\n# @@@ editable\nabc abc abc\n# @@@ end\nzzzzzzzzzzzzz\n",
         ReplaceResult.REPLACED,
-        True,
     ),
     (
         "without_id_not_str.txt",
@@ -129,7 +120,6 @@ testdata_test_snip_harden = [
         "zzzzzzzzzzzzz\n# @@@ editable\nblah blah blah\n# @@@ end\nzzzzzzzzzzzzz\n",
         "zzzzzzzzzzzzz\n# @@@ editable\nabc abc abc\n# @@@ end\nzzzzzzzzzzzzz\n",
         ReplaceResult.REPLACED,
-        True,
     ),
     (
         "without_id_excess_whitespace.txt",
@@ -138,7 +128,6 @@ testdata_test_snip_harden = [
         "zzzzzzzzzzzzz\n# @@@ editable\nblah blah blah\n# @@@ end\nzzzzzzzzzzzzz\n",
         "zzzzzzzzzzzzz\n# @@@ editable\nabc abc abc\n# @@@ end\nzzzzzzzzzzzzz\n",
         ReplaceResult.REPLACED,
-        True,
     ),
     (
         "with_id_match_2nd.txt",
@@ -147,7 +136,6 @@ testdata_test_snip_harden = [
         "zzzzzzzzzzzzz\n# @@@ editable asdf\nblah blah blah\n# @@@ end\nzzzzzz\n# @@@ editable george\nhey there ted\n# @@@ end\nzzzzzzz\n",
         "zzzzzzzzzzzzz\n# @@@ editable asdf\nblah blah blah\n# @@@ end\nzzzzzz\n# @@@ editable george\nabc abc abc\n# @@@ end\nzzzzzzz\n",
         ReplaceResult.REPLACED,
-        False,
     ),
     (
         "with_id_match_1st.txt",
@@ -156,7 +144,6 @@ testdata_test_snip_harden = [
         "zzzzzzzzzzzzz\n# @@@ editable asdf\nblah blah blah\n# @@@ end\nzzzzzz\n# @@@ editable george\nhey there ted\n# @@@ end\nzzzzzzz\n",
         "zzzzzzzzzzzzz\n# @@@ editable asdf\nabc abc abc\n# @@@ end\nzzzzzz\n# @@@ editable george\nhey there ted\n# @@@ end\nzzzzzzz\n",
         ReplaceResult.REPLACED,
-        False,
     ),
     (
         "with_id_match_1st_and_3rd.txt",
@@ -165,7 +152,6 @@ testdata_test_snip_harden = [
         "zzzzzzzzzzzzz\n# @@@ editable asdf\nblah blah blah\n# @@@ end\nzzzzzz\n# @@@ editable george\nhey there ted\n# @@@ end\nzzzzzzz\n# @@@ editable asdf\nlol lol lol\n# @@@ end\noh ok then",
         "zzzzzzzzzzzzz\n# @@@ editable asdf\nabc abc abc\n# @@@ end\nzzzzzz\n# @@@ editable george\nhey there ted\n# @@@ end\nzzzzzzz\n# @@@ editable asdf\nabc abc abc\n# @@@ end\noh ok then",
         ReplaceResult.REPLACED,
-        False,
     ),
 ]
 ids_test_snip_harden = [
@@ -187,7 +173,7 @@ ids_test_snip_harden = [
 
 
 @pytest.mark.parametrize(
-    "file_name, id_, replace_text, file_contents, expected, expected_result_status, is_quiet",
+    "file_name, id_, replace_text, file_contents, expected, expected_result_status",
     testdata_test_snip_harden,
     ids=ids_test_snip_harden,
 )
@@ -198,7 +184,6 @@ def test_snip_harden(
     file_contents,
     expected,
     expected_result_status,
-    is_quiet,
     tmp_path,
     caplog,
     file_regression,
@@ -226,7 +211,7 @@ def test_snip_harden(
         Path("__init__.py"),  # relative file (not scary normally empty)
     )
     for invalid in invalids:
-        er_bad = Snip(invalid, is_quiet=is_quiet)
+        er_bad = Snip(invalid)
         # Fails at this point, not on class construction
         is_success = er_bad.replace(replace_text, id_=id_)
         assert is_success is None or ReplaceResult.VALIDATE_FAIL == is_success
@@ -243,14 +228,14 @@ def test_snip_harden(
         Path(mixed_f).write_text("")  # reset file contents
 
         # empty file --> ValueError
-        er_bad_val = Snip(mixed_f, is_quiet=is_quiet)
+        er_bad_val = Snip(mixed_f)
         with pytest.raises(ValueError):
             er_bad_val.get_file()
 
     for mixed_f in path_fnames:
         path_f = Path(mixed_f)
         path_f.write_text(file_contents)
-        er = Snip(mixed_f, is_quiet=is_quiet)
+        er = Snip(mixed_f)
 
         # pass in non-str
         invalids = (
@@ -277,26 +262,41 @@ def test_snip_harden(
             file_regression.check(expected, extension=".txt", binary=False)
 
 
-def test_snip_properties():
-    """Test Snip properties."""
-    # pytest --showlocals --log-level INFO -k "test_properties" tests
-    is_quiet_invalids = (
+testdata_snip_properties = (
+    (
         None,
-        "Hello World!",
-    )
-    path_invalids = (
-        None,
+        pytest.raises(TypeError),
+    ),
+    (
         1.12345,
+        pytest.raises(TypeError),
+    ),
+    (
         1,
-    )
-    for p_invalid in path_invalids:
-        for q_invalid in is_quiet_invalids:
-            with pytest.raises(TypeError):
-                Snip(p_invalid, is_quiet=q_invalid)
+        pytest.raises(TypeError),
+    ),
+)
+ids_snip_properties = (
+    "unsupported None",
+    "unsupported type float",
+    "unsupported type int",
+)
 
 
 @pytest.mark.parametrize(
-    "file_name, id_, replace_text, file_contents, expected, expected_result_status, is_quiet",
+    "path_f, expectation",
+    testdata_snip_properties,
+    ids=ids_snip_properties,
+)
+def test_snip_properties(path_f, expectation):
+    """Test Snip properties."""
+    # pytest --showlocals --log-level INFO -k "test_properties" tests
+    with expectation:
+        Snip(path_f)
+
+
+@pytest.mark.parametrize(
+    "file_name, id_, replace_text, file_contents, expected, expected_result_status",
     testdata_test_snip_harden,
     ids=ids_test_snip_harden,
 )
@@ -307,7 +307,6 @@ def test_checks_normal_usage(
     file_contents,
     expected,
     expected_result_status,
-    is_quiet,
     caplog,
 ):
     """Snippet validity checks."""
@@ -354,7 +353,7 @@ def test_checks_normal_usage(
 
 
 @pytest.mark.parametrize(
-    "file_name, id_, replace_text, file_contents, expected, expected_result_status, is_quiet",
+    "file_name, id_, replace_text, file_contents, expected, expected_result_status",
     testdata_test_snip_harden,
     ids=ids_test_snip_harden,
 )
@@ -365,7 +364,6 @@ def test_checks_bad_input(
     file_contents,
     expected,
     expected_result_status,
-    is_quiet,
     caplog,
 ):
     """Snippet validity checks bad input."""
@@ -433,7 +431,7 @@ def test_check_snips_bad(path):
 
 
 @pytest.mark.parametrize(
-    "file_name, id_, replace_text, file_contents, expected, expected_result_status, is_quiet",
+    "file_name, id_, replace_text, file_contents, expected, expected_result_status",
     testdata_test_snip_harden,
     ids=ids_test_snip_harden,
 )
@@ -444,7 +442,6 @@ def test_snip_validate(
     file_contents,
     expected,
     expected_result_status,
-    is_quiet,
     caplog,
     tmp_path,
 ):
@@ -468,13 +465,13 @@ def test_snip_validate(
         Path(mixed_f).write_text("")  # reset file contents
 
         # empty file --> ValueError --> False
-        snip_empty = Snip(mixed_f, is_quiet=is_quiet)
+        snip_empty = Snip(mixed_f)
         assert snip_empty.validate() is False
 
         Path(mixed_f).write_text(file_contents)
 
         # good
-        snip = Snip(mixed_f, is_quiet=True)
+        snip = Snip(mixed_f)
         is_valid = snip.validate()
         assert is_valid is True
 
@@ -485,7 +482,7 @@ def test_snip_validate(
             Path("__init__.py"),  # relative file (not scary normally empty)
         )
         for invalid in invalids:
-            snip_bad = Snip(invalid, is_quiet=is_quiet)
+            snip_bad = Snip(invalid)
             # Fails at this point, not on class construction
             is_valid = snip_bad.validate()
             assert is_valid is False
@@ -497,84 +494,72 @@ testdata_snip_contents = [
         "asdf",
         "zzzzzzzzzzzzz\nzzzzzzzzzz\nzzzzzzzzzzzzz\n",
         ReplaceResult.NO_MATCH,
-        False,
     ),
     (
         "with_id_key_no_key.txt",
         "asdf",
         "zzzzzzzzzzzzz\n# @@@ editable\nblah blah blah\n# @@@ end\nzzzzzzzzzzzzz\n",
         ReplaceResult.NO_MATCH,
-        False,
     ),
     (
         "with_id_no_key_key.txt",
         "",
         "zzzzzzzzzzzzz\n# @@@ editable george\nblah blah blah\n# @@@ end\nzzzzzzzzzzzzz\n",
         "blah blah blah",
-        False,
     ),
     (
         "with_id.txt",
         "asdf",
         "zzzzzzzzzzzzz\n# @@@ editable asdf\nblah blah blah\n# @@@ end\nzzzzzzzzzzzzz\n",
         "blah blah blah",
-        False,
     ),
     (
         "with_id_snippet_empty.txt",
         "asdf",
         "zzzzzzzzzzzzz\n# @@@ editable asdf\n\n# @@@ end\nzzzzzzzzzzzzz\n",
         "",
-        False,
     ),
     (
         "without_id_empty_str.txt",
         "",
         "zzzzzzzzzzzzz\n# @@@ editable\nblah blah blah\n# @@@ end\nzzzzzzzzzzzzz\n",
         "blah blah blah",
-        True,
     ),
     (
         "without_id_none.txt",
         None,
         "zzzzzzzzzzzzz\n# @@@ editable\nblah blah blah\n# @@@ end\nzzzzzzzzzzzzz\n",
         "blah blah blah",
-        True,
     ),
     (
         "without_id_not_str.txt",
         1.12345,
         "zzzzzzzzzzzzz\n# @@@ editable\nblah blah blah\n# @@@ end\nzzzzzzzzzzzzz\n",
         "blah blah blah",
-        True,
     ),
     (
         "without_id_excess_whitespace.txt",
         "    ",
         "zzzzzzzzzzzzz\n# @@@ editable\nblah blah blah\n# @@@ end\nzzzzzzzzzzzzz\n",
         "blah blah blah",
-        True,
     ),
     (
         "with_id_match_2nd.txt",
         "george",
         "zzzzzzzzzzzzz\n# @@@ editable asdf\nblah blah blah\n# @@@ end\nzzzzzz\n# @@@ editable george\nhey there ted\n# @@@ end\nzzzzzzz\n",
         "hey there ted",
-        False,
     ),
     (
         "with_id_match_1st.txt",
         "asdf",
         "zzzzzzzzzzzzz\n# @@@ editable asdf\nblah blah blah\n# @@@ end\nzzzzzz\n# @@@ editable george\nhey there ted\n# @@@ end\nzzzzzzz\n",
         "blah blah blah",
-        False,
     ),
     (
         "with_id_match_1st_and_3rd.txt",
         "asdf",
         "zzzzzzzzzzzzz\n# @@@ editable asdf\nblah blah blah\n# @@@ end\nzzzzzz\n# @@@ editable george\nhey there ted\n# @@@ end\nzzzzzzz\n# @@@ editable asdf\nlol lol lol\n# @@@ end\noh ok then",
         "blah blah blah",
-        False,
     ),
 ]
 ids_snip_contents = [
@@ -594,7 +579,7 @@ ids_snip_contents = [
 
 
 @pytest.mark.parametrize(
-    "file_name, id_, file_contents, expected, is_quiet",
+    "file_name, id_, file_contents, expected",
     testdata_snip_contents,
     ids=ids_snip_contents,
 )
@@ -603,7 +588,6 @@ def test_snip_contents(
     id_,
     file_contents,
     expected,
-    is_quiet,
     tmp_path,
     prepare_folders_files,
     caplog,
@@ -619,7 +603,7 @@ def test_snip_contents(
     caplog.handler.level = logger.level
 
     path_abs = tmp_path / file_name
-    snip = Snip(path_abs, is_quiet=is_quiet)
+    snip = Snip(path_abs)
 
     # No preparation -- snip.contents
     t_actual = snip.contents(id_=id_)

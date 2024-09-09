@@ -49,13 +49,13 @@ authors = [
 
 [project.urls]
 # https://github.com/pypi/warehouse/blob/70eac9796fa1eae24741525688a112586eab9010/warehouse/templates/packaging/detail.html#L20-L62
-"Documentation" = "https://msftcangoblowm.github.io/drain-swamp"
-"Docs (rtd)" = "https://drain-swamp.readthedocs.io/en/stable"
-"Changes" = "https://raw.githubusercontent.com/msftcangoblowm/drain-swamp/master/CHANGES.rst"
-"PyPI Releases" = "https://pypi.org/project/drain-swamp"
-"Source code" = "https://github.com/msftcangoblowm/drain-swamp"
-"Issue tracker" = "https://github.com/msftcangoblowm/drain-swamp/issues"
-"Mastodon" = "https://mastodon.social/@msftcangoblowme"
+"Documentation" = 'https://msftcangoblowm.github.io/drain-swamp'
+"Docs (rtd)" = 'https://drain-swamp.readthedocs.io/en/stable'
+"Changes" = 'https://raw.githubusercontent.com/msftcangoblowm/drain-swamp/master/CHANGES.rst'
+"PyPI Releases" = 'https://pypi.org/project/drain-swamp'
+"Source code" = 'https://github.com/msftcangoblowm/drain-swamp'
+"Issue tracker" = 'https://github.com/msftcangoblowm/drain-swamp/issues'
+"Mastodon" = 'https://mastodon.social/@msftcangoblowme'
 
 [tool.setuptools.packages.find]
 where = ["src"]
@@ -81,19 +81,19 @@ scm-version = "drain_swamp.cli_scm_version:main"
 
 [tool.setuptools.dynamic]
 # @@@ editable little_shop_of_horrors_shrine_candles
-dependencies = { file = ["requirements/prod.lnk"] }
-optional-dependencies.pip = { file = ["requirements/pip.lnk"] }
-optional-dependencies.pip_tools = { file = ["requirements/pip-tools.lnk"] }
-optional-dependencies.dev = { file = ["requirements/dev.lnk"] }
-optional-dependencies.manage = { file = ["requirements/manage.lnk"] }
-optional-dependencies.docs = { file = ["docs/requirements.lnk"] }
+dependencies = { file = ['requirements/prod.lnk'] }
+optional-dependencies.pip = { file = ['requirements/pip.lnk'] }
+optional-dependencies.pip_tools = { file = ['requirements/pip-tools.lnk'] }
+optional-dependencies.dev = { file = ['requirements/dev.lnk'] }
+optional-dependencies.manage = { file = ['requirements/manage.lnk'] }
+optional-dependencies.docs = { file = ['docs/requirements.lnk'] }
 # @@@ end
 
 version = {attr = "drain_swamp._version.__version__"}
 
 [tool.pipenv-unlock]
 wraps-build-backend = "setuptools.build_meta"
-version_file = "src/drain_swamp/_version.py"
+version_file = 'src/drain_swamp/_version.py'
 folders = [
     "docs",
     "requirements",
@@ -101,16 +101,16 @@ folders = [
 
 # target contains: alphanumeric+underscore
 # relative path file stem contains: alphanumeric+hyphen
-required = { target = "prod", relative_path = "requirements/prod.in" }
+required = { target = "prod", relative_path = 'requirements/prod.in' }
 
 # target contains: alphanumeric+underscore
 # relative path file stem contains: alphanumeric+hyphen
 optionals = [
-    { target = "pip", relative_path = "requirements/pip.in" },
-    { target = "pip_tools", relative_path = "requirements/pip-tools.in" },
-    { target = "dev", relative_path = "requirements/dev.in" },
-    { target = "manage", relative_path = "requirements/manage.in" },
-    { target = "docs", relative_path = "docs/requirements.in" },
+    { target = "pip", relative_path = 'requirements/pip.in' },
+    { target = "pip_tools", relative_path = 'requirements/pip-tools.in' },
+    { target = "dev", relative_path = 'requirements/dev.in' },
+    { target = "manage", relative_path = 'requirements/manage.in' },
+    { target = "docs", relative_path = 'docs/requirements.in' },
 ]
 
 [tool.drain-swamp]
@@ -128,7 +128,7 @@ generate_hashes = false  # From setuptools 69.0.2, parsing dependencies with has
 # [tool.setuptools_scm]
 # SETUPTOOLS_SCM_PRETEND_VERSION_FOR_DRAIN_SWAMP="1.0.2" python -m setuptools_scm
 # fallback_version = "1.0.2"
-# version_file = "src/drain_swamp/_version.py"
+# version_file = 'src/drain_swamp/_version.py'
 
 [tool.mypy]
 mypy_path = "src"
@@ -162,15 +162,15 @@ precision = 2
 ignore_errors = true
 skip_covered = true
 skip_empty = true
-fail_under = 70
+fail_under = 95
 show_missing = true
 
 [tool.sphinx-pyproject]
 language = "en"
 needs_sphinx = "1.7"
-templates_path = ["_templates",]
-html_static_path = ["_static",]
-html_css_files = ["css/custom.css",]
+templates_path = ['_templates',]
+html_static_path = ['_static',]
+html_css_files = ['css/custom.css',]
 # https://www.sphinx-doc.org/en/master/usage/markdown.html
 source_suffix = [".md", ".rst"]
 master_doc = "index"
@@ -194,19 +194,19 @@ extensions = [
     "sphinx_favicon",
 ]
 linkcheck_ignore = [
-    "https://github.com/crdoconnor/strictyaml/blob/dfd93f9740ebd5e7150029bc3d89ea102bcddf00/strictyaml/representation.py#L48",
-    "https://github.com/crdoconnor/strictyaml/blob/dfd93f9740ebd5e7150029bc3d89ea102bcddf00/strictyaml/representation.py#L114",
-    "https://github.com/PyCQA/flake8/blob/fb9a02aaf77b56fcad4320971e7edca0cea93489/src/flake8/options/config.py#L56",
-    "https://github.com/psf/black/blob/ea66d40dd7f1eaa20256e6fccaf6d7b853ccc541/src/black/files.py#L57",
-    "https://github.com/csachs/pyproject-flake8/blob/16b9dd4d2f19dcf0bfb3a3110f98227627cd67fe/pflake8/__init__.py#L22",
-    "https://github.com/csachs/pyproject-flake8/blob/16b9dd4d2f19dcf0bfb3a3110f98227627cd67fe/pflake8/__init__.py#L86",
-    "https://github.com/executablebooks/sphinx-external-toc/#development-notes",
-    "https://stackoverflow.com/a/32190021",
-    "https://github.com/python/cpython/blob/bac277f1dd1f1895ee54a0ae4bf11cf1f2dc5ac2/Modules/_abc.c#L279",
-    "https://github.com/python/cpython/blob/ca2275025bf25427758bc5d7adecc0455068f1e9/Lib/dataclasses.py#L268",
-    "https://github.com/python/cpython/blob/8edfa0b0b4ae4235bb3262d952c23e7581516d4f/Lib/os.py#L701",
-    "https://github.com/pypa/setuptools/blob/4147b093d0aea4f57757c699a0b25bbc3aab2580/setuptools/dist.py#L204",
-    "https://github.com/pypa/setuptools/blob/e9f0be98ea4faaba4a7b2d07ba994a81fde8f42f/setuptools/build_meta.py#L161",
+    'https://github.com/crdoconnor/strictyaml/blob/dfd93f9740ebd5e7150029bc3d89ea102bcddf00/strictyaml/representation.py#L48',
+    'https://github.com/crdoconnor/strictyaml/blob/dfd93f9740ebd5e7150029bc3d89ea102bcddf00/strictyaml/representation.py#L114',
+    'https://github.com/PyCQA/flake8/blob/fb9a02aaf77b56fcad4320971e7edca0cea93489/src/flake8/options/config.py#L56',
+    'https://github.com/psf/black/blob/ea66d40dd7f1eaa20256e6fccaf6d7b853ccc541/src/black/files.py#L57',
+    'https://github.com/csachs/pyproject-flake8/blob/16b9dd4d2f19dcf0bfb3a3110f98227627cd67fe/pflake8/__init__.py#L22',
+    'https://github.com/csachs/pyproject-flake8/blob/16b9dd4d2f19dcf0bfb3a3110f98227627cd67fe/pflake8/__init__.py#L86',
+    'https://github.com/executablebooks/sphinx-external-toc/#development-notes',
+    'https://stackoverflow.com/a/32190021',
+    'https://github.com/python/cpython/blob/bac277f1dd1f1895ee54a0ae4bf11cf1f2dc5ac2/Modules/_abc.c#L279',
+    'https://github.com/python/cpython/blob/ca2275025bf25427758bc5d7adecc0455068f1e9/Lib/dataclasses.py#L268',
+    'https://github.com/python/cpython/blob/8edfa0b0b4ae4235bb3262d952c23e7581516d4f/Lib/os.py#L701',
+    'https://github.com/pypa/setuptools/blob/4147b093d0aea4f57757c699a0b25bbc3aab2580/setuptools/dist.py#L204',
+    'https://github.com/pypa/setuptools/blob/e9f0be98ea4faaba4a7b2d07ba994a81fde8f42f/setuptools/build_meta.py#L161',
 ]
 myst_enable_extensions = ["colon_fence", "html_image"]
 external_toc_exclude_missing = true
@@ -240,7 +240,7 @@ ensure_newline_before_comments = true
 line_length = 88
 supported_extensions = ["py", "pyi"]
 skip = [
-    "src/drain_swamp/_version.py",
+    'src/drain_swamp/_version.py',
 ]
 
 [tool.flake8]
@@ -258,7 +258,7 @@ extend_ignore = [
     "E501",
 ]
 exclude = [
-    "src/drain_swamp/_version.py",
+    'src/drain_swamp/_version.py',
 ]
 
 [tool.twine]
@@ -275,9 +275,9 @@ log_date_format = "%Y-%m-%d %H:%M:%S"
 [tool.interrogate]
 color = true
 exclude = [
-    "src/drain_swamp/_version.py",
-    "docs",
-    "build",
+    'src/drain_swamp/_version.py',
+    'docs',
+    'build',
 ]
 fail-under = 95
 ignore-init-module = true

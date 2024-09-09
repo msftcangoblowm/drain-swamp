@@ -92,7 +92,12 @@ def test_run_cmd(tmp_path, prepare_folders_files, caplog, has_logging_occurred):
         f"{executable_path} -V",
     )
     for cmd in valids:
+        logger.info(f"cmd: {cmd!r}")
         t_ret = run_cmd(cmd, env=env)
         out, err, exit_code, str_exc = t_ret
+        if exit_code != 0:
+            logger.info(f"str_exc: {str_exc!r}")
+            logger.info(f"err: {err!r}")
+            logger.info(f"out: {out!r}")
         assert exit_code == 0
         assert len(out.strip()) != 0

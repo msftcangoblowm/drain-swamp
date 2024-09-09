@@ -318,8 +318,6 @@ class Snip:
 
     :ivar fname: the file in/near the project to update
     :vartype fname: str | pathlib.Path
-    :ivar is_quiet: Default False, set to True to repress logging
-    :vartype is_quiet: bool | None
 
     :raises:
 
@@ -338,16 +336,14 @@ class Snip:
         r"# @@@ editable\s?(\w*)?\n(.*?)\n# @@@ end\n",
         flags=re.DOTALL,
     )
-    __slots__ = ("_is_quiet", "_path_file", "_contents", "_is_infer")
+    __slots__ = ("_path_file", "_contents", "_is_infer")
 
     def __init__(
         self,
         fname,
-        is_quiet=False,
     ):
         """Class constructor."""
         super().__init__()
-        self.is_quiet = is_quiet
 
         # Not throughly validated
         self.path_file = fname
@@ -415,28 +411,6 @@ class Snip:
         return ret
 
     @property
-    def is_quiet(self):
-        """Whether to permit printing status to stderr.
-
-        :returns: True to not print status updates
-        :rtype: bool
-        """
-        return self._is_quiet
-
-    @is_quiet.setter
-    def is_quiet(self, val):
-        """Whether or not to suppress info logging messages.
-
-        :param val: Should be a bool. Defaults to False
-        :type val: typing.Any
-        """
-        # Eventhough optional, is_quiet is a bool
-        if val is None or not isinstance(val, bool):
-            self._is_quiet = False
-        else:  # pragma: no cover
-            self._is_quiet = val
-
-    @property
     def is_infer(self):
         """id is None or empty str. snippet_co is taken from snippet.
 
@@ -458,9 +432,9 @@ class Snip:
         """
         cls = type(self)
         meth_path = f"{mod_dotted_path}.{cls.__name__}.get_file"
-        if not self.is_file_ok() and not self.is_quiet:  # pragma: no cover
-            msg_info = f"{meth_path} Cannot update nonexistent file, {self.path_file!r}"
-            _logger.info(msg_info)
+        if not self.is_file_ok() and is_module_debug:  # pragma: no cover
+            msg_warn = f"{meth_path} Cannot update nonexistent file, {self.path_file!r}"
+            _logger.warning(msg_warn)
         else:  # pragma: no cover
             pass
 
@@ -520,13 +494,13 @@ class Snip:
         """
         cls = type(self)
         meth_path = f"{mod_dotted_path}.{cls.__name__}.replace"
-        is_log_ok = not self.is_quiet
+
         if replacement is None or not isinstance(replacement, str):
             msg_exc = "Unsupported type, replacement contents must be a str"
             raise TypeError(msg_exc)
 
         id_ = sanitize_id(id_)
-        if is_log_ok:  # pragma: no cover
+        if is_module_debug:  # pragma: no cover
             _logger.info(f"{meth_path} id_ (user input; filtered): {id_}")
             msg_info = f"{meth_path} replacement (user input filtered): {replacement!r}"
             _logger.info(msg_info)
@@ -603,7 +577,7 @@ class Snip:
                `regex tester web app <https://regexr.com/>`_
 
             """
-            if is_log_ok:  # pragma: no cover
+            if is_module_debug:  # pragma: no cover
                 _logger.debug(f"matched region:   {matchobj.group(0)}")
                 _logger.debug(f"current id:       {matchobj.group(1)}")
                 _logger.debug(f"current contents: {matchobj.group(2)}")
@@ -620,14 +594,14 @@ class Snip:
                 # both have id and match
                 ret = f"{token_start} {id_}\n{replacement}\n{token_end}"
 
-                if is_log_ok:  # pragma: no cover
+                if is_module_debug:  # pragma: no cover
                     msg_debug = "both have id; match"
                     _logger.debug(msg_debug)
                 else:  # pragma: no cover
                     pass
             elif is_target_have_id and is_current_have_id and current_id != id_:
                 # both have id; no match
-                if is_log_ok:  # pragma: no cover
+                if is_module_debug:  # pragma: no cover
                     msg_debug = "both have id; no match --> return unmodified"
                     _logger.debug(msg_debug)
                 else:  # pragma: no cover
@@ -635,20 +609,20 @@ class Snip:
                 ret = matchobj.group(0)
             elif not is_target_have_id and not is_current_have_id:
                 ret = f"{token_start}\n{replacement}\n{token_end}"
-                if is_log_ok:  # pragma: no cover
+                if is_module_debug:  # pragma: no cover
                     msg_debug = "both no id; match"
                     _logger.debug(msg_debug)
                 else:  # pragma: no cover
                     pass
             else:
-                if is_log_ok:  # pragma: no cover
+                if is_module_debug:  # pragma: no cover
                     msg_debug = "not a match --> return unmodified"
                     _logger.debug(msg_debug)
                 else:  # pragma: no cover
                     pass
                 ret = matchobj.group(0)
 
-            if is_log_ok:  # pragma: no cover
+            if is_module_debug:  # pragma: no cover
                 msg_debug = f"ret: {ret}"
                 _logger.debug(msg_debug)
             else:  # pragma: no cover
@@ -678,7 +652,7 @@ class Snip:
             token_end = cls.TOKEN_END
             new_text = re.sub(cls.PATTERN_W_ID, replace_fcn, text_existing)
 
-            if is_log_ok:  # pragma: no cover
+            if is_module_debug:  # pragma: no cover
                 msg_info = f"{meth_path} text (after re.sub): {new_text}"
                 _logger.info(msg_info)
             else:  # pragma: no cover
@@ -687,7 +661,7 @@ class Snip:
             is_changed = new_text != text_existing
 
             if is_changed:
-                if is_log_ok:  # pragma: no cover
+                if is_module_debug:  # pragma: no cover
                     msg_info = f"{meth_path} Updating {self.path_file!r}"
                     _logger.info(msg_info)
                 else:  # pragma: no cover
@@ -759,13 +733,12 @@ class Snip:
         cls = type(self)
         meth_path = f"{mod_dotted_path}.{cls.__name__}.snippets"
 
-        is_log_ok = not self.is_quiet
         # If True --> self._contents is a str | None. None if checks fail
         is_valid = self.validate()
         is_invalid_file = not is_valid
         is_checks_fail = is_valid and self._contents is None
         if is_invalid_file or is_checks_fail:
-            if is_log_ok:  # pragma: no cover
+            if is_module_debug:  # pragma: no cover
                 msg_info = (
                     f"{meth_path} Validation issue. Check file: {self.path_file!r}"
                 )

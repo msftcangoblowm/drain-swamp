@@ -18,6 +18,7 @@ from __future__ import annotations
 
 import logging
 import os
+from pathlib import PurePosixPath
 
 from .backend_abc import BackendType
 from .constants import g_app_name
@@ -45,30 +46,30 @@ class BackendSetupTools(BackendType):
     .. code-block:: text
 
        # @@@ editable
-       dependencies = { file = ["requirements/prod.lock"] }
-       optional-dependencies.pip = { file = ["requirements/pip.lock"] }
-       optional-dependencies.pip_tools = { file = ["requirements/pip-tools.lock"] }
-       optional-dependencies.dev = { file = ["requirements/dev.lock"] }
-       optional-dependencies.manage = { file = ["requirements/manage.lock"] }
-       optional-dependencies.docs = { file = ["docs/requirements.lock"] }
+       dependencies = { file = ['requirements/prod.lock'] }
+       optional-dependencies.pip = { file = ['requirements/pip.lock'] }
+       optional-dependencies.pip_tools = { file = ['requirements/pip-tools.lock'] }
+       optional-dependencies.dev = { file = ['requirements/dev.lock'] }
+       optional-dependencies.manage = { file = ['requirements/manage.lock'] }
+       optional-dependencies.docs = { file = ['docs/requirements.lock'] }
        # @@@ end
 
-       version = {attr = "logging_strict._version.__version__"}
+       version = {attr = 'logging_strict._version.__version__'}
 
     When not dependency locked
 
     .. code-block:: text
 
        # @@@ editable
-       dependencies = { file = ["requirements/prod.unlock"] }
-       optional-dependencies.pip = { file = ["requirements/pip.unlock"] }
-       optional-dependencies.pip_tools = { file = ["requirements/pip-tools.unlock"] }
-       optional-dependencies.dev = { file = ["requirements/dev.unlock"] }
-       optional-dependencies.manage = { file = ["requirements/manage.unlock"] }
-       optional-dependencies.docs = { file = ["docs/requirements.unlock"] }
+       dependencies = { file = ['requirements/prod.unlock'] }
+       optional-dependencies.pip = { file = ['requirements/pip.unlock'] }
+       optional-dependencies.pip_tools = { file = ['requirements/pip-tools.unlock'] }
+       optional-dependencies.dev = { file = ['requirements/dev.unlock'] }
+       optional-dependencies.manage = { file = ['requirements/manage.unlock'] }
+       optional-dependencies.docs = { file = ['docs/requirements.unlock'] }
        # @@@ end
 
-       version = {attr = "logging_strict._version.__version__"}
+       version = {attr = 'logging_strict._version.__version__'}
 
     Other ``pyproject.toml`` dynamic properties are not placed within
     the editable section
@@ -87,12 +88,12 @@ class BackendSetupTools(BackendType):
        ]
        required = "requirements/prod.in"
        optionals = [
-           "requirements/prod.in",
-           "requirements/pip.in",
-           "requirements/pip-tools.in",  # <-- hyphen
-           "requirements/dev.in",
-           "requirements/manage.in",
-           "docs/requirements.in",
+           'requirements/prod.in',
+           'requirements/pip.in',
+           'requirements/pip-tools.in',  # <-- hyphen
+           'requirements/dev.in',
+           'requirements/manage.in',
+           'docs/requirements.in',
        ]
 
     - extras
@@ -119,7 +120,7 @@ class BackendSetupTools(BackendType):
 
       File stems will have hyphens not underscore
 
-      ``optional-dependencies.pip_tools = { file = ["requirements/pip-tools.unlock"] }``
+      ``optional-dependencies.pip_tools = { file = ['requirements/pip-tools.unlock'] }``
 
       The file stem is hyphen but the dependency contains underscores
 
@@ -210,7 +211,7 @@ class BackendSetupTools(BackendType):
 
         .. code-block:: text
 
-           dependencies = { file = ["requirements/prod.lock"] }
+           dependencies = { file = ['requirements/prod.lock'] }
 
         In this case,
         required is ``requirements/prod.in``
@@ -227,7 +228,9 @@ class BackendSetupTools(BackendType):
         else:
             # tuple[str, Path]
             target, path_required_abs = self.required
-            path_rel = path_required_abs.relative_to(self.parent_dir)
+            path_rel = PurePosixPath(path_required_abs).relative_to(
+                PurePosixPath(self.parent_dir),
+            )
             path_dir = path_rel.parent
 
             str_suffix = self.fix_suffix(suffix)
@@ -238,7 +241,8 @@ class BackendSetupTools(BackendType):
 
             path_dir_final = path_dir.joinpath(f"{stem}{str_suffix}")
 
-            ret = f"""dependencies = {{ file = ["{path_dir_final}"] }}"""
+            # TOML format -- paths use single quote, not double quote
+            ret = f"""dependencies = {{ file = ['{path_dir_final}'] }}"""
 
             yield ret
 
@@ -251,7 +255,7 @@ class BackendSetupTools(BackendType):
 
         .. code-block:: text
 
-           optional-dependencies.pip_tools = { file = ["requirements/pip-tools.unlock"] }
+           optional-dependencies.pip_tools = { file = ['requirements/pip-tools.unlock'] }
 
         In this case,
 
@@ -265,7 +269,11 @@ class BackendSetupTools(BackendType):
         :rtype: collections.abc.Iterator[str]
         """
         for target, path_abs in self.optionals.items():
-            path_rel = path_abs.relative_to(self.parent_dir)
+            # Even on Windows, treat as a posix path
+            path_rel = PurePosixPath(path_abs).relative_to(
+                PurePosixPath(self.parent_dir),
+            )
+
             str_suffix = self.fix_suffix(suffix)
             # file stem contains hyphens, not underscores
             path_rel_r = path_rel.parent
@@ -274,9 +282,10 @@ class BackendSetupTools(BackendType):
             path_full_r = path_rel_r.joinpath(f"{stem_r}{str_suffix}")
 
             target_l = target.replace("-", "_")
+            # TOML format -- paths use single quote, not double quote
             ret = (
                 f"""optional-dependencies.{target_l} = {{ file = ["""
-                f""""{str(path_full_r)}"] }}"""
+                f"""'{str(path_full_r)}'] }}"""
             )
             yield ret
 

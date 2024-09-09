@@ -11,31 +11,19 @@ repr helpers. Careful to use PurePath subclasses
 
 """
 
-import platform
 from collections.abc import (
     Mapping,
     MutableSet,
 )
-from pathlib import (
-    PurePath,
-    PurePosixPath,
-    PureWindowsPath,
-)
+from pathlib import PurePath
+
+from ._safe_path import _to_purepath
 
 __all__ = (
     "repr_dict_str_path",
     "repr_set_path",
     "repr_path",
 )
-
-
-def _is_win():
-    """Check if system is Windows.
-
-    :returns: True if Windows else False
-    :rtype: bool
-    """
-    return platform.system().lower() == "windows"
 
 
 def _fix_bool(val, default=False):
@@ -108,10 +96,8 @@ def repr_dict_str_path(k, d_repr, is_last=False):
     idx_last = len(d_repr.keys()) - 1
     for idx, t_pair in enumerate(d_repr.items()):
         k_0, v_0 = t_pair
-        if _is_win():  # pragma: no cover
-            val += f"""'{k_0!s}': {PureWindowsPath(v_0)!r}"""
-        else:  # pragma: no cover
-            val += f"""'{k_0!s}': {PurePosixPath(v_0)!r}"""
+        pure_v_0 = _to_purepath(v_0)
+        val += f"""'{k_0!s}': {pure_v_0!r}"""
 
         is_last_item = idx != idx_last
         if is_last_item:
@@ -161,10 +147,8 @@ def repr_set_path(k, set_repr, is_last=False):
     val = "{"
     idx_last = len(set_repr) - 1
     for idx, path_f in enumerate(set_repr):
-        if _is_win():  # pragma: no cover
-            val += repr(PureWindowsPath(path_f))
-        else:  # pragma: no cover
-            val += repr(PurePosixPath(path_f))
+        pure_f = _to_purepath(path_f)
+        val += repr(pure_f)
 
         is_last_item = idx != idx_last
         if is_last_item:
@@ -212,10 +196,8 @@ def repr_path(k, path, is_last=False):
     else:  # pragma: no cover
         pass
 
-    if _is_win():  # pragma: no cover
-        val = f"{PureWindowsPath(path)!r}"
-    else:  # pragma: no cover
-        val = f"{PurePosixPath(path)!r}"
+    pure_f = _to_purepath(path)
+    val = f"{pure_f!r}"
 
     ret = f"{k}={val}"
     ret = _append_comma(ret, not is_last_bool)

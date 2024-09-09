@@ -109,29 +109,44 @@ def test_lock_unlock_successfully(
     runner = CliRunner()
     with runner.isolated_filesystem(temp_dir=tmp_path) as tmp_dir_path:
         path_tmp_dir = Path(tmp_dir_path)
+        # prepare
+        #    pyproject.toml
         path_f = prep_pyproject_toml(path_pyproject_toml, path_tmp_dir)
         tp = TomlParser(path_f)
         d_pyproject_toml = tp.d_pyproject_toml
+
+        #    empty files
         prepare_files_empties(
             d_pyproject_toml,
             path_tmp_dir,
             d_add_files=additional_files,
         )
+        #    unlock/lock command
         cmd = prep_cmd_unlock_lock(
             path_tmp_dir,
             snip_co=id_,
             add_folders=additional_folders,
         )
+        #    get dependency lock state
         is_locked = BackendType.is_locked(path_f)
+        #    read pyproject.toml contents
         expected = path_f.read_text()
+
+        logger.info(f"cmd (before): {cmd}")
+        logger.info(f"lock state (True is locked): {is_locked}")
+        logger.info(f"pyproject.toml (before): {expected}")
 
         # act
         if is_locked:
             result = runner.invoke(dependencies_unlock, cmd)
             assert result.exit_code == 0
-            result = runner.invoke(dependencies_lock, cmd)
-            assert result.exit_code == 0
             actual = path_f.read_text()
+            logger.info(f"pyproject.toml (after unlock): {actual}")
+
+            result = runner.invoke(dependencies_lock, cmd)
+            actual = path_f.read_text()
+            logger.info(f"pyproject.toml (after lock): {actual}")
+            assert result.exit_code == 0
         else:
             result = runner.invoke(dependencies_lock, cmd)
             assert result.exit_code == 0

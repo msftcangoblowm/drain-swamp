@@ -30,13 +30,13 @@ copyright_start_year = 2024
 
 [tool.pipenv-unlock]
 folders = [
-    "ci",
+    'ci',
 ]
 
-required = { target = "prod", relative_path = "requirements/prod.in" }
+required = { target = "prod", relative_path = 'requirements/prod.in' }
 
 # underscore: hyphen
 optionals = [
-    { target = "pip", relative_path = "requirements/pip.in" },
-    { target = "manage", relative_path = "requirements/manage.in" },
+    { target = "pip", relative_path = 'requirements/pip.in' },
+    { target = "manage", relative_path = 'requirements/manage.in' },
 ]

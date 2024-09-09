@@ -7,7 +7,6 @@ __all__ = (
     "repr_path",
 )
 
-def _is_win() -> bool: ...
 def _fix_bool(
     val: Any,
     default: bool = False,

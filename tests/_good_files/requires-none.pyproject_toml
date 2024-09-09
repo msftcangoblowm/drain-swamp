@@ -11,23 +11,23 @@ dynamic = [
 
 [tool.setuptools.dynamic]
 # @@@ editable little_shop_of_horrors_shrine_candles
-optional-dependencies.pip = { file = ["requirements/pip.lock"] }
-optional-dependencies.pip_tools = { file = ["requirements/pip-tools.lock"] }
-optional-dependencies.dev = { file = ["requirements/dev.lock"] }
-optional-dependencies.manage = { file = ["requirements/manage.lock"] }
-optional-dependencies.docs = { file = ["docs/requirements.lock"] }
+optional-dependencies.pip = { file = ['requirements/pip.lock'] }
+optional-dependencies.pip_tools = { file = ['requirements/pip-tools.lock'] }
+optional-dependencies.dev = { file = ['requirements/dev.lock'] }
+optional-dependencies.manage = { file = ['requirements/manage.lock'] }
+optional-dependencies.docs = { file = ['docs/requirements.lock'] }
 # @@@ end
 
-version = {attr = "drain_swamp._version.__version__"}
+version = {attr = 'drain_swamp._version.__version__'}
 
 [tool.pipenv-unlock]
 required = {}
 
 # underscore: hyphen
 optionals = [
-    { target = "pip", relative_path = "" },
-    { target = "pip_tools", relative_path = "" },
-    { target = "dev", relative_path = "" },
-    { target = "manage", relative_path = "" },
-    { target = "docs", relative_path = "" },
+    { target = "pip", relative_path = '' },
+    { target = "pip_tools", relative_path = '' },
+    { target = "dev", relative_path = '' },
+    { target = "manage", relative_path = '' },
+    { target = "docs", relative_path = '' },
 ]

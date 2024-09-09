@@ -11,24 +11,24 @@ dynamic = [
 
 [tool.setuptools.dynamic]
 # @@@ editable little_shop_of_horrors_shrine_candles
-dependencies = { file = ["requirements/prod.lock"] }
-optional-dependencies.pip = { file = ["requirements/pip.lock"] }
-optional-dependencies.pip_tools = { file = ["requirements/pip-tools.lock"] }
-optional-dependencies.dev = { file = ["requirements/dev.lock"] }
-optional-dependencies.manage = { file = ["requirements/manage.lock"] }
-optional-dependencies.docs = { file = ["docs/requirements.lock"] }
+dependencies = { file = ['requirements/prod.lock'] }
+optional-dependencies.pip = { file = ['requirements/pip.lock'] }
+optional-dependencies.pip_tools = { file = ['requirements/pip-tools.lock'] }
+optional-dependencies.dev = { file = ['requirements/dev.lock'] }
+optional-dependencies.manage = { file = ['requirements/manage.lock'] }
+optional-dependencies.docs = { file = ['docs/requirements.lock'] }
 # @@@ end
 
-version = {attr = "drain_swamp._version.__version__"}
+version = {attr = 'drain_swamp._version.__version__'}
 
 [tool.pipenv-unlock]
-required = { shrine_candle = "prod", mommas_photo = "requirements/prod.in" }
+required = { shrine_candle = "prod", mommas_photo = 'requirements/prod.in' }
 
 # underscore: hyphen
 optionals = [
-    { shrine_candle = "pip", mommas_photo = "requirements/pip.in" },
-    { shrine_candle = "pip_tools", mommas_photo = "requirements/pip-tools.in" },
-    { shrine_candle = "dev", mommas_photo = "requirements/dev.in" },
-    { shrine_candle = "manage", mommas_photo = "requirements/manage.in" },
-    { shrine_candle = "docs", mommas_photo = "docs/requirements.in" },
+    { shrine_candle = "pip", mommas_photo = 'requirements/pip.in' },
+    { shrine_candle = "pip_tools", mommas_photo = 'requirements/pip-tools.in' },
+    { shrine_candle = "dev", mommas_photo = 'requirements/dev.in' },
+    { shrine_candle = "manage", mommas_photo = 'requirements/manage.in' },
+    { shrine_candle = "docs", mommas_photo = 'docs/requirements.in' },
 ]
