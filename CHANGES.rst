@@ -42,6 +42,7 @@ Changelog
    Commit items for NEXT VERSION
    ..............................
 
+   - fix(backend_abc): sorting hat on Windows sort resolved
    - feat(safe_path): add replace_suffixes
    - fix(backend_abc): sorting hat strategy differs by platform
    - fix(run_cmd): cmd sequence --> str --> shlex.split

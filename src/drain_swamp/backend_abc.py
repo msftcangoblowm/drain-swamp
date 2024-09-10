@@ -1195,6 +1195,12 @@ class BackendType:
                     is_unlocked_1 = (
                         abspath_lnk.stat().st_size == abspath_unlock.stat().st_size
                     )
+                    if is_locked_1:
+                        path_resolved = abspath_lock
+                    elif is_unlocked_1:
+                        path_resolved = abspath_unlock
+                    else:  # pragma: no cover
+                        pass
                 # sort
                 if is_locked_1:
                     locks.append(path_resolved)
