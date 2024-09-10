@@ -61,7 +61,6 @@ from ._repr import (
 )
 from ._safe_path import (
     _to_purepath,
-    is_win,
     replace_suffixes,
     resolve_joinpath,
 )
@@ -1074,24 +1073,31 @@ class BackendType:
         mod_path = "backend_abc.BackendType.in_files"
         set_folders = self.folders_implied | self.folders_additional
         if is_module_debug:  # pragma: no cover
-            _logger.info(f"{mod_path} implied folders: {self.folders_implied}")
-            _logger.info(f"{mod_path} additional folders: {self.folders_additional}")
-            _logger.info(f"{mod_path} set_folders: {set_folders}")
+            msg_info = f"{mod_path} implied folders: {self.folders_implied}"
+            _logger.info(msg_info)
+            msg_info = f"{mod_path} additional folders: {self.folders_additional}"
+            _logger.info(msg_info)
+            msg_info = f"{mod_path} set_folders: {set_folders}"
+            _logger.info(msg_info)
         else:  # pragma: no cover
             pass
 
         for rel_path in set_folders:
             if is_module_debug:  # pragma: no cover
-                _logger.info(f"{mod_path} rel_path: {rel_path}")
+                msg_info = f"{mod_path} rel_path: {rel_path}"
+                _logger.info(msg_info)
             else:  # pragma: no cover
                 pass
             path_dir = self.parent_dir
             abs_path = path_dir.joinpath(rel_path)
             pattern = f"**/*{SUFFIX_IN}"
             if is_module_debug:  # pragma: no cover
-                _logger.info(f"{mod_path} abs_path: {abs_path}")
-                _logger.info(f"{mod_path} pattern {pattern}")
-                _logger.info(f"""{mod_path} files: {list(abs_path.glob(pattern))}""")
+                msg_info = f"{mod_path} abs_path: {abs_path}"
+                _logger.info(msg_info)
+                msg_info = f"{mod_path} pattern: {pattern}"
+                _logger.info(msg_info)
+                msg_info = f"{mod_path} files: {list(abs_path.glob(pattern))}"
+                _logger.info(msg_info)
             else:  # pragma: no cover
                 pass
             yield from abs_path.glob(f"**/*{SUFFIX_IN}")
@@ -1137,8 +1143,9 @@ class BackendType:
         # This is for the best; parsing quotes in regex is too hard
         # Possible to get a snippet from an invalid ``pyproject.toml`` file
         # May raise PyProjectTOMLParseError or PyProjectTOMLReadError
+        mod_path = "BackendType.is_locked"
         if is_module_debug:  # pragma: no cover
-            msg_info = f"BackendType.is_locked reading path config: {path_config!r}"
+            msg_info = f"{mod_path} reading path config: {path_config!r}"
             _logger.info(msg_info)
         else:  # pragma: no cover
             pass
@@ -1149,15 +1156,19 @@ class BackendType:
             raise
 
         if is_module_debug:  # pragma: no cover
-            _logger.info(f"BackendType.is_locked d_pyproject_toml: {d_pyproject_toml}")
+            _logger.info(f"{mod_path} d_pyproject_toml: {d_pyproject_toml}")
         else:  # pragma: no cover
             pass
 
         locks = []
         unlocks = []
 
-        def sorting_hat(relpath: Path) -> None:
-            """Decide whether a lock or unlock dependency. Then weight the counts."""
+        def sorting_hat(relpath: PurePath) -> None:
+            """Decide whether a lock or unlock dependency. Then weight the counts.
+
+            :param relpath: A requirement relative path
+            :param relpath: pathlib.PurePath
+            """
             nonlocal locks
             nonlocal unlocks
             nonlocal path_f
@@ -1179,33 +1190,51 @@ class BackendType:
                     abspath_package,
                     relpath,
                 )
-                if not is_win():  # pragma: no cover
+                if abspath_lnk.is_symlink():  # pragma: no cover
                     # Strategy -- Follow the symlink
                     path_resolved = abspath_lnk.resolve()
                     dependency_file_name = path_resolved.name
                     is_locked_1 = dependency_file_name.endswith(SUFFIX_LOCKED)
                     is_unlocked_1 = dependency_file_name.endswith(SUFFIX_UNLOCKED)
-                else:  # pragma: no cover
+                    if is_locked_1:
+                        locks.append(path_resolved)
+                    elif is_unlocked_1:
+                        unlocks.append(path_resolved)
+                    else:  # pragma: no cover
+                        pass
+                elif abspath_lnk.is_file():  # pragma: no cover
                     # Strategy -- compare file sizes
                     abspath_lock = replace_suffixes(abspath_lnk, SUFFIX_LOCKED)
                     abspath_unlock = replace_suffixes(abspath_lnk, SUFFIX_UNLOCKED)
-                    is_locked_1 = (
-                        abspath_lnk.stat().st_size == abspath_lock.stat().st_size
-                    )
-                    is_unlocked_1 = (
-                        abspath_lnk.stat().st_size == abspath_unlock.stat().st_size
-                    )
-                    if is_locked_1:
-                        path_resolved = abspath_lock
-                    elif is_unlocked_1:
-                        path_resolved = abspath_unlock
+                    lnk_file_size = abspath_lnk.stat().st_size
+                    lock_file_size = abspath_lock.stat().st_size
+                    unlock_file_size = abspath_unlock.stat().st_size
+
+                    is_locked_1 = lnk_file_size == lock_file_size
+                    is_unlocked_1 = lnk_file_size == unlock_file_size
+
+                    if is_module_debug:  # pragma: no cover
+                        msg_info = f"{mod_path} lnk path {abspath_lnk!r}"
+                        _logger.info(msg_info)
+                        msg_info = f"{mod_path} lock path {abspath_lock!r}"
+                        _logger.info(msg_info)
+                        msg_info = f"{mod_path} unlock path {abspath_unlock!r}"
+                        _logger.info(msg_info)
+                        msg_info = f"{mod_path} lnk size: {lnk_file_size}"
+                        _logger.info(msg_info)
+                        msg_info = f"{mod_path} lock size: {lock_file_size}"
+                        _logger.info(msg_info)
+                        msg_info = f"{mod_path} unlock size: {unlock_file_size}"
+                        _logger.info(msg_info)
                     else:  # pragma: no cover
                         pass
-                # sort
-                if is_locked_1:
-                    locks.append(path_resolved)
-                elif is_unlocked_1:
-                    unlocks.append(path_resolved)
+
+                    if is_locked_1:
+                        locks.append(abspath_lock)
+                    elif is_unlocked_1:
+                        unlocks.append(abspath_unlock)
+                    else:  # pragma: no cover
+                        pass
                 else:  # pragma: no cover
                     pass
             else:  # pragma: no cover
@@ -1248,19 +1277,21 @@ class BackendType:
         is_no_tool_setuptools_dynamic_section = len(section_.keys()) == 0
 
         required_count = 0
+        targets = ("dependencies", "optional-dependencies")
         for target, d_ in section_.items():
-            if target == "dependencies":
-                # required dependencies
-                files = d_.get("file", [])
-                for f_relpath in files:
-                    required_count += 1
-                    sorting_hat(Path(f_relpath))
-            elif target == "optional-dependencies":
-                # optional dependencies
-                for target_opt, d_opt in section_.items():
-                    files = d_opt.get("file", [])
+            if target in targets:
+                if target == "dependencies":
+                    # required dependencies
+                    files = d_.get("file", [])
                     for f_relpath in files:
-                        sorting_hat(Path(f_relpath))
+                        required_count += 1
+                        sorting_hat(PurePath(f_relpath))
+                else:
+                    # optional dependencies
+                    for target_opt, d_opt in d_.items():
+                        files = d_opt.get("file", [])
+                        for f_relpath in files:
+                            sorting_hat(PurePath(f_relpath))
             else:  # pragma: no cover
                 pass
 
@@ -1283,8 +1314,8 @@ class BackendType:
             raise AssertionError(msg_exc)
 
         if is_module_debug:  # pragma: no cover
-            _logger.info(f"BackendType.is_locked locks: {locks}")
-            _logger.info(f"BackendType.is_locked unlocks: {unlocks}")
+            _logger.info(f"{mod_path} locks: {locks}")
+            _logger.info(f"{mod_path} unlocks: {unlocks}")
         else:  # pragma: no cover
             pass
 
