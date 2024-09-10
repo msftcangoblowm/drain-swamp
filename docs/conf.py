@@ -18,7 +18,7 @@ version = "1.7.1"
 # The full version, including alpha/beta/rc tags.
 release = "1.7.1"
 # The date of release, in "monthname day, year" format.
-release_date = "September 7, 2024"
+release_date = "September 10, 2024"
 # @@@ end
 
 v = parse(release)

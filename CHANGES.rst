@@ -42,38 +42,37 @@ Changelog
    Commit items for NEXT VERSION
    ..............................
 
-   - ci(testsuite): pypy-3.9 upstream issue sys.executable suffix wrong case
-   - test(backend_abc): copy over .lock and .unlock files, not just empty files
-   - fix(backend_abc): fix sorting hat parsing optional dependencies
-   - fix(backend_abc): sorting hat on Windows sort resolved
-   - feat(safe_path): add replace_suffixes
-   - fix(backend_abc): sorting hat strategy differs by platform
-   - fix(run_cmd): cmd sequence --> str --> shlex.split
-   - test(backend_abc): confirm cause not run_cmd pipenv-unlock refresh
-   - fix: sorting hat combine paths with resolve_joinpath
-   - fix(run_cmd): shlex.split set posix parameter
-   - refactor: remove exception BackendNotSupportedError
-   - refactor: remove the concept of backend awareness
-   - refactor: backend_abc no longer an abc
-   - fix: careful not to write Windows linesep into a TOML file
-   - refactor: where possible _to_purepath rather than PurePosixPath and PureWindowsPath
-   - fix: remove snip constructor param is_quiet
-   - fix(backend_setuptools): dependency file relative path treat as PurePosixPath
-   - fix: TOML format path must be single quoted
-   - feat: automagically choose platform supported dependency lock copy implementation
-   - feat: packaging process symlinks --> files. Check for either
-   - test: On Windows, no executable true, but there might be git
-   - fix: strftime %D and %T works on all platforms
-   - fix: run_cmd file not found error message is platform specific
-   - test: if Windows, unlink file not symlink
-
 .. scriv-start-here
 
 .. _changes_1-7-1:
 
-Version 1.7.1 — 2024-09-07
+Version 1.7.1 — 2024-09-10
 --------------------------
 
+- ci(testsuite): pypy-3.9 upstream issue sys.executable suffix wrong case
+- test(backend_abc): copy over .lock and .unlock files, not just empty files
+- fix(backend_abc): fix sorting hat parsing optional dependencies
+- fix(backend_abc): sorting hat on Windows sort resolved
+- feat(safe_path): add replace_suffixes
+- fix(backend_abc): sorting hat strategy differs by platform
+- fix(run_cmd): cmd sequence --> str --> shlex.split
+- test(backend_abc): confirm cause not run_cmd pipenv-unlock refresh
+- fix: sorting hat combine paths with resolve_joinpath
+- fix(run_cmd): shlex.split set posix parameter
+- refactor: remove exception BackendNotSupportedError
+- refactor: remove the concept of backend awareness
+- refactor: backend_abc no longer an abc
+- fix: careful not to write Windows linesep into a TOML file
+- refactor: where possible _to_purepath rather than PurePosixPath and PureWindowsPath
+- fix: remove snip constructor param is_quiet
+- fix(backend_setuptools): dependency file relative path treat as PurePosixPath
+- fix: TOML format path must be single quoted
+- feat: automagically choose platform supported dependency lock copy implementation
+- feat: packaging process symlinks --> files. Check for either
+- test: On Windows, no executable true, but there might be git
+- fix: strftime %D and %T works on all platforms
+- fix: run_cmd file not found error message is platform specific
+- test: if Windows, unlink file not symlink
 - fix: patch strftime. Platform consistency
 - test(backend_setuptools): apply platform line seperator
 
