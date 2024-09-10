@@ -52,15 +52,20 @@ def run_cmd(cmd, cwd=None, env=None):
         - :py:exc:`TypeError` -- Unsupported type for 1st arg cmd
 
     """
-    if isinstance(cmd, str):
-        # splitting Windows path will remove all path seperators
-        # https://ss64.com/nt/syntax-esc.html
-        cmd = shlex.split(cmd, posix=not is_win)
-    elif isinstance(cmd, Sequence):
-        cmd = [os.fspath(x) for x in cmd]
+    # Coerse into a str. Use shlex.split on the str
+    is_nonstr_sequence = isinstance(cmd, Sequence) and not isinstance(cmd, str)
+    if is_nonstr_sequence:
+        # os.fspath(x)
+        cmd_1 = " ".join(cmd)
+    elif isinstance(cmd, str):
+        cmd_1 = cmd
     else:
         msg_warn = f"expected 1st param cmd to be a Sequence got {type(cmd)}"
         raise TypeError(msg_warn)
+
+    # splitting Windows path will remove all path seperators
+    # https://ss64.com/nt/syntax-esc.html
+    cmd_2 = shlex.split(cmd_1, posix=not is_win)
 
     if cwd is None or not issubclass(type(cwd), PurePath):
         path_cwd = Path.cwd()
@@ -75,7 +80,7 @@ def run_cmd(cmd, cwd=None, env=None):
 
     try:
         proc = subprocess.run(
-            cmd,
+            cmd_2,
             shell=False,
             stdout=subprocess.PIPE,
             stderr=subprocess.PIPE,

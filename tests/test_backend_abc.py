@@ -971,10 +971,18 @@ def test_resolve_symlinks(
         is_set_lock,
     )
 
-    run_cmd(cmd, cwd=tmp_path)
+    t_out = run_cmd(cmd, cwd=tmp_path)
+    out, err, exit_code, exc = t_out
+    logger.info(f"cmd: {cmd!r}")
+    if exit_code != 0:
+        logger.info(f"exc: {exc!r}")
+        logger.info(f"err: {err!r}")
+        logger.info(f"out: {out!r}")
+    assert has_logging_occurred(caplog)
+    assert exit_code == 0
+    assert exc is None
 
     # verify
-    logger.info(f"cmd: {cmd!r}")
     actual = BackendType.is_locked(path_f)
     assert has_logging_occurred(caplog)
     assert actual is expected

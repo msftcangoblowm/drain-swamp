@@ -42,6 +42,8 @@ Changelog
    Commit items for NEXT VERSION
    ..............................
 
+   - fix(run_cmd): cmd sequence --> str --> shlex.split
+   - test(backend_abc): confirm cause not run_cmd pipenv-unlock refresh
    - fix: sorting hat combine paths with resolve_joinpath
    - fix(run_cmd): shlex.split set posix parameter
    - refactor: remove exception BackendNotSupportedError
