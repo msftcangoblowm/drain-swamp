@@ -4,9 +4,9 @@
 Portions of a Path take into account platform must be dealt withpSafely deal with paths.
 
 .. py:data:: __all__
-   :type: tuple[str, str, str, str, str, str]
+   :type: tuple[str, str, str, str, str, str, str]
    :value: ("fix_relpath", "is_linux", "is_macos", "is_win", \
-   "resolve_path", "resolve_joinpath")
+   "replace_suffixes", "resolve_path", "resolve_joinpath")
 
    Module exports
 
@@ -25,6 +25,7 @@ __all__ = (
     "is_linux",
     "is_macos",
     "is_win",
+    "replace_suffixes",
     "resolve_path",
     "resolve_joinpath",
 )
@@ -138,5 +139,27 @@ def resolve_joinpath(abspath_a, relpath_b):
         ret = abspath_a.joinpath(str_fix_b)
     else:
         ret = cls_pure(abspath_a).joinpath(str_fix_b)
+
+    return ret
+
+
+def replace_suffixes(abspath_a, suffixes):
+    """Replace suffixes.
+
+    :param abspath_a:
+    :type abspath_a: pathlib.PurePath | pathlib.Path
+    :param suffixes:
+    :type suffixes: str
+    :returns: abspath with replaced suffixes
+    :rtype: pathlib.PurePath | pathlib.Path
+    """
+    path_parent = abspath_a.parent
+    str_name_0 = abspath_a.name
+
+    # Get rid of all suffixes
+    stem = str_name_0.split(".")[0]
+
+    str_name_1 = f"{stem}{suffixes}"
+    ret = path_parent / str_name_1
 
     return ret

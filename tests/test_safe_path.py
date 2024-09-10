@@ -30,6 +30,7 @@ import pytest
 
 from drain_swamp._safe_path import (
     is_win,
+    replace_suffixes,
     resolve_joinpath,
     resolve_path,
 )
@@ -87,3 +88,26 @@ def test_resolve_path(f_path, expected):
     # pytest --showlocals --log-level INFO -k "test_resolve_path" tests
     actual = resolve_path(f_path)
     assert expected in actual
+
+
+testdata_replace_suffixes = (
+    (
+        "ted.txt",
+        [".tar", ".gz"],
+    ),
+)
+ids_replace_suffixes = ("txt to tarball",)
+
+
+@pytest.mark.parametrize(
+    "relpath, suffixes",
+    testdata_replace_suffixes,
+    ids=ids_replace_suffixes,
+)
+def test_replace_suffixes(tmp_path, relpath, suffixes):
+    """Confirm can replace suffixes on an absolute path."""
+    # pytest --showlocals --log-level INFO -k "test_replace_suffixes" tests
+    str_suffixes = "".join(suffixes)
+    abspath_0 = tmp_path / relpath
+    abspath_1 = replace_suffixes(abspath_0, str_suffixes)
+    assert abspath_1.suffixes == suffixes

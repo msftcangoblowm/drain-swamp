@@ -10,6 +10,7 @@ __all__ = (
     "is_linux",
     "is_macos",
     "is_win",
+    "replace_suffixes",
     "resolve_path",
     "resolve_joinpath",
 )
@@ -26,3 +27,7 @@ def resolve_joinpath(
     abspath_a: PurePath | Path,
     relpath_b: PurePath | Path | str,
 ) -> PureWindowsPath | PurePosixPath | type[Path]: ...
+def replace_suffixes(
+    abspath_a: PurePath | Path,
+    suffixes: str,
+) -> PurePath | Path: ...

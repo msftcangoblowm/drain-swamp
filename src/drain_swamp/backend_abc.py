@@ -62,6 +62,7 @@ from ._repr import (
 from ._safe_path import (
     _to_purepath,
     is_win,
+    replace_suffixes,
     resolve_joinpath,
 )
 from .check_type import (
@@ -1186,14 +1187,8 @@ class BackendType:
                     is_unlocked_1 = dependency_file_name.endswith(SUFFIX_UNLOCKED)
                 else:  # pragma: no cover
                     # Strategy -- compare file sizes
-                    abspath_lock = abspath_lnk.replace(
-                        SUFFIX_SYMLINK,
-                        SUFFIX_LOCKED,
-                    )
-                    abspath_unlock = abspath_lnk.replace(
-                        SUFFIX_SYMLINK,
-                        SUFFIX_UNLOCKED,
-                    )
+                    abspath_lock = replace_suffixes(abspath_lnk, SUFFIX_LOCKED)
+                    abspath_unlock = replace_suffixes(abspath_lnk, SUFFIX_UNLOCKED)
                     is_locked_1 = (
                         abspath_lnk.stat().st_size == abspath_lock.stat().st_size
                     )
