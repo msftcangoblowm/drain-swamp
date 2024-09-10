@@ -1220,11 +1220,15 @@ class BackendType:
                         _logger.info(msg_info)
                         msg_info = f"{mod_path} unlock path {abspath_unlock!r}"
                         _logger.info(msg_info)
-                        msg_info = f"{mod_path} lnk size: {lnk_file_size}"
+                        msg_info = f"{mod_path} lnk size: {lnk_file_size!r}"
                         _logger.info(msg_info)
-                        msg_info = f"{mod_path} lock size: {lock_file_size}"
+                        msg_info = f"{mod_path} lock size: {lock_file_size!r}"
                         _logger.info(msg_info)
-                        msg_info = f"{mod_path} unlock size: {unlock_file_size}"
+                        msg_info = f"{mod_path} unlock size: {unlock_file_size!r}"
+                        _logger.info(msg_info)
+                        msg_info = f"{mod_path} is_locked_1: {is_locked_1!r}"
+                        _logger.info(msg_info)
+                        msg_info = f"{mod_path} is_unlocked_1: {is_unlocked_1!r}"
                         _logger.info(msg_info)
                     else:  # pragma: no cover
                         pass

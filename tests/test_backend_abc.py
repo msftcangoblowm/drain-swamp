@@ -25,6 +25,7 @@ Integration test
 
 import logging
 import logging.config
+import shutil
 import sys
 from contextlib import nullcontext as does_not_raise
 from pathlib import (
@@ -39,7 +40,10 @@ from unittest.mock import (
 import pytest
 
 from drain_swamp._run_cmd import run_cmd
-from drain_swamp._safe_path import resolve_path
+from drain_swamp._safe_path import (
+    resolve_joinpath,
+    resolve_path,
+)
 from drain_swamp.backend_abc import (
     BackendType,
     ensure_folder,
@@ -941,6 +945,7 @@ def test_resolve_symlinks(
     tmp_path,
     prep_pyproject_toml,
     prepare_folders_files,
+    path_project_base,
     caplog,
     has_logging_occurred,
 ):
@@ -960,8 +965,15 @@ def test_resolve_symlinks(
     seq_ins = list(d_ins.values())
     prepare_folders_files(seq_ins, tmp_path)
 
-    #    .lock and .unlock
+    #    .lock and .unlock -- creates the folders
     prepare_folders_files(seq_unlocks, tmp_path)
+
+    #    .lock and .unlock -- copy actual files needed by refresh
+    abspath_base = path_project_base()
+    for relpath_a in seq_unlocks:
+        src = str(resolve_joinpath(abspath_base, PurePath(relpath_a)))
+        dest = str(resolve_joinpath(tmp_path, PurePath(relpath_a)))
+        shutil.copy2(src, dest)
 
     # act
     cmd = (

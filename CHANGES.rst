@@ -42,6 +42,7 @@ Changelog
    Commit items for NEXT VERSION
    ..............................
 
+   - test(backend_abc): copy over .lock and .unlock files, not just empty files
    - fix(backend_abc): fix sorting hat parsing optional dependencies
    - fix(backend_abc): sorting hat on Windows sort resolved
    - feat(safe_path): add replace_suffixes
