@@ -59,7 +59,10 @@ from ._repr import (
     repr_path,
     repr_set_path,
 )
-from ._safe_path import _to_purepath
+from ._safe_path import (
+    _to_purepath,
+    resolve_joinpath,
+)
 from .check_type import (
     is_iterable_not_str,
     is_ok,
@@ -1158,20 +1161,25 @@ class BackendType:
             nonlocal path_f
 
             file_name = relpath.name
-            if file_name.endswith(SUFFIX_LOCKED):
+            is_locked_0 = file_name.endswith(SUFFIX_LOCKED)
+            is_unlocked_0 = file_name.endswith(SUFFIX_UNLOCKED)
+            is_symlink_0 = file_name.endswith(SUFFIX_SYMLINK)
+            if is_locked_0:
                 locks.append(relpath)
-            elif file_name.endswith(SUFFIX_UNLOCKED):
+            elif is_unlocked_0:
                 unlocks.append(relpath)
-            elif file_name.endswith(SUFFIX_SYMLINK):
+            elif is_symlink_0:
                 # resolve symlink gets the file towhich it points
                 abspath_package = path_f.parent
-                abspath_dependency_file = abspath_package / relpath
+                abspath_dependency_file = resolve_joinpath(abspath_package, relpath)
                 path_resolved = abspath_dependency_file.resolve()
 
                 dependency_file_name = path_resolved.name
-                if dependency_file_name.endswith(SUFFIX_LOCKED):
+                is_locked_1 = dependency_file_name.endswith(SUFFIX_LOCKED)
+                is_unlocked_1 = dependency_file_name.endswith(SUFFIX_UNLOCKED)
+                if is_locked_1:
                     locks.append(path_resolved)
-                elif dependency_file_name.endswith(SUFFIX_UNLOCKED):
+                elif is_unlocked_1:
                     unlocks.append(path_resolved)
                 else:  # pragma: no cover
                     pass
@@ -1239,7 +1247,7 @@ class BackendType:
 
                [tool.setuptools.dynamic]
                # @@@ editable little_shop_of_horrors_shrine_candles
-               dependencies = { file = ["requirements/prod.unlock"] }
+               dependencies = { file = ['requirements/prod.unlock'] }
                # @@@ end
 
             """

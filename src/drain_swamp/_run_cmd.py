@@ -31,6 +31,8 @@ from pathlib import (
     PurePath,
 )
 
+from ._safe_path import is_win
+
 __all__ = ("run_cmd",)
 
 
@@ -51,7 +53,9 @@ def run_cmd(cmd, cwd=None, env=None):
 
     """
     if isinstance(cmd, str):
-        cmd = shlex.split(cmd)
+        # splitting Windows path will remove all path seperators
+        # https://ss64.com/nt/syntax-esc.html
+        cmd = shlex.split(cmd, posix=not is_win)
     elif isinstance(cmd, Sequence):
         cmd = [os.fspath(x) for x in cmd]
     else:

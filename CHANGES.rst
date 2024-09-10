@@ -42,6 +42,8 @@ Changelog
    Commit items for NEXT VERSION
    ..............................
 
+   - fix: sorting hat combine paths with resolve_joinpath
+   - fix(run_cmd): shlex.split set posix parameter
    - refactor: remove exception BackendNotSupportedError
    - refactor: remove the concept of backend awareness
    - refactor: backend_abc no longer an abc
