@@ -61,6 +61,7 @@ from ._repr import (
 )
 from ._safe_path import (
     _to_purepath,
+    is_win,
     resolve_joinpath,
 )
 from .check_type import (
@@ -1165,18 +1166,41 @@ class BackendType:
             is_unlocked_0 = file_name.endswith(SUFFIX_UNLOCKED)
             is_symlink_0 = file_name.endswith(SUFFIX_SYMLINK)
             if is_locked_0:
+                # sort
                 locks.append(relpath)
             elif is_unlocked_0:
+                # sort
                 unlocks.append(relpath)
             elif is_symlink_0:
-                # resolve symlink gets the file towhich it points
+                # resolve ``.lnk`` file. To which file does it point?
                 abspath_package = path_f.parent
-                abspath_dependency_file = resolve_joinpath(abspath_package, relpath)
-                path_resolved = abspath_dependency_file.resolve()
-
-                dependency_file_name = path_resolved.name
-                is_locked_1 = dependency_file_name.endswith(SUFFIX_LOCKED)
-                is_unlocked_1 = dependency_file_name.endswith(SUFFIX_UNLOCKED)
+                abspath_lnk = resolve_joinpath(
+                    abspath_package,
+                    relpath,
+                )
+                if not is_win():  # pragma: no cover
+                    # Strategy -- Follow the symlink
+                    path_resolved = abspath_lnk.resolve()
+                    dependency_file_name = path_resolved.name
+                    is_locked_1 = dependency_file_name.endswith(SUFFIX_LOCKED)
+                    is_unlocked_1 = dependency_file_name.endswith(SUFFIX_UNLOCKED)
+                else:  # pragma: no cover
+                    # Strategy -- compare file sizes
+                    abspath_lock = abspath_lnk.replace(
+                        SUFFIX_SYMLINK,
+                        SUFFIX_LOCKED,
+                    )
+                    abspath_unlock = abspath_lnk.replace(
+                        SUFFIX_SYMLINK,
+                        SUFFIX_UNLOCKED,
+                    )
+                    is_locked_1 = (
+                        abspath_lnk.stat().st_size == abspath_lock.stat().st_size
+                    )
+                    is_unlocked_1 = (
+                        abspath_lnk.stat().st_size == abspath_unlock.stat().st_size
+                    )
+                # sort
                 if is_locked_1:
                     locks.append(path_resolved)
                 elif is_unlocked_1:
