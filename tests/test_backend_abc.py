@@ -64,71 +64,6 @@ if sys.version_info >= (3, 9):  # pragma: no cover
 else:  # pragma: no cover
     from typing import Sequence
 
-testdata_fix_suffix = [
-    ("md", ".md"),
-    (".md", ".md"),
-]
-ids_fix_suffix = [
-    "without prefix period",
-    "with prefix period",
-]
-
-
-@pytest.mark.parametrize(
-    "suffix, expected",
-    testdata_fix_suffix,
-    ids=ids_fix_suffix,
-)
-def test_fix_suffix(suffix, expected):
-    """Does not barf given multiple suffixes e.g. .tar.gz"""
-    # pytest --showlocals --log-level INFO -k "test_fix_suffix" tests
-    actual = BackendType.fix_suffix(suffix)
-    assert actual == expected
-
-
-testdata_determine_backend = [
-    (
-        Path(__file__).parent.joinpath("_good_files", "backend-only.pyproject_toml"),
-        "setuptools",
-    ),
-    (
-        Path(__file__).parent.joinpath("_good_files", "complete.pyproject_toml"),
-        "setuptools",
-    ),
-    (
-        Path(__file__).parent.joinpath("_good_files", "requires-none.pyproject_toml"),
-        "setuptools",
-    ),
-    (
-        Path(__file__).parent.joinpath("_good_files", "nonsense-keys.pyproject_toml"),
-        "setuptools",
-    ),
-    (
-        Path(__file__).parent.joinpath(
-            "_good_files", "thin-wrap-backend.pyproject_toml"
-        ),
-        "setuptools",
-    ),
-]
-ids_determine_backend = [
-    f"""{t_backend[0].name.rsplit(".", 1)[0]}{t_backend[1]}"""
-    for t_backend in testdata_determine_backend
-]
-
-
-@pytest.mark.parametrize(
-    "path, expected",
-    testdata_determine_backend,
-    ids=ids_determine_backend,
-)
-def test_determine_backend(path, expected):
-    """Test determine backend."""
-    # pytest --showlocals --log-level INFO -k "test_determine_backend" tests
-    tp = TomlParser(path)
-    d_pyproject_toml = tp.d_pyproject_toml
-    actual = BackendType.determine_backend(d_pyproject_toml)
-    assert actual == expected
-
 
 def test_try_dict_update(tmp_path, caplog, has_logging_occurred, prepare_folders_files):
     """Test try_dict_update."""
@@ -819,10 +754,10 @@ def test_ensure_folder(tmp_path):
     )
     parent_dir = Path(__file__).parent.joinpath("conftest.py")
     with patch(
-        f"{g_app_name}.backend_setuptools.BackendSetupTools.path_config",
+        f"{g_app_name}.backend_abc.BackendType.path_config",
         return_value=tmp_path,
     ):
-        inst = BackendType.load_factory(path_config, parent_dir=parent_dir)
+        inst = BackendType(path_config, parent_dir=parent_dir)
         # folder
         ensure_folder(inst.parent_dir)
         # file. Will get it's parent
@@ -1039,7 +974,7 @@ def test_resolve_symlinks(
     run_cmd(cmd, cwd=tmp_path)
 
     # verify
-    logger.info("cmd: {cmd!r}")
+    logger.info(f"cmd: {cmd!r}")
     actual = BackendType.is_locked(path_f)
     assert has_logging_occurred(caplog)
     assert actual is expected

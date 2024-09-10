@@ -44,7 +44,6 @@ from drain_swamp._safe_path import (
     resolve_path,
 )
 from drain_swamp.backend_abc import BackendType
-from drain_swamp.backend_setuptools import BackendSetupTools  # noqa: F401
 from drain_swamp.constants import (
     LOGGING,
     g_app_name,
@@ -163,7 +162,7 @@ def test_lock_compile(
     prepare_folders_files(seq_create_these, tmp_path)
     path_config_dest = prep_pyproject_toml(path_config, tmp_path)
 
-    inst = BackendType.load_factory(
+    inst = BackendType(
         path_config_dest,
         parent_dir=tmp_path,
         additional_folders=additional_folders,
@@ -594,7 +593,7 @@ def test_unlock_compile(
     path_config_dest = prep_pyproject_toml(path_config, tmp_path)
 
     # prepare (required and optionals .in files)
-    inst = BackendType.load_factory(
+    inst = BackendType(
         path_config_dest,
         parent_dir=tmp_path,
         additional_folders=additional_folders,
@@ -910,7 +909,7 @@ def test_refresh_links(
 
     # No .lock file
     #    prepare (required and optionals .in files)
-    inst = BackendType.load_factory(
+    inst = BackendType(
         path_config,
         parent_dir=tmp_path,
     )
@@ -930,7 +929,7 @@ def test_refresh_links(
         pass
 
     # prepare (required and optionals .in files)
-    inst = BackendType.load_factory(
+    inst = BackendType(
         path_config,
         parent_dir=tmp_path,
     )

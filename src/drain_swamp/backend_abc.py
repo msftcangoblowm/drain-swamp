@@ -73,8 +73,6 @@ from .constants import (
     g_app_name,
 )
 from .exceptions import (
-    BackendNotSupportedError,
-    MissingRequirementsFoldersFiles,
     PyProjectTOMLParseError,
     PyProjectTOMLReadError,
 )
@@ -107,7 +105,7 @@ def try_dict_update(
 
     ``pyproject.toml`` then cli. cli has higher priority
 
-    :param set_both: pass by reference set. Changed in-place
+    :param set_both: pass by reference set. Changed in-place. Items are absolute Path
     :type set_both: dict[str, pathlib.Path]
     :param path_config: base folder absolute path
     :type path_config: pathlib.Path
@@ -134,6 +132,7 @@ def try_dict_update(
                 pass
         else:
             path_abs = path_config.joinpath(path_relative_x)
+            # target: WindowsPath | PosixPath
             set_both.update({target_x: path_abs})
     else:  # pragma: no cover
         pass
@@ -619,18 +618,40 @@ def ensure_folder(val):
     return ret
 
 
-class BackendType(abc.ABC):
-    """ABC of packaging backend support.
+class BackendType:
+    """Reading and processes the ``pyproject.toml``
 
-    get_registered and __subclasshook__ makes this ABC aware of all subclasses
+    :ivar path_config: ``pyproject.toml`` folder path
+    :vartype path_config: pathlib.Path
+    :ivar required: relative path to required dependency .in file
+    :vartype required: tuple[str, pathlib.Path] | None
+    :ivar optionals:
 
-    All that is required is to import this ABC and all subclasses
+       Default empty tuple. Relative path to optional dependencies
+       .in files. There may be some which are not optional dependencies
+       like ``requirements/tox.in`` and ``requirements/kit.in``. Which
+       are used by CI/CD or tox
 
-    To create a subclass backend instance, call
-    :py:meth:`drain_swamp.backend_abc.BackendType.load_factory`.
+    :vartype optionals: dict[str, pathlib.Path]
+    :ivar parent_dir:
 
-    The backend is known immediately after reading in ``pyproject.toml``
-    and the appropriate subclass is chosen and instanciated
+       folder path If provided and acceptable overrides attr, path_config
+
+    :vartype parent_dir: pathlib.Path | None
+    :ivar additional_folders:
+
+       Default empty Sequence. Folders to search for .in files beyond
+       the folders implied by required and optionals relative_path values
+
+    :vartype additional_folders: tuple[pathlib.Path, ...]
+    :raises:
+
+       - :py:exc:`drain_swamp.exceptions.PyProjectTOMLReadError` --
+         Either not a file or lacks read permission
+
+       - :py:exc:`drain_swamp.exceptions.PyProjectTOMLParseError` --
+         Could not parse pyproject.toml for various reasons
+
     """
 
     _path_required: tuple[str, Path] | None
@@ -642,54 +663,17 @@ class BackendType(abc.ABC):
     BACKEND_NAME: ClassVar[str]
     PYPROJECT_TOML_SECTION_NAME: ClassVar[str]
 
-    @staticmethod
-    def load_factory(
+    def __init__(
+        self,
         path_config,
         required=None,
         optionals={},
         parent_dir=None,
         additional_folders=(),
     ):
-        """Choose factory from registered subclasses.
-
-        :param path_config: ``pyproject.toml`` folder path
-        :type path_config: pathlib.Path
-        :param required: relative path to required dependency .in file
-        :type required: tuple[str, pathlib.Path] | None
-        :param optionals:
-
-           Default empty tuple. Relative path to optional dependencies
-           .in files. There may be some which are not optional dependencies
-           like ``requirements/tox.in`` and ``requirements/kit.in``. Which
-           are used by CI/CD or tox
-
-        :type optionals: dict[str, pathlib.Path]
-        :param parent_dir:
-
-           folder path If provided and acceptable overrides attr, path_config
-
-        :type parent_dir: pathlib.Path | None
-        :param additional_folders:
-
-           Default empty Sequence. Folders to search for .in files beyond
-           the folders implied by required and optionals relative_path values
-
-        :type additional_folders: tuple[pathlib.Path, ...]
-        :returns: Subclass instance
-        :rtype: typing.Self
-        :raises:
-
-           - :py:exc:`drain_swamp.exceptions.PyProjectTOMLReadError` --
-             Either not a file or lacks read permission
-
-           - :py:exc:`drain_swamp.exceptions.PyProjectTOMLParseError` --
-             Could not parse pyproject.toml for various reasons
-
-           - :py:exc:`drain_swamp.exceptions.BackendNotSupportedError` --
-             No support yet for python package backend
-
-        """
-
+        """Class constructor."""
+        mod_path = "drain_swamp.backend_abc.BackendType constructor"
+        super().__init__()
         # During testing, path_config can be cwd, while parent_dir is tmp_path
         if parent_dir is not None and issubclass(type(parent_dir), PurePath):
             path_override = parent_dir
@@ -697,10 +681,7 @@ class BackendType(abc.ABC):
             path_override = path_config
 
         if is_module_debug:  # pragma: no cover
-            msg_info = (
-                "drain_swamp.backend_abc.BackendType:load_factory "
-                f"path_override {path_override!r}"
-            )
+            msg_info = f"{mod_path} path_override {path_override!r}"
             _logger.info(msg_info)
         else:  # pragma: no cover
             pass
@@ -708,37 +689,20 @@ class BackendType(abc.ABC):
         # May raise PyProjectTOMLParseError or PyProjectTOMLReadError
         d_pyproject_toml, path_f = TomlParser.read(path_override)
 
-        str_backend = BackendType.determine_backend(d_pyproject_toml)
-        lst_registered = list(BackendType.get_registered())
-
-        ret = None
-        for kls in lst_registered:
-            if kls.BACKEND_NAME == str_backend:
-                ret = kls(  # type: ignore[call-arg]
-                    d_pyproject_toml,
-                    path_f,
-                    required=required,
-                    optionals=optionals,
-                    parent_dir=parent_dir,
-                    additional_folders=additional_folders,
-                )
-            else:  # pragma: no cover
-                # continue
-                pass
-
-        if ret is None:
-            backends_name = [kls.BACKEND_NAME for kls in lst_registered]
-            msg_exc = (
-                f"No support yet for python package backend {str_backend}. "
-                f"Registered backends: {backends_name}. The pyproject.toml "
-                f"{path_override}, specify backend in build-system.build-backend "
-                "or override tool.pipenv-unlock.wraps-build-backend"
-            )
-            raise BackendNotSupportedError(msg_exc)
+        if is_module_debug:  # pragma: no cover
+            msg_info = f"{mod_path} path_override: {path_override!r} path_f: {path_f!r}"
+            _logger.info(msg_info)
         else:  # pragma: no cover
             pass
 
-        return ret
+        self._path_config = path_f
+        self.load(  # type: ignore[call-arg]
+            d_pyproject_toml,
+            required=required,
+            optionals=optionals,
+            parent_dir=parent_dir,
+            additional_folders=additional_folders,
+        )
 
     def load(
         self,
@@ -818,59 +782,6 @@ class BackendType(abc.ABC):
         )
         #    Annoying to make a unittest just for this property
         assert self.folders_additional == self._folders_additional
-
-    @staticmethod
-    def determine_backend(d_pyproject_toml):
-        """If a thin-wrapped custom build backend, must specify build backend.
-
-        .. code-block:: text
-
-           [tool.pipenv-unlock]
-           wraps-build-backend = "setuptools.build_meta"
-
-        Example custom build backend
-
-        .. code-block:: text
-
-           [build-system]
-           requires = ["setuptools>=70.0.0", "wheel", "build", "setuptools_scm>=8"]
-           build-backend = "_req_links.backend"
-           backend-path = [
-               ".",
-               "src",
-           ]
-
-        :param d_pyproject_toml: ``pyproject.toml`` read in as a dict
-        :type d_pyproject_toml: dict[str, typing.Any]
-        :returns:
-
-           backend package name. Up to first period. e.g.
-           setuptools.build_meta --> "setuptools"
-
-        :rtype: str
-
-        .. seealso::
-
-           https://setuptools.pypa.io/en/latest/build_meta.html#dynamic-build-dependencies-and-other-build-meta-tweaks
-
-        """
-        str_build_system = (
-            d_pyproject_toml.get("tool", {})
-            .get("pipenv-unlock", {})
-            .get("wraps-build-backend", None)
-        )
-
-        if str_build_system is None:
-            # build-backend not thin-wrapped
-            d_build_system = d_pyproject_toml.get("build-system", {})
-            str_build_system = d_build_system["build-backend"]
-        else:  # pragma: no cover
-            pass
-
-        str_build = str_build_system.split(".")[0]
-        ret = cast(str, str_build)
-
-        return ret
 
     @staticmethod
     def get_required(
@@ -1114,117 +1025,6 @@ class BackendType(abc.ABC):
         """
         return self._folders_additional
 
-    @classmethod
-    def __subclasshook__(cls, C):
-        """A class wanting to be
-        :py:class:`~drain_swamp.backend_abc.BackendType`, minimally requires:
-
-        Properties:
-
-        - file_stem
-
-        - file_name
-
-        - package
-
-        - dest_folder
-
-        Methods:
-
-        - extract
-
-        - as_str -- get for free
-
-        - setup -- get for free
-
-        Then register itself
-        :code:`BackendType.register(AnotherBackendClass)` or subclass
-        :py:class:`~drain_swamp.backend_abc.BackendType`
-
-        :param C:
-
-           Class to test whether implements this interface or is a subclass
-
-        :type C: typing.Any
-        :returns:
-
-           ``True`` implements
-           :py:class:`~drain_swamp.backend_abc.BackendType`
-           interface or is a subclass. ``False`` not a
-           :py:class:`~drain_swamp.backend_abc.BackendType`
-
-        :rtype: bool
-        """
-        if cls is BackendType:
-            methods = ("compose",)
-
-            expected_count = len(methods)
-            for B in C.__mro__:
-                lst = [True for meth in methods if meth in B.__dict__]
-                match_count = len(lst)
-                is_same = match_count == expected_count
-                if is_same:
-                    return True
-                else:  # pragma: no cover
-                    pass
-        else:  # pragma: no cover
-            pass
-        return NotImplemented  # pragma: no cover Tried long enough with issubclass
-
-    @classmethod
-    def get_registered(cls):
-        """:py:class:`~drain_swamp.backend_abc.BackendType` abc registry.
-
-        Contains registered classes.
-
-        :returns: Generator of registered classes to abc, BackendType
-        :rtype: collections.abc.Iterator[type[typing.Self]]
-
-        .. note:: test howto
-
-           Would have to create a mock with all the abstract properties
-           and methods implemented. This is **alot** of work. Testing
-           is skipped
-
-        .. note:: :py:func:`abc._get_dump`
-
-           Does exist in :py:mod:`abc`. The module level function is
-           protected and not intended to be user facing.
-
-           This is the only way to know which classes are registered to
-           support this abc. Would prefer not to hard-code the
-           registered classes
-
-        """
-        for weakref_cls in abc._get_dump(BackendType)[1]:  # type: ignore
-            ref = weakref_cls
-            klass = ref()
-            if klass is not None:
-                yield klass
-            else:  # pragma: no cover
-                pass
-
-        yield from ()
-
-    @staticmethod
-    def fix_suffix(suffix):
-        """Prepend period if suffix lacks it.
-
-        :param suffix:
-
-           one file suffix, not suffixes, which might not be prepended by a period
-
-        :type suffix: str
-        :returns: Suffix with preceding period character
-        :rtype: str
-        """
-        if not suffix.startswith("."):
-            ret = f".{suffix}"
-        else:
-            ret = suffix
-
-        return ret
-
     def __repr__(self) -> str:
         """Fallback :py:func:`repr` implementation. For display of the
         instance state, not for recreating an instance.
@@ -1458,21 +1258,3 @@ class BackendType(abc.ABC):
         ret = choose_winner()
 
         return ret
-
-    def compose(self):
-        """Subclass must make its own implementation and call,
-        :code:`super().compose()`.
-
-        Perform sanity checks
-
-        :raises:
-
-            - :py:exc:`drain_swamp.exceptions.MissingRequirementsFoldersFiles` --
-              No requirements folders and files. Abort and provide user feedback
-
-        """
-        # Confirm requirements folders and files exist
-        gen_files = self.in_files()
-        if len(list(gen_files)) == 0:
-            msg_exc = "There are no requirements folders and files. Prepare these"
-            raise MissingRequirementsFoldersFiles(msg_exc)

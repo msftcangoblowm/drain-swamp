@@ -72,14 +72,14 @@ class BackendType(abc.ABC):
     BACKEND_NAME: ClassVar[str]
     PYPROJECT_TOML_SECTION_NAME: ClassVar[str]
 
-    @staticmethod
-    def load_factory(
+    def __init__(
+        self,
         path_config: Path,
         required: tuple[str, Path] | None = None,
         optionals: dict[str, Path] = {},
         parent_dir: Path | None = None,
         additional_folders: tuple[Path, ...] = (),
-    ) -> BackendType: ...
+    ) -> None: ...
     def load(
         self,
         d_pyproject_toml: dict[str, Any],
@@ -126,8 +126,6 @@ class BackendType(abc.ABC):
     def __subclasshook__(cls, C: Any) -> bool: ...
     @classmethod
     def get_registered(cls) -> Iterator[type[Self]]: ...
-    @staticmethod
-    def fix_suffix(suffix: str) -> str: ...
     def in_files(self) -> Generator[Path, None, None]: ...
     @staticmethod
     def is_locked(

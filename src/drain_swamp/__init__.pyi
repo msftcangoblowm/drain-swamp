@@ -1,5 +1,4 @@
 from .exceptions import (
-    BackendNotSupportedError,
     MissingRequirementsFoldersFiles,
     PyProjectTOMLParseError,
     PyProjectTOMLReadError,
@@ -7,7 +6,6 @@ from .exceptions import (
 
 __all__ = (
     "PyProjectTOMLParseError",
-    "BackendNotSupportedError",
     "PyProjectTOMLReadError",
     "MissingRequirementsFoldersFiles",
 )

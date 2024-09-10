@@ -130,7 +130,7 @@ Replace the text within the snippet
    ...     chars_written = path_some_conf.write_text(contents_existing)
    ...
    ...     # act
-   ...     snip = Snip(path_some_conf, is_quiet=True)
+   ...     snip = Snip(path_some_conf)
    ...     is_success = snip.replace(contents_new, id_="i_am_a_snippet_co")
    ...
    ...     actual = path_some_conf.read_text()

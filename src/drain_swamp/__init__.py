@@ -2,8 +2,8 @@
 .. moduleauthor:: Dave Faulkmore <https://mastodon.social/@msftcangoblowme>
 
 .. py:data:: __all__
-   :type: tuple[str, str, str, str]
-   :value: ("PyProjectTOMLParseError", "BackendNotSupportedError", \
+   :type: tuple[str, str, str]
+   :value: ("PyProjectTOMLParseError", \
     "PyProjectTOMLReadError", "MissingRequirementsFoldersFiles")
 
    Package level exports
@@ -24,7 +24,6 @@ __package__ = __name__
 
 from .constants_maybe import __version_app as __version__  # noqa: F401
 from .exceptions import (
-    BackendNotSupportedError,
     MissingRequirementsFoldersFiles,
     PyProjectTOMLParseError,
     PyProjectTOMLReadError,
@@ -32,7 +31,6 @@ from .exceptions import (
 
 __all__ = (
     "PyProjectTOMLParseError",
-    "BackendNotSupportedError",
     "PyProjectTOMLReadError",
     "MissingRequirementsFoldersFiles",
 )

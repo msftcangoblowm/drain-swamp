@@ -41,7 +41,7 @@ subtrees:
       - file: code/ext/pipenv_unlock/index
         entries:
         - file: code/ext/pipenv_unlock/backend_abc
-        - file: code/ext/pipenv_unlock/backend_setuptools
+        - file: code/ext/pipenv_unlock/snippet_dependencies
         - file: code/ext/pipenv_unlock/lock_toggle
         - file: code/ext/pipenv_unlock/snippet_pyproject_toml
       - file: code/ext/drain_swamp/index

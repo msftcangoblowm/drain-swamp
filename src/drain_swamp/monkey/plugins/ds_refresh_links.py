@@ -19,10 +19,8 @@ from pathlib import Path
 from typing import Any
 
 from drain_swamp.backend_abc import BackendType
-from drain_swamp.backend_setuptools import BackendSetupTools  # noqa: F401
 from drain_swamp.check_type import click_bool
 from drain_swamp.exceptions import (
-    BackendNotSupportedError,
     MissingRequirementsFoldersFiles,
     PyProjectTOMLParseError,
     PyProjectTOMLReadError,
@@ -87,14 +85,14 @@ def _is_set_lock(config_settings, default=None):
 
 
 def _parent_dir(config_settings, default=None):
-    """A hack just for testing. Into config_settings, add parent-dir.
-    Which is to be feed into BackendType.load_factory call
+    """Into config_settings, add ``parent-dir``. A BackendType
+    constructor arg specifically for testing.
 
     :param config_settings: config dict
     :type config_settings: dict[str, typing.Any] | None
     :param default: Default False. Create symlink to .unlock file
     :type default: typing.Any | None
-    :returns: parent_dir value to be used with BackendType.load_factory
+    :returns: parent_dir. Feed into BackendType constructor
     :rtype: pathlib.Path | None
     :meta private
     """
@@ -131,7 +129,7 @@ def _snippet_co(config_settings, default=None):
     :type config_settings: dict[str, typing.Any] | None
     :param default: Default None
     :type default: typing.Any | None
-    :returns: parent_dir value to be used with BackendType.load_factory
+    :returns: parent_dir. Feed into BackendType constructor
     :rtype: pathlib.Path
     :meta private
     """
@@ -178,7 +176,6 @@ def before_version_infer(config_settings: dict[str, Any]) -> str | None:
 
        - :py:exc:`drain_swamp.exceptions.PyProjectTOMLReadError`
        - :py:exc:`drain_swamp.exceptions.PyProjectTOMLParseError`
-       - :py:exc:`drain_swamp.exceptions.BackendNotSupportedError`
        - :py:exc:`drain_swamp.exceptions.MissingRequirementsFoldersFiles`
        - :py:exc:`AssertionError`
 
@@ -190,11 +187,14 @@ def before_version_infer(config_settings: dict[str, Any]) -> str | None:
     parent_dir = _parent_dir(config_settings)
     snippet_co = _snippet_co(config_settings, default=None)
 
-    msg_info = f"{mod_path} is_set_lock: {is_set_lock} parent_dir {parent_dir}"
+    msg_info = (
+        f"{mod_path} is_set_lock: {is_set_lock!r} parent_dir {parent_dir!r} "
+        f"snippet_co {snippet_co!r} cwd: {cwd!r}"
+    )
     log.info(msg_info)
 
     try:
-        inst = BackendType.load_factory(cwd, parent_dir=parent_dir)
+        inst = BackendType(cwd, parent_dir=parent_dir)
         log.info(
             f"{mod_path} inst.path_config: {inst.path_config} "
             f"abs?: {inst.path_config.is_absolute()}"
@@ -207,11 +207,6 @@ def before_version_infer(config_settings: dict[str, Any]) -> str | None:
         ret = msg_exc
     except PyProjectTOMLParseError:
         msg_exc = f"Cannot parse pyproject.toml. {traceback.format_exc()}"
-        ret = msg_exc
-    except BackendNotSupportedError as e:
-        """cause typically code neglecting to import backend drivers
-        after importing BackendType. Drivers not automatically imported"""
-        msg_exc = f"{e} {traceback.format_exc()}"
         ret = msg_exc
     except MissingRequirementsFoldersFiles:
         msg_exc = (
@@ -226,6 +221,8 @@ def before_version_infer(config_settings: dict[str, Any]) -> str | None:
         )
         ret = msg_exc
     else:
+        msg_info = f"{mod_path} path_config: {inst.path_config!r} parent_dir {inst.parent_dir!r}"
+        log.info(msg_info)
         ret = None
 
     if ret is not None:  # pragma: no cover

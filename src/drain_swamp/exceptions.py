@@ -4,8 +4,8 @@
 Package wide exceptions
 
 .. py:data:: __all__
-   :type: tuple[str, str, str, str]
-   :value: ("PyProjectTOMLParseError", "BackendNotSupportedError", \
+   :type: tuple[str, str, str]
+   :value: ("PyProjectTOMLParseError", \
    "PyProjectTOMLReadError", "MissingRequirementsFoldersFiles")
 
    Module exports
@@ -15,7 +15,6 @@ Package wide exceptions
 __package__ = "drain_swamp"
 __all__ = (
     "PyProjectTOMLParseError",
-    "BackendNotSupportedError",
     "PyProjectTOMLReadError",
     "MissingRequirementsFoldersFiles",
 )
@@ -39,18 +38,6 @@ class PyProjectTOMLReadError(OSError):
 
 class PyProjectTOMLParseError(ValueError):
     """No point in continuing if the ``pyproject.toml`` can't be parsed and loaded.
-
-    :ivar msg: The error message
-    :vartype msg: str
-    """
-
-    def __init__(self, msg: str) -> None:
-        """Class constructor."""
-        super().__init__(msg)
-
-
-class BackendNotSupportedError(ValueError):
-    """Do not have support yet for given Python package backend.
 
     :ivar msg: The error message
     :vartype msg: str

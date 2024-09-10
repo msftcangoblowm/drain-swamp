@@ -40,7 +40,6 @@ from drain_swamp import (
 )
 from drain_swamp._safe_path import resolve_joinpath
 from drain_swamp.backend_abc import BackendType
-from drain_swamp.backend_setuptools import BackendSetupTools  # noqa: F401
 from drain_swamp.constants import (
     LOGGING,
     g_app_name,
@@ -419,18 +418,52 @@ testdata_refresh = (
         None,
         True,
     ),
+    (
+        Path(__file__).parent.joinpath(
+            "_good_files", "multiple-snippets.pyproject_toml"
+        ),
+        (
+            "requirements/prod.in",
+            "requirements/pins.in",
+            "requirements/pip.in",
+            "requirements/tox.in",
+            "requirements/manage.in",
+        ),
+        (
+            "requirements/prod.unlock",
+            "requirements/pip.unlock",
+            "requirements/tox.unlock",
+            "requirements/manage.unlock",
+            "requirements/prod.lock",
+            "requirements/pip.lock",
+            "requirements/tox.lock",
+            "requirements/manage.lock",
+        ),
+        (
+            "requirements/prod.lnk",
+            "requirements/pip.lnk",
+            "requirements/tox.lnk",
+            "requirements/manage.lnk",
+        ),
+        "little_shop_of_horrors_shrine_candles",
+        False,
+    ),
 )
 ids_refresh = (
     "missing tox (MissingRequirementsFoldersFiles)",
     "manage and tox",
     "constraint path needs to be resolved",
-    "dependencies ok. snippet_co no match. Cannot update snippet",
+    "dependencies ok. nonexistent snippet_co. No match",
     "dependencies ok. snippet malformed. Cannot update snippet",
+    "multiple snippets. snippet co required to choose correct one",
 )
 
 
 @pytest.mark.parametrize(
-    "path_pyproject_toml, seq_create_in_files, seq_create_lock_files, seq_expected, snippet_co, str_returned",
+    (
+        "path_pyproject_toml, seq_create_in_files, seq_create_lock_files, "
+        "seq_expected, snippet_co, str_returned"
+    ),
     testdata_refresh,
     ids=ids_refresh,
 )
@@ -481,75 +514,74 @@ def test_plugin_refresh_links_normal(
         # abspath_files.append(abspath_dest)
         pass
 
-    configs = (
-        (
-            "[project]\n"
-            """name = "great-package"\n"""
-            """version = "99.99.99a1.dev6"\n"""
-            "[tool.config-settings]\n"
-            """kind = "current"\n"""
-            """set-lock = "0"\n"""
-        ),
-        (
-            "[project]\n"
-            """name = "great-package"\n"""
-            """version = "99.99.99a1.dev6"\n"""
-            "[tool.config-settings]\n"
-            """kind = "current"\n"""
-            """set-lock = "1"\n"""
-        ),
+    config_start = (
+        "[project]\n"
+        """name = "great-package"\n"""
+        """version = "99.99.99a1.dev6"\n"""
+        "[tool.config-settings]\n"
+        """kind = "current"\n"""
     )
-    for toml_contents in configs:
+    add_lines = (
+        """set-lock = "0"\n""",
+        """set-lock = "1"\n""",
+    )
+    for line in add_lines:
+        toml_contents = f"{config_start}{line}"
         if snippet_co is not None:
             toml_contents += f"""snip-co = "{snippet_co}"\n"""
-
+        toml_contents += "\n"
         d_section = ConfigSettings.get_section_dict(tmp_path, toml_contents)
 
-        inst = BackendType.load_factory(
+        inst = BackendType(
             path_config,
             parent_dir=tmp_path,
         )
         assert inst.parent_dir == tmp_path
+        logger.info(f"d_section: {d_section!r}")
+        snip_co = d_section.get("snip-co", None)
+        logger.info(f"snip_co in d_section: {snip_co}")
 
-        """
         with patch(
             "drain_swamp.monkey.plugins.ds_refresh_links.Path.cwd",
-            return_value=tmp_path,
+            return_value=Path(__file__).parent.parent,
         ):
-        """
-        with (
-            patch(
-                f"{g_app_name}.monkey.plugins.ds_refresh_links.BackendType.load_factory",
-                return_value=inst,
-            ),
-            patch(
-                "drain_swamp.monkey.plugins.ds_refresh_links.Path.cwd",
-                return_value=tmp_path,
-            ),
-        ):
-            str_msg = before_version_infer(d_section)
-            if str_returned:
-                # returns error message
-                assert str_msg is not None
-                assert isinstance(str_msg, str)
-                logger.info(str_msg)
-                assert has_logging_occurred(caplog)
-            else:
-                # success
-                assert str_msg is None
-                # verify symlinks -- created, w/o resolve
-                for relpath_expected in seq_expected:
-                    abspath_expected = resolve_joinpath(tmp_path, relpath_expected)
+            with patch(
+                f"{g_app_name}.monkey.plugins.ds_refresh_links._is_set_lock",
+                return_value=bool(d_section["set-lock"]),
+            ):
+                with patch(
+                    f"{g_app_name}.monkey.plugins.ds_refresh_links._parent_dir",
+                    return_value=tmp_path,
+                ):
+                    with patch(
+                        f"{g_app_name}.monkey.plugins.ds_refresh_links._snippet_co",
+                        return_value=snip_co,
+                    ):
+                        str_msg = before_version_infer(d_section)
+                        if str_returned:
+                            # returns error message
+                            assert str_msg is not None
+                            assert isinstance(str_msg, str)
+                            logger.info(str_msg)
+                            assert has_logging_occurred(caplog)
+                        else:
+                            # success
+                            assert str_msg is None
+                            # verify symlinks -- created, w/o resolve
+                            for relpath_expected in seq_expected:
+                                abspath_expected = resolve_joinpath(
+                                    tmp_path, relpath_expected
+                                )
 
-                    # Checks .lnk file exists. Abstracts out implementation
-                    assert issubclass(type(abspath_expected), Path)
-                    impl = DependencyLockLnkFactory.get_supported()
-                    assert impl.is_file(abspath_expected)
+                                # Checks .lnk file exists. Abstracts out implementation
+                                assert issubclass(type(abspath_expected), Path)
+                                impl = DependencyLockLnkFactory.get_supported()
+                                assert impl.is_file(abspath_expected)
 
-                    # clean up symlink|file
-                    abspath_expected.unlink()
-                    is_exists_1 = abspath_expected.exists()
-                    assert not is_exists_1
+                                # clean up symlink|file
+                                abspath_expected.unlink()
+                                is_exists_1 = abspath_expected.exists()
+                                assert not is_exists_1
 
 
 def test_plugin_refresh_links_exceptions(
@@ -639,18 +671,6 @@ def test_plugin_refresh_links_exceptions(
                     d_pyproject_toml = None
                 assert d_pyproject_toml is not None
                 assert isinstance(d_pyproject_toml, Mapping)
-
-                """BackendNotSupportedError
-                Don't replace BackendType.load_factory, into config_settings
-                provide parent-dir
-                """
-                with (
-                    patch(
-                        "drain_swamp.backend_abc.BackendType.determine_backend",
-                        return_value="maniac_into_squats",
-                    ),
-                ):
-                    before_version_infer(d_section)
 
                 # normal execution
                 str_error = before_version_infer(d_section)

@@ -84,14 +84,12 @@ else:
 
 from ._debug_mode import set_debug_mode
 from .backend_abc import BackendType
-from .backend_setuptools import BackendSetupTools  # noqa: F401
 from .constants import (
     SUFFIX_LOCKED,
     SUFFIX_UNLOCKED,
     g_app_name,
 )
 from .exceptions import (
-    BackendNotSupportedError,
     MissingRequirementsFoldersFiles,
     PyProjectTOMLParseError,
     PyProjectTOMLReadError,
@@ -105,6 +103,7 @@ from .snip import (
     ReplaceResult,
     Snip,
 )
+from .snippet_dependencies import SnippetDependencies
 from .snippet_pyproject_toml import (
     SNIPPET_NO_MATCH,
     SNIPPET_VALIDATE_FAIL,
@@ -415,7 +414,7 @@ def dependencies_lock(path, required, optionals, additional_folders, snippet_co)
     t_add_folders = tuple(s_additionals)
 
     try:
-        inst = BackendType.load_factory(
+        inst = BackendType(
             path,
             required=required,
             optionals=d_optionals,
@@ -433,14 +432,16 @@ def dependencies_lock(path, required, optionals, additional_folders, snippet_co)
         # raise click.ClickException(msg_exc)
         click.secho(msg_exc, fg="red", err=True)
         sys.exit(4)
-    except BackendNotSupportedError:
-        msg_exc = f"No support yet for this Python packaging backend. {traceback.format_exc()}"
-        # raise click.ClickException(msg_exc)
-        click.secho(msg_exc, fg="red", err=True)
-        sys.exit(5)
 
     try:
-        new_contents = inst.compose(SUFFIX_LOCKED)
+        # new_contents = inst.compose(SUFFIX_LOCKED)
+        new_contents = SnippetDependencies()(
+            SUFFIX_LOCKED,
+            inst.parent_dir,
+            inst.in_files(),
+            inst.required,
+            inst.optionals,
+        )
     except MissingRequirementsFoldersFiles:
         msg_exc = (
             "Missing requirements folders and files. Prepare these "
@@ -622,7 +623,7 @@ def dependencies_unlock(path, required, optionals, additional_folders, snippet_c
     t_add_folders = tuple(s_additionals)
 
     try:
-        inst = BackendType.load_factory(
+        inst = BackendType(
             path,
             required=required,
             optionals=d_optionals,
@@ -640,15 +641,17 @@ def dependencies_unlock(path, required, optionals, additional_folders, snippet_c
         # raise click.ClickException(msg_exc)
         click.secho(msg_exc, fg="red", err=True)
         sys.exit(4)
-    except BackendNotSupportedError:
-        msg_exc = f"No support yet for this Python packaging backend. {traceback.format_exc()}"
-        # raise click.ClickException(msg_exc)
-        click.secho(msg_exc, fg="red", err=True)
-        sys.exit(5)
 
     # get contents for update to pyproject.toml
     try:
-        new_contents = inst.compose(SUFFIX_UNLOCKED)
+        # new_contents = inst.compose(SUFFIX_UNLOCKED)
+        new_contents = SnippetDependencies()(
+            SUFFIX_UNLOCKED,
+            inst.parent_dir,
+            inst.in_files(),
+            inst.required,
+            inst.optionals,
+        )
     except MissingRequirementsFoldersFiles:
         msg_exc = (
             "Missing requirements folders and files. Prepare these "
@@ -773,7 +776,7 @@ def create_links(path, is_set_lock, snippet_co):
         pass
 
     try:
-        inst = BackendType.load_factory(path)
+        inst = BackendType(path)
     except PyProjectTOMLReadError:
         msg_exc = (
             f"Either not a file or lacks read permissions. {traceback.format_exc()}"
@@ -786,11 +789,6 @@ def create_links(path, is_set_lock, snippet_co):
         # raise click.ClickException(msg_exc)
         click.secho(str(e), fg="red", err=True)
         sys.exit(4)
-    except BackendNotSupportedError as e:
-        # msg_exc = f"No support yet for this Python packaging backend. {traceback.format_exc()}"
-        # raise click.ClickException(msg_exc)
-        click.secho(str(e), fg="red", err=True)
-        sys.exit(5)
 
     if __debug__:  # pragma: no cover
         _logger.info(f"{modpath} inst: {inst.__repr__()}")

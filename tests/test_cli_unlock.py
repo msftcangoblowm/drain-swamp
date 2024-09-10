@@ -36,7 +36,6 @@ from click.testing import CliRunner
 
 from drain_swamp._safe_path import is_win
 from drain_swamp.backend_abc import BackendType
-from drain_swamp.backend_setuptools import BackendSetupTools  # noqa: F401
 from drain_swamp.cli_unlock import (
     create_links,
     dependencies_lock,
@@ -234,30 +233,6 @@ def test_lock_unlock_and_back_wo_prepare(
 testdata_lock_unlock_and_back_with_prepare = (
     (
         dependencies_lock,
-        Path(__file__).parent.joinpath(
-            "_good_files", "backend-unsupported.pyproject_toml"
-        ),
-        "little_shop_of_horrors_shrine_candles",
-        (Path("ci"),),
-        {"ci": Path("ci/kit.in")},
-        True,
-        True,
-        5,  # BackendNotSupportedError
-    ),
-    (
-        dependencies_unlock,
-        Path(__file__).parent.joinpath(
-            "_good_files", "backend-unsupported.pyproject_toml"
-        ),
-        "little_shop_of_horrors_shrine_candles",
-        (Path("ci"),),
-        {"ci": Path("ci/kit.in")},
-        True,
-        True,
-        5,  # BackendNotSupportedError
-    ),
-    (
-        dependencies_lock,
         Path(__file__).parent.joinpath("_good_files", "complete.pyproject_toml"),
         "little_shop_of_horrors_shrine_candles",
         (Path("ci"),),
@@ -318,8 +293,6 @@ testdata_lock_unlock_and_back_with_prepare = (
     ),
 )
 ids_lock_unlock_and_back_with_prepare = (
-    "lock unsupported backend",
-    "unlock unsupported backend",
     "lock missing folders and files",
     "unlock missing folders and files",
     "lock Snippet is invalid",
@@ -663,7 +636,7 @@ def test_lock_unlock_and_back_optionals(
         # logger.info(f"output: {result.output}")
         assert result.exit_code == 0
 
-        inst = BackendType.load_factory(
+        inst = BackendType(
             path_tmp_dir,
             optionals=d_optionals,
             additional_folders=additional_folders,
@@ -787,7 +760,7 @@ def test_create_links_exceptions(
 
     with runner.isolated_filesystem(temp_dir=tmp_path) as tmp_dir_path:
         path_tmp_dir = Path(tmp_dir_path)
-        # PyProjectTOMLReadError (3) -- note BackendType.load_factory call is wrong
+        # PyProjectTOMLReadError (3) -- note BackendType call is wrong
         func_cmd = [
             "--path",
             tmp_dir_path,
@@ -806,17 +779,6 @@ def test_create_links_exceptions(
         exit_code_actual = result.exit_code
         assert exit_code_actual == expected
 
-        # unsupported backend (5) -- note BackendType.load_factory call is wrong
-        path_pyproject_toml_5 = Path(__file__).parent.joinpath(
-            "_good_files", "backend-unsupported.pyproject_toml"
-        )
-        expected = 5
-        #    prepare
-        path_f = prep_pyproject_toml(path_pyproject_toml_5, path_tmp_dir)
-        result = runner.invoke(create_links, func_cmd)
-        exit_code_actual = result.exit_code
-        assert exit_code_actual == expected
-
         # Path is expected to be a folder, not a file (2)
         path_pyproject_toml_7 = Path(__file__).parent.joinpath(
             "_bad_files", "static_dependencies.pyproject_toml"
@@ -828,13 +790,13 @@ def test_create_links_exceptions(
             "--path",
             str(path_f),
         ]
-        inst = BackendType.load_factory(
+        inst = BackendType(
             path_f,
             parent_dir=tmp_dir_path,
         )
         assert inst.parent_dir == path_tmp_dir
         with patch(
-            f"{g_app_name}.cli_unlock.BackendType.load_factory",
+            f"{g_app_name}.cli_unlock.BackendType",
             return_value=inst,
         ):
             result = runner.invoke(create_links, func_cmd)
@@ -854,7 +816,7 @@ def test_create_links_exceptions(
             tmp_dir_path,
         ]
         with patch(
-            f"{g_app_name}.cli_unlock.BackendType.load_factory",
+            f"{g_app_name}.cli_unlock.BackendType",
             return_value=inst,
         ):
             result = runner.invoke(create_links, func_cmd)
@@ -1053,7 +1015,7 @@ def test_create_links_set_lock(
         prepare_folders_files(seq_unlock, path_tmp_dir)
         prepare_folders_files(seq_lock, path_tmp_dir)
 
-        inst = BackendType.load_factory(
+        inst = BackendType(
             path_config,
             parent_dir=tmp_dir_path,
         )
@@ -1087,7 +1049,7 @@ def test_create_links_set_lock(
             func_cmd.extend(["--snip", snippet_co])
 
         with patch(
-            f"{g_app_name}.cli_unlock.BackendType.load_factory",
+            f"{g_app_name}.cli_unlock.BackendType",
             return_value=inst,
         ):
             result = runner.invoke(create_links, func_cmd)
@@ -1158,7 +1120,7 @@ def test_create_links_missing_files(
         #    .in
         prepare_folders_files(seq_in, path_tmp_dir)
         #    try without .unlock and .lock files --> MissingRequirementsFoldersFiles(6)
-        inst = BackendType.load_factory(
+        inst = BackendType(
             path_config,
             parent_dir=tmp_dir_path,
         )
@@ -1176,7 +1138,7 @@ def test_create_links_missing_files(
 
         expected_exit_code = 6
         with patch(
-            f"{g_app_name}.cli_unlock.BackendType.load_factory",
+            f"{g_app_name}.cli_unlock.BackendType",
             return_value=inst,
         ):
             result = runner.invoke(create_links, func_cmd)

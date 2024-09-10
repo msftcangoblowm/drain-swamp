@@ -3,7 +3,7 @@
 
 .. py:data:: __all__
    :type: tuple[str]
-   :value: ("BackendSetupTools",)
+   :value: ("SnippetDependencies",)
 
    Module's exports
 
@@ -17,31 +17,84 @@
 from __future__ import annotations
 
 import logging
-import os
 from pathlib import PurePosixPath
 
-from .backend_abc import BackendType
 from .constants import g_app_name
+from .exceptions import MissingRequirementsFoldersFiles
 
 __package__ = "drain_swamp"
-__all__ = ("BackendSetupTools",)
+__all__ = ("SnippetDependencies",)
 
-_logger = logging.getLogger(f"{g_app_name}.backend_abc")
+_logger = logging.getLogger(f"{g_app_name}.snippet_dependencies")
 
 
-class BackendSetupTools(BackendType):
-    """Support for setuptools.
+def _fix_suffix(suffix):
+    """Prepend period if suffix lacks it.
 
-    Create an instance using the factory,
-    :py:meth:`drain_swamp.backend_abc.BackendType.load_factory`
+    :param suffix:
 
-    Can read in the relevant ``pyproject.toml`` section for dependencies
-    and optional-dependencies, another section details extras, and then
-    rewrite the editable section
+       one file suffix, not suffixes, which might not be prepended by a period
 
-    The editable section should look like
+    :type suffix: str
+    :returns: Suffix with preceding period character
+    :rtype: str
+    """
+    if not suffix.startswith("."):
+        ret = f".{suffix}"
+    else:
+        ret = suffix
 
-    When dependency locked
+    return ret
+
+
+def _check_are_requirements_files(in_files):
+    """Check there are dependency requirements files.
+
+    Which every Python package will have.
+
+    :param in_files: Dependency requirements ``.in`` files
+    :type in_files: collections.abc.Sequence[pathlib.Path]
+    :raises:
+
+        - :py:exc:`drain_swamp.exceptions.MissingRequirementsFoldersFiles` --
+          No requirements folders and files. Abort and provide user feedback
+
+    """
+
+    is_empty = len(in_files) == 0
+    if is_empty:
+        msg_exc = "There are no requirements folders and files. Prepare these"
+        raise MissingRequirementsFoldersFiles(msg_exc)
+
+
+class SnippetDependencies:
+    """In ``pyproject.toml``, dependencies can be organized in
+    many requirements files. So the assumption dependencies are dynamic rather
+    than static.
+
+    |project_name| distinguishes between, and has both, dependency lock
+    and unlock files.
+
+    Requirement files, typically with ``.txt`` extention, are replaced with:
+    ``.in``, ``.unlock``, ``.lock``, and ``.lnk``.
+
+    The ``.unlock`` and ``.lock`` are generated, but can be manually editted.
+
+    The ``.lnk`` is created during package build process. On Windows, it's
+    a file copy on other platforms it's a symlink. Python build process
+    resolves symlinks.
+
+    A snippet is placed in section, ``tool.setuptools.dynamic``. The snippet
+    has both start and end tokens. No need to know the section name.
+    The snippet contains both dependencies and optional-dependencies.
+
+    Metadata is needed to generate the snippet contents.
+
+    - (extra) folders
+    - required
+    - optionals
+
+    When dependency locked (and before refresh)
 
     .. code-block:: text
 
@@ -56,7 +109,7 @@ class BackendSetupTools(BackendType):
 
        version = {attr = 'logging_strict._version.__version__'}
 
-    When not dependency locked
+    When not dependency unlocked (and before refresh)
 
     .. code-block:: text
 
@@ -71,15 +124,14 @@ class BackendSetupTools(BackendType):
 
        version = {attr = 'logging_strict._version.__version__'}
 
-    Other ``pyproject.toml`` dynamic properties are not placed within
-    the editable section
+    Notice the dynamic version is not within the snippet.
 
-    In pyproject.toml,
+    **Metadata section**
 
     .. code-block:: text
 
        [tool.pipenv-unlock]
-       extras = [
+       folders = [
            "pip",
            "pip_tools",  # <-- underscore
            "dev",
@@ -96,7 +148,7 @@ class BackendSetupTools(BackendType):
            'docs/requirements.in',
        ]
 
-    - extras
+    - folders
 
       There maybe other .in/.lock/.unlock files, such as kit.in and
       tox.in, these are used by tox or CI/CD. These will also need
@@ -124,89 +176,13 @@ class BackendSetupTools(BackendType):
 
       The file stem is hyphen but the dependency contains underscores
 
-    .. py:attribute:: BACKEND_NAME
-       :type: str
-       :value: "setuptools"
-
-       This backend driver is setuptools
-
-    .. py:attribute:: PYPROJECT_TOML_SECTION_NAME
-       :type: str
-       :value: "tool.setuptools.dynamic"
-
-       Dynamic section
-
-       Not supported:
-
-       - setup.cfg
-       - setup.py
-       - pyproject.toml, but not dynamic
-
-       An editable section is created by start and end tokens. So not
-       needed to know the name of the section. Left here for completeness
-
-    :ivar d_pyproject_toml: pyproject.toml in one giant dict
-    :vartype d_pyproject_toml: dict[str, typing.Any]
-    :ivar path_config: Absolute path to pyproject.toml file
-    :vartype path_config: pathlib.Path
-    :ivar required:
-
-       Default None. From cli, relative path to required dependencies .in file
-
-    :vartype required: tuple[str, pathlib.Path] | None
-    :ivar optionals:
-
-       Default empty tuple. relative path of optional dependency ``.in`` files
-
-    :vartype optionals: dict[str, pathlib.Path]
-    :ivar parent_dir:
-
-           folder path If provided and acceptable overrides attr, path_config
-
-    :vartype parent_dir: pathlib.Path | None
-
     :raises:
 
        - :py:exc:`FileNotFoundError` -- package required dependency file is required
 
     """
 
-    BACKEND_NAME = "setuptools"
-    PYPROJECT_TOML_SECTION_NAME = "tool.setuptools.dynamic"
-
-    def __init__(
-        self,
-        d_pyproject_toml,
-        path_config,
-        required=None,
-        optionals={},
-        parent_dir=None,
-        additional_folders=(),
-    ):
-        """Class constructor."""
-        super().__init__()
-        self._path_config = path_config
-
-        # may raise: FileNotFoundError
-        self.load(
-            d_pyproject_toml,
-            required=required,
-            optionals=optionals,
-            parent_dir=parent_dir,
-            additional_folders=additional_folders,
-        )
-
-    @property
-    def backend(self):
-        """Get Backend name.
-
-        :returns: Backend name
-        :rtype: str
-        """
-        cls = type(self)
-        return cls.BACKEND_NAME
-
-    def compose_dependencies_line(self, suffix):
+    def _compose_dependencies_line(self, suffix):
         """Compose required dependency line.
 
         .. code-block:: text
@@ -222,24 +198,22 @@ class BackendSetupTools(BackendType):
         :returns: tool.setuptools.dynamic dependencies line
         :rtype: collections.abc.Iterator[str]
         """
-        _logger.info(f"path_required: {self.required} {type(self.required)}")
-        if self.required is None:
+        _logger.info(f"path_required: {self._required} {type(self._required)}")
+        if self._required is None:
             yield from ()
         else:
             # tuple[str, Path]
-            target, path_required_abs = self.required
+            target, path_required_abs = self._required
             path_rel = PurePosixPath(path_required_abs).relative_to(
-                PurePosixPath(self.parent_dir),
+                PurePosixPath(self._parent_dir),
             )
             path_dir = path_rel.parent
-
-            str_suffix = self.fix_suffix(suffix)
 
             # file stem contains hyphens, not underscores
             stem = path_rel.stem
             stem = stem.replace("_", "-")
 
-            path_dir_final = path_dir.joinpath(f"{stem}{str_suffix}")
+            path_dir_final = path_dir.joinpath(f"{stem}{suffix}")
 
             # TOML format -- paths use single quote, not double quote
             ret = f"""dependencies = {{ file = ['{path_dir_final}'] }}"""
@@ -248,7 +222,7 @@ class BackendSetupTools(BackendType):
 
         yield from ()
 
-    def compose_optional_lines(self, suffix):
+    def _compose_optional_lines(self, suffix):
         """Compose the optional lines returning an Iterator.
 
         Optional lines are in this format
@@ -268,18 +242,17 @@ class BackendSetupTools(BackendType):
         :returns: tool.setuptools.dynamic dependencies and optional-dependencies lines
         :rtype: collections.abc.Iterator[str]
         """
-        for target, path_abs in self.optionals.items():
+        for target, path_abs in self._optionals.items():
             # Even on Windows, treat as a posix path
             path_rel = PurePosixPath(path_abs).relative_to(
-                PurePosixPath(self.parent_dir),
+                PurePosixPath(self._parent_dir),
             )
 
-            str_suffix = self.fix_suffix(suffix)
             # file stem contains hyphens, not underscores
             path_rel_r = path_rel.parent
             stem_r = path_rel.stem
             stem_r = stem_r.replace("_", "-")
-            path_full_r = path_rel_r.joinpath(f"{stem_r}{str_suffix}")
+            path_full_r = path_rel_r.joinpath(f"{stem_r}{suffix}")
 
             target_l = target.replace("-", "_")
             # TOML format -- paths use single quote, not double quote
@@ -291,23 +264,49 @@ class BackendSetupTools(BackendType):
 
         yield from ()
 
-    def compose(self, suffix):
+    def __call__(self, suffix, parent_dir, gen_in_files, required, optionals):
         """Create the new contents to be placed into the snippet.
         ``pyproject.toml`` required and optional-dependencies.
 
         :param suffix: File suffix. Either ``.lock`` or ``.unlock``
         :type suffix: str
+        :param parent_dir: Folder absolute path
+        :type parent_dir: pathlib.Path
+        :param gen_in_files: dependency requirements ``.in`` file absolute paths
+        :type gen_in_files: collections.abc.Generator[pathlib.Path, None, None]
+        :param required:
+
+           Default None. From cli, relative path to required dependencies .in file
+
+        :type required: tuple[str, pathlib.Path] | None
+        :param optionals:
+
+           Default empty tuple. relative path of optional dependency ``.in`` files
+
+        :type optionals: dict[str, pathlib.Path]
         :returns: tool.setuptools.dynamic dependencies and optional-dependencies lines
         :rtype: str
+        :raises:
+
+            - :py:exc:`drain_swamp.exceptions.MissingRequirementsFoldersFiles` --
+              No requirements folders and files. Abort and provide user feedback
+
         """
-        super().compose()  # do validation checks
+        self._parent_dir = parent_dir
+        self._required = required
+        self._optionals = optionals
+
+        str_suffix = _fix_suffix(suffix)
+
+        in_files = list(gen_in_files)
+        # May raise MissingRequirementsFoldersFiles
+        _check_are_requirements_files(in_files)
+
         ret = []
-        ret.extend(list(self.compose_dependencies_line(suffix)))
-        ret.extend(list(self.compose_optional_lines(suffix)))
-        sep = os.linesep
+        ret.extend(list(self._compose_dependencies_line(str_suffix)))
+        ret.extend(list(self._compose_optional_lines(str_suffix)))
+        # TOML format line endings **MUST** be \n, not \r\n
+        sep = "\n"
         lines = sep.join(ret)
 
         return lines
-
-
-BackendType.register(BackendSetupTools)

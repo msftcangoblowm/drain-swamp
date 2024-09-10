@@ -26,7 +26,7 @@ Code manual
       :class-card: sd-border-0
 
       - :doc:`backend abc <ext/pipenv_unlock/backend_abc>`
-      - :doc:`backend setuptools <ext/pipenv_unlock/backend_setuptools>`
+      - :doc:`snippet dependencies <ext/pipenv_unlock/snippet_dependencies>`
       - :doc:`lock toggle <ext/pipenv_unlock/lock_toggle>`
       - :doc:`snippet pyproject.toml <ext/pipenv_unlock/snippet_pyproject_toml>`
 

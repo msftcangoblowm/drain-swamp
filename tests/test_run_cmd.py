@@ -24,6 +24,7 @@ Integration test
 import logging
 import logging.config
 import os
+import sys
 
 import pytest
 
@@ -86,13 +87,13 @@ def test_run_cmd(tmp_path, prepare_folders_files, caplog, has_logging_occurred):
     assert len(err.strip()) != 0
 
     # Something printed to stdout
-    executable_path = resolve_path("python")
     valids = (
-        (executable_path, "-V"),
-        f"{executable_path} -V",
+        (sys.executable, "-V"),
+        f"{sys.executable} -V",
     )
     for cmd in valids:
         logger.info(f"cmd: {cmd!r}")
+
         t_ret = run_cmd(cmd, env=env)
         out, err, exit_code, str_exc = t_ret
         if exit_code != 0:

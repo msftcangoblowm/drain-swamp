@@ -42,6 +42,10 @@ Changelog
    Commit items for NEXT VERSION
    ..............................
 
+   - refactor: remove exception BackendNotSupportedError
+   - refactor: remove the concept of backend awareness
+   - refactor: backend_abc no longer an abc
+   - fix: careful not to write Windows linesep into a TOML file
    - refactor: where possible _to_purepath rather than PurePosixPath and PureWindowsPath
    - fix: remove snip constructor param is_quiet
    - fix(backend_setuptools): dependency file relative path treat as PurePosixPath

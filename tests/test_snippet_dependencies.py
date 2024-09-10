@@ -3,15 +3,15 @@
 
 ..
 
-Unittest for module, drain_swamp.backend_setupttools
+Unittest for module, drain_swamp.snippet_dependencies
 
 Unit test -- Module
 
 .. code-block:: shell
 
-   python -m coverage run --source='drain_swamp.backend_setuptools' -m pytest \
-   --showlocals tests/test_backend_setuptools.py && coverage report \
-   --data-file=.coverage --include="**/backend_setuptools.py"
+   python -m coverage run --source='drain_swamp.snippet_dependencies' -m pytest \
+   --showlocals tests/test_snippet_dependencies.py && coverage report \
+   --data-file=.coverage --include="**/snippet_dependencies.py"
 
 Integration test
 
@@ -25,8 +25,10 @@ Integration test
 
 import logging
 import logging.config
-import os
-import sys
+from collections.abc import (
+    Generator,
+    Sequence,
+)
 from contextlib import nullcontext as does_not_raise
 from pathlib import Path
 
@@ -37,28 +39,38 @@ from drain_swamp.backend_abc import (
     get_optionals_pyproject_toml,
     get_required_pyproject_toml,
 )
-from drain_swamp.backend_setuptools import BackendSetupTools  # noqa: F401
 from drain_swamp.constants import (
     LOGGING,
     g_app_name,
 )
-from drain_swamp.exceptions import (
-    BackendNotSupportedError,
-    MissingRequirementsFoldersFiles,
-    PyProjectTOMLParseError,
-)
+from drain_swamp.exceptions import MissingRequirementsFoldersFiles
 from drain_swamp.parser_in import TomlParser
+from drain_swamp.snippet_dependencies import (
+    SnippetDependencies,
+    _fix_suffix,
+)
 
-if sys.version_info >= (3, 9):  # pragma: no cover
-    from collections.abc import (
-        Generator,
-        Sequence,
-    )
-else:  # pragma: no cover
-    from typing import (
-        Generator,
-        Sequence,
-    )
+testdata_fix_suffix = [
+    ("md", ".md"),
+    (".md", ".md"),
+]
+ids_fix_suffix = [
+    "without prefix period",
+    "with prefix period",
+]
+
+
+@pytest.mark.parametrize(
+    "suffix, expected",
+    testdata_fix_suffix,
+    ids=ids_fix_suffix,
+)
+def test_fix_suffix(suffix, expected):
+    """Does not barf given multiple suffixes e.g. .tar.gz"""
+    # pytest --showlocals --log-level INFO -k "test_fix_suffix" tests
+    actual = _fix_suffix(suffix)
+    assert actual == expected
+
 
 testdata_load_factory_good = (
     (
@@ -151,12 +163,10 @@ def test_load_factory_good(
     path_f = prep_pyproject_toml(path_config, tmp_path)
 
     # Confirm backend name
-    inst_backend = BackendType.load_factory(path_f, parent_dir=tmp_path)
+    inst_backend = BackendType(path_f, parent_dir=tmp_path)
 
     assert inst_backend.path_config == path_f
     assert inst_backend.parent_dir != path_f
-    assert issubclass(type(inst_backend), BackendType)
-    assert backend_expected == inst_backend.backend
 
     # BackendType.parent_dir setter only accepts folder
     parent_dir_before = inst_backend.parent_dir
@@ -165,86 +175,47 @@ def test_load_factory_good(
     #    not a folder. Coerses file --> folder
     inst_backend.parent_dir = tmp_path.joinpath(inst_backend.path_config.name)
     del inst_backend
-    inst_backend = BackendType.load_factory(path_config, parent_dir=tmp_path)
+    inst_backend = BackendType(path_config, parent_dir=tmp_path)
 
-    # BackendSetupTools.compose_dependencies_line
     suffixes = (
         ".lock",
         ".unlock",
     )
     for suffix in suffixes:
-        gen_actual = inst_backend.compose_dependencies_line(suffix)
-        assert isinstance(gen_actual, Generator)
-        lst_required_line = list(gen_actual)
-        if len(lst_required_line) == 0:
-            # no required packages no dependencies .in file
-            pass
-        else:
-            assert isinstance(lst_required_line[0], str)
-            assert suffix in lst_required_line[0]
+        gen_in_files = inst_backend.in_files()
+        in_files = list(gen_in_files)
+        in_files_count = len(in_files)
 
-        logger.info(
-            f"optionals: ({len(inst_backend.optionals)}): {inst_backend.optionals}"
-        )
-
-        gen_actual = inst_backend.compose_optional_lines(suffix)
-        assert isinstance(gen_actual, Generator)
-        optional_lines = list(gen_actual)
-        set_lines = set(optional_lines)
-
-        set_from_parts = set()
-        for line in set_lines:
-            set_from_parts.add(line)
-        if len(lst_required_line) != 0:
-            set_from_parts.add(lst_required_line[0])
-
-        """raises MissingRequirementsFoldersFiles if both required or
-        optionals are missing"""
+        gen_in_files = inst_backend.in_files()
+        assert isinstance(gen_in_files, Generator)
         with expectation:
-            str_lines_all = inst_backend.compose(suffix)
+            str_lines_all = SnippetDependencies()(
+                suffix,
+                inst_backend.parent_dir,
+                gen_in_files,
+                inst_backend.required,
+                inst_backend.optionals,
+            )
         if isinstance(expectation, does_not_raise):
-            if len(str_lines_all) == 0:
-                assert len(set_from_parts) == 0
-            else:
-                lines_all = str_lines_all.split(os.linesep)
-                set_from_all = set(lines_all)
+            # TOML format -- Even on Windows, line seperator must be "\n"
+            lines = str_lines_all.split("\n")
+            lines_count = len(lines)
+            # Assumes there are no duplicate required or optionals
+            assert in_files_count == lines_count
 
-                assert set_from_all == set_from_parts
-
-
-testdata_load_factory_bad = (
-    (
-        Path(__file__).parent.joinpath("_bad_files", "backend_only.pyproject_toml"),
-        pytest.raises(PyProjectTOMLParseError),
-    ),
-    (
-        Path(__file__).parent.joinpath(
-            "_good_files", "backend-unsupported.pyproject_toml"
-        ),
-        pytest.raises(BackendNotSupportedError),
-    ),
-)
-ids_load_factory_bad = (
-    "has malformed value without closing double quote",
-    "unsupported or unknown backend",
-)
-
-
-@pytest.mark.parametrize(
-    "path_config, expectation",
-    testdata_load_factory_bad,
-    ids=ids_load_factory_bad,
-)
-def test_load_factory_bad(
-    path_config,
-    expectation,
-    tmp_path,
-    prep_pyproject_toml,
-):
-    """BackendType.load_factory exceptions."""
-    # pytest --showlocals --log-level INFO -k "test_load_factory_bad" tests
-    # prepare
-    prep_pyproject_toml(path_config, tmp_path)
-    # act
-    with expectation:
-        BackendType.load_factory(path_config, parent_dir=tmp_path)
+        # Empty required = None
+        gen_in_files = inst_backend.in_files()
+        assert isinstance(gen_in_files, Generator)
+        with expectation:
+            str_lines_all = SnippetDependencies()(
+                suffix,
+                inst_backend.parent_dir,
+                gen_in_files,
+                None,
+                inst_backend.optionals,
+            )
+            # TOML format -- Even on Windows, line seperator must be "\n"
+            lines = str_lines_all.split("\n")
+            lines_count = len(lines)
+            in_files_wo_required = in_files_count - 1
+            assert in_files_wo_required == lines_count
