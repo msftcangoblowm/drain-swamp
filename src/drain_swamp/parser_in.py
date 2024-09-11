@@ -50,7 +50,7 @@ __package__ = "drain_swamp"
 __all__ = ("TomlParser",)
 
 _logger = logging.getLogger(f"{g_app_name}.parser_in")
-is_module_debug = True
+is_module_debug = False
 
 
 class TomlParser:

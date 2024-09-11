@@ -761,6 +761,7 @@ testdata_refresh = (
             "requirements/tox.lnk",
             "requirements/manage.lnk",
         ),
+        does_not_raise(),
         pytest.raises(AssertionError),
     ),
     (
@@ -787,6 +788,7 @@ testdata_refresh = (
             "requirements/manage.lnk",
         ),
         pytest.raises(MissingRequirementsFoldersFiles),
+        pytest.raises(MissingRequirementsFoldersFiles),
     ),
     (
         Path(__file__).parent.joinpath(
@@ -811,6 +813,7 @@ testdata_refresh = (
             "requirements/tox.lnk",
             "requirements/manage.lnk",
         ),
+        pytest.raises(MissingRequirementsFoldersFiles),
         does_not_raise(),
     ),
     (
@@ -850,6 +853,7 @@ testdata_refresh = (
             "requirements/manage.lnk",
             "docs/requirements.lnk",
         ),
+        pytest.raises(MissingRequirementsFoldersFiles),
         does_not_raise(),
     ),
 )
@@ -862,7 +866,10 @@ ids_refresh = (
 
 
 @pytest.mark.parametrize(
-    "path_pyproject_toml, seq_create_in_files, seq_create_lock_files, seq_expected, expectation",
+    (
+        "path_pyproject_toml, seq_create_in_files, seq_create_lock_files, "
+        "seq_expected, no_prep_expectation, expectation"
+    ),
     testdata_refresh,
     ids=ids_refresh,
 )
@@ -871,6 +878,7 @@ def test_refresh_links(
     seq_create_in_files,
     seq_create_lock_files,
     seq_expected,
+    no_prep_expectation,
     expectation,
     tmp_path,
     prepare_folders_files,
@@ -890,16 +898,17 @@ def test_refresh_links(
     logger.addHandler(hdlr=caplog.handler)
     caplog.handler.level = logger.level
 
-    path_config = prep_pyproject_toml(path_pyproject_toml, tmp_path)
-
-    # prepare
     assert isinstance(seq_create_in_files, Sequence)
     assert isinstance(seq_create_lock_files, Sequence)
+    path_cwd = path_project_base()
 
-    # prepare .in
+    # prepare
+    #    pyproject.toml
+    path_config = prep_pyproject_toml(path_pyproject_toml, tmp_path)
+
+    #    .in
     prepare_folders_files(seq_create_in_files, tmp_path)
     #    move real files, no need to create folders
-    path_cwd = path_project_base()
     for p_f in seq_create_in_files:
         abspath_src = path_cwd.joinpath(p_f)
         abspath_dest = tmp_path.joinpath(p_f)
@@ -914,7 +923,7 @@ def test_refresh_links(
         parent_dir=tmp_path,
     )
     assert inst.parent_dir == tmp_path
-    with pytest.raises(MissingRequirementsFoldersFiles):
+    with no_prep_expectation:
         refresh_links(inst, is_set_lock=True)
     del inst
 

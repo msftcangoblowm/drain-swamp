@@ -54,7 +54,7 @@ __all__ = (
 
 mod_dotted_path = f"{g_app_name}.snip"
 _logger = logging.getLogger()
-is_module_debug = True
+is_module_debug = False
 
 
 class ReplaceResult(Enum):

@@ -55,7 +55,13 @@ def folders_implied_init(
     optionals: dict[str, Path],
     required: tuple[str, Path] | None = None,
 ) -> set[Path]: ...
-def folders_additional_init(
+def get_additional_folders_pyproject_toml(
+    d_pyproject_toml: dict[str, Any],
+    path_config: Path,
+    implied_folders: set[Path],
+    is_bypass: bool | None = False,
+) -> set[Path]: ...
+def folders_additional_cli(
     parent_dir: Path,
     folders_implied: set[Path],
     additional_folders: tuple[Path] = ...,

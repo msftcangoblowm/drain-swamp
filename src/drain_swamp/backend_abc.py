@@ -92,7 +92,7 @@ __all__ = ("BackendType",)
 
 _logger = logging.getLogger(f"{g_app_name}.backend_abc")
 
-is_module_debug = True
+is_module_debug = False
 
 # taken from pyproject.toml
 entrypoint_name = "pipenv-unlock"  # noqa: F401
@@ -269,6 +269,72 @@ def get_optionals_pyproject_toml(
                 pass
         else:  # pragma: no cover
             pass
+
+
+def get_additional_folders_pyproject_toml(
+    d_pyproject_toml,
+    path_config,
+    implied_folders,
+    is_bypass=False,
+):
+    """From ``pyproject.toml`` [tool.pipenv-unlock] get ``folders`` value.
+
+    Which is a :code:`list[str]`.
+
+    :param d_pyproject_toml: pyproject.toml dict
+    :type d_pyproject_toml: dict[str, typing.Any]
+    :param path_config: absolute folder path
+    :type path_config: pathlib.Path
+    :param implied_folders: Relative path of known folders containing ``.in``
+    :type implied_folders: set[pathlib.Path]
+    :param is_bypass: Default False. True checks if folder exists
+    :type is_bypass: bool | None
+    :returns: set of **relative paths** to folders containing ``.in`` files
+    :rtype set[pathlib.Path]
+    """
+    if is_bypass is None or not isinstance(is_bypass, bool):
+        is_bypass = False
+
+    ret = set()
+    d_tool = d_pyproject_toml.get("tool", {}).get(entrypoint_name, {})
+    for key, mixed_blob in d_tool.items():
+        is_folders = (
+            key == "folders" and mixed_blob is not None and isinstance(mixed_blob, list)
+        )
+        if is_module_debug:  # pragma: no cover
+            _logger.info(f"is_folders: {is_folders}")
+        else:  # pragma: no cover
+            pass
+
+        if is_folders:
+            for folder_relpath in mixed_blob:
+                is_not_empty = (
+                    folder_relpath is not None
+                    and isinstance(folder_relpath, str)
+                    and len(folder_relpath.strip()) != 0
+                )
+                if is_not_empty:
+                    relpath_folder = Path(folder_relpath)
+                    is_not_in_implied = relpath_folder not in implied_folders
+                    path_abs = resolve_joinpath(path_config, folder_relpath)
+                    if is_bypass is True and is_not_in_implied:
+                        ret.add(relpath_folder)
+                    elif is_bypass is False and is_not_in_implied:
+                        is_dir = path_abs.exists() and path_abs.is_dir()
+                        if is_dir:
+                            ret.add(relpath_folder)
+                        else:  # pragma: no cover
+                            pass
+                    else:  # pragma: no cover
+                        # Not an additional. In implied folders
+                        pass
+                else:  # pragma: no cover
+                    pass
+        else:  # pragma: no cover
+            # in pyproject.toml [tool.pipenv-unlock], no folders key nor list[str] value
+            pass
+
+    return ret
 
 
 def get_required_pyproject_toml(
@@ -465,7 +531,7 @@ def folders_implied_init(
     return set_folders_implied
 
 
-def folders_additional_init(
+def folders_additional_cli(
     parent_dir,
     folders_implied,
     additional_folders=(),
@@ -487,30 +553,27 @@ def folders_additional_init(
 
        [tool.setuptools.dynamic]
        # @@@ editable little_shop_of_horrors_shrine_candles
-       dependencies = { file = ["requirements/prod.lock"] }
-       optional-dependencies.pip = { file = ["requirements/pip.lock"] }
-       optional-dependencies.pip_tools = { file = ["requirements/pip-tools.lock"] }
-       optional-dependencies.dev = { file = ["requirements/dev.lock"] }
-       optional-dependencies.manage = { file = ["requirements/manage.lock"] }
-       optional-dependencies.docs = { file = ["docs/requirements.lock"] }
+       dependencies = { file = ['requirements/prod.lock'] }
+       optional-dependencies.pip = { file = ['requirements/pip.lock'] }
+       optional-dependencies.pip_tools = { file = ['requirements/pip-tools.lock'] }
+       optional-dependencies.dev = { file = ['requirements/dev.lock'] }
+       optional-dependencies.manage = { file = ['requirements/manage.lock'] }
+       optional-dependencies.docs = { file = ['docs/requirements.lock'] }
        # @@@ end
 
        [tool.pipenv-unlock]
        folders = [
-           "docs",
-           "requirements",
-           "ci",
+           'ci',
        ]
 
-       required = { target = "prod", relative_path = "requirements/prod.in" }
-
+       required = { target = "prod", relative_path = 'requirements/prod.in' }
 
        optionals = [
-           { target = "pip", relative_path = "requirements/pip.in" },
-           { target = "pip_tools", relative_path = "requirements/pip-tools.in" },
-           { target = "dev", relative_path = "requirements/dev.in" },
-           { target = "manage", relative_path = "requirements/manage.in" },
-           { target = "docs", relative_path = "docs/requirements.in" },
+           { target = "pip", relative_path = 'requirements/pip.in' },
+           { target = "pip_tools", relative_path = 'requirements/pip-tools.in' },
+           { target = "dev", relative_path = 'requirements/dev.in' },
+           { target = "manage", relative_path = 'requirements/manage.in' },
+           { target = "docs", relative_path = 'docs/requirements.in' },
        ]
 
     The implied folders are determined from:
@@ -518,9 +581,9 @@ def folders_additional_init(
     - tool.pipenv-unlock.required
     - tool.pipenv-unlock.optionals
 
-    In this case, the implied folders are: :code:`{"requirements", "docs"}`
+    In this case, the implied folders are: :code:`{'requirements', 'docs'}`
 
-    tool.pipenv-unlock.folders contains the additional folder: :code:`{"ci"}`
+    tool.pipenv-unlock.folders contains the additional folder: :code:`{'ci'}`
 
     :param parent_dir: absolute path to parent folder
     :type parent_dir: pathlib.Path
@@ -778,12 +841,23 @@ class BackendType:
             required=required,
         )
 
-        # _folders_additional
-        self._folders_additional = folders_additional_init(
+        # folders_additional -- pyproject.toml
+        set_folders_additional_0 = get_additional_folders_pyproject_toml(
+            d_pyproject_toml,
+            self.parent_dir,
+            self.folders_implied,
+        )
+        # _folders_additional -- cli
+        set_folders_additional_1 = folders_additional_cli(
             self.parent_dir,
             self.folders_implied,
             additional_folders=additional_folders,
         )
+        # combine two sets
+        self._folders_additional = set_folders_additional_0.union(
+            set_folders_additional_1,
+        )
+
         #    Annoying to make a unittest just for this property
         assert self.folders_additional == self._folders_additional
 
@@ -1056,7 +1130,9 @@ class BackendType:
         else:
             # t_required is None when pyproject.toml contains static dependencies
             # Remove <comma><space> token
-            ret = ret[:-2]
+            ret += "required=None"
+            # ret = ret[:-2]
+            pass
 
         ret += ">"
 

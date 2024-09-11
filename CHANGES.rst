@@ -44,6 +44,16 @@ Changelog
 
 .. scriv-start-here
 
+.. _changes_1-7-2:
+
+Version 1.7.2 — 2024-09-11
+--------------------------
+
+- test(static dependencies): remove tool.pipenv-unlock section
+- fix(backend_abc): from pyproject.toml process additional folders
+- chore: turn all is_module_debug flags off
+- chore(cli_unlock): comment out __debug__ blocks
+
 .. _changes_1-7-1:
 
 Version 1.7.1 — 2024-09-10

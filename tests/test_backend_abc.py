@@ -47,8 +47,9 @@ from drain_swamp._safe_path import (
 from drain_swamp.backend_abc import (
     BackendType,
     ensure_folder,
-    folders_additional_init,
+    folders_additional_cli,
     folders_implied_init,
+    get_additional_folders_pyproject_toml,
     get_optionals_cli,
     get_optionals_pyproject_toml,
     get_required_cli,
@@ -653,7 +654,7 @@ def test_folders_implied_init(
     assert s_actual == s_expected
 
 
-testdata_folders_additional_init = (
+testdata_folders_additional_cli = (
     (
         {Path("requirements"), Path("docs")},
         (Path("requirements"), Path("docs"), Path("ci")),
@@ -665,7 +666,7 @@ testdata_folders_additional_init = (
         {Path("ci")},
     ),
 )
-ids_folders_additional_init = (
+ids_folders_additional_cli = (
     "Folders contains all folders",
     "Folders contains just the additional folders",
 )
@@ -673,17 +674,17 @@ ids_folders_additional_init = (
 
 @pytest.mark.parametrize(
     "s_folders_implied, t_additional_folders, s_expected",
-    testdata_folders_additional_init,
-    ids=ids_folders_additional_init,
+    testdata_folders_additional_cli,
+    ids=ids_folders_additional_cli,
 )
-def test_folders_additional_init(
+def test_folders_additional_cli(
     s_folders_implied,
     t_additional_folders,
     s_expected,
     tmp_path,
 ):
-    """Test folders_additional_init."""
-    # pytest --showlocals --log-level INFO -k "test_folders_additional_init" -v tests
+    """Test folders_additional_cli."""
+    # pytest --showlocals --log-level INFO -k "test_folders_additional_cli" -v tests
     # prepare
     for path_dir_implied in s_folders_implied:
         abs_path = tmp_path / path_dir_implied
@@ -694,7 +695,7 @@ def test_folders_additional_init(
         abs_path.mkdir(parents=True, exist_ok=True)
 
     # Should contain relative paths. Which is normal situation / usage
-    s_actual = folders_additional_init(
+    s_actual = folders_additional_cli(
         tmp_path,
         s_folders_implied,
         t_additional_folders,
@@ -710,7 +711,7 @@ def test_folders_additional_init(
     else:
         t_additional_folders_abspath = t_additional_folders
 
-    s_actual = folders_additional_init(
+    s_actual = folders_additional_cli(
         tmp_path,
         s_folders_implied,
         t_additional_folders_abspath,
@@ -998,3 +999,129 @@ def test_resolve_symlinks(
     actual = BackendType.is_locked(path_f)
     assert has_logging_occurred(caplog)
     assert actual is expected
+
+
+@pytest.mark.parametrize(
+    "path_config_src, d_ins, seq_unlocks",
+    testdata_resolve_symlinks,
+    ids=("complete link files",),
+)
+def test_backend_abc_repr_normal(
+    path_config_src,
+    d_ins,
+    seq_unlocks,
+    tmp_path,
+    prep_pyproject_toml,
+    prepare_folders_files,
+    path_project_base,
+    caplog,
+    has_logging_occurred,
+):
+    """Log a realistic repr."""
+    # pytest --showlocals --log-level INFO -k "test_backend_abc_repr_normal" -v tests
+    LOGGING["loggers"][g_app_name]["propagate"] = True
+    logging.config.dictConfig(LOGGING)
+    logger = logging.getLogger(name=g_app_name)
+    logger.addHandler(hdlr=caplog.handler)
+    caplog.handler.level = logger.level
+
+    # prepare
+    #    pyproject.toml
+    path_f = prep_pyproject_toml(path_config_src, tmp_path)
+
+    #    additional folder: ``ci/``
+    prepare_folders_files(("ci/empty.txt",), tmp_path)
+    path_empty_file = resolve_joinpath(tmp_path, "ci/empty.txt")
+    path_empty_file.unlink()
+
+    #    .in
+    seq_ins = list(d_ins.values())
+    prepare_folders_files(seq_ins, tmp_path)
+
+    #    .lock and .unlock -- creates the folders
+    prepare_folders_files(seq_unlocks, tmp_path)
+
+    """
+    #    .lock and .unlock -- copy actual files needed by refresh
+    abspath_base = path_project_base()
+    for relpath_a in seq_unlocks:
+        src = str(resolve_joinpath(abspath_base, PurePath(relpath_a)))
+        dest = str(resolve_joinpath(tmp_path, PurePath(relpath_a)))
+        shutil.copy2(src, dest)
+    """
+    pass
+
+    inst = BackendType(path_f, parent_dir=tmp_path)
+
+    logger.info(f"folders_implied: {inst.folders_implied}")
+    logger.info(f"folders_additional: {inst.folders_additional}")
+    logger.info(f"inst: {inst!r}")
+
+    # May raise PyProjectTOMLParseError or PyProjectTOMLReadError
+    d_pyproject_toml, path_f = TomlParser.read(tmp_path)
+
+    is_bypasses = (
+        None,
+        0.12345,
+        True,
+        False,
+    )
+    for is_bypass in is_bypasses:
+        get_additional_folders_pyproject_toml(
+            d_pyproject_toml,
+            tmp_path,
+            inst.folders_implied,
+            is_bypass=is_bypass,
+        )
+
+    assert has_logging_occurred(caplog)
+
+
+testdata_backend_abc_repr_edge_cases = (
+    Path(__file__).parent.joinpath(
+        "_bad_files",
+        "static_dependencies.pyproject_toml",
+    ),
+)
+ids_backend_abc_repr_edge_cases = (
+    "static dependencies have no required nor optionals",
+)
+
+
+@pytest.mark.parametrize(
+    "path_config_src",
+    testdata_backend_abc_repr_edge_cases,
+    ids=ids_backend_abc_repr_edge_cases,
+)
+def test_backend_abc_repr_edge_cases(
+    path_config_src,
+    tmp_path,
+    prep_pyproject_toml,
+    prepare_folders_files,
+    caplog,
+    has_logging_occurred,
+):
+    """Double check BackendType.__repr__ when only static dependencies."""
+    # pytest --showlocals --log-level INFO -k "test_backend_abc_repr_edge_cases" -v tests
+    LOGGING["loggers"][g_app_name]["propagate"] = True
+    logging.config.dictConfig(LOGGING)
+    logger = logging.getLogger(name=g_app_name)
+    logger.addHandler(hdlr=caplog.handler)
+    caplog.handler.level = logger.level
+
+    # prepare
+    #    pyproject.toml
+    path_f = prep_pyproject_toml(path_config_src, tmp_path)
+
+    #    additional folder: ``ci/``
+    prepare_folders_files(("ci/empty.txt",), tmp_path)
+    path_empty_file = resolve_joinpath(tmp_path, "ci/empty.txt")
+    path_empty_file.unlink()
+
+    inst = BackendType(path_f, parent_dir=tmp_path)
+
+    logger.info(f"folders_implied: {inst.folders_implied}")
+    logger.info(f"folders_additional: {inst.folders_additional}")
+    logger.info(f"inst: {inst!r}")
+
+    assert has_logging_occurred(caplog)

@@ -760,7 +760,6 @@ def create_links(path, is_set_lock, snippet_co):
 
     :type snippet_co: str | None
     """
-    modpath = "drain_swamp.cli_unlock.create_links"
     # resolve causing conversion into a str. Should be Path
     if isinstance(path, str):  # pragma: no cover
         path = Path(path)
@@ -770,10 +769,14 @@ def create_links(path, is_set_lock, snippet_co):
     # print logging to stdout if __debug__ and not test suite
     set_debug_mode(is_ci=True)
 
+    """
+    modpath = "drain_swamp.cli_unlock.create_links"
     if __debug__:  # pragma: no cover
         _logger.info(f"{modpath} path: {path!r}")
     else:  # pragma: no cover
         pass
+    """
+    pass
 
     try:
         inst = BackendType(path)
@@ -790,10 +793,13 @@ def create_links(path, is_set_lock, snippet_co):
         click.secho(str(e), fg="red", err=True)
         sys.exit(4)
 
+    """
     if __debug__:  # pragma: no cover
         _logger.info(f"{modpath} inst: {inst.__repr__()}")
     else:  # pragma: no cover
         pass
+    """
+    pass
 
     """Create the .lnk (lock dependency state) symlinks
     This normally occurs during package build time
@@ -818,10 +824,13 @@ def create_links(path, is_set_lock, snippet_co):
         click.secho(msg_exc, fg="red", err=True)
         sys.exit(7)
 
+    """
     if __debug__:  # pragma: no cover
         _logger.info(f"{modpath} update snippet...")
     else:  # pragma: no cover
         pass
+    """
+    pass
 
     path_config = inst.path_config
     err_or_none = snippet_replace_suffixes(path_config, snippet_co=snippet_co)
