@@ -28,15 +28,13 @@
 
 \* Python 3.9 through 3.13, PyPy
 
+**new in 1.8.x**
+
+add dependency drain-swamp-snippet;
+
 **New in 1.7.x**
 
 Windows support; patch strftime;
-
-**New in 1.6.x**
-
-recognize .in files options -r and -c; tox test only folder tests; favicons;
-workflow for branches to test MacOS and Windows; MacOS supported;
-fix zero commits semantic str;
 
 .. raw:: html
 
