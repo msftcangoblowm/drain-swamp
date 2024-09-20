@@ -42,6 +42,8 @@ Changelog
    Commit items for NEXT VERSION
    ..............................
 
+   - ci: download config settings once share with other jobs
+   - ci(drain-swamp-action): fetch-tags off
    - ci: actions/checkout put repository in with block
    - ci(release): kind tag not env.RELEASE_VERSION
    - ci: checkout specify repository

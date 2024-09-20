@@ -23,6 +23,7 @@ env:
   COVERAGE_IGOR_VERBOSE: 1
   FORCE_COLOR: 1    # Get colored test output
   LOCK_SUFFIX: ${{ vars.DRAINSWAMP_SET_LOCK == '1' && '.lock' || '.unlock' }}
+  DS_CONFIG_SETTINGS: ''
 
 permissions:
   contents: write
@@ -34,8 +35,40 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
+  get-toml:
+    name: "Get config-settings"
+    runs-on: "${{ matrix.os }}-latest"
+    strategy:
+      matrix:
+        os:
+          - ubuntu
+        python-version:
+          - "3.9"
+      fail-fast: false
+
+    steps:
+    - id: prepare-config-settings
+      name: >-
+        Build Plugin parameters
+      uses: 'msftcangoblowm/drain-swamp-action@v1'
+      env:
+        SET_LOCK: ${{ vars.DRAINSWAMP_SET_LOCK }}
+      with:
+        plugin_parameters: '{"set-lock": "$SET_LOCK", "kind": "current"}'
+        checkout: true
+        fetch_tags: false
+        python_version: "${{ matrix.python-version }}"
+
+    - name: "Download artifact"
+      uses: actions/download-artifact@v4
+      with:
+        name: config-settings-${{ matrix.os }}-${{ matrix.python-version }}
+        path: '${{ runner.temp }}'
+
   codecov:
     name: "${{ matrix.python-version }} on ${{ matrix.os }}"
+    needs:
+      get-toml
     runs-on: "${{ matrix.os }}-latest"
     # Don't run tests if the branch name includes "-notests"
     if: "!contains(github.ref, '-notests')"
@@ -47,24 +80,6 @@ jobs:
           - "3.9"
       fail-fast: false
     steps:
-    - id: prepare-config-settings
-      name: >-
-        Build Plugin parameters
-      uses: 'msftcangoblowm/drain-swamp-action@v1'
-      env:
-        SET_LOCK: ${{ vars.DRAINSWAMP_SET_LOCK }}
-      with:
-        plugin_parameters: '{"set-lock": "${{ env.SET_LOCK }}", "kind": "current"}'
-        checkout: true
-        fetch_tags: true
-        python_version: "${{ matrix.python-version }}"
-
-    - name: "Download artifact"
-      uses: actions/download-artifact@v4
-      with:
-        name: config-settings-${{ matrix.os }}-${{ matrix.python-version }}
-        path: '${{ runner.temp }}'
-
     - name: "Check out the repo"
       uses: actions/checkout@6d193bf28034eafb982f37bd894289fe649468fc # v4.1.7
       with:
@@ -90,6 +105,7 @@ jobs:
       run: |
         # TOML file location ${{ runner.temp }}/${{ steps.outcome.inputs.toml_file_name }}
         # env.DS_CONFIG_SETTINGS contains (OS independent) path to TOML file
+        cat '${{ env.DS_CONFIG_SETTINGS }}'
         python -m build
     - name: "Install"
       run: |
