@@ -66,50 +66,67 @@ jobs:
       fail-fast: false
 
     steps:
-      - name: "Check out the repo"
-        uses: actions/checkout@692973e3d937129bcbf40652eb9f2f61becf3332 # v4.1.7
+    - name: "Check out the repo"
+      uses: actions/checkout@6d193bf28034eafb982f37bd894289fe649468fc # v4.1.7
 
-      - name: Get latest tag
-        id: vars
-        run: |
-          echo "tag=$(git describe --tags)" >> $GITHUB_OUTPUT
+    - name: Get latest tag
+      id: vars
+      run: |
+        echo "tag=$(git describe --tags)" >> $GITHUB_OUTPUT
 
-      - name: "Install ${{ matrix.python-version }} with deadsnakes"
-        uses: deadsnakes/action@46e471f4c71ca724da6fd6432ae594c918a2472a # v3.1.0
-        if: "!startsWith(matrix.python-version, 'pypy-')"
-        with:
-          python-version: "${{ matrix.python-version }}"
+    - id: prepare-config-settings
+      name: >-
+        Build Plugin parameters
+      uses: 'msftcangoblowm/drain-swamp-action@v1'
+      env:
+        SET_LOCK: ${{ vars.DRAINSWAMP_SET_LOCK }}
+        RELEASE_VERSION: ${{ steps.vars.outputs.tag }}
+      with:
+        plugin_parameters: '{"set-lock": "$SET_LOCK", "kind": "$RELEASE_VERSION"}'
+        checkout: true
+        fetch_tags: true
+        python_version: "${{ matrix.python-version }}"
 
-      - name: "Install ${{ matrix.python-version }} with setup-python"
-        uses: actions/setup-python@f677139bbe7f9c59b41e40162b753c062f5d49a3 # v5.2.0
-        if: "startsWith(matrix.python-version, 'pypy-')"
-        with:
-          python-version: "${{ matrix.python-version }}"
+    - name: "Download artifact"
+      uses: actions/download-artifact@v4
+      with:
+        name: config-settings-${{ matrix.os }}-${{ matrix.python-version }}
+        path: '${{ runner.temp }}'
 
-      - name: "Show diagnostic info"
-        run: |
-          set -xe
-          python -VV
-          python -m site
-          env
+    - name: "Install ${{ matrix.python-version }} with deadsnakes"
+      uses: deadsnakes/action@46e471f4c71ca724da6fd6432ae594c918a2472a # v3.1.0
+      if: ${{ ! startsWith(matrix.python-version, 'pypy-') }}
+      with:
+        python-version: "${{ matrix.python-version }}"
 
-      - name: "Install dependencies -- tests"
-        run: |
-          python -m pip install -r requirements/tox$LOCK_SUFFIX
-          python -m pip install -r requirements/prod$LOCK_SUFFIX
+    - name: "Install ${{ matrix.python-version }} with setup-python"
+      uses: actions/setup-python@v5.2.0
+      if: startsWith(matrix.python-version, 'pypy-')
+      with:
+        python-version: "${{ matrix.python-version }}"
 
-      - name: "Install dependencies -- build"
-        run: |
-          python -m pip install -r requirements/kit$LOCK_SUFFIX
+    - name: "Show diagnostic info"
+      run: |
+        set -xe
+        python -VV
+        python -m site
+        env
 
-      - name: build
-        env:
-          RELEASE_VERSION: ${{ steps.vars.outputs.tag }}
-          SET_LOCK: ${{ vars.DRAINSWAMP_SET_LOCK }}
-        run: |
-          echo "python -m build -C--kind=$RELEASE_VERSION -C--set-lock=$SET_LOCK"
-          python -m build -C--kind="$RELEASE_VERSION" -C--set-lock="$SET_LOCK"
+    - name: "Install dependencies -- tests"
+      run: |
+        python -m pip install -r requirements/tox$LOCK_SUFFIX
+        python -m pip install -r requirements/prod$LOCK_SUFFIX
 
-      - name: "Run tox"
-        run: |
-          python -m tox -c tox-test.ini -- -rfsEX
+    - name: "Install dependencies -- build"
+      run: |
+        python -m pip install -r requirements/kit$LOCK_SUFFIX
+
+    - name: build
+      run: |
+        # TOML file location ${{ runner.temp }}/${{ steps.outcome.inputs.toml_file_name }}
+        # env.DS_CONFIG_SETTINGS contains (OS independent) path to TOML file
+        python -m build
+
+    - name: "Run tox"
+      run: |
+        python -m tox -c tox-test.ini -- -rfsEX

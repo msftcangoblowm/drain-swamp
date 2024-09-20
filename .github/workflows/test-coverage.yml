@@ -47,57 +47,64 @@ jobs:
           - "3.9"
       fail-fast: false
     steps:
-      - name: "Check out the repo"
-        uses: actions/checkout@692973e3d937129bcbf40652eb9f2f61becf3332 # v4.1.7
-        with:
-          # fetch all branches and tags instead of only fetching the ref/SHA that triggered the workflow
-          fetch-depth: 0
-      # https://stackoverflow.com/questions/66349002/get-latest-tag-git-describe-tags-when-repo-is-cloned-with-depth-1
-      # echo "tag=$(git describe --tags `git rev-list --tags --max-count=1`)" >> $GITHUB_OUTPUT
-      - name: Get latest tag
-        id: vars
-        run: |
-          echo "tag=$(git describe --tags)" >> $GITHUB_OUTPUT
-      - name: Set up Python ${{ matrix.python-version }}
-        uses: actions/setup-python@f677139bbe7f9c59b41e40162b753c062f5d49a3 # v5.2.0
-        with:
-          python-version: "${{ matrix.python-version }}"
-          cache: pip
-          cache-dependency-path: |
-            requirements/*${{ env.LOCK_SUFFIX }}
-          allow-prereleases: true
-      - name: "Install dependencies"
-        run: |
-          set -xe
-          python -m pip install -r requirements/kit$LOCK_SUFFIX
-          python -m pip install -r requirements/prod$LOCK_SUFFIX
-          python -m pip install -r requirements/dev$LOCK_SUFFIX
-      - name: "Build sdist and whl"
-        env:
-          RELEASE_VERSION: ${{ steps.vars.outputs.tag }}
-          SET_LOCK: ${{ vars.DRAINSWAMP_SET_LOCK }}
-        run: |
-          set -xe
-          echo "python -m build -C--kind='current' -C--set-lock='$SET_LOCK'"
-          python -m build -C--kind="current" -C--set-lock="$SET_LOCK"
-      - name: "Install"
-        run: |
-          set -xe
-          python -m pip install --disable-pip-version-check -q .
-      # integration/ does not contribute to coverage
-      - name: "Run coverage"
-        run : |
-          set -xe
-          pytest --showlocals --quiet --cov=drain_swamp --cov-report=xml --cov-config=pyproject.toml tests
-      - name: "Upload to Codecov"
-        uses: codecov/codecov-action@4b21c320b5517fc6ffd4406a28e66325c721dc20 # 4.5.0
-        with:
-          name: unittest-py3.9
-          token: ${{ secrets.CODECOV_TOKEN }}
-          slug: msftcangoblowm/drain-swamp
-          os: linux
-          flags: unittests
-          file: ./coverage.xml
-          env_vars: OS,PYTHON
-          fail_ci_if_error: true
-          verbose: true
+    - id: prepare-config-settings
+      name: >-
+        Build Plugin parameters
+      uses: 'msftcangoblowm/drain-swamp-action@v1'
+      env:
+        SET_LOCK: ${{ vars.DRAINSWAMP_SET_LOCK }}
+      with:
+        plugin_parameters: '{"set-lock": "${{ env.SET_LOCK }}", "kind": "current"}'
+        checkout: true
+        fetch_tags: true
+        python_version: "${{ matrix.python-version }}"
+
+    - name: "Download artifact"
+      uses: actions/download-artifact@v4
+      with:
+        name: config-settings-${{ matrix.os }}-${{ matrix.python-version }}
+        path: '${{ runner.temp }}'
+
+    - name: "Check out the repo"
+      uses: actions/checkout@6d193bf28034eafb982f37bd894289fe649468fc # v4.1.7
+
+    - name: Set up Python ${{ matrix.python-version }}
+      uses: actions/setup-python@v5.2.0
+      with:
+        python-version: "${{ matrix.python-version }}"
+        # cache: pip
+        # cache-dependency-path: |
+        #   requirements/*${{ env.LOCK_SUFFIX }}
+        allow-prereleases: true
+    - name: "Install dependencies"
+      run: |
+        set -xe
+        python -m pip install -r requirements/kit$LOCK_SUFFIX
+        python -m pip install -r requirements/prod$LOCK_SUFFIX
+        python -m pip install -r requirements/dev$LOCK_SUFFIX
+    - name: "Build sdist and whl"
+      run: |
+        # TOML file location ${{ runner.temp }}/${{ steps.outcome.inputs.toml_file_name }}
+        # env.DS_CONFIG_SETTINGS contains (OS independent) path to TOML file
+        python -m build
+    - name: "Install"
+      run: |
+        set -xe
+        python -m pip install --disable-pip-version-check -q .
+    # integration/ does not contribute to coverage
+    - name: "Run coverage"
+      run : |
+        set -xe
+        pytest --showlocals --quiet --cov=drain_swamp --cov-report=xml --cov-config=pyproject.toml tests
+    - name: "Upload to Codecov"
+      uses: codecov/codecov-action@2296b6ba9eee85301a5ef2c7c2cdc738faf1f939 # 4.5.0
+      with:
+        name: unittest-py3.9
+        token: ${{ secrets.CODECOV_TOKEN }}
+        slug: msftcangoblowm/drain-swamp
+        os: linux
+        flags: unittests
+        file: ./coverage.xml
+        env_vars: OS,PYTHON
+        fail_ci_if_error: true
+        verbose: true

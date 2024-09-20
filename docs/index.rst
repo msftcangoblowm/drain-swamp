@@ -30,7 +30,7 @@
 
 **new in 1.8.x**
 
-add dependency drain-swamp-snippet;
+add dependency drain-swamp-snippet; use msftcangoblowm/drain-swamp-action;
 
 **New in 1.7.x**
 

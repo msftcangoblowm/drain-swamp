@@ -44,6 +44,14 @@ Changelog
 
 .. scriv-start-here
 
+.. _changes_1-8-1:
+
+Version 1.8.1 — 2024-09-20
+--------------------------
+
+- ci: use msftcangoblowm/drain-swamp-action
+- chore(workflows): review gha versions
+
 .. _changes_1-8-0:
 
 Version 1.8.0 — 2024-09-20

@@ -43,7 +43,7 @@ jobs:
         sudo update-locale
 
     - name: Checkout the repo
-      uses: actions/checkout@692973e3d937129bcbf40652eb9f2f61becf3332 # v4.1.7
+      uses: actions/checkout@6d193bf28034eafb982f37bd894289fe649468fc # v4.1.7
       with:
         # fetch all branches and tags instead of only fetching the ref/SHA that triggered the workflow
         fetch-depth: 0
@@ -55,8 +55,27 @@ jobs:
       run: |
         echo "tag=$(git describe --tags)" >> $GITHUB_OUTPUT
 
+    - id: prepare-config-settings
+      name: >-
+        Build Plugin parameters
+      uses: 'msftcangoblowm/drain-swamp-action@v1'
+      env:
+        SET_LOCK: ${{ vars.DRAINSWAMP_SET_LOCK }}
+        RELEASE_VERSION: ${{ steps.vars.outputs.tag }}
+      with:
+        plugin_parameters: '{"set-lock": "$SET_LOCK", "kind": "$RELEASE_VERSION"}'
+        checkout: true
+        fetch_tags: true
+        python_version: "${{ matrix.python-version }}"
+
+    - name: "Download artifact"
+      uses: actions/download-artifact@v4
+      with:
+        name: config-settings-${{ matrix.os }}-${{ matrix.python-version }}
+        path: '${{ runner.temp }}'
+
     - name: "Install Python"
-      uses: actions/setup-python@f677139bbe7f9c59b41e40162b753c062f5d49a3 # v5.2.0
+      uses: actions/setup-python@v5.2.0
       with:
         python-version: "3.10" # default of sphinx-notes/pages
         cache: pip
@@ -71,16 +90,14 @@ jobs:
 
     # Create generated files: version file and .lnk files. sdist tarball ignored
     - name: "Build sdist to run plugins. Create generated files"
-      env:
-        SET_LOCK: ${{ vars.DRAINSWAMP_SET_LOCK }}
       run: |
-        set -xe
-        echo "python -m build -C--kind='current' -C--set-lock='$SET_LOCK'"
-        python -m build -C--kind="current" -C--set-lock="$SET_LOCK"
+        # TOML file location ${{ runner.temp }}/${{ steps.outcome.inputs.toml_file_name }}
+        # env.DS_CONFIG_SETTINGS contains (OS independent) path to TOML file
+        python -m build
 
     - name: deploy Sphinx --> Github pages
       id: deployment
-      uses: sphinx-notes/pages@3a7b173ecba074b270b37c64007c1edfd8465892  # 3.1 MIT
+      uses: sphinx-notes/pages@3.1  # MIT
       with:
         checkout: false
         requirements_path: docs/requirements${{ env.LOCK_SUFFIX }}
