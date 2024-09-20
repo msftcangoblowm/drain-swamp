@@ -85,6 +85,10 @@ jobs:
 
     - name: "Check out the repo"
       uses: actions/checkout@6d193bf28034eafb982f37bd894289fe649468fc # v4.1.7
+      repository: msftcangoblowm/drain-swamp
+      with:
+        # fetch all branches and tags instead of only fetching the ref/SHA that triggered the workflow
+        fetch-depth: 0
 
     - name: "Set up Python"
       uses: actions/setup-python@v5.2.0

@@ -67,6 +67,10 @@ jobs:
 
     - name: "Check out the repo"
       uses: actions/checkout@6d193bf28034eafb982f37bd894289fe649468fc # v4.1.7
+      repository: msftcangoblowm/drain-swamp
+      with:
+        # fetch all branches and tags instead of only fetching the ref/SHA that triggered the workflow
+        fetch-depth: 0
 
     - name: Set up Python ${{ matrix.python-version }}
       uses: actions/setup-python@v5.2.0
@@ -99,7 +103,7 @@ jobs:
     - name: "Upload to Codecov"
       uses: codecov/codecov-action@2296b6ba9eee85301a5ef2c7c2cdc738faf1f939 # 4.5.0
       with:
-        name: unittest-py3.9
+        name: unittest-py${{ matrix.python-version }}
         token: ${{ secrets.CODECOV_TOKEN }}
         slug: msftcangoblowm/drain-swamp
         os: linux

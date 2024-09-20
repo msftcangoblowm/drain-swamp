@@ -42,6 +42,8 @@ Changelog
    Commit items for NEXT VERSION
    ..............................
 
+   - ci: checkout specify repository
+
 .. scriv-start-here
 
 .. _changes_1-8-1:

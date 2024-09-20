@@ -33,7 +33,14 @@ concurrency:
 jobs:
   lint:
     name: "isort black flake8 etc"
-    runs-on: ubuntu-latest
+    runs-on: "${{ matrix.os }}-latest"
+    strategy:
+      matrix:
+        os:
+          - ubuntu
+        python-version:
+          - "3.9"
+      fail-fast: false
 
     steps:
     - id: prepare-config-settings
@@ -56,14 +63,18 @@ jobs:
 
     - name: "Check out the repo"
       uses: actions/checkout@6d193bf28034eafb982f37bd894289fe649468fc # v4.1.7
+      repository: msftcangoblowm/drain-swamp
+      with:
+        # fetch all branches and tags instead of only fetching the ref/SHA that triggered the workflow
+        fetch-depth: 0
 
     - name: "Install Python"
       uses: actions/setup-python@v5.2.0
       with:
-        python-version: "3.9" # Minimum of PYVERSIONS
-        cache: pip
-        cache-dependency-path: |
-          requirements/*${{ env.LOCK_SUFFIX }}
+        python-version: "${{ matrix.python-version }}" # Minimum of PYVERSIONS
+        # cache: pip
+        # cache-dependency-path: |
+        #  requirements/*${{ env.LOCK_SUFFIX }}
 
     - name: "Install dependencies"
       run: |
@@ -84,7 +95,14 @@ jobs:
 
   mypy:
     name: "Check types"
-    runs-on: ubuntu-latest
+    runs-on: "${{ matrix.os }}-latest"
+    strategy:
+      matrix:
+        os:
+          - ubuntu
+        python-version:
+          - "3.9"
+      fail-fast: false
 
     steps:
     - id: prepare-config-settings
@@ -107,14 +125,18 @@ jobs:
 
     - name: "Check out the repo"
       uses: actions/checkout@6d193bf28034eafb982f37bd894289fe649468fc # v4.1.7
+      repository: msftcangoblowm/drain-swamp
+      with:
+        # fetch all branches and tags instead of only fetching the ref/SHA that triggered the workflow
+        fetch-depth: 0
 
     - name: "Install Python"
       uses: actions/setup-python@v5.2.0
       with:
-        python-version: "3.9" # Minimum of PYVERSIONS, but at least 3.9
-        cache: pip
-        cache-dependency-path: |
-          requirements/*${{ env.LOCK_SUFFIX }}
+        python-version: "${{ matrix.python-version }}" # Minimum of PYVERSIONS, but at least 3.9
+        # cache: pip
+        # cache-dependency-path: |
+        #  requirements/*${{ env.LOCK_SUFFIX }}
 
     - name: "Install dependencies"
       run: |
@@ -137,10 +159,18 @@ jobs:
 
   docs:
     name: "Build docs"
-    runs-on: ubuntu-latest
+    runs-on: "${{ matrix.os }}-latest"
+    strategy:
+      matrix:
+        os:
+          - ubuntu
+        python-version:
+          - "3.9"
+      fail-fast: false
     concurrency:
       group: docs-${{ github.ref }}
       cancel-in-progress: false  # quality then gh-pages
+
     steps:
     - id: prepare-config-settings
       name: >-
@@ -162,14 +192,18 @@ jobs:
 
     - name: "Check out the repo"
       uses: actions/checkout@6d193bf28034eafb982f37bd894289fe649468fc # v4.1.7
+      repository: msftcangoblowm/drain-swamp
+      with:
+        # fetch all branches and tags instead of only fetching the ref/SHA that triggered the workflow
+        fetch-depth: 0
 
     - name: "Install Python"
       uses: actions/setup-python@v5.2.0
       with:
-        python-version: "3.9" # Doc version from PYVERSIONS
-        cache: pip
-        cache-dependency-path: |
-          requirements/*${{ env.LOCK_SUFFIX }}
+        python-version: "${{ matrix.python-version }}" # Doc version from PYVERSIONS
+        # cache: pip
+        # cache-dependency-path: |
+        #  requirements/*${{ env.LOCK_SUFFIX }}
 
     - name: "Show environment"
       run: |
