@@ -24,6 +24,10 @@ from pathlib import (
 )
 
 import click
+from drain_swamp_snippet import (
+    ReplaceResult,
+    Snip,
+)
 
 # pep366 ...
 # https://stackoverflow.com/a/34155199
@@ -98,10 +102,6 @@ from .lock_toggle import (
     lock_compile,
     refresh_links,
     unlock_compile,
-)
-from .snip import (
-    ReplaceResult,
-    Snip,
 )
 from .snippet_dependencies import SnippetDependencies
 from .snippet_pyproject_toml import (
@@ -722,7 +722,15 @@ def create_links(path, is_set_lock, snippet_co):
     .. code-block:: text
 
        [build-system]
-       requires = ["setuptools>=70.0.0", "wheel", "build", "setuptools_scm>=8"]
+       requires = [
+           "setuptools>=70.0.0",
+           "wheel",
+           "build",
+           "setuptools_scm>=8",
+           "click",
+           "pluggy",
+           "drain-swamp-snippet",
+       ]
        build-backend = "setuptools.build_meta"
        backend-path = ["_req_links"]
 

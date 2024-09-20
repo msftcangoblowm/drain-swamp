@@ -38,6 +38,7 @@ from unittest.mock import (
 )
 
 import pytest
+from drain_swamp_snippet import ReplaceResult
 
 from drain_swamp._run_cmd import run_cmd
 from drain_swamp._safe_path import (
@@ -62,7 +63,6 @@ from drain_swamp.constants import (
 )
 from drain_swamp.exceptions import PyProjectTOMLReadError
 from drain_swamp.parser_in import TomlParser
-from drain_swamp.snip import ReplaceResult
 
 if sys.version_info >= (3, 9):  # pragma: no cover
     from collections.abc import Sequence

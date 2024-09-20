@@ -48,6 +48,8 @@ domdf-python-tools==3.8.0.post2
     # via
     #   dom-toml
     #   sphinx-pyproject
+drain-swamp-snippet==1.0.0.post2
+    # via -r ../requirements/prod.in
 idna==3.6
     # via
     #   requests
@@ -94,7 +96,7 @@ myst-parser==2.0.0
     # via sphinx-external-toc-strict
 natsort==8.4.0
     # via domdf-python-tools
-packaging==24.0
+packaging==24.1
     # via
     #   sphinx
     #   sphinx-external-toc-strict
@@ -154,7 +156,7 @@ sphinx-copybutton==0.5.2
     # via -r docs/requirements.in
 sphinx-design==0.6.1
     # via -r docs/requirements.in
-sphinx-external-toc-strict==1.2.0
+sphinx-external-toc-strict==1.2.3.post0
     # via -r docs/requirements.in
 sphinx-favicon==1.0.1
     # via -r docs/requirements.in

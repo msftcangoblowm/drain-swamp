@@ -18,6 +18,8 @@ import traceback
 from pathlib import Path
 from typing import Any
 
+from drain_swamp_snippet import ReplaceResult
+
 from drain_swamp.backend_abc import BackendType
 from drain_swamp.check_type import click_bool
 from drain_swamp.exceptions import (
@@ -28,7 +30,6 @@ from drain_swamp.exceptions import (
 from drain_swamp.lock_toggle import refresh_links
 from drain_swamp.monkey.hooks import markers
 from drain_swamp.monkey.hooks.constants import HOOK_NAMESPACE
-from drain_swamp.snip import ReplaceResult
 from drain_swamp.snippet_pyproject_toml import (
     SNIPPET_NO_MATCH,
     SNIPPET_VALIDATE_FAIL,

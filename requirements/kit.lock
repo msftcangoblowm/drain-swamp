@@ -16,7 +16,7 @@ filelock==3.13.4
     # via cibuildwheel
 importlib-metadata==7.1.0
     # via build
-packaging==24.0
+packaging==24.1
     # via
     #   auditwheel
     #   build

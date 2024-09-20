@@ -18,10 +18,11 @@ subtrees:
 - entries:
   - file: code/index
     entries:
-    - file: code/snip
     - file: code/cli_unlock
     - file: code/cli_igor
     - file: code/cli_scm_version
+    - title: Snip
+      url: https://drain-swamp-snippet.readthedocs.io/en/stable/code/snip.html#drain_swamp_snippet.snip.Snip
     - file: code/general/index
       entries:
       - file: code/general/version_file
@@ -71,7 +72,8 @@ subtrees:
         - file: code/monkey/plugins/scm_version
 - caption: Articles
   entries:
-  - file: snippets/snippets
+  - title: Anatomy of a snippet
+    url: https://drain-swamp-snippet.readthedocs.io/en/stable/overview.html
   - file: article-version-specifiers
   - file: why/about_authors
   - file: why/cringe-culture

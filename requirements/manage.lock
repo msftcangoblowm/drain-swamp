@@ -18,6 +18,8 @@ docutils==0.21.2
     # via
     #   readme-renderer
     #   restview
+drain-swamp-snippet==1.0.0.post2
+    # via -r prod.in
 filelock==3.13.4
     # via virtualenv
 identify==2.5.36

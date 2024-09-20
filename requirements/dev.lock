@@ -14,7 +14,7 @@ charset-normalizer==3.3.2
     # via requests
 click==8.1.7
     # via
-    #   -c requirements/prod.in
+    #   -r requirements/prod.in
     #   black
 coverage[toml]==7.5.0
     # via
@@ -24,6 +24,8 @@ cryptography==42.0.5
     # via secretstorage
 docutils==0.21.2
     # via readme-renderer
+drain-swamp-snippet==1.0.0.post2
+    # via -r prod.in
 exceptiongroup==1.2.1
     # via pytest
 fastjsonschema==2.19.1
@@ -78,7 +80,7 @@ mypy-extensions==1.0.0
     #   mypy
 nh3==0.2.17
     # via readme-renderer
-packaging==24.0
+packaging==24.1
     # via
     #   black
     #   pytest
@@ -92,7 +94,7 @@ platformdirs==4.2.1
     # via black
 pluggy==1.5.0
     # via
-    #   -c requirements/prod.in
+    #   -r requirements/prod.in
     #   pytest
 pycodestyle==2.11.1
     # via flake8

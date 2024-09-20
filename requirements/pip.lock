@@ -1,4 +1,4 @@
-packaging==24.0
+packaging==24.1
     # via setuptools-scm
 setuptools-scm==8.0.4
     # via -r requirements/pip.in

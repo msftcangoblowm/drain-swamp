@@ -36,13 +36,14 @@ import datetime
 import logging
 import textwrap
 
-from .constants import g_app_name
-from .monkey.patch_strftime import StrFTime
-from .package_metadata import PackageMetadata
-from .snip import (
+from drain_swamp_snippet import (
     ReplaceResult,
     Snip,
 )
+
+from .constants import g_app_name
+from .monkey.patch_strftime import StrFTime
+from .package_metadata import PackageMetadata
 from .version_semantic import (
     SemVersion,
     _path_or_cwd,
@@ -324,7 +325,7 @@ class SnipSphinxConf:
            - NO_CHANGE -- no replacement occurred
            - REPLACED -- replaced contents
 
-        :rtype: drain_swamp.snip.ReplaceResult
+        :rtype: drain_swamp_snippet.ReplaceResult
         """
         # is_ok check avoids, TypeError
         contents = self._contents

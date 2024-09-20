@@ -2,7 +2,7 @@ import logging
 from pathlib import Path
 from typing import Final
 
-from .snip import ReplaceResult
+from drain_swamp_snippet import ReplaceResult
 
 SNIPPET_NO_MATCH: Final[str]  # noqa: F401
 SNIPPET_VALIDATE_FAIL: Final[str]  # noqa: F401

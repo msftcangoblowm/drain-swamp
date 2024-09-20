@@ -46,10 +46,10 @@
     - Check that the docs build correctly:
         $ tox -e docs
         or
-        $ cd docs && make doctest && cd - &>/dev/null
-        $ cd docs && make linkcheck && cd - &>/dev/null
-        $ cd docs && make html && cd - &>/dev/null
-        $ cd docs && make pdf && cd - &>/dev/null
+        $ cd docs && make doctest; cd - &>/dev/null
+        $ cd docs && make linkcheck; cd - &>/dev/null
+        $ cd docs && make html; cd - &>/dev/null
+        $ cd docs && make pdf; cd - &>/dev/null
     - tox will affect _version.py, revert version str back to tagged version
 - commit the release-prep changes
     $ make relcommit1

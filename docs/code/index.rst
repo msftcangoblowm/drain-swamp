@@ -17,10 +17,14 @@ Code manual
       - :doc:`cli_igor`
       - :doc:`cli_scm_version`
 
-   .. grid-item-card:: :material-twotone:`pinch;2em;sd-text-primary` Techniques
+   .. grid-item-card:: :material-twotone:`pinch;2em;sd-text-primary` Snippet
       :class-card: sd-border-0
+      :link-type: url
+      :link: https://drain-swamp-snippet.readthedocs.io/en/stable/code/snip.html#drain_swamp_snippet.snip.Snip
+      :link-alt: Snippet base package drain-swamp-snippet has class Snip and enum ReplaceResult
 
-      - :doc:`Snip <snip>`
+      - drain_swamp_snippet.Snip
+      - drain_swamp_snippet.ReplaceResult
 
    .. grid-item-card:: :material-twotone:`lock_open;2em;sd-text-success` Dependency locking
       :class-card: sd-border-0

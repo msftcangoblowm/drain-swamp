@@ -8,3 +8,4 @@ tox
 colorama>=0.4.6
 pip-tools
 click
+drain-swamp-snippet

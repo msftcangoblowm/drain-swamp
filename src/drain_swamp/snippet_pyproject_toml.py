@@ -45,15 +45,16 @@ the refresh accomplishes it's task
 
 import logging
 
+from drain_swamp_snippet import (
+    ReplaceResult,
+    Snip,
+)
+
 from .constants import (
     SUFFIX_LOCKED,
     SUFFIX_SYMLINK,
     SUFFIX_UNLOCKED,
     g_app_name,
-)
-from .snip import (
-    ReplaceResult,
-    Snip,
 )
 
 SNIPPET_NO_MATCH = "In pyproject.toml, there is no snippet with snippet code {}"
@@ -88,7 +89,7 @@ def snippet_replace_suffixes(path_config, snippet_co=None):
         On success, None. Otherwise check for
         ReplaceResult.VALIDATE_FAIL and ReplaceResult.NO_MATCH
 
-    :rtype: drain_swamp.snip.ReplaceResult | None
+    :rtype: drain_swamp_snippet.ReplaceResult | None
     """
 
     modpath = f"{g_app_name}.snippet_pyproject_toml.snippet_replace_suffixes"

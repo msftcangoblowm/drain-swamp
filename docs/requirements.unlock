@@ -14,3 +14,4 @@ sphinx_design
 sphinx-tabs
 sphinx-favicon
 interrogate
+drain-swamp-snippet==1.0.0.post1

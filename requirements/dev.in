@@ -2,7 +2,7 @@
 # For details: https://github.com/msftcangoblowm/drain-swamp/blob/master/NOTICE.txt
 
 -c pins.in
--c prod.in
+-r prod.in
 
 black
 blackdoc

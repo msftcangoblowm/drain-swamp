@@ -159,6 +159,10 @@ intersphinx_mapping = {
         "https://github.com/pypa/setuptools/blob",
         ("objects-setuptools.inv", "objects-setuptools.txt"),
     ),
+    "dss": (
+        "https://drain-swamp-snippet.readthedocs.io/en/stable",
+        ("objects-dss.inv", "objects-dss.txt"),
+    ),
 }
 intersphinx_disabled_reftypes = ["std:doc"]
 

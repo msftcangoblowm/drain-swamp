@@ -16,3 +16,4 @@ flake8-pyi
 twine
 click
 coverage
+drain-swamp-snippet

@@ -4,8 +4,8 @@
 # packaging and kitting
 
 -c pins.in
--c prod.in
--c tox.in
+-r prod.in
+-r tox.in
 
 # pypi.org
 twine

@@ -1,0 +1,16 @@
+# Sphinx inventory version 2
+# Project: drain-swamp-snippet 0.0.1.post1
+# Version: 0.0.1.post1
+# The remainder of this file is compressed using zlib.
+drain_swamp_snippet.Snip py:class 1 code/snip.html#drain_swamp_snippet.snip.Snip -
+drain_swamp_snippet.Snip.replace py:method 1 code/snip.html#drain_swamp_snippet.snip.Snip.replace -
+drain_swamp_snippet.Snip.replace.params.replacement py:parmeter 1 code/snip.html#drain_swamp_snippet.snip.Snip.replace -
+drain_swamp_snippet.Snip.replace.params.id_ py:parmeter 1 code/snip.html#drain_swamp_snippet.snip.Snip.replace -
+drain_swamp_snippet.ReplaceResult py:class 1 code/snip.html#drain_swamp_snippet.snip.ReplaceResult -
+drain_swamp_snippet.snip.Snip py:class 1 code/snip.html#$ -
+drain_swamp_snippet.snip.Snip.replace py:method 1 code/snip.html#$ -
+drain_swamp_snippet.snip.Snip.replace.params.replacement py:parmeter 1 code/snip.html#$ -
+drain_swamp_snippet.snip.Snip.replace.params.id_ py:parmeter 1 code/snip.html#$ -
+drain_swamp_snippet.snip.ReplaceResult py:class 1 code/snip.html#$ -
+snippets std:doc -1 snippets.html snippets
+overview std:doc -1 overview.html Anatomy of a snippet

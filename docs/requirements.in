@@ -2,7 +2,7 @@
 # For details: https://github.com/msftcangoblowm/drain-swamp/blob/master/NOTICE.txt
 
 # -c ../requirements/pins.lock
--c ../requirements/prod.in
+-r ../requirements/prod.in
 
 sphinx
 sphinx-pyproject

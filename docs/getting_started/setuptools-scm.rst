@@ -7,7 +7,14 @@ pyproject.toml
 .. code-block:: text
 
    [build-system]
-   requires = ["setuptools>=70.0.0", "wheel", "build", "setuptools_scm>=8", "drain-swamp"]
+   requires = [
+       "setuptools>=70.0.0",
+       "wheel",
+       "build",
+       "setuptools_scm>=8",
+       "drain-swamp",
+       "drain-swamp-snippet",
+   ]
    build-backend = "setuptools.build_meta"
 
    [project]

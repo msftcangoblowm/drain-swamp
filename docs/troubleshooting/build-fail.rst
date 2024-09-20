@@ -32,6 +32,9 @@ To see the verbose error message
    * Creating isolated environment: venv+pip...
    * Installing packages in isolated environment:
      - build
+     - click
+     - drain-swamp-snippet
+     - pluggy
      - setuptools>=70.0.0
      - setuptools_scm>=8
      - wheel

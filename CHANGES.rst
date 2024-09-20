@@ -42,6 +42,10 @@ Changelog
    Commit items for NEXT VERSION
    ..............................
 
+   - feat: use package drain-swamp-snippet
+   - refactor: remove module drain_swamp.snip
+   - chore: add build requirement dependency drain-swamp-snippet
+
 .. scriv-start-here
 
 .. _changes_1-7-2:

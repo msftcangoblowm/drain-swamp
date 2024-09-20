@@ -4,9 +4,11 @@ click==8.1.7
     # via
     #   -r requirements/prod.in
     #   pip-tools
+drain-swamp-snippet==1.0.0.post2
+    # via -r prod.in
 importlib-metadata==7.1.0
     # via build
-packaging==24.0
+packaging==24.1
     # via
     #   build
     #   setuptools-scm

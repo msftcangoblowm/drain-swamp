@@ -49,7 +49,14 @@ Then link this to your ``pyproject.toml`` file
 .. code:: text
 
    [build-system]
-   requires = ["setuptools>=70.0.0", "wheel", "build", "setuptools_scm>=8", "drain_swamp"]
+   requires = [
+       "setuptools>=70.0.0",
+       "wheel",
+       "build",
+       "setuptools_scm>=8",
+       "drain-swamp",
+       "drain-swamp-snippet",
+   ]
    build-backend = "setuptools.build_meta"
 
    [project]

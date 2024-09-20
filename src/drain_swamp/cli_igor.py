@@ -80,6 +80,10 @@ import sys
 from pathlib import Path
 
 import click
+from drain_swamp_snippet import (
+    ReplaceResult,
+    Snip,
+)
 
 # pep366 ...
 # https://stackoverflow.com/a/34155199
@@ -143,10 +147,6 @@ from .igor_utils import (
     print_cheats,
     seed_changelog,
     write_version_file,
-)
-from .snip import (
-    ReplaceResult,
-    Snip,
 )
 from .snippet_sphinx_conf import SnipSphinxConf
 
