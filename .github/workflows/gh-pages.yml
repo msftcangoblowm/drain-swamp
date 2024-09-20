@@ -28,7 +28,17 @@ env:
 jobs:
   pages:
     name: "publish github pages"
-    runs-on: ubuntu-latest
+    runs-on: "${{ matrix.os }}"
+    # If it doesn't finish in an hour, it's not going to. Don't spin for six
+    # hours needlessly.
+    timeout-minutes: 60
+    strategy:
+      matrix:
+        os:
+          - ubuntu-latest
+        python-version:
+          - "3.9"
+      fail-fast: false
     environment:
       name: github-pages
       url: ${{ steps.deployment.outputs.page_url }}
@@ -36,24 +46,12 @@ jobs:
     permissions:
       pages: write
       id-token: write
+
     steps:
     - name: platform set locale
       run: |
         sudo locale-gen en_US.UTF-8
         sudo update-locale
-
-    - name: Checkout the repo
-      uses: actions/checkout@6d193bf28034eafb982f37bd894289fe649468fc # v4.1.7
-      with:
-        # fetch all branches and tags instead of only fetching the ref/SHA that triggered the workflow
-        fetch-depth: 0
-
-    # https://stackoverflow.com/questions/66349002/get-latest-tag-git-describe-tags-when-repo-is-cloned-with-depth-1
-    # echo "tag=$(git describe --tags `git rev-list --tags --max-count=1`)" >> $GITHUB_OUTPUT
-    - name: Get latest tag
-      id: vars
-      run: |
-        echo "tag=$(git describe --tags)" >> $GITHUB_OUTPUT
 
     - id: prepare-config-settings
       name: >-
@@ -61,9 +59,8 @@ jobs:
       uses: 'msftcangoblowm/drain-swamp-action@v1'
       env:
         SET_LOCK: ${{ vars.DRAINSWAMP_SET_LOCK }}
-        RELEASE_VERSION: ${{ steps.vars.outputs.tag }}
       with:
-        plugin_parameters: '{"set-lock": "$SET_LOCK", "kind": "$RELEASE_VERSION"}'
+        plugin_parameters: '{"set-lock": "$SET_LOCK", "kind": "current"}'
         checkout: true
         fetch_tags: true
         python_version: "${{ matrix.python-version }}"
@@ -74,14 +71,28 @@ jobs:
         name: config-settings-${{ matrix.os }}-${{ matrix.python-version }}
         path: '${{ runner.temp }}'
 
+    - name: Checkout the repo
+      uses: actions/checkout@6d193bf28034eafb982f37bd894289fe649468fc # v4.1.7
+      with:
+        repository: '${{ github.repository }}'
+        # fetch all branches and tags instead of only fetching the ref/SHA that triggered the workflow
+        fetch-depth: 0
+
+    # https://stackoverflow.com/questions/66349002/get-latest-tag-git-describe-tags-when-repo-is-cloned-with-depth-1
+    # echo "tag=$(git describe --tags `git rev-list --tags --max-count=1`)" >> $GITHUB_OUTPUT
+    - name: Get latest tag
+      id: vars
+      run: |
+        echo "tag=$(git describe --tags)" >> $GITHUB_OUTPUT
+
     - name: "Install Python"
       uses: actions/setup-python@v5.2.0
       with:
-        python-version: "3.10" # default of sphinx-notes/pages
-        cache: pip
-        cache-dependency-path: |
-          requirements/*${{ env.LOCK_SUFFIX }}
-          docs/requirements${{ env.LOCK_SUFFIX }}
+        python-version: '${{ matrix.python-version }}' # default of sphinx-notes/pages
+        # cache: pip
+        # cache-dependency-path: |
+        #  requirements/*${{ env.LOCK_SUFFIX }}
+        #  docs/requirements${{ env.LOCK_SUFFIX }}
 
     - name: "Install dependencies for build"
       run: |

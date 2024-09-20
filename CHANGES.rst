@@ -42,6 +42,8 @@ Changelog
    Commit items for NEXT VERSION
    ..............................
 
+   - ci: actions/checkout put repository in with block
+   - ci(release): kind tag not env.RELEASE_VERSION
    - ci: checkout specify repository
 
 .. scriv-start-here

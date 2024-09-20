@@ -42,55 +42,59 @@ jobs:
       fail-fast: false
 
     steps:
-      - name: "Check out the repo"
-        uses: actions/checkout@6d193bf28034eafb982f37bd894289fe649468fc # v4.1.7
+    - name: "Check out the repo"
+      uses: actions/checkout@6d193bf28034eafb982f37bd894289fe649468fc # v4.1.7
+      with:
+        repository: '${{ github.repository }}'
+        # fetch all branches and tags instead of only fetching the ref/SHA that triggered the workflow
+        fetch-depth: 0
 
-      - name: "Install ${{ matrix.python-version }} with setup-python"
-        uses: actions/setup-python@v5.2.0
-        if: startsWith(matrix.python-version, 'pypy-')
-        with:
-          python-version: "${{ matrix.python-version }}"
+    - name: "Install ${{ matrix.python-version }} with setup-python"
+      uses: actions/setup-python@v5.2.0
+      if: startsWith(matrix.python-version, 'pypy-')
+      with:
+        python-version: "${{ matrix.python-version }}"
 
-      - name: "Install ${{ matrix.python-version }} with deadsnakes"
-        uses: deadsnakes/action@v3.2.0
-        if: ${{ ! startsWith(matrix.python-version, 'pypy-') }}
-        with:
-          python-version: "${{ matrix.python-version }}"
+    - name: "Install ${{ matrix.python-version }} with deadsnakes"
+      uses: deadsnakes/action@v3.2.0
+      if: ${{ ! startsWith(matrix.python-version, 'pypy-') }}
+      with:
+        python-version: "${{ matrix.python-version }}"
 
-      - name: "Show diagnostic info"
-        run: |
-          set -xe
-          python -VV
-          python -m site
-          env
+    - name: "Show diagnostic info"
+      run: |
+        set -xe
+        python -VV
+        python -m site
+        env
 
-      - name: "Install dependencies -- tests"
-        run: |
-          set -xe
-          python -m pip install -r requirements/tox$LOCK_SUFFIX
-          python -m pip install -r requirements/prod$LOCK_SUFFIX
+    - name: "Install dependencies -- tests"
+      run: |
+        set -xe
+        python -m pip install -r requirements/tox$LOCK_SUFFIX
+        python -m pip install -r requirements/prod$LOCK_SUFFIX
 
-      - name: "Install dependencies -- build"
-        run: |
-          set -xe
-          python -m pip install -r requirements/kit$LOCK_SUFFIX
+    - name: "Install dependencies -- build"
+      run: |
+        set -xe
+        python -m pip install -r requirements/kit$LOCK_SUFFIX
 
-      - name: Refresh .lnk files. Avoid build. Not run in subprocess
-        env:
-          SET_LOCK: ${{ vars.DRAINSWAMP_SET_LOCK }}
-        run: |
-          set -xe
-          python src/drain_swamp/cli_unlock.py refresh --set-lock="$SET_LOCK"
+    - name: Refresh .lnk files. Avoid build. Not run in subprocess
+      env:
+        SET_LOCK: ${{ vars.DRAINSWAMP_SET_LOCK }}
+      run: |
+        set -xe
+        python src/drain_swamp/cli_unlock.py refresh --set-lock="$SET_LOCK"
 
-      - name: "Run tox for ${{ matrix.python-version }}"
-        run: |
-          python -m tox -- -rfsEX
+    - name: "Run tox for ${{ matrix.python-version }}"
+      run: |
+        python -m tox -- -rfsEX
 
-      - name: "Retry tox for ${{ matrix.python-version }}"
-        if: failure()
-        run: |
-          # `exit 1` makes sure that the job remains red with flaky runs
-          python -m tox -- -rfsEX --lf -vvvvv && exit 1
+    - name: "Retry tox for ${{ matrix.python-version }}"
+      if: failure()
+      run: |
+        # `exit 1` makes sure that the job remains red with flaky runs
+        python -m tox -- -rfsEX --lf -vvvvv && exit 1
 
   # This job aggregates test results. It's the required check for branch protection.
   # https://github.com/marketplace/actions/alls-green#why
@@ -105,7 +109,7 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Decide whether the needed jobs succeeded or failed
-        uses: re-actors/alls-green@05ac9388f0aebcb5727afa17fcccfecd6f8ec5fe
-        with:
-          jobs: ${{ toJSON(needs) }}
+    - name: Decide whether the needed jobs succeeded or failed
+      uses: re-actors/alls-green@05ac9388f0aebcb5727afa17fcccfecd6f8ec5fe
+      with:
+        jobs: ${{ toJSON(needs) }}
