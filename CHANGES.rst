@@ -42,6 +42,8 @@ Changelog
    Commit items for NEXT VERSION
    ..............................
 
+   - ci: set DS_CONFIG_SETTINGS --> GITHUB_ENV
+   - ci: clearly name communication between jobs
    - ci: fix matrix.python_version --> matrix.python-version
    - ci: artifact name use matrix.python_version
    - ci: fix set GITHUB_OUTPUT on step config-settings-output

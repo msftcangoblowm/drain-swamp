@@ -63,7 +63,7 @@ jobs:
         name: config-settings-${{ matrix.os }}-${{ matrix.python-version }}
         path: '${{ runner.temp }}'
 
-    - name: Upload artifact -- config settings toml
+    - name: Trans jobs artifact -- upload
       uses: actions/upload-artifact@v4.4.0
       with:
           name: config-settings-toml-${{ matrix.os }}-${{ matrix.python-version }}
@@ -72,7 +72,7 @@ jobs:
           if-no-files-found: error
 
     - id: config-settings-output
-      name: env variable DS_CONFIG_SETTINGS --> outputs
+      name: Trans jobs -- DS_CONFIG_SETTINGS --> outputs
       shell: bash
       run: |
         echo 'config_settings=${{ env.DS_CONFIG_SETTINGS }}' >> GITHUB_OUTPUT
@@ -94,13 +94,16 @@ jobs:
     if: "!contains(github.ref, '-notests')"
 
     steps:
-    - name: Download artifact -- config settings toml
+    - name: Trans jobs artifact -- upload
       uses: actions/download-artifact@v4.1.8
-      env:
-        DS_CONFIG_SETTINGS: '${{ steps.config-settings-output.outputs.config_settings }}'
       with:
         name: config-settings-toml-${{ matrix.os }}-${{ matrix.python-version }}
         path: '${{ runner.temp }}'
+
+    - name: Trans jobs -- outputs --> DS_CONFIG_SETTINGS
+      shell: bash
+      run: |
+        echo 'DS_CONFIG_SETTINGS=${{ steps.config-settings-output.outputs.config_settings }}' >> GITHUB_ENV
 
     - name: "Check out the repo"
       uses: actions/checkout@6d193bf28034eafb982f37bd894289fe649468fc # v4.1.7
