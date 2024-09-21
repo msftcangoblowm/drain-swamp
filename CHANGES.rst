@@ -42,6 +42,7 @@ Changelog
    Commit items for NEXT VERSION
    ..............................
 
+   - ci: fix set GITHUB_OUTPUT on step config-settings-output
    - refactor: rename tests/test_snip --> tests/_good_snips
    - fix: resolve_path cannot find executable fallback to pep366 invocation
    - ci: remove env variable SET_LOCK

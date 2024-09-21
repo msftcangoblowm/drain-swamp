@@ -75,9 +75,7 @@ jobs:
       name: env variable DS_CONFIG_SETTINGS --> outputs
       shell: bash
       run: |
-        echo "config_settings=${{ env.DS_CONFIG_SETTINGS }}" >> GITHUB_OUTPUT
-      outputs:
-        config_settings: '${{ env.DS_CONFIG_SETTINGS }}'
+        echo 'config_settings=${{ env.DS_CONFIG_SETTINGS }}' >> GITHUB_OUTPUT
 
   codecov:
     name: "${{ matrix.python-version }} on ${{ matrix.os }}"
