@@ -42,6 +42,7 @@ Changelog
    Commit items for NEXT VERSION
    ..............................
 
+   - ci: outputs from parent job available on needs.job-name.outputs.output-name
    - ci: set DS_CONFIG_SETTINGS --> GITHUB_ENV
    - ci: clearly name communication between jobs
    - ci: fix matrix.python_version --> matrix.python-version

@@ -42,6 +42,8 @@ jobs:
         python-version:
           - "3.9"
       fail-fast: false
+    outputs:
+      config_settings: '${{ steps.config-settings-output.outputs.config_settings }}'
 
     steps:
     - id: prepare-config-settings
@@ -72,7 +74,7 @@ jobs:
       name: Trans jobs -- DS_CONFIG_SETTINGS --> outputs
       shell: bash
       run: |
-        echo 'config_settings=${{ env.DS_CONFIG_SETTINGS }}' >> GITHUB_OUTPUT
+        echo 'config_settings=${{ env.DS_CONFIG_SETTINGS }}' >> "$GITHUB_OUTPUT"
 
   lint:
     name: "isort black flake8 etc"
@@ -98,7 +100,7 @@ jobs:
     - name: Trans jobs -- outputs --> DS_CONFIG_SETTINGS
       shell: bash
       run: |
-        echo 'DS_CONFIG_SETTINGS=${{ steps.config-settings-output.outputs.config_settings }}' >> GITHUB_ENV
+        echo 'DS_CONFIG_SETTINGS=${{ needs.get-toml.outputs.config_settings }}' >> "$GITHUB_ENV"
 
     - name: "Check out the repo"
       uses: actions/checkout@6d193bf28034eafb982f37bd894289fe649468fc # v4.1.7
@@ -123,8 +125,6 @@ jobs:
 
     # Create generated files: version file and .lnk files. sdist tarball ignored
     - name: "Build sdist to run plugins. Create generated files"
-      env:
-        DS_CONFIG_SETTINGS: '${{ steps.config-settings-output.outputs.config_settings }}'
       run: |
         # TOML file location ${{ runner.temp }}/${{ steps.outcome.inputs.toml_file_name }}
         # env.DS_CONFIG_SETTINGS contains (OS independent) path to TOML file
@@ -159,7 +159,7 @@ jobs:
     - name: Trans jobs -- outputs --> DS_CONFIG_SETTINGS
       shell: bash
       run: |
-        echo 'DS_CONFIG_SETTINGS=${{ steps.config-settings-output.outputs.config_settings }}' >> GITHUB_ENV
+        echo 'DS_CONFIG_SETTINGS=${{ needs.get-toml.outputs.config_settings }}' >> "$GITHUB_ENV"
 
     - name: "Check out the repo"
       uses: actions/checkout@6d193bf28034eafb982f37bd894289fe649468fc # v4.1.7
@@ -227,7 +227,7 @@ jobs:
     - name: Trans jobs -- outputs --> DS_CONFIG_SETTINGS
       shell: bash
       run: |
-        echo 'DS_CONFIG_SETTINGS=${{ steps.config-settings-output.outputs.config_settings }}' >> GITHUB_ENV
+        echo 'DS_CONFIG_SETTINGS=${{ needs.get-toml.outputs.config_settings }}' >> "$GITHUB_ENV"
 
     - name: "Check out the repo"
       uses: actions/checkout@6d193bf28034eafb982f37bd894289fe649468fc # v4.1.7
