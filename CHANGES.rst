@@ -42,6 +42,9 @@ Changelog
    Commit items for NEXT VERSION
    ..............................
 
+   - ci: pass DS_CONFIG_SETTINGS between jobs as output
+   - ci(coverage): download dsa once
+   - ci(quality): download dsa once
    - ci: download config settings once share with other jobs
    - ci(drain-swamp-action): fetch-tags off
    - ci: actions/checkout put repository in with block

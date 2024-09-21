@@ -20,7 +20,6 @@ defaults:
 env:
   PIP_DISABLE_PIP_VERSION_CHECK: 1
   LOCK_SUFFIX: ${{ vars.DRAINSWAMP_SET_LOCK == '1' && '.lock' || '.unlock' }}
-  DS_CONFIG_SETTINGS: ''
 
 permissions:
   contents: read
@@ -31,18 +30,18 @@ concurrency:
     ${{ github.event.pull_request.number || github.sha }}
   cancel-in-progress: true
 
+strategy:
+  matrix:
+    os:
+      - ubuntu-latest
+    python-version:
+      - "3.9"
+  fail-fast: false
+
 jobs:
   get-toml:
     name: "Get config-settings"
-    runs-on: "${{ matrix.os }}-latest"
-    strategy:
-      matrix:
-        os:
-          - ubuntu
-        python-version:
-          - "3.9"
-      fail-fast: false
-
+    runs-on: "${{ matrix.os }}"
     steps:
     - id: prepare-config-settings
       name: >-
@@ -56,26 +55,43 @@ jobs:
         fetch_tags: false
         python_version: "${{ matrix.python-version }}"
 
-    - name: "Download artifact"
-      uses: actions/download-artifact@v4
+    - name: Download artifact
+      uses: actions/download-artifact@v4.1.8
       with:
         name: config-settings-${{ matrix.os }}-${{ matrix.python-version }}
         path: '${{ runner.temp }}'
+
+    - name: upload artifact -- config settings toml
+      uses: actions/upload-artifact@v4.4.0
+      with:
+          name: config-settings-toml-${{ matrix.os }}-${{ inputs.python_version }}
+          path: '${{ env.DS_CONFIG_SETTINGS }}'
+          retention-days: 1
+          if-no-files-found: error
+
+    - id: config-settings-output
+    - name: env variable DS_CONFIG_SETTINGS --> outputs
+      shell: bash
+      run: |
+        echo "config_settings=${{ env.DS_CONFIG_SETTINGS }}" >> GITHUB_OUTPUT
+      outputs:
+        config_settings: '${{ env.DS_CONFIG_SETTINGS }}'
 
   lint:
     name: "isort black flake8 etc"
     needs:
       get-toml
-    runs-on: "${{ matrix.os }}-latest"
-    strategy:
-      matrix:
-        os:
-          - ubuntu
-        python-version:
-          - "3.9"
-      fail-fast: false
+    runs-on: "${{ matrix.os }}"
 
     steps:
+    - name: Download artifact -- config settings toml
+      uses: actions/download-artifact@v4.1.8
+      env:
+        DS_CONFIG_SETTINGS: '${{ steps.config-settings-output.outputs.config_settings }}'
+      with:
+        name: config-settings-toml-${{ matrix.os }}-${{ matrix.python-version }}
+        path: '${{ runner.temp }}'
+
     - name: "Check out the repo"
       uses: actions/checkout@6d193bf28034eafb982f37bd894289fe649468fc # v4.1.7
       with:
@@ -99,6 +115,8 @@ jobs:
 
     # Create generated files: version file and .lnk files. sdist tarball ignored
     - name: "Build sdist to run plugins. Create generated files"
+      env:
+        DS_CONFIG_SETTINGS: '${{ steps.config-settings-output.outputs.config_settings }}'
       run: |
         # TOML file location ${{ runner.temp }}/${{ steps.outcome.inputs.toml_file_name }}
         # env.DS_CONFIG_SETTINGS contains (OS independent) path to TOML file
@@ -113,16 +131,17 @@ jobs:
     name: "Check types"
     needs:
       get-toml
-    runs-on: "${{ matrix.os }}-latest"
-    strategy:
-      matrix:
-        os:
-          - ubuntu
-        python-version:
-          - "3.9"
-      fail-fast: false
+    runs-on: "${{ matrix.os }}"
 
     steps:
+    - name: Download artifact -- config settings toml
+      uses: actions/download-artifact@v4.1.8
+      env:
+        DS_CONFIG_SETTINGS: '${{ steps.config-settings-output.outputs.config_settings }}'
+      with:
+        name: config-settings-toml-${{ matrix.os }}-${{ matrix.python-version }}
+        path: '${{ runner.temp }}'
+
     - name: "Check out the repo"
       uses: actions/checkout@6d193bf28034eafb982f37bd894289fe649468fc # v4.1.7
       with:
@@ -162,19 +181,20 @@ jobs:
     name: "Build docs"
     needs:
       get-toml
-    runs-on: "${{ matrix.os }}-latest"
-    strategy:
-      matrix:
-        os:
-          - ubuntu
-        python-version:
-          - "3.9"
-      fail-fast: false
+    runs-on: "${{ matrix.os }}"
     concurrency:
       group: docs-${{ github.ref }}
       cancel-in-progress: false  # quality then gh-pages
 
     steps:
+    - name: Download artifact -- config settings toml
+      uses: actions/download-artifact@v4.1.8
+      env:
+        DS_CONFIG_SETTINGS: '${{ steps.config-settings-output.outputs.config_settings }}'
+      with:
+        name: config-settings-toml-${{ matrix.os }}-${{ matrix.python-version }}
+        path: '${{ runner.temp }}'
+
     - name: "Check out the repo"
       uses: actions/checkout@6d193bf28034eafb982f37bd894289fe649468fc # v4.1.7
       with:

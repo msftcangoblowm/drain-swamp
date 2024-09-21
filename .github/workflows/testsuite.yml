@@ -22,7 +22,6 @@ env:
   COVERAGE_IGOR_VERBOSE: 1
   FORCE_COLOR: 1    # Get colored test output
   LOCK_SUFFIX: ${{ vars.DRAINSWAMP_SET_LOCK == '1' && '.lock' || '.unlock' }}
-  DS_CONFIG_SETTINGS: ''
 
 permissions:
   contents: read
@@ -36,8 +35,6 @@ concurrency:
 jobs:
   tests:
     name: "${{ matrix.python-version }} on ${{ matrix.os }}"
-    needs:
-      get-toml
     runs-on: "${{ matrix.os }}-latest"
     # Don't run tests if the branch name includes "-notests"
     if: "!contains(github.ref, '-notests')"
@@ -81,7 +78,7 @@ jobs:
         python_version: "${{ matrix.python-version }}"
 
     - name: "Download artifact"
-      uses: actions/download-artifact@v4
+      uses: actions/download-artifact@v4.1.8
       with:
         name: config-settings-${{ matrix.os }}-${{ matrix.python-version }}
         path: '${{ runner.temp }}'
