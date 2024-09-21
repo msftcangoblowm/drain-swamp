@@ -134,11 +134,15 @@ endif
 # --cov-report=xml
 # Dependencies: pytest, pytest-cov, pytest-regressions
 # make [v=1] coverage
+# $(VENV_BIN)/pytest --showlocals --cov=drain_swamp --cov-report=term-missing --cov-config=pyproject.toml $(verbose_text) tests
 .PHONY: coverage
 coverage: private verbose_text = $(if $(v),"--verbose")
 coverage:				## Run tests, generate coverage reports -- make [v=1] coverage
 ifeq ($(is_venv),1)
-	@$(VENV_BIN)/pytest --showlocals --cov=drain_swamp --cov-report=term-missing --cov-config=pyproject.toml $(verbose_text) tests
+	-@$(VENV_BIN_PYTHON) -m coverage erase
+	$(VENV_BIN_PYTHON) -m coverage run --parallel -m pytest --showlocals $(verbose_text) tests
+	$(VENV_BIN_PYTHON) -m coverage combine
+	$(VENV_BIN_PYTHON) -m coverage report --fail-under=95
 endif
 
 ##@ Kitting

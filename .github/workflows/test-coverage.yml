@@ -139,10 +139,13 @@ jobs:
         set -xe
         python -m pip install --disable-pip-version-check -q .
     # integration/ does not contribute to coverage
+    # pytest --showlocals --quiet --cov=drain_swamp --cov-report=xml --cov-config=pyproject.toml tests
     - name: "Run coverage"
       run : |
         set -xe
-        pytest --showlocals --quiet --cov=drain_swamp --cov-report=xml --cov-config=pyproject.toml tests
+        python -m coverage run --parallel -m pytest --showlocals --quiet tests
+        python -m coverage combine
+        python -m coverage xml --fail-under=95
     - name: "Upload to Codecov"
       uses: codecov/codecov-action@2296b6ba9eee85301a5ef2c7c2cdc738faf1f939 # 4.5.0
       with:

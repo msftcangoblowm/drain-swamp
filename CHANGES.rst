@@ -8,6 +8,8 @@ Changelog
    Feature request
    .................
 
+   - phase out dependency pytest-cov. Remove from requirements/dev.*
+
    - When packaging, symlinks are converted into files. This change is only
      noticed when the package is installed. Create an integration test
      which builds and installs a package in a test venv. Confirm package
@@ -42,6 +44,7 @@ Changelog
    Commit items for NEXT VERSION
    ..............................
 
+   - fix: deprecate pytest-cov use coverage
    - ci: outputs from parent job available on needs.job-name.outputs.output-name
    - ci: set DS_CONFIG_SETTINGS --> GITHUB_ENV
    - ci: clearly name communication between jobs
