@@ -34,28 +34,25 @@ concurrency:
     ${{ github.event.pull_request.number || github.sha }}
   cancel-in-progress: true
 
-strategy:
-  matrix:
-    os:
-      - ubuntu-latest
-    python-version:
-      - "3.9"
-  fail-fast: false
-
 jobs:
   get-toml:
     name: "Get config-settings"
     runs-on: "${{ matrix.os }}"
+    strategy:
+      matrix:
+        os:
+          - ubuntu-latest
+        python-version:
+          - "3.9"
+      fail-fast: false
 
     steps:
     - id: prepare-config-settings
       name: >-
         Build Plugin parameters
       uses: 'msftcangoblowm/drain-swamp-action@v1'
-      env:
-        SET_LOCK: ${{ vars.DRAINSWAMP_SET_LOCK }}
       with:
-        plugin_parameters: '{"set-lock": "$SET_LOCK", "kind": "current"}'
+        plugin_parameters: '{"set-lock": "${{ vars.DRAINSWAMP_SET_LOCK }}", "kind": "current"}'
         checkout: true
         fetch_tags: false
         python_version: "${{ matrix.python-version }}"
@@ -87,6 +84,14 @@ jobs:
     needs:
       get-toml
     runs-on: "${{ matrix.os }}"
+    strategy:
+      matrix:
+        os:
+          - ubuntu-latest
+        python-version:
+          - "3.9"
+      fail-fast: false
+
     # Don't run tests if the branch name includes "-notests"
     if: "!contains(github.ref, '-notests')"
 

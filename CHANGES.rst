@@ -42,6 +42,7 @@ Changelog
    Commit items for NEXT VERSION
    ..............................
 
+   - ci: remove env variable SET_LOCK
    - ci: pass DS_CONFIG_SETTINGS between jobs as output
    - ci(coverage): download dsa once
    - ci(quality): download dsa once

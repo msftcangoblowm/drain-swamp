@@ -22,17 +22,16 @@ env:
 permissions:
   contents: read  # This is required for actions/checkout
 
-strategy:
-  matrix:
-    os:
-      - ubuntu-latest
-    python-version:
-      - "3.9"
-  fail-fast: false
-
 jobs:
   build:
     runs-on: "${{ matrix.os }}"
+    strategy:
+      matrix:
+        os:
+          - ubuntu-latest
+        python-version:
+          - "3.9"
+      fail-fast: false
     # If it doesn't finish in an hour, it's not going to. Don't spin for six
     # hours needlessly.
     timeout-minutes: 60
@@ -41,10 +40,8 @@ jobs:
       name: >-
         Build Plugin parameters
       uses: 'msftcangoblowm/drain-swamp-action@v1'
-      env:
-        SET_LOCK: ${{ vars.DRAINSWAMP_SET_LOCK }}
       with:
-        plugin_parameters: '{"set-lock": "$SET_LOCK", "kind": "tag"}'
+        plugin_parameters: '{"set-lock": "${{ vars.DRAINSWAMP_SET_LOCK }}", "kind": "tag"}'
         checkout: true
         fetch_tags: false
         python_version: "${{ matrix.python-version }}"
@@ -100,7 +97,7 @@ jobs:
     if: github.event_name == 'push' && startsWith(github.ref, 'refs/tags')
     needs:
     - build
-    runs-on: "${{ matrix.os }}"
+    runs-on: ubuntu-latest
     environment:
       name: pypi
       url: https://pypi.org/p/drain-swamp
@@ -131,7 +128,7 @@ jobs:
       and upload them to GitHub Release
     needs:
     - publish-to-pypi
-    runs-on: "${{ matrix.os }}"
+    runs-on: ubuntu-latest
 
     permissions:
       contents: write  # IMPORTANT: mandatory for making GitHub Releases
@@ -173,7 +170,7 @@ jobs:
     if: github.event_name == 'push' && startsWith(github.ref, 'refs/tags')
     needs:
     - build
-    runs-on: "${{ matrix.os }}"
+    runs-on: ubuntu-latest
 
     environment:
       name: testpypi

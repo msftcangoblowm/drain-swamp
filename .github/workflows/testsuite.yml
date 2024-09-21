@@ -69,10 +69,8 @@ jobs:
       name: >-
         Build Plugin parameters
       uses: 'msftcangoblowm/drain-swamp-action@v1'
-      env:
-        SET_LOCK: ${{ vars.DRAINSWAMP_SET_LOCK }}
       with:
-        plugin_parameters: '{"set-lock": "$SET_LOCK", "kind": "current"}'
+        plugin_parameters: '{"set-lock": "${{ vars.DRAINSWAMP_SET_LOCK }}", "kind": "current"}'
         checkout: true
         fetch_tags: false
         python_version: "${{ matrix.python-version }}"

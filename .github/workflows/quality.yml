@@ -30,27 +30,26 @@ concurrency:
     ${{ github.event.pull_request.number || github.sha }}
   cancel-in-progress: true
 
-strategy:
-  matrix:
-    os:
-      - ubuntu-latest
-    python-version:
-      - "3.9"
-  fail-fast: false
-
 jobs:
   get-toml:
     name: "Get config-settings"
+
     runs-on: "${{ matrix.os }}"
+    strategy:
+      matrix:
+        os:
+          - ubuntu-latest
+        python-version:
+          - "3.9"
+      fail-fast: false
+
     steps:
     - id: prepare-config-settings
       name: >-
         Build Plugin parameters
       uses: 'msftcangoblowm/drain-swamp-action@v1'
-      env:
-        SET_LOCK: ${{ vars.DRAINSWAMP_SET_LOCK }}
       with:
-        plugin_parameters: '{"set-lock": "$SET_LOCK", "kind": "current"}'
+        plugin_parameters: '{"set-lock": "${{ vars.DRAINSWAMP_SET_LOCK }}", "kind": "current"}'
         checkout: true
         fetch_tags: false
         python_version: "${{ matrix.python-version }}"
@@ -81,7 +80,15 @@ jobs:
     name: "isort black flake8 etc"
     needs:
       get-toml
+
     runs-on: "${{ matrix.os }}"
+    strategy:
+      matrix:
+        os:
+          - ubuntu-latest
+        python-version:
+          - "3.9"
+      fail-fast: false
 
     steps:
     - name: Download artifact -- config settings toml
@@ -131,7 +138,15 @@ jobs:
     name: "Check types"
     needs:
       get-toml
+
     runs-on: "${{ matrix.os }}"
+    strategy:
+      matrix:
+        os:
+          - ubuntu-latest
+        python-version:
+          - "3.9"
+      fail-fast: false
 
     steps:
     - name: Download artifact -- config settings toml
@@ -181,7 +196,16 @@ jobs:
     name: "Build docs"
     needs:
       get-toml
+
     runs-on: "${{ matrix.os }}"
+    strategy:
+      matrix:
+        os:
+          - ubuntu-latest
+        python-version:
+          - "3.9"
+      fail-fast: false
+
     concurrency:
       group: docs-${{ github.ref }}
       cancel-in-progress: false  # quality then gh-pages
