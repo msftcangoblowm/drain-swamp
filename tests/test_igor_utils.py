@@ -47,6 +47,8 @@ from drain_swamp.igor_utils import (
     SCRIV_START,
     UNRELEASED,
     AlterEnv,
+    _get_branch,
+    _get_sha,
     build_package,
     edit_for_release,
     get_current_version,
@@ -207,7 +209,7 @@ testdata_edit_for_release = (
         Path(__file__).parent.joinpath("_changelog_files", "CHANGES-empty.rst"),
         Path(__file__).parent.joinpath("_changelog_files", "NOTICE-empty.txt"),
         Path(__file__).parent.joinpath(
-            "test_snip", "test_snip_harden_one_snip__with_id_.txt"
+            "_good_snips", "test_snip_harden_one_snip__with_id_.txt"
         ),
         Path(__file__).parent.joinpath("_good_files", "no_project_name.pyproject_toml"),
         "asdf",
@@ -218,7 +220,7 @@ testdata_edit_for_release = (
         Path(__file__).parent.joinpath("_changelog_files", "CHANGES-empty.rst"),
         Path(__file__).parent.joinpath("_changelog_files", "NOTICE-empty.txt"),
         Path(__file__).parent.joinpath(
-            "test_snip", "test_snip_harden_one_snip__with_id_.txt"
+            "_good_snips", "test_snip_harden_one_snip__with_id_.txt"
         ),
         Path(__file__).parent.joinpath("_good_files", "no_copyright.pyproject_toml"),
         "asdf",
@@ -229,7 +231,7 @@ testdata_edit_for_release = (
         Path(__file__).parent.joinpath("_changelog_files", "CHANGES-empty.rst"),
         Path(__file__).parent.joinpath("_changelog_files", "NOTICE-empty.txt"),
         Path(__file__).parent.joinpath(
-            "test_snip", "test_snip_harden_one_snip__with_id_.txt"
+            "_good_snips", "test_snip_harden_one_snip__with_id_.txt"
         ),
         Path(__file__).parent.joinpath("_good_files", "no_copyright.pyproject_toml"),
         "asdf",
@@ -240,7 +242,7 @@ testdata_edit_for_release = (
         Path(__file__).parent.joinpath("_changelog_files", "CHANGES-empty.rst"),
         Path(__file__).parent.joinpath("_changelog_files", "NOTICE-empty.txt"),
         Path(__file__).parent.joinpath(
-            "test_snip", "test_snip_harden_one_snip__with_id_.txt"
+            "_good_snips", "test_snip_harden_one_snip__with_id_.txt"
         ),
         Path(__file__).parent.joinpath("_good_files", "weird_copyright.pyproject_toml"),
         "asdf",
@@ -251,7 +253,7 @@ testdata_edit_for_release = (
         Path(__file__).parent.joinpath("_changelog_files", "CHANGES-empty.rst"),
         Path(__file__).parent.joinpath("_changelog_files", "NOTICE-empty.txt"),
         Path(__file__).parent.joinpath(
-            "test_snip", "test_snip_harden_one_snip__with_id_.txt"
+            "_good_snips", "test_snip_harden_one_snip__with_id_.txt"
         ),
         Path(__file__).parent.joinpath(
             "_good_files", "weird_copyright-2.pyproject_toml"
@@ -812,3 +814,13 @@ def test_get_tag_version(tmp_path, prep_pyproject_toml, prepare_folders_files):
     sane_fallback = "0.0.1"
     sem_ver = get_tag_version(path_cwd)
     assert sem_ver == sane_fallback
+
+
+def test_no_git_not_installed():
+    """Pretend git is not installed."""
+    expected = ""
+    with patch(f"{g_app_name}.igor_utils.resolve_path", return_value=None):
+        actual = _get_sha()
+        assert actual == expected
+        actual = _get_branch()
+        assert actual == expected

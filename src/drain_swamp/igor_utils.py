@@ -50,6 +50,7 @@ from pathlib import (
 )
 
 from ._run_cmd import run_cmd
+from ._safe_path import resolve_path
 from .check_type import is_ok
 from .package_metadata import PackageMetadata
 from .parser_in import TomlParser
@@ -706,14 +707,37 @@ def get_current_version(path):
     return ret
 
 
-def _get_branch() -> str:
+def _get_branch():
     """From git, get the current branch name.
 
     :returns: Branch name
     :rtype: str
     :meta private:
     """
-    ret = subprocess.getoutput("git rev-parse --abbrev-ref @")
+    git_path = resolve_path("git")
+    if git_path is not None:
+        path_git = PurePath(git_path)
+        ret = subprocess.getoutput(f"{path_git!s} rev-parse --abbrev-ref @")
+    else:
+        ret = ""
+
+    return ret
+
+
+def _get_sha():
+    """From git, get the last commit sha.
+
+    :returns: commit sha
+    :rtype: str
+    :meta private:
+    """
+    git_path = resolve_path("git")
+    if git_path is not None:
+        path_git = PurePath(git_path)
+        ret = subprocess.getoutput(f"{path_git!s} rev-parse @")
+    else:
+        ret = ""
+
     return ret
 
 
@@ -741,7 +765,7 @@ def print_cheats(path, kind):
 
     # Initial version these will both fail
     branch = _get_branch()
-    sha = subprocess.getoutput("git rev-parse @")
+    sha = _get_sha()
 
     # expecting Path cwd
     try:

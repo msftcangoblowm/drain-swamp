@@ -42,6 +42,8 @@ Changelog
    Commit items for NEXT VERSION
    ..............................
 
+   - refactor: rename tests/test_snip --> tests/_good_snips
+   - fix: resolve_path cannot find executable fallback to pep366 invocation
    - ci: remove env variable SET_LOCK
    - ci: pass DS_CONFIG_SETTINGS between jobs as output
    - ci(coverage): download dsa once

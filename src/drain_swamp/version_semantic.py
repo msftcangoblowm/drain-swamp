@@ -217,10 +217,16 @@ def _current_tag(path=None):
 
     :rtype: str | None
     :meta private:
+
+    :raises:
+
+       - :py:exc:`AssertionError` -- git executable not found. git must not be installed
+
     """
     path_cwd = _path_or_cwd(path)
 
     executable_path = resolve_path("git")
+    assert executable_path is not None
     cmd = (executable_path, "describe", "--tag")
     t_ret = run_cmd(cmd, cwd=path_cwd)
     out, err, exit_code, exc = t_ret
@@ -590,23 +596,24 @@ def _current_version(path=None):
     """
     path_cwd = _path_or_cwd(path)
 
+    ep_path = resolve_path("scm-version")
+    is_setuptools_scm = is_package_installed("setuptools-scm")
+    is_drain_swamp = is_package_installed("drain_swamp")
+
     # Check setuptools-scm package is installed
-    if not is_package_installed("setuptools-scm"):
+    if not is_setuptools_scm or not is_drain_swamp:
         return None
     else:  # pragma: no cover
         pass
 
-    # Call in subprocess to avoid circular import error
-    # Replaces:
-    # cmd = [sys.executable, "setup.py", "--version"]
-    # cmd = [sys.executable, "-m", "setuptools_scm"]
-    if is_package_installed("drain_swamp"):
-        # thru entrypoint
-        cmd = ("scm-version", "get")
-    else:  # pragma: no cover
-        # thru pep366. unittest adds nothing
-        f_relpath = fix_relpath("src/drain_swamp/cli_scm_version.py")
-        cmd = (sys.executable, f_relpath, "get")
+    if ep_path is None:
+        cmd = [
+            sys.executable,
+            fix_relpath("src/drain_swamp/cli_scm_version.py"),
+        ]
+    else:
+        cmd = [ep_path]
+    cmd.append("get")
 
     t_ret = run_cmd(cmd, cwd=path_cwd)
     out, err, exit_code, exc = t_ret
@@ -827,49 +834,6 @@ def _arbritary_version(
         return None
 
     return ver_tag
-
-
-def _get_app_name(path=None):
-    """app name contains underscores. Package name contains hyphens.
-    Want the app name, not the package name
-
-    Source git. Looks at the local repo, not remote
-
-    :param path:
-
-       Default None. If None assumes path is current working directory,
-       otherwise provide the path to the package base folder
-
-    :type path: pathlib.Path | None
-    :returns: app name. None if fails to get from git
-    :rtype: str | None
-    :meta private:
-
-    .. seealso::
-
-       `From git get project name <https://stackoverflow.com/a/33180289>`_
-
-    """
-    path_cwd = _path_or_cwd(path)
-
-    executable_path = resolve_path("git")
-    cmd = (
-        executable_path,
-        "rev-parse",
-        "--show-toplevel",
-    )
-    t_ret = run_cmd(cmd, cwd=path_cwd)
-    out, err, exit_code, exc = t_ret
-    if exc is not None:
-        ret = None
-    else:
-        if out is None:
-            ret = None
-        else:
-            str_mixed = Path(out).name
-            ret = str_mixed.replace("-", "_")
-
-    return ret
 
 
 class SemVersion:

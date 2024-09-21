@@ -224,7 +224,7 @@ Replace the text within the snippet
     import textwrap
     from pathlib import Path
 
-    from drain_swamp.snip import Snip
+    from drain_swamp_snippet import Snip
 
     # prepare
     contents_existing = textwrap.dedent(

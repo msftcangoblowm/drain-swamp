@@ -45,6 +45,7 @@ Raises LookupError if missing pyproject.toml or missing sections tool.drain-swam
 
 from __future__ import annotations
 
+import copy
 import logging
 import sys
 import warnings
@@ -128,19 +129,18 @@ def on_version_infer(config_settings: dict[str, Any]) -> str | None:
     if ret is not None:
         return ret
     else:
+        ep_path = resolve_path("scm-version")
+        if not is_installed or ep_path is None:  # pragma: no cover
+            # pep366
+            cmd_base = [
+                sys.executable,
+                fix_relpath("src/drain_swamp/cli_scm_version.py"),
+            ]
+        else:
+            cmd_base = [ep_path]
+
         if kind in ("current", "now"):
-            # Get current version from scm and write to file
-            if not is_installed:  # pragma: no cover
-                # pep366
-                cmd = [
-                    sys.executable,
-                    fix_relpath("src/drain_swamp/cli_scm_version.py"),
-                ]
-            else:
-                # ../cli_scm_version.py entrypoint
-                cmd = [
-                    resolve_path("scm-version"),
-                ]
+            cmd = copy.deepcopy(cmd_base)
             cmd.extend(["get", "--is-write"])
             t_out = run_cmd(cmd, cwd=None)
             out, err, code, subprocess_msg = t_out
@@ -165,18 +165,7 @@ def on_version_infer(config_settings: dict[str, Any]) -> str | None:
             version_file. Do not change version_file"""
             ret = None
         else:
-            # version str
-            if not is_installed:  # pragma: no cover
-                # pep366
-                cmd = [
-                    sys.executable,
-                    fix_relpath("src/drain_swamp/cli_scm_version.py"),
-                ]
-            else:
-                # ../cli_scm_version.py entrypoint
-                cmd = [
-                    resolve_path("scm-version"),
-                ]
+            cmd = copy.deepcopy(cmd_base)
             cmd.extend(["write", kind])
             t_out = run_cmd(cmd, cwd=None)
             out, err, code, subprocess_msg = t_out

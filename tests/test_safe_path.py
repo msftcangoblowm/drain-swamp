@@ -67,10 +67,16 @@ testdata_resolve_path = (
         "/true",
         marks=pytest.mark.skipif(is_win(), reason="MacOS and linux platform issue"),
     ),
+    pytest.param(
+        "adsfdsafdsafdsafasfsadfafsadfasdfsadfasdf",
+        None,
+        marks=pytest.mark.skipif(is_win(), reason="MacOS and linux platform issue"),
+    ),
 )
 ids_resolve_path = (
     "Windows",
     "Linux and MacOS",
+    "nonexistent executable",
 )
 
 
@@ -87,7 +93,10 @@ def test_resolve_path(f_path, expected):
     """
     # pytest --showlocals --log-level INFO -k "test_resolve_path" tests
     actual = resolve_path(f_path)
-    assert expected in actual
+    if expected is None:
+        assert expected == actual
+    else:
+        assert expected in actual
 
 
 testdata_replace_suffixes = (

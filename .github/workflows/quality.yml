@@ -69,7 +69,7 @@ jobs:
           if-no-files-found: error
 
     - id: config-settings-output
-    - name: env variable DS_CONFIG_SETTINGS --> outputs
+      name: env variable DS_CONFIG_SETTINGS --> outputs
       shell: bash
       run: |
         echo "config_settings=${{ env.DS_CONFIG_SETTINGS }}" >> GITHUB_OUTPUT
@@ -173,6 +173,7 @@ jobs:
         #  requirements/*${{ env.LOCK_SUFFIX }}
 
     - name: "Install dependencies"
+      shell: bash
       run: |
         # Runs on 3.9, but hashes supported by pip-tools is
         # not supported by setuptools. So don't expect hashes
@@ -182,6 +183,7 @@ jobs:
 
     # Create generated files: version file and .lnk files. sdist tarball ignored
     - name: "Build sdist to run plugins. Create generated files"
+      shell: bash
       run: |
         # TOML file location ${{ runner.temp }}/${{ steps.outcome.inputs.toml_file_name }}
         # env.DS_CONFIG_SETTINGS contains (OS independent) path to TOML file
@@ -189,6 +191,7 @@ jobs:
         python -m build
 
     - name: "Tox mypy"
+      shell: bash
       run: |
         python -m tox -e mypy
 
@@ -235,6 +238,7 @@ jobs:
         #  requirements/*${{ env.LOCK_SUFFIX }}
 
     - name: "Show environment"
+      shell: bash
       run: |
         set -xe
         python -VV
@@ -242,6 +246,7 @@ jobs:
         env
 
     - name: "Install dependencies"
+      shell: bash
       run: |
         set -xe
         python -m pip install -r requirements/tox$LOCK_SUFFIX
@@ -250,6 +255,7 @@ jobs:
 
     # Create generated files: version file and .lnk files. sdist tarball ignored
     - name: "Build sdist to run plugins. Create generated files"
+      shell: bash
       run: |
         # TOML file location ${{ runner.temp }}/${{ steps.outcome.inputs.toml_file_name }}
         # env.DS_CONFIG_SETTINGS contains (OS independent) path to TOML file

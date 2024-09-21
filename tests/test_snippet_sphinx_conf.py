@@ -204,33 +204,6 @@ def test_snip_sphinx_conf_contents(
         #    Terse datetime str intended for display
         assert """release_date = \"""" in actual
 
-    # Could not get project name from git --> AssertionError
-    """
-    if kind == "tag":
-        with (
-            patch(
-                f"{g_app_name}.version_semantic._get_app_name",
-                side_effect=AssertionError,
-            ),
-            patch(
-                "subprocess.run",
-                return_value=subprocess.CompletedProcess(
-                    cmd,
-                    returncode=128,
-                    stdout="",
-                    stderr="fatal: No names found, cannot describe anything.",
-                ),
-            ),
-            pytest.raises(AssertionError),
-        ):
-            sc.contents(
-                kind,
-                package_name,
-                copyright_start_year,
-            )
-    """
-    pass
-
     # Explicit version str bad --> ValueError
     kind = "nowhere boys alternative universe police state that knows about magic"
     with pytest.raises(ValueError):
@@ -244,7 +217,7 @@ def test_snip_sphinx_conf_contents(
 testdata_snip_sphinx_conf_replace = (
     (
         Path(__file__).parent.joinpath(
-            "test_snip",
+            "_good_snips",
             "test_snip_harden_one_snip__with_id_.txt",
         ),
         "0.0.1",

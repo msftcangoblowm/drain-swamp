@@ -16,7 +16,6 @@ from drain_swamp.version_semantic import (
     Version,
     _current_tag,
     _current_version,
-    _get_app_name,
     _map_release,
     _remove_v,
     get_version,
@@ -406,6 +405,18 @@ class SemVersioning(unittest.TestCase):
             actual = _current_version(path=self.cwd)
             self.assertIsNone(actual)
 
+        # command or entrypoint not available. e.g. resolve_path("asdfas") is None
+        with patch(
+            f"{g_app_name}.version_semantic.is_package_installed",
+            return_value=True,
+        ):
+            with patch(
+                f"{g_app_name}.version_semantic.resolve_path",
+                return_value=None,
+            ):
+                actual = _current_version(path=self.cwd)
+                self.assertIsNotNone(actual)
+
         cmd = []
         with patch(
             "subprocess.run",
@@ -620,34 +631,6 @@ class SemVersioning(unittest.TestCase):
             ):
                 actual_ver = sv.version_clean(kind)
                 self.assertEqual(actual_ver, sane_fallback)
-
-    def test_get_app_name(self):
-        """Grabs app project basename from git."""
-        expected = g_app_name
-        actual = _get_app_name(path=self.cwd)
-        self.assertEqual(actual, expected)
-
-        """Unlikely to ever occur. Bigger risk would be if the package
-        base name is not the same as g_app_name"""
-        cmd = []
-        with patch(
-            "subprocess.run",
-            side_effect=subprocess.CalledProcessError(128, cmd),
-        ):
-            actual = _get_app_name(path=self.cwd)
-            self.assertIsNone(actual)
-
-        # returns nothing. Not a possibility but hardened against this
-        with patch(
-            "subprocess.run",
-            return_value=subprocess.CompletedProcess(
-                cmd,
-                returncode=0,
-                stdout="",
-            ),
-        ):
-            actual = _get_app_name(path=self.cwd)
-            self.assertIsNone(actual)
 
     def test_sanitize_kind(self):
         """Can provide a version str or get latest tag or current dev version."""

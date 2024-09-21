@@ -340,7 +340,7 @@ testdata_snippets_list = (
     (
         "docs",
         Path(__file__).parent.joinpath(
-            "test_snip",
+            "_good_snips",
             "test_snip_harden_one_snip__with_id_.txt",
         ),
         0,
@@ -349,7 +349,7 @@ testdata_snippets_list = (
     (
         "docs",
         Path(__file__).parent.joinpath(
-            "test_snip",
+            "_good_snips",
             "test_snip_harden_No_snippet__Nothing_to_do_.txt",
         ),
         6,

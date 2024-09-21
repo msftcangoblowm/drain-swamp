@@ -89,10 +89,13 @@ def resolve_path(str_cmd):
     :param str_cmd: Relative path to executable
     :type str_cmd: str
     :returns: Windows safe absolute path to executable
-    :rtype: str
+    :rtype: str | None
     """
     str_path = shutil.which(str_cmd)
-    ret = str(_to_purepath(str_path))
+    if str_path is None:
+        ret = None
+    else:
+        ret = str(_to_purepath(str_path))
 
     return ret
 

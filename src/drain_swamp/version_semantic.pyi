@@ -39,7 +39,6 @@ def _arbritary_version(
     next_version: str,
     path: Path | None = None,
 ) -> str | None: ...
-def _get_app_name(path: Path | None = None) -> str | None: ...
 
 class SemVersion:
     CURRENT_ALIAS_DEFAULT: str = "current"

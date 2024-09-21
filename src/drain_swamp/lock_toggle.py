@@ -602,7 +602,9 @@ def lock_compile(inst):
 
     """
     str_func_name = f"{g_app_name}.lock_toggle.lock_compile"
-    assert is_package_installed("pip-tools") is True
+    is_installed = is_package_installed("pip-tools")
+    ep_path = resolve_path("pip-compile")
+    assert is_installed is True and ep_path is not None
 
     # store pairs
     lst_pairs = []
@@ -640,7 +642,7 @@ def lock_compile(inst):
     for in_path, out_path in lst_pairs:
         # str(PATH_PIP_COMPILE),
         cmd = (
-            resolve_path("pip-compile"),
+            ep_path,
             "--allow-unsafe",
             "--resolver",
             "backtracking",
