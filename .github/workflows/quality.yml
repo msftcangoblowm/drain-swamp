@@ -63,7 +63,7 @@ jobs:
     - name: upload artifact -- config settings toml
       uses: actions/upload-artifact@v4.4.0
       with:
-          name: config-settings-toml-${{ matrix.os }}-${{ inputs.python_version }}
+          name: config-settings-toml-${{ matrix.os }}-${{ matrix.python_version }}
           path: '${{ env.DS_CONFIG_SETTINGS }}'
           retention-days: 1
           if-no-files-found: error
