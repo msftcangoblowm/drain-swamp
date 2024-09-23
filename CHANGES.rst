@@ -37,29 +37,20 @@ Changelog
    Commit items for NEXT VERSION
    ..............................
 
-   - chore: remove dependency pytest-cov
-   - docs: rewrite front page
-   - ci: drain-swamp-action input fetch_tags deprecation
-   - fix: deprecate pytest-cov use coverage
-   - ci: outputs from parent job available on needs.job-name.outputs.output-name
-   - ci: set DS_CONFIG_SETTINGS --> GITHUB_ENV
-   - ci: clearly name communication between jobs
-   - ci: fix matrix.python_version --> matrix.python-version
-   - ci: artifact name use matrix.python_version
-   - ci: fix set GITHUB_OUTPUT on step config-settings-output
-   - refactor: rename tests/test_snip --> tests/_good_snips
-   - fix: resolve_path cannot find executable fallback to pep366 invocation
-   - ci: remove env variable SET_LOCK
-   - ci: pass DS_CONFIG_SETTINGS between jobs as output
-   - ci(coverage): download dsa once
-   - ci(quality): download dsa once
-   - ci: download config settings once share with other jobs
-   - ci(drain-swamp-action): fetch-tags off
-   - ci: actions/checkout put repository in with block
-   - ci(release): kind tag not env.RELEASE_VERSION
-   - ci: checkout specify repository
-
 .. scriv-start-here
+
+.. _changes_1-8-2:
+
+Version 1.8.2 — 2024-09-23
+--------------------------
+
+- fix: resolve_path cannot find executable fallback to pep366 invocation
+- refactor: rename tests/test_snip --> tests/_good_snips
+- chore: remove dependency pytest-cov
+- docs: rewrite front page
+- ci: from drain-swamp-action remove input fetch_tags
+- ci: actions/checkout put repository in with block
+- ci(release): kind tag not env.RELEASE_VERSION
 
 .. _changes_1-8-1:
 
