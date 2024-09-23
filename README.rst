@@ -35,14 +35,6 @@ triggering malware.
 
 Lets call this hiding place, *the swamp*
 
-drain-swamp has build plugins. Ideal for creating generated files like:
-
-- setuptools-scm version file
-
-- dependency lock and unlock files
-
-Isn't protobuf also compiled? Great fit for a build plugin
-
 Boilerplate
 """"""""""""
 
@@ -54,117 +46,44 @@ copy+paste into multiple packages.
 - small variations leak in
 - code quality and feature improvements are less likely to happen
 
-drain-swamp started out to reduce this
+``drain-swamp`` started out to reduce this
 
-Updating docs
-""""""""""""""
+Generated files
+---------------
 
-updates
+For Python packages, which contain generated files, UX is improved
+by generating those files during the build process.
 
-- Sphinx ``docs/conf.py``
-- CHANGES.rst
-- NOTICE.txt
+These batteries are included:
 
-This is done skillfully, applying a generic technique, snippets. Static
-config files become dynamic, encouraging automation.
+- setuptools-scm version file
 
-flexible semantic versioning
-"""""""""""""""""""""""""""""
+- dependency lock switch
 
-In the build workflow, setting the version tag comes last, not before the build.
+  ``.lock``, ``.unlock``, and ``.lnk`` files
 
-When building, the semantic version would come from the version file.
-Which makes it's way into the sdist tarball
+Micro services use message queues for inter-process communications.
+The messages use ``protobuf`` message protocol which produces a
+generated file. That **must** be part of the build process.
 
-.. code:: shell
+Would be a good fit for a build plugin
 
-   python -m build -C--kind="0.5.1a4.dev6" -C--set-lock="0"
+version file
+""""""""""""
 
-One of our build plugins will update the version file.
+The build plugin for interacting with version file, it's
+about having flexibility on which version str to use.
 
-Lets check the license. Hmmm Apache2.0 abandonware, that's a great
-reason to turn the dependency lock off.
+Different circumstances calls for different version str
 
-It's slightly more messy than this, the jist is, config settings gets
-passed to all build plugins.
+- CI tagged release workflow needs ``tag`` version from the version file
 
-**kind** can be:
+- CI on push workflows need the ``current`` version
 
-*current* (or *now*) -- get semantic version from git
+- :code:`python -m build` provide the new version str
 
-*tag* -- semantic version str from version file
-
-a semantic version str -- so have full control over what it becomes
-
-There is no bump version. Cuz we adults and semantic version str
-isn't limited to *major.minor.patch*
-
-Nor does changelog entries with *feat* and *fix* lines necessitate a
-major or minor release bump.
-
-bump version is the opposite, dumbing things down.
-
-Extensions
------------
-
-*Snip* is the generic technique to make an otherwise static
-config file, dynamic. Simple explanation: static portion is surrounded
-by comments turning it into a snippet.
-
-This technique is applied to aid DevOps.
-
-Comes with these *extensions*:
-
-**pipenv-unlock** -- switch on/off dependency locks
-
-``pyproject.toml`` is not dynamic and it's not supposed to be dynamic. In
-an ideal world, it would be static.
-
-Authors disappear or die. Unfunded projects quickly become
-abandonware. Packages with locked dependencies do not age well.
-
-pipenv-unlock is a light switch to turn on/off dependency locking.
-
-refresh both .unlock and .lock files. During build time, .lnk shortcut is created.
-
-An author dies, discovers girls, or gets a job scrapping gum off sidewalks. No worries
-
-refreshes symlinks (.lnk)
-
-.. code-block:: shell
-
-   pipenv-unlock refresh --set-lock "off"
-   pipenv-unlock refresh --set-lock "on"
-
-lock / unlock dependencies
-
-.. code-block:: shell
-
-   pipenv-unlock lock
-   pipenv-unlock unlock
-
-.. csv-table:: Following in Click's footsteps
-   :header: "State", "Possible values"
-   :widths: auto
-
-   "lock", """1"", ""true"", ""t"", ""yes"", ""y"", ""on"""
-   "unlock", """0"", ""false"", ""f"", ""no"", ""n"", ""off"""
-
-**drain-swamp**
-
-In ``conf.py``, there are some dynamic fields. Each package release,
-has to change these fields:
-
-- version
-- release
-- release_date
-- copyright (start year and author name)
-
-Reduces reliance on ``igor.py``
-
-**scm-version** -- Version file support
-
-Replaces getting version from setup.py or from setuptools-scm
+This flexibility allows to test building a package
+before :code:`git push` or a tagged release.
 
 Get scm (source control management) version
 
@@ -189,120 +108,142 @@ to check/fix semantic version str
 
    scm-version write "0.5.2post0.dev1"
 
-Whats a snippet?
------------------
+Features
+--------
 
-Within a configuration, often need to run some code to change a some text.
+Updating docs
+""""""""""""""
 
-The only requirement is the file format should recognize pound symbol ``#`` as a comment.
+Before a commit, update the date and version str in several locations
 
-A snippet **without** an snippet code (id)
+updates
 
-.. code:: text
+- Sphinx ``docs/conf.py``
+- CHANGES.rst
+- NOTICE.txt
 
-   before snippet
-   # @@@ editable
-   code block
-   # @@@ end
-   after snippet
+This Sphinx conf.py contains a snippet. The entire contents of the snippet
+is replaced. This technique is now a separate package,
+drain-swamp-snippet_
 
-A snippet **with** an snippet code (id)
+.. _drain-swamp-snippet: https://pypi.org/project/drain-swamp-snippet
 
-.. code:: text
+Dependency lock switch
+""""""""""""""""""""""
 
-   before snippet
-   # @@@ i_am_a_snippet_co
-   code block
-   # @@@ end
-   after snippet
+Authors disappear or die. Unfunded projects quickly become
+abandonware. Packages with locked dependencies do not age well.
 
-Replace the text within the snippet
+Lets check the license. Hmmm Apache2.0 abandonware, that's a great
+reason to turn the dependency lock off.
 
-.. code:: python
+**pipenv-unlock** is a light switch to turn on/off dependency locking.
 
-    import tempfile
-    import textwrap
-    from pathlib import Path
+On your repo, set a CI variable and that is the switch.
 
-    from drain_swamp_snippet import Snip
+When the repo is inactive, turn off the switch and make a release
+without dependency locking.
 
-    # prepare
-    contents_existing = textwrap.dedent(
-        """\
-    before snippet
-    # @@@ editable i_am_a_snippet_co
-    code block
-    # @@@ end
-    after snippet
-    """
-    )
+**How it works**
 
-    contents_new = """new\ncontents\nhere"""
+A snippet in ``pyproject.toml`` containing both
+dependencies and optional-dependencies. There is additional
+meta data as well.
 
-    expected = textwrap.dedent(
-        """\
-    before snippet
-    # @@@ editable i_am_a_snippet_co
-    new
-    contents
-    here
-    # @@@ end
-    after snippet
-    """
-    )
+Refresh both ``.unlock`` and ``.lock`` files. During build time,
+``.lnk`` shortcut is created.
 
-    with tempfile.TemporaryDirectory() as f_path:
-        path_f = Path(f_path)
+Create dependency files with the ``.in`` extension.
+These include the dependencies and lines with ``-r`` and
+``-c`` to include other dependency files.
 
-        # prepare
-        path_some_conf = path_f / "some.conf"
-        path_some_conf.write_text(contents_existing)
+Then
 
-        # act
-        snip = Snip(path_some_conf, is_quiet=True)
-        snip.replace(contents_new, id_="i_am_a_snippet_co")
+Create both lock and unlock dependency files
 
-        actual = path_some_conf.read_text()
+.. code-block:: shell
 
-    assert actual == expected
+   pipenv-unlock lock
+   pipenv-unlock unlock
 
-In a temporary folder, created a file, ``some.conf`` with contents,
-*contents_existing*.
+Update the ``pyproject.toml`` snippet and refreshes
+symlinks (.lnk)
 
-Replace the contents within the snippet, with id *i_am_a_snippet_co*,
-with *contents_new*.
+.. code-block:: shell
 
-textwrap.dedent("""\\ means, remove any indention and escape
-ignore the preceding newline
+   pipenv-unlock refresh --set-lock "off"
+   pipenv-unlock refresh --set-lock "on"
 
-Snip constructor parameter, is_quiet, turns off logging
+.. csv-table:: set lock state values
+   :header: "State", "Possible values"
+   :widths: auto
 
-Where to use snippets?
-------------------------
+   "lock", """1"", ""true"", ""t"", ""yes"", ""y"", ""on"""
+   "unlock", """0"", ""false"", ""f"", ""no"", ""n"", ""off"""
 
-Python package authors rarely write and publish just one python package.
+build config settings
+""""""""""""""""""""""
 
-We write lots of packages!
+The Python packages build process occurs within a subprocess.
+The hottest trending topic is how to pass config settings to
+this subprocess?
 
-In each package, there is boilerplate code, not covered by unittests,
-that is almost an exact copy as found in other packages.
+Right before :code:`python -m build`, depending on context,
+use whichever method is most appropriate.
 
-After a few published packages, this boilerplate code becomes a liability
-and an eye sore.
+**custom build backend**
 
-Code within ``Makefile`` or ``igor.py`` needs to brought under control.
-Like a cancer, waiting to be exploited, less is more.
+This would only work for a custom build backend. Will see
+it's use only in drain-swamp howto.txt
 
-Ideally, cut out entirely or as much as is reasonable.
+.. code:: shell
 
-File formats -- supported
+   python -m build -C--kind="0.5.1a4.dev6" -C--set-lock="0"
 
-Lines starting with pound sign **#** are considered comments:
+Unless authoring a custom build backend, can safely
+ignore.
 
-- python
-- bash
-- pyproject.toml
-- Linux config files
+**cli**
+
+Use bash-workaround_
+
+**tox**
+
+Similiar to *cli*. During ``pre_command``, the TOML file and
+environment variable DS_CONFIG_SETTINGS are created.
+
+tox test -- drain-swamp-tox-test_
+
+tox -- drain-swamp-tox_
+
+**github workflows**
+
+drain-swamp-action_ creates the TOML file and environment
+variable, DS_CONFIG_SETTINGS.
+
+Immediately after this gh action, there is fair bit of:
+
+upload and download artifacts, between step communication,
+and maybe between jobs communication.
+
+- matrix size == 1 drain-swamp-release-yml_
+
+There is one job. Communication is only between steps. e.g. ubuntu-latest-3.10
+
+- matrix size > 1 drain-swamp-quality-yml_
+
+There are several jobs. A parent job occurs once. Constraining artifact upload
+to only occur once.
+
+See also ``gh workflows`` folder -- drain-swamp-gh-workflows_
+
+.. _bash-workaround: https://github.com/msftcangoblowm/drain-swamp-action/tree/v1#technique----bash-implementation
+.. _drain-swamp-action: https://github.com/msftcangoblowm/drain-swamp-action/tree/v1#github-workflow
+.. _drain-swamp-release-yml: https://github.com/msftcangoblowm/drain-swamp/blob/master/.github/workflows/release.yml
+.. _drain-swamp-quality-yml: https://github.com/msftcangoblowm/drain-swamp/blob/master/.github/workflows/quality.yml
+.. _drain-swamp-gh-workflows: https://github.com/msftcangoblowm/drain-swamp/tree/master/.github/workflows
+.. _drain-swamp-tox-test: https://github.com/msftcangoblowm/drain-swamp/blob/master/tox-test.ini
+.. _drain-swamp-tox: https://github.com/msftcangoblowm/drain-swamp/blob/master/tox.ini
 
 .. |last-commit| image:: https://img.shields.io/github/last-commit/msftcangoblowm/drain-swamp/master
     :target: https://github.com/msftcangoblowm/drain-swamp/pulse

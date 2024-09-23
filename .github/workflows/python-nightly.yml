@@ -73,7 +73,6 @@ jobs:
       with:
         plugin_parameters: '{"set-lock": "${{ vars.DRAINSWAMP_SET_LOCK }}", "kind": "current"}'
         checkout: true
-        fetch_tags: false
         python_version: "${{ matrix.python-version }}"
 
     - name: "Download artifact"

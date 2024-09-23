@@ -22,14 +22,6 @@ triggering malware.
 
 Lets call this hiding place, *the swamp*
 
-drain-swamp has build plugins. Ideal for creating generated files like:
-
-- setuptools-scm version file
-
-- dependency lock and unlock files
-
-Isn't protobuf also compiled? Great fit for a build plugin
-
 Boilerplate
 """"""""""""
 
@@ -41,119 +33,46 @@ copy+paste into multiple packages.
 - small variations leak in
 - code quality and feature improvements are less likely to happen
 
-drain-swamp started out to reduce this
+``drain-swamp`` started out to reduce this
 
-Updating docs
-""""""""""""""
+Generated files
+---------------
 
-updates
+For Python packages, which contain generated files, UX is improved
+by generating those files during the build process.
 
-- Sphinx ``docs/conf.py``
-- CHANGES.rst
-- NOTICE.txt
+These batteries are included:
 
-This is done skillfully, applying a generic technique, snippets. Static
-config files become dynamic, encouraging automation.
+- setuptools-scm version file
 
-flexible semantic versioning
-"""""""""""""""""""""""""""""
+- dependency lock switch
 
-In the build workflow, setting the version tag comes last, not before the build.
+  ``.lock``, ``.unlock``, and ``.lnk`` files
 
-When building, the semantic version would come from the version file.
-Which makes it's way into the sdist tarball
+Micro services use message queues for inter-process communications.
+The messages use ``protobuf`` message protocol which produces a
+generated file. That **must** be part of the build process.
 
-.. code-block:: shell
+Would be a good fit for a build plugin
 
-   python -m build -C--kind="0.5.1a4.dev6" -C--set-lock="0"
+version file
+""""""""""""
 
-One of our build plugins will update the version file.
+The build plugin for interacting with version file, it's
+about having flexibility on which version str to use.
 
-Lets check the license. Hmmm Apache2.0 abandonware, that's a great
-reason to turn the dependency lock off.
+Different circumstances calls for different version str
 
-It's slightly more messy than this, the jist is, config settings gets
-passed to all build plugins.
+- CI tagged release workflow needs ``tag`` version from the version file
 
-**kind** can be:
+- CI on push workflows need the ``current`` version
 
-*current* (or *now*) -- get semantic version from git
+- :code:`python -m build` provide the new version str
 
-*tag* -- semantic version str from version file
+This flexibility allows to test building a package
+before :code:`git push` or a tagged release.
 
-a semantic version str -- so have full control over what it becomes
-
-There is no bump version. Cuz we adults and semantic version str
-isn't limited to *major.minor.patch*
-
-Nor does changelog entries with *feat* and *fix* lines necessitate a
-major or minor release bump.
-
-bump version is the opposite, dumbing things down.
-
-Extensions
------------
-
-*Snip* is the generic technique to make an otherwise static
-config file, dynamic. Simple explanation: static portion is surrounded
-by comments turning it into a snippet.
-
-This technique is applied to aid DevOps.
-
-Comes with these *extensions*:
-
-**pipenv-unlock** -- switch on/off dependency locks
-
-``pyproject.toml`` is not dynamic and it's not supposed to be dynamic. In
-an ideal world, it would be static.
-
-Authors disappear or die. Unfunded projects quickly become
-abandonware. Packages with locked dependencies do not age well.
-
-pipenv-unlock is a light switch to turn on/off dependency locking.
-
-refresh both .unlock and .lock files. During build time, .lnk shortcut is created.
-
-An author dies, discovers girls, or gets a job scrapping gum off sidewalks. No worries
-
-refreshes symlinks (.lnk)
-
-.. code-block:: shell
-
-   pipenv-unlock refresh --set-lock "off"
-   pipenv-unlock refresh --set-lock "on"
-
-lock / unlock dependencies
-
-.. code-block:: shell
-
-   pipenv-unlock lock
-   pipenv-unlock unlock
-
-.. csv-table:: Following in Click's footsteps
-   :header: "State", "Possible values"
-   :widths: auto
-
-   "lock", """1"", ""true"", ""t"", ""yes"", ""y"", ""on"""
-   "unlock", """0"", ""false"", ""f"", ""no"", ""n"", ""off"""
-
-**drain-swamp**
-
-In ``conf.py``, there are some dynamic fields. Each package release,
-has to change these fields:
-
-- version
-- release
-- release_date
-- copyright (start year and author name)
-
-Reduces reliance on ``igor.py``
-
-**scm-version** -- Version file support
-
-Replaces getting version from setup.py or from setuptools-scm
-
-Get :abbr:`scm (source control management)` version
+Get scm (source control management) version
 
 .. code-block:: shell
 
@@ -175,6 +94,137 @@ to check/fix semantic version str
 .. code-block:: shell
 
    scm-version write "0.5.2post0.dev1"
+
+Features
+--------
+
+Updating docs
+""""""""""""""
+
+Before a commit, update the date and version str in several locations
+
+updates
+
+- Sphinx ``docs/conf.py``
+- CHANGES.rst
+- NOTICE.txt
+
+This Sphinx conf.py contains a snippet. The entire contents of the snippet
+is replaced. This technique is now a separate package,
+drain-swamp-snippet_
+
+.. _drain-swamp-snippet: https://pypi.org/project/drain-swamp-snippet
+
+Dependency lock switch
+""""""""""""""""""""""
+
+Authors disappear or die. Unfunded projects quickly become
+abandonware. Packages with locked dependencies do not age well.
+
+Lets check the license. Hmmm Apache2.0 abandonware, that's a great
+reason to turn the dependency lock off.
+
+**pipenv-unlock** is a light switch to turn on/off dependency locking.
+
+On your repo, set a CI variable and that is the switch.
+
+When the repo is inactive, turn off the switch and make a release
+without dependency locking.
+
+**How it works**
+
+A snippet in ``pyproject.toml`` containing both
+dependencies and optional-dependencies. There is additional
+meta data as well.
+
+Refresh both ``.unlock`` and ``.lock`` files. During build time,
+``.lnk`` shortcut is created.
+
+Create dependency files with the ``.in`` extension.
+These include the dependencies and lines with ``-r`` and
+``-c`` to include other dependency files.
+
+Then
+
+Create both lock and unlock dependency files
+
+.. code-block:: shell
+
+   pipenv-unlock lock
+   pipenv-unlock unlock
+
+Update the ``pyproject.toml`` snippet and refreshes
+symlinks (.lnk)
+
+.. code-block:: shell
+
+   pipenv-unlock refresh --set-lock "off"
+   pipenv-unlock refresh --set-lock "on"
+
+.. csv-table:: set lock state values
+   :header: "State", "Possible values"
+   :widths: auto
+
+   "lock", """1"", ""true"", ""t"", ""yes"", ""y"", ""on"""
+   "unlock", """0"", ""false"", ""f"", ""no"", ""n"", ""off"""
+
+build config settings
+""""""""""""""""""""""
+
+The Python packages build process occurs within a subprocess.
+The hottest trending topic is how to pass config settings to
+this subprocess?
+
+Right before :code:`python -m build`, depending on context,
+use whichever method is most appropriate.
+
+**custom build backend**
+
+This would only work for a custom build backend. Will see
+it's use only in drain-swamp howto.txt
+
+.. code:: shell
+
+   python -m build -C--kind="0.5.1a4.dev6" -C--set-lock="0"
+
+Unless authoring a custom build backend, can safely
+ignore.
+
+**cli**
+
+Use :ref:`Bash workaround <gh_dsa:bash>`
+
+**tox**
+
+Similiar to *cli*. During ``pre_command``, the TOML file and
+environment variable DS_CONFIG_SETTINGS are created.
+
+:ref:`tox test <gh_ds:tox-test>`
+
+:ref:`tox <gh_ds:tox>`
+
+**github workflows**
+
+:ref:`drain-swamp-action gh action <gh_dsa:action>` creates the TOML
+file and environment variable DS_CONFIG_SETTINGS.
+
+Immediately after this gh action, there is fair bit of:
+
+upload and download artifacts, between step communication,
+and maybe between jobs communication.
+
+- matrix size == 1 :ref:`release workflow <gh_ds:release>`
+
+There is one job. Communication is only between steps. e.g. ubuntu-latest-3.10
+
+- matrix size > 1 :ref:`quality workflow <gh_ds:quality>`
+
+There are several jobs. A parent job occurs once. Constraining artifact upload
+to only occur once.
+
+.. seealso::
+
+   :ref:`drain-swamp gh workflows <gh_ds:workflows>`
 
 .. |feature banner| image:: _static/drain-swamp-banner-640-320.*
    :alt: drain-swamp features build plugins and dependency lock switch

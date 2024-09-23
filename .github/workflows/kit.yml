@@ -157,9 +157,9 @@ jobs:
         with:
           # PYVERSIONS
           python-version: "3.9"
-          cache: pip
-          cache-dependency-path: |
-            requirements/*${{ env.LOCK_SUFFIX }}
+          # cache: pip
+          # cache-dependency-path: |
+          #   requirements/*${{ env.LOCK_SUFFIX }}
 
       - name: "Install tools"
         run: |
@@ -207,9 +207,9 @@ jobs:
         with:
           # PYVERSIONS
           python-version: "3.9"
-          cache: pip
-          cache-dependency-path: |
-            requirements/*${{ env.LOCK_SUFFIX }}
+          # cache: pip
+          # cache-dependency-path: |
+          #   requirements/*${{ env.LOCK_SUFFIX }}
 
       - name: "Install tools"
         run: |
@@ -247,9 +247,9 @@ jobs:
         uses: actions/setup-python@v5.2.0
         with:
           python-version: "pypy-3.9" # Minimum of PyPy PYVERSIONS
-          cache: pip
-          cache-dependency-path: |
-            requirements/*${{ env.LOCK_SUFFIX }}
+          # cache: pip
+          # cache-dependency-path: |
+          #   requirements/*${{ env.LOCK_SUFFIX }}
 
       - name: "Install requirements"
         run: |

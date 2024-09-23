@@ -1,0 +1,9 @@
+# Sphinx inventory version 2
+# Project: drain-swamp 1.8.0
+# Version: 1.8.0
+# The remainder of this file is compressed using zlib.
+gh_ds:release std:label -1 blob/master/.github/workflows/release.yml release gh workflow
+gh_ds:quality std:label -1 blob/master/.github/workflows/quality.yml quality gh workflow
+gh_ds:workflows std:label -1 tree/master/.github/workflows Workflows folder
+gh_ds:tox std:label -1 blob/master/tox.ini tox.ini
+gh_ds:tox-test std:label -1 blob/master/tox-test.ini tox-test.ini

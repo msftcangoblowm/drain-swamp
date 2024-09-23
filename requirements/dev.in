@@ -15,6 +15,5 @@ coverage
 twine
 validate-pyproject
 pytest>=7.1
-pytest-cov
 pytest-regressions
 types-setuptools

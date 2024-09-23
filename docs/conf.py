@@ -163,6 +163,14 @@ intersphinx_mapping = {
         "https://drain-swamp-snippet.readthedocs.io/en/stable",
         ("objects-dss.inv", "objects-dss.txt"),
     ),
+    "gh-dsa": (
+        "https://github.com/msftcangoblowm/drain-swamp-action",
+        ("objects-gh-dsa.inv", "objects-gh-dsa.txt"),
+    ),
+    "gh-ds": (
+        "https://github.com/msftcangoblowm/drain-swamp",
+        ("objects-gh-ds.inv", "objects-gh-ds.txt"),
+    ),
 }
 intersphinx_disabled_reftypes = ["std:doc"]
 

@@ -1,0 +1,7 @@
+# Sphinx inventory version 2
+# Project: drain-swamp-action 1.0.0
+# Version: 1.0.0
+# The remainder of this file is compressed using zlib.
+gh_dsa std:doc -1 tree/v1/README.rst drain-swamp-action v1 branch
+gh_dsa:bash std:label -1 tree/v1/README.rst#technique----bash-implementation Bash implementation
+gh_dsa:action std:label -1 tree/v1/README.rst#github-workflow dsa github action

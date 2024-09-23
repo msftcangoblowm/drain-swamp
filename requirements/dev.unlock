@@ -7,7 +7,6 @@ blackdoc
 flake8
 pytest>=7.1
 flake8-pyproject
-pytest-cov
 validate-pyproject
 pytest-regressions
 types-setuptools

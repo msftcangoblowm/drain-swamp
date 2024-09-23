@@ -208,6 +208,8 @@ linkcheck_ignore = [
     'https://github.com/python/cpython/blob/8edfa0b0b4ae4235bb3262d952c23e7581516d4f/Lib/os.py#L701',
     'https://github.com/pypa/setuptools/blob/4147b093d0aea4f57757c699a0b25bbc3aab2580/setuptools/dist.py#L204',
     'https://github.com/pypa/setuptools/blob/e9f0be98ea4faaba4a7b2d07ba994a81fde8f42f/setuptools/build_meta.py#L161',
+    'https://github.com/msftcangoblowm/drain-swamp-action/tree/v1/README.rst#github-workflow',
+    'https://github.com/msftcangoblowm/drain-swamp-action/tree/v1/README.rst#technique----bash-implementation',
 ]
 myst_enable_extensions = ["colon_fence", "html_image"]
 external_toc_exclude_missing = true

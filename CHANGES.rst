@@ -8,8 +8,6 @@ Changelog
    Feature request
    .................
 
-   - phase out dependency pytest-cov. Remove from requirements/dev.*
-
    - When packaging, symlinks are converted into files. This change is only
      noticed when the package is installed. Create an integration test
      which builds and installs a package in a test venv. Confirm package
@@ -17,11 +15,6 @@ Changelog
 
    - On Windows, refresh links fails. Combining dependencies relative path with cwd path
      Use __debug__ to turn on module level logging AND send the logging to stdout
-
-   - create gha, not just update workflow. If ``drain-swamp``, build
-     use config_settings options. Otherwise do the workaround. Export
-     env variable which contain path to temp .toml file. File contain parsable
-     config_settings which can be read from a subprocess
 
    - Confirm setuptools-scm file finders are being called?
 
@@ -44,6 +37,9 @@ Changelog
    Commit items for NEXT VERSION
    ..............................
 
+   - chore: remove dependency pytest-cov
+   - docs: rewrite front page
+   - ci: drain-swamp-action input fetch_tags deprecation
    - fix: deprecate pytest-cov use coverage
    - ci: outputs from parent job available on needs.job-name.outputs.output-name
    - ci: set DS_CONFIG_SETTINGS --> GITHUB_ENV
