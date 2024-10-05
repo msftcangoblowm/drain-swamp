@@ -35,7 +35,7 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  get-toml:
+  get-toml-cov:
     name: "Get config-settings"
     runs-on: "${{ matrix.os }}"
     strategy:
@@ -43,7 +43,7 @@ jobs:
         os:
           - ubuntu-latest
         python-version:
-          - "3.9"
+          - "3.10"
       fail-fast: false
     outputs:
       config_settings: '${{ steps.config-settings-output.outputs.config_settings }}'
@@ -81,14 +81,14 @@ jobs:
   codecov:
     name: "${{ matrix.python-version }} on ${{ matrix.os }}"
     needs:
-      get-toml
+      get-toml-cov
     runs-on: "${{ matrix.os }}"
     strategy:
       matrix:
         os:
           - ubuntu-latest
         python-version:
-          - "3.9"
+          - "3.10"
       fail-fast: false
 
     # Don't run tests if the branch name includes "-notests"
@@ -104,7 +104,7 @@ jobs:
     - name: Trans jobs -- outputs --> DS_CONFIG_SETTINGS
       shell: bash
       run: |
-        echo 'DS_CONFIG_SETTINGS=${{ needs.get-toml.outputs.config_settings }}' >> "$GITHUB_ENV"
+        echo 'DS_CONFIG_SETTINGS=${{ needs.get-toml-cov.outputs.config_settings }}' >> "$GITHUB_ENV"
 
     - name: "Check out the repo"
       uses: actions/checkout@v4.2.0

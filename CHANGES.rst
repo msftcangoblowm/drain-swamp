@@ -40,6 +40,7 @@ Changelog
    Commit items for NEXT VERSION
    ..............................
 
+   - ci(test-coverage): unique job name and py39 --> py310
    - ci(quality-docs): fix outputs job name
    - fix: importlib-metadata ensure use latest version
    - refactor: build plugins prefix plugin name to messages
