@@ -103,7 +103,7 @@ jobs:
     - name: Trans jobs -- outputs --> DS_CONFIG_SETTINGS
       shell: bash
       run: |
-        echo 'DS_CONFIG_SETTINGS=${{ needs.get-toml.outputs.config_settings }}' >> "$GITHUB_ENV"
+        echo 'DS_CONFIG_SETTINGS=${{ needs.get-toml-docs.outputs.config_settings }}' >> "$GITHUB_ENV"
 
     - name: "Check out the repo"
       uses: actions/checkout@v4.2.0

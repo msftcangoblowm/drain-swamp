@@ -6,8 +6,10 @@ click==8.1.7
     #   pip-tools
 drain-swamp-snippet==1.0.0.post2
     # via -r requirements/prod.in
-importlib-metadata==7.1.0
-    # via build
+importlib-metadata==8.5.0
+    # via
+    #   -r requirements/prod.in
+    #   build
 packaging==24.1
     # via
     #   build

@@ -1,6 +1,8 @@
 colorama>=0.4.6 ;platform_system=="Windows"
 setuptools>=75.1.0
 setuptools-scm>=8.1.0
+importlib-metadata>=8.5.0
+
 auditwheel
 build
 cibuildwheel

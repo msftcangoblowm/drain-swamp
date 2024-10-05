@@ -40,8 +40,9 @@ identify==2.5.36
     # via pre-commit
 idna==3.7
     # via requests
-importlib-metadata==7.1.0
+importlib-metadata==8.5.0
     # via
+    #   -r requirements/prod.in
     #   build
     #   keyring
     #   twine

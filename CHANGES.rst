@@ -40,6 +40,8 @@ Changelog
    Commit items for NEXT VERSION
    ..............................
 
+   - ci(quality-docs): fix outputs job name
+   - fix: importlib-metadata ensure use latest version
    - refactor: build plugins prefix plugin name to messages
    - refactor(lock_toggle): improve instructions when missing .unlock or .lock files
    - ci(quality-docs): separate workflow for docs

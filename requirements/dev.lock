@@ -42,8 +42,9 @@ flake8-pyproject==1.2.3
     # via -r requirements/dev.in
 idna==3.7
     # via requests
-importlib-metadata==7.1.0
+importlib-metadata==8.5.0
     # via
+    #   -r requirements/prod.in
     #   build
     #   keyring
     #   twine

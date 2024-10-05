@@ -1,5 +1,7 @@
 pip>=24.2
 setuptools>=75.1.0
+importlib-metadata>=8.5.0
+
 drain-swamp-snippet
 click
 pip-tools

@@ -12,8 +12,10 @@ cibuildwheel==2.17.0
     # via -r requirements/kit.in
 filelock==3.13.4
     # via cibuildwheel
-importlib-metadata==7.1.0
-    # via build
+importlib-metadata==8.5.0
+    # via
+    #   -r requirements/kit.in
+    #   build
 packaging==24.1
     # via
     #   auditwheel
