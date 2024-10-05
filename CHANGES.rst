@@ -40,24 +40,29 @@ Changelog
    Commit items for NEXT VERSION
    ..............................
 
-   - ci(test-coverage): unique job name and py39 --> py310
-   - ci(quality-docs): fix outputs job name
-   - fix: importlib-metadata ensure use latest version
-   - refactor: build plugins prefix plugin name to messages
-   - refactor(lock_toggle): improve instructions when missing .unlock or .lock files
-   - ci(quality-docs): separate workflow for docs
-   - ci: bump pypa/gh-action-pypi-publish to 1.10.3
-   - ci: drain-swamp-action version is 1.0.1 not v1.0.1
-   - fix: click.Path parameters receive as pathlib.Path. Previously str
-   - chore: normalize pip and setuptools versions
-   - chore: bump actions/checkout to v4.2.0
-   - docs: add mission and contributing
-   - chore: rtd and tox.ini target docs py39 --> py310
-   - docs: py39 --> py310
-   - chore: two venvs. docs py310. Everything else py39
-   - docs(Makefile): catch all target comment out
-
 .. scriv-start-here
+
+.. _changes_1-8-3:
+
+Version 1.8.3 — 2024-10-05
+--------------------------
+
+- ci(test-coverage): unique job name and py39 --> py310
+- ci(quality-docs): fix outputs job name
+- fix: importlib-metadata ensure use latest version
+- refactor: build plugins prefix plugin name to messages
+- refactor(lock_toggle): improve instructions when missing .unlock or .lock files
+- ci(quality-docs): separate workflow for docs
+- ci: bump pypa/gh-action-pypi-publish to 1.10.3
+- ci: drain-swamp-action version is 1.0.1 not v1.0.1
+- fix: click.Path parameters receive as pathlib.Path. Previously str
+- chore: normalize pip and setuptools versions
+- chore: bump actions/checkout to v4.2.0
+- docs: add mission and contributing
+- chore: rtd and tox.ini target docs py39 --> py310
+- docs: py39 --> py310
+- chore: two venvs. docs py310. Everything else py39
+- docs(Makefile): catch all target comment out
 
 .. _changes_1-8-2:
 
