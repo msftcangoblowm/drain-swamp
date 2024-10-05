@@ -1,15 +1,16 @@
 # Licensed under the AGPLv3+ License: https://www.gnu.org/licenses/
 # For details: https://github.com/msftcangoblowm/drain-swamp/blob/master/NOTICE.txt
 
-# -c ../requirements/pins.lock
--r ../requirements/prod.in
+-c ../requirements/prod.in
 
-sphinx
+pip<24.2
+sphinx>=8
+sphinx-external-toc-strict>=2.0.0.post1
+
 sphinx-pyproject
 sphinx-autobuild
 sphinx-paramlinks
 sphobjinv   # cross-references inventories, objects.inv
-sphinx-external-toc-strict
 scriv       # for writing GitHub releases
 sphinx-copybutton
 sphinx_design

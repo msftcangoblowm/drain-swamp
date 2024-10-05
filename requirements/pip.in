@@ -3,6 +3,6 @@
 
 -c pins.in
 
-pip
-setuptools
-setuptools-scm  # versioning
+pip>=24.2
+setuptools>=75.1.0
+setuptools-scm>=8.1.0

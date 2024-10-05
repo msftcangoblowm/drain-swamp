@@ -1,6 +1,9 @@
 # Licensed under the AGPLv3+ License: https://www.gnu.org/licenses/
 # For details: https://github.com/msftcangoblowm/drain-swamp/blob/master/NOTICE.txt
 
+pip>=24.2
+setuptools>=75.1.0
+
 click           # entrypoints
 # pip-tools commit 53309647980e2a4981db54c0033f98c61142de0b
 # Supposed to fix the absolute path issue, but didn't

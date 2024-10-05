@@ -3,9 +3,7 @@ cachetools==5.3.3
 chardet==5.2.0
     # via tox
 colorama==0.4.6
-    # via
-    #   -r requirements/tox.in
-    #   tox
+    # via tox
 distlib==0.3.8
     # via virtualenv
 filelock==3.13.4
@@ -24,8 +22,9 @@ pluggy==1.5.0
     # via tox
 pyproject-api==1.6.1
     # via tox
-tomli==2.0.1
+tomli==2.0.1 ; python_version < "3.11"
     # via
+    #   -c requirements/pins.in
     #   pyproject-api
     #   tox
 tox==4.14.2

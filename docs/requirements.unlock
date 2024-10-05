@@ -1,8 +1,9 @@
-sphinx-external-toc-strict
+pip<24.2
+sphinx>=8
+sphinx-external-toc-strict>=2.0.0.post1
 pluggy
 sphobjinv
 setuptools-scm
-sphinx
 scriv
 sphinx-pyproject
 sphinx-autobuild
@@ -14,4 +15,4 @@ sphinx_design
 sphinx-tabs
 sphinx-favicon
 interrogate
-drain-swamp-snippet==1.0.0.post1
+drain-swamp-snippet

@@ -37,6 +37,15 @@ Changelog
    Commit items for NEXT VERSION
    ..............................
 
+   - fix: click.Path parameters receive as pathlib.Path. Previously str
+   - chore: normalize pip and setuptools versions
+   - chore: bump actions/checkout to v4.2.0
+   - docs: add mission and contributing
+   - chore: rtd and tox.ini target docs py39 --> py310
+   - docs: py39 --> py310
+   - chore: two venvs. docs py310. Everything else py39
+   - docs(Makefile): catch all target comment out
+
 .. scriv-start-here
 
 .. _changes_1-8-2:

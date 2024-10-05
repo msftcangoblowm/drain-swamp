@@ -287,7 +287,13 @@ def main():
     "--path",
     "path",
     default=Path.cwd(),
-    type=click.Path(exists=False, file_okay=False, dir_okay=True, resolve_path=True),
+    type=click.Path(
+        exists=False,
+        file_okay=False,
+        dir_okay=True,
+        resolve_path=True,
+        path_type=Path,
+    ),
     help=help_path,
 )
 def seed(path):
@@ -300,12 +306,6 @@ def seed(path):
     :param path: path to the current working directory containing pyproject.toml
     :type path: pathlib.Path
     """
-    # resolve causing conversion into a str. Should be Path
-    if isinstance(path, str):  # pragma: no cover
-        path = Path(path)
-    else:  # pragma: no cover
-        pass
-
     f_stream = io.StringIO()
     with contextlib.redirect_stderr(f_stream):
         exit_code = seed_changelog(path)
@@ -331,7 +331,13 @@ def seed(path):
     "--path",
     "path",
     default=Path.cwd(),
-    type=click.Path(exists=False, file_okay=False, dir_okay=True, resolve_path=True),
+    type=click.Path(
+        exists=False,
+        file_okay=False,
+        dir_okay=True,
+        resolve_path=True,
+        path_type=Path,
+    ),
     help=help_path,
 )
 @click.option(
@@ -365,12 +371,6 @@ def edit(path, kind, snippet_co=None):  # pragma: no cover
     :param snippet_co: Sphinx doc?/conf.py snippet code. Supply none is no snippet has no code
     :type snippet_co: str | None
     """
-    # resolve causing conversion into a str. Should be Path
-    if isinstance(path, str):  # pragma: no cover
-        path = Path(path)
-    else:  # pragma: no cover
-        pass
-
     with contextlib.redirect_stderr(io.StringIO()) as f_stream:
         opt_int = edit_for_release(path, kind, snippet_co=snippet_co)
     str_err = f_stream.getvalue()
@@ -391,7 +391,13 @@ def edit(path, kind, snippet_co=None):  # pragma: no cover
     "-p",
     "--path",
     default=Path.cwd(),
-    type=click.Path(exists=False, file_okay=False, dir_okay=True, resolve_path=True),
+    type=click.Path(
+        exists=False,
+        file_okay=False,
+        dir_okay=True,
+        resolve_path=True,
+        path_type=Path,
+    ),
     help=help_path,
 )
 def snippets_list(path):
@@ -413,12 +419,6 @@ def snippets_list(path):
 
     :type path: pathlib.Path
     """
-    # resolve causing conversion into a str. Should be Path
-    if isinstance(path, str):  # pragma: no cover
-        path = Path(path)
-    else:  # pragma: no cover
-        pass
-
     # Get absolute path to doc?/conf.py
     try:
         sc = SnipSphinxConf(path=path)
@@ -462,7 +462,13 @@ def snippets_list(path):
     "--path",
     "path",
     default=Path.cwd(),
-    type=click.Path(exists=False, file_okay=False, dir_okay=True, resolve_path=True),
+    type=click.Path(
+        exists=False,
+        file_okay=False,
+        dir_okay=True,
+        resolve_path=True,
+        path_type=Path,
+    ),
     help=help_path,
 )
 @click.option(
@@ -486,12 +492,6 @@ def semantic_version_aware_build(path, kind):
 
     :type kind: str
     """
-    # resolve causing conversion into a str. Should be Path
-    if isinstance(path, str):  # pragma: no cover
-        path = Path(path)
-    else:  # pragma: no cover
-        pass
-
     try:
         with contextlib.redirect_stderr(io.StringIO()) as f_stream:
             # click --> exit code 2. Preventing NotADirectoryError
@@ -525,7 +525,13 @@ def semantic_version_aware_build(path, kind):
     "--path",
     "path",
     default=Path.cwd(),
-    type=click.Path(exists=False, file_okay=False, dir_okay=True, resolve_path=True),
+    type=click.Path(
+        exists=False,
+        file_okay=False,
+        dir_okay=True,
+        resolve_path=True,
+        path_type=Path,
+    ),
     help=help_path,
 )
 @click.option(
@@ -555,12 +561,6 @@ def setuptools_scm_key_value_pair(path, kind):
        build. Might remain relevent only to initially create the version file
 
     """
-    # resolve causing conversion into a str. Should be Path
-    if isinstance(path, str):  # pragma: no cover
-        path = Path(path)
-    else:  # pragma: no cover
-        pass
-
     try:
         with contextlib.redirect_stderr(io.StringIO()):
             # click --> exit code 2. Preventing NotADirectoryError
@@ -619,7 +619,13 @@ def validate_tag(ver):
     "--path",
     "path",
     default=Path.cwd(),
-    type=click.Path(exists=False, file_okay=False, dir_okay=True, resolve_path=True),
+    type=click.Path(
+        exists=False,
+        file_okay=False,
+        dir_okay=True,
+        resolve_path=True,
+        path_type=Path,
+    ),
     help=help_path,
 )
 def current_version(path):
@@ -635,12 +641,6 @@ def current_version(path):
     :param path: current working directory
     :type path: pathlib.Path
     """
-    # resolve causing conversion into a str. Should be Path
-    if isinstance(path, str):  # pragma: no cover
-        path = Path(path)
-    else:  # pragma: no cover
-        pass
-
     opt_str = get_current_version(path)
     if opt_str is None:
         sys.exit(1)
@@ -659,7 +659,13 @@ def current_version(path):
     "--path",
     "path",
     default=Path.cwd(),
-    type=click.Path(exists=False, file_okay=False, dir_okay=True, resolve_path=True),
+    type=click.Path(
+        exists=False,
+        file_okay=False,
+        dir_okay=True,
+        resolve_path=True,
+        path_type=Path,
+    ),
     help=help_path,
 )
 def tag_version(path):
@@ -675,12 +681,6 @@ def tag_version(path):
     :param path: current working directory
     :type path: pathlib.Path
     """
-    # resolve causing conversion into a str. Should be Path
-    if isinstance(path, str):  # pragma: no cover
-        path = Path(path)
-    else:  # pragma: no cover
-        pass
-
     # NotADirectoryError prevents by click
     try:
         ver_sem = get_tag_version(path)
@@ -714,7 +714,13 @@ def tag_version(path):
     "--path",
     "path",
     default=Path.cwd(),
-    type=click.Path(exists=False, file_okay=True, dir_okay=True, resolve_path=True),
+    type=click.Path(
+        exists=False,
+        file_okay=True,
+        dir_okay=True,
+        resolve_path=True,
+        path_type=Path,
+    ),
     help=help_path,
 )
 @click.option(
@@ -744,12 +750,6 @@ def do_cheats(path, kind):
 
     :type kind: str
     """
-    # resolve causing conversion into a str. Should be Path
-    if isinstance(path, str):  # pragma: no cover
-        path = Path(path)
-    else:  # pragma: no cover
-        pass
-
     try:
         print_cheats(path, kind)
     except NotADirectoryError as e:

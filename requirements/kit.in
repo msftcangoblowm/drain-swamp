@@ -1,20 +1,17 @@
 # Licensed under the AGPLv3+ License: https://www.gnu.org/licenses/
 # For details: https://github.com/msftcangoblowm/drain-swamp/blob/master/NOTICE.txt
 
-# -c pins.in
-
-# Things needed to make distribution kits.
-# "make upgrade" turns this into requirements/kit.pip.
-
-auditwheel
-build
-cibuildwheel  # .github/workflows/kit.yml
-setuptools
-setuptools-scm  # versioning
-wheel
-
 # Build has a windows-only dependency on colorama:
 # https://github.com/pypa/build/blob/main/setup.cfg#L32
 #   colorama;os_name == "nt"
 # We copy it here so it can get pinned.
-colorama
+colorama>=0.4.6 ;platform_system=="Windows"
+
+# Things needed to make distribution kits.
+# "make upgrade" turns this into requirements/kit.pip.
+build
+setuptools>=75.1.0
+
+auditwheel
+cibuildwheel  # .github/workflows/kit.yml
+setuptools-scm>=8.1.0

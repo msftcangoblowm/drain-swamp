@@ -52,7 +52,7 @@ jobs:
     - id: prepare-config-settings
       name: >-
         Build Plugin parameters
-      uses: 'msftcangoblowm/drain-swamp-action@v1'
+      uses: 'msftcangoblowm/drain-swamp-action@v1.0.1'
       with:
         plugin_parameters: '{"set-lock": "${{ vars.DRAINSWAMP_SET_LOCK }}", "kind": "current"}'
         checkout: true
@@ -107,7 +107,7 @@ jobs:
         echo 'DS_CONFIG_SETTINGS=${{ needs.get-toml.outputs.config_settings }}' >> "$GITHUB_ENV"
 
     - name: "Check out the repo"
-      uses: actions/checkout@6d193bf28034eafb982f37bd894289fe649468fc # v4.1.7
+      uses: actions/checkout@v4.2.0
       with:
         repository: '${{ github.repository }}'
         # fetch all branches and tags instead of only fetching the ref/SHA that triggered the workflow
@@ -146,7 +146,7 @@ jobs:
         python -m coverage combine
         python -m coverage xml --fail-under=95
     - name: "Upload to Codecov"
-      uses: codecov/codecov-action@2296b6ba9eee85301a5ef2c7c2cdc738faf1f939 # 4.5.0
+      uses: codecov/codecov-action@b9fd7d16f6d7d1b5d2bec1a2887e65ceed900238 # 4.5.0
       with:
         name: unittest-py${{ matrix.python-version }}
         token: ${{ secrets.CODECOV_TOKEN }}

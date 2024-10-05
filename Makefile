@@ -26,6 +26,7 @@ else
 is_venv = 1
 VENV_BIN := $(VIRTUAL_ENV)/bin
 VENV_BIN_PYTHON := python3
+PY_X_Y := $(shell $(VENV_BIN_PYTHON) -c 'import platform; t_ver = platform.python_version_tuple(); print(".".join(t_ver[:2]));')
 endif
 
 ifeq ($(is_venv),1)
@@ -63,26 +64,22 @@ upgrade-one:			## Update the *.pip files for one package. `make upgrade-one pack
 _upgrade: export CUSTOM_COMPILE_COMMAND=make upgrade
 _upgrade:
 ifeq ($(is_venv),1)
-  ifeq ($(is_piptools), pip-tools)
-	@pip install --quiet --disable-pip-version-check --requirement requirements/pip-tools.lock
-	$(PIP_COMPILE) -o requirements/pip-tools.lock requirements/pip-tools.in
+	@if [[ "$(PY_X_Y)" = "3.9" ]]; then
+
+	pip install --quiet --disable-pip-version-check -r requirements/pip-tools.lock
+	[[ -f requirements/pip-tools.lock ]] && cat /dev/null > requirements/pip-tools.lock
 	$(PIP_COMPILE) -o requirements/pip.lock requirements/pip.in
-	$(PIP_COMPILE) -o requirements/kit.lock requirements/kit.in
+	$(PIP_COMPILE) -o requirements/pip-tools.lock requirements/pip-tools.in
 	$(PIP_COMPILE) -o requirements/prod.lock requirements/prod.in
+	$(PIP_COMPILE) -o requirements/kit.lock requirements/kit.in
+	$(PIP_COMPILE) --no-strip-extras -o requirements/mypy.lock requirements/mypy.in
 	$(PIP_COMPILE) --no-strip-extras -o requirements/tox.lock requirements/tox.in
+
 	$(PIP_COMPILE) --no-strip-extras -o requirements/manage.lock requirements/manage.in
 	$(PIP_COMPILE) --no-strip-extras -o requirements/dev.lock requirements/dev.in
-	$(PIP_COMPILE) --no-strip-extras -o requirements/mypy.lock requirements/mypy.in
-  endif
-endif
 
-doc_upgrade: export CUSTOM_COMPILE_COMMAND=make doc_upgrade
-doc_upgrade: $(VENV_BIN)	## Update the doc/requirements.pip file
-ifeq ($(is_venv),1)
-  ifeq ($(is_piptools), pip-tools)
-	@$(VENV_BIN)/pip install --quiet --disable-pip-version-check --requirement requirements/pip-tools.lock
-	$(VENV_BIN)/$(PIP_COMPILE) -o docs/requirements.lock docs/requirements.in
-  endif
+
+	fi
 endif
 
 diff_upgrade:			## Summarize the last `make upgrade`

@@ -1,7 +1,9 @@
 # Licensed under the AGPLv3+ License: https://www.gnu.org/licenses/
 # For details: https://github.com/msftcangoblowm/drain-swamp/blob/master/NOTICE.txt
 
-# pip.pip, dev.pip, kit.pip, mypy.pip
-typing-extensions; python_version<"3.10"
+-c ../requirements/pins.in
 
-tomli>=1; python_version<"3.11"
+pip<24.2
+
+pip-tools
+get-pypi-latest-version

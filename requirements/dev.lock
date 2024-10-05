@@ -6,6 +6,8 @@ black==24.4.1
     #   blackdoc
 blackdoc==0.3.9
     # via -r requirements/dev.in
+build==1.2.2
+    # via pip-tools
 certifi==2024.2.2
     # via requests
 cffi==1.17.1
@@ -16,14 +18,15 @@ click==8.1.7
     # via
     #   -r requirements/prod.in
     #   black
-coverage[toml]==7.5.0
+    #   pip-tools
+coverage==7.5.0
     # via -r requirements/dev.in
 cryptography==42.0.5
     # via secretstorage
 docutils==0.21.2
     # via readme-renderer
 drain-swamp-snippet==1.0.0.post2
-    # via -r prod.in
+    # via -r requirements/prod.in
 exceptiongroup==1.2.1
     # via pytest
 fastjsonschema==2.19.1
@@ -41,6 +44,7 @@ idna==3.7
     # via requests
 importlib-metadata==7.1.0
     # via
+    #   build
     #   keyring
     #   twine
 iniconfig==2.0.0
@@ -81,11 +85,15 @@ nh3==0.2.17
 packaging==24.1
     # via
     #   black
+    #   build
     #   pytest
+    #   setuptools-scm
 pathspec==0.12.1
     # via
     #   black
     #   blackdoc
+pip-tools==7.4.1
+    # via -r requirements/prod.in
 pkginfo==1.10.0
     # via twine
 platformdirs==4.2.1
@@ -106,6 +114,10 @@ pygments==2.17.2
     # via
     #   readme-renderer
     #   rich
+pyproject-hooks==1.2.0
+    # via
+    #   build
+    #   pip-tools
 pytest==8.1.1
     # via
     #   -r requirements/dev.in
@@ -133,27 +145,47 @@ rich==13.7.1
     #   twine
 secretstorage==3.3.3
     # via keyring
-tomli==2.0.1
+setuptools-scm==8.1.0
+    # via -r requirements/prod.in
+tomli==2.0.1 ; python_version < "3.11"
     # via
+    #   -c requirements/pins.in
     #   black
     #   blackdoc
-    #   coverage
+    #   build
     #   flake8-pyproject
     #   mypy
+    #   pip-tools
     #   pytest
+    #   setuptools-scm
 twine==5.0.0
     # via -r requirements/dev.in
 types-setuptools==70.1.0.20240627
     # via -r requirements/dev.in
-typing-extensions==4.12.2
+typing-extensions==4.12.2 ; python_version < "3.10"
     # via
+    #   -c requirements/pins.in
     #   black
     #   mypy
+    #   setuptools-scm
 urllib3==2.2.1
     # via
     #   requests
     #   twine
 validate-pyproject==0.16
     # via -r requirements/dev.in
+wheel==0.44.0
+    # via pip-tools
 zipp==3.20.0
     # via importlib-metadata
+
+# The following packages are considered to be unsafe in a requirements file:
+pip==24.2
+    # via
+    #   -r requirements/prod.in
+    #   pip-tools
+setuptools==75.1.0
+    # via
+    #   -r requirements/prod.in
+    #   pip-tools
+    #   setuptools-scm

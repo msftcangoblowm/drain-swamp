@@ -206,7 +206,13 @@ def main():
     "-p",
     "--path",
     default=Path.cwd(),
-    type=click.Path(exists=True, file_okay=True, dir_okay=True, resolve_path=True),
+    type=click.Path(
+        exists=True,
+        file_okay=True,
+        dir_okay=True,
+        resolve_path=True,
+        path_type=Path,
+    ),
     help=help_path,
 )
 def state_is_lock(path):
@@ -227,16 +233,6 @@ def state_is_lock(path):
 
     :type path: pathlib.Path
     """
-
-    # click.secho(f"path (before): {path} type {type(path)}", fg="green")
-    # resolve causing conversion into a str. Should be Path
-    if isinstance(path, str):  # pragma: no cover
-        path = Path(path)
-    else:  # pragma: no cover
-        pass
-    # click.secho(f"path (after): {str(path)}", fg="green")
-    pass
-
     try:
         out = BackendType.is_locked(path)
     except (PyProjectTOMLParseError, PyProjectTOMLReadError) as e:
@@ -264,14 +260,28 @@ def state_is_lock(path):
     "-p",
     "--path",
     default=Path.cwd(),
-    type=click.Path(exists=False, file_okay=False, dir_okay=True, resolve_path=True),
+    type=click.Path(
+        exists=False,
+        file_okay=False,
+        dir_okay=True,
+        resolve_path=True,
+        path_type=Path,
+    ),
     help=help_path,
 )
 @click.option(
     "-r",
     "--required",
     default=None,
-    type=(str, click.Path(exists=False, file_okay=True, dir_okay=False)),
+    type=(
+        str,
+        click.Path(
+            exists=False,
+            file_okay=True,
+            dir_okay=False,
+            path_type=Path,
+        ),
+    ),
     help=help_required,
     nargs=2,
 )
@@ -279,7 +289,15 @@ def state_is_lock(path):
     "-o",
     "--optional",
     "optionals",
-    type=(str, click.Path(exists=False, file_okay=True, dir_okay=False)),
+    type=(
+        str,
+        click.Path(
+            exists=False,
+            file_okay=True,
+            dir_okay=False,
+            path_type=Path,
+        ),
+    ),
     help=help_optionals,
     multiple=True,
     nargs=2,
@@ -288,7 +306,13 @@ def state_is_lock(path):
     "-d",
     "--dir",
     "additional_folders",
-    type=click.Path(exists=False, file_okay=False, dir_okay=True, resolve_path=True),
+    type=click.Path(
+        exists=False,
+        file_okay=False,
+        dir_okay=True,
+        resolve_path=True,
+        path_type=Path,
+    ),
     multiple=True,
     help=help_additional_folder,
 )
@@ -377,12 +401,6 @@ def dependencies_lock(path, required, optionals, additional_folders, snippet_co)
 
     :type snippet_co: str | None
     """
-    # resolve causing conversion into a str. Should be Path
-    if isinstance(path, str):  # pragma: no cover
-        path = Path(path)
-    else:  # pragma: no cover
-        pass
-
     # cli optionals. No user input validation yet
     # Sequence[tuple[str, pathlib.Path]] | None --> dict[str, Path]
     has_optionals = (
@@ -402,11 +420,7 @@ def dependencies_lock(path, required, optionals, additional_folders, snippet_co)
     #    list[str | Path] --> tuple[Path]
     s_additionals = set()
     for add_dir in additional_folders:
-        if isinstance(add_dir, str):
-            # Counter-intuitively, this is what click provides
-            p_new = Path(add_dir)
-            s_additionals.add(p_new)
-        elif issubclass(type(add_dir), PurePath):  # pragma: no cover
+        if issubclass(type(add_dir), PurePath):  # pragma: no cover
             # This is what click should be providing
             s_additionals.add(add_dir)
         else:  # pragma: no cover
@@ -494,14 +508,28 @@ def dependencies_lock(path, required, optionals, additional_folders, snippet_co)
     "-p",
     "--path",
     default=Path.cwd(),
-    type=click.Path(exists=False, file_okay=False, dir_okay=True, resolve_path=True),
+    type=click.Path(
+        exists=False,
+        file_okay=False,
+        dir_okay=True,
+        resolve_path=True,
+        path_type=Path,
+    ),
     help=help_path,
 )
 @click.option(
     "-r",
     "--required",
     default=None,
-    type=(str, click.Path(exists=False, file_okay=True, dir_okay=False)),
+    type=(
+        str,
+        click.Path(
+            exists=False,
+            file_okay=True,
+            dir_okay=False,
+            path_type=Path,
+        ),
+    ),
     help=help_required,
     nargs=2,
 )
@@ -509,7 +537,15 @@ def dependencies_lock(path, required, optionals, additional_folders, snippet_co)
     "-o",
     "--optional",
     "optionals",
-    type=(str, click.Path(exists=False, file_okay=True, dir_okay=False)),
+    type=(
+        str,
+        click.Path(
+            exists=False,
+            file_okay=True,
+            dir_okay=False,
+            path_type=Path,
+        ),
+    ),
     help=help_optionals,
     nargs=2,
     multiple=True,
@@ -518,7 +554,13 @@ def dependencies_lock(path, required, optionals, additional_folders, snippet_co)
     "-d",
     "--dir",
     "additional_folders",
-    type=click.Path(exists=False, file_okay=False, dir_okay=True, resolve_path=True),
+    type=click.Path(
+        exists=False,
+        file_okay=False,
+        dir_okay=True,
+        resolve_path=True,
+        path_type=Path,
+    ),
     multiple=True,
     help=help_additional_folder,
 )
@@ -586,12 +628,6 @@ def dependencies_unlock(path, required, optionals, additional_folders, snippet_c
 
     :type snippet_co: str | None
     """
-    # resolve causing conversion into a str. Should be Path
-    if isinstance(path, str):  # pragma: no cover
-        path = Path(path)
-    else:  # pragma: no cover
-        pass
-
     # No user input validation yet
     # Sequence[tuple[str, pathlib.Path]] | None --> dict[str, Path]
     has_optionals = (
@@ -611,11 +647,7 @@ def dependencies_unlock(path, required, optionals, additional_folders, snippet_c
     #    list[str | Path] --> tuple[Path]
     s_additionals = set()
     for add_dir in additional_folders:
-        if isinstance(add_dir, str):
-            # Counter-intuitively, this is what click provides
-            p_new = Path(add_dir)
-            s_additionals.add(p_new)
-        elif issubclass(type(add_dir), PurePath):  # pragma: no cover
+        if issubclass(type(add_dir), PurePath):  # pragma: no cover
             # This is what click should be providing
             s_additionals.add(add_dir)
         else:  # pragma: no cover
@@ -695,7 +727,13 @@ def dependencies_unlock(path, required, optionals, additional_folders, snippet_c
     "-p",
     "--path",
     default=Path.cwd(),
-    type=click.Path(exists=False, file_okay=False, dir_okay=True, resolve_path=True),
+    type=click.Path(
+        exists=False,
+        file_okay=False,
+        dir_okay=True,
+        resolve_path=True,
+        path_type=Path,
+    ),
     help=help_path,
 )
 @click.option(
@@ -768,12 +806,6 @@ def create_links(path, is_set_lock, snippet_co):
 
     :type snippet_co: str | None
     """
-    # resolve causing conversion into a str. Should be Path
-    if isinstance(path, str):  # pragma: no cover
-        path = Path(path)
-    else:  # pragma: no cover
-        pass
-
     # print logging to stdout if __debug__ and not test suite
     set_debug_mode(is_ci=True)
 

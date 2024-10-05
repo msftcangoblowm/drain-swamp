@@ -95,7 +95,13 @@ def main():
     "-p",
     "--path",
     default=Path.cwd(),
-    type=click.Path(exists=True, file_okay=False, dir_okay=True, resolve_path=True),
+    type=click.Path(
+        exists=True,
+        file_okay=False,
+        dir_okay=True,
+        resolve_path=True,
+        path_type=Path,
+    ),
     help=help_path,
 )
 @click.option(
@@ -127,14 +133,8 @@ def get_scm_version(path, is_write, write_to):
     :param write_to: During testing provide alternative version file path
     :type write_to: str | None
     """
-    # resolve causing conversion into a str. Should be Path
-    if isinstance(path, str):  # pragma: no cover
-        path_cwd = Path(path)
-    else:  # pragma: no cover
-        path_cwd = path
-
     # Both scm_version and write_to_file expect relative_to not package base folder
-    path_relative_to = path_cwd.joinpath("pyproject.toml")
+    path_relative_to = path.joinpath("pyproject.toml")
     relative_to_path = str(path_relative_to)
 
     str_scm_ver = scm_version(relative_to_path)
@@ -173,7 +173,13 @@ def get_scm_version(path, is_write, write_to):
     "-p",
     "--path",
     default=Path.cwd(),
-    type=click.Path(exists=True, file_okay=False, dir_okay=True, resolve_path=True),
+    type=click.Path(
+        exists=True,
+        file_okay=False,
+        dir_okay=True,
+        resolve_path=True,
+        path_type=Path,
+    ),
     help=help_path,
 )
 @click.option(
@@ -198,14 +204,8 @@ def write_scm_version(scm_ver, path, write_to):
     :param write_to: During testing provide alternative version file path
     :type write_to: str | None
     """
-    # resolve causing conversion into a str. Should be Path
-    if isinstance(path, str):  # pragma: no cover
-        path_cwd = Path(path)
-    else:  # pragma: no cover
-        path_cwd = path
-
     # Both scm_version and write_to_file expect relative_to not package base folder
-    path_relative_to = path_cwd.joinpath("pyproject.toml")
+    path_relative_to = path.joinpath("pyproject.toml")
     relative_to_path = str(path_relative_to)
 
     # Possible for there to be no pyproject.toml or missing sections

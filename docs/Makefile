@@ -14,6 +14,7 @@ else
 is_venv = 1
 VENV_BIN := $(VIRTUAL_ENV)/bin
 VENV_BIN_PYTHON := python3
+PY_X_Y := $(shell $(VENV_BIN_PYTHON) -c 'import platform; t_ver = platform.python_version_tuple(); print(".".join(t_ver[:2]));')
 endif
 
 err_check_web_conn := Failed. Has issues or no web connection
@@ -24,6 +25,27 @@ SPHINXBUILDNOOPT := $(VENV_BIN)/sphinx-build
 SPHINXBUILD   := $(SPHINXBUILDNOOPT) $(SPHINXOPTS) $(O)
 SOURCEDIR     := .
 BUILDDIR      := _build
+
+##@ Build dependencies
+
+# Will also check venv python major.minor version
+# . .venv/bin/activate
+# python -m pip install pip-tools 'pip<24.2'
+# pip-compile -o pip-tools.lock pip-tools.in
+# 1st empty requirements.lock -- avoid pip saying there are dependency conflicts
+.PHONY: doc_upgrade
+doc_upgrade: export CUSTOM_COMPILE_COMMAND=make doc_upgrade
+doc_upgrade: private PIP_COMPILE := $(VENV_BIN_PYTHON) -m piptools compile --allow-unsafe
+doc_upgrade:			## Update the docs/requirements.lock file
+ifeq ($(is_venv),1)
+	@if [[ "$(PY_X_Y)" = "3.10" ]]; then
+
+	$(VENV_BIN)/pip install --quiet --disable-pip-version-check -r pip-tools.lock
+	[[ -f requirements.lock ]] && cat /dev/null > requirements.lock
+	$(VENV_BIN)/$(PIP_COMPILE) -o requirements.lock requirements.in
+
+	fi
+endif
 
 ##@ Build
 
@@ -197,8 +219,8 @@ help:				## (Default) Display this help -- Always up to date
 
 # Catch-all target: route all unknown targets to Sphinx using the new
 # "make mode" option.  $(O) is meant as a shortcut for $(SPHINXOPTS).
-.PHONY: Makefile
-%: Makefile				## Catch all target
-ifeq ($(is_venv),1)
-	@$(SPHINXBUILD) -b $@ "$(SOURCEDIR)" "$(BUILDDIR)"
-endif
+# .PHONY: Makefile
+# %: Makefile				## Catch all target
+# ifeq ($(is_venv),1)
+# 	@$(SPHINXBUILD) -b $@ "$(SOURCEDIR)" "$(BUILDDIR)"
+# endif

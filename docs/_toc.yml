@@ -88,6 +88,8 @@ subtrees:
     - file: LICENSE/closed-source-license
 - caption: Links
   entries:
+  - file: mission
+  - file: contributing
   - file: getting-help
   - title: Contact
     url: https://mastodon.social/@msftcangoblowme
