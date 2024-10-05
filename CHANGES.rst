@@ -37,6 +37,8 @@ Changelog
    Commit items for NEXT VERSION
    ..............................
 
+   - ci: bump pypa/gh-action-pypi-publish to 1.10.3
+   - ci: drain-swamp-action version is 1.0.1 not v1.0.1
    - fix: click.Path parameters receive as pathlib.Path. Previously str
    - chore: normalize pip and setuptools versions
    - chore: bump actions/checkout to v4.2.0

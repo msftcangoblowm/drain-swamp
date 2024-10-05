@@ -68,7 +68,7 @@ jobs:
     - id: prepare-config-settings
       name: >-
         Build Plugin parameters
-      uses: 'msftcangoblowm/drain-swamp-action@v1.0.1'
+      uses: 'msftcangoblowm/drain-swamp-action@1.0.1'
       with:
         plugin_parameters: '{"set-lock": "${{ vars.DRAINSWAMP_SET_LOCK }}", "kind": "current"}'
         checkout: true
