@@ -117,7 +117,7 @@ jobs:
         ls -1 dist | wc -l
 
     - name: Publish package
-      uses: pypa/gh-action-pypi-publish@v1.10.2
+      uses: pypa/gh-action-pypi-publish@v1.10.3
       with:
         skip-existing: true
 
@@ -186,7 +186,7 @@ jobs:
         path: ${{ env.DEST_FOLDER }}
 
     - name: Publish distribution to TestPyPI
-      uses: pypa/gh-action-pypi-publish@v1.10.2
+      uses: pypa/gh-action-pypi-publish@v1.10.3
       with:
         repository-url: https://test.pypi.org/legacy/
         skip-existing: true
