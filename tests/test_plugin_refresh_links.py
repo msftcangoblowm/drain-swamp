@@ -714,4 +714,4 @@ def test_plugin_refresh_links_exceptions(
         ):
             str_error = before_version_infer(d_section)
             assert has_logging_occurred(caplog)
-            assert str_error == expected_err
+            assert str_error.endswith(expected_err)

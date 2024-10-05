@@ -8,6 +8,9 @@ Changelog
    Feature request
    .................
 
+   - Better order both .unlock and .lock dependencies:
+     ``-c`` and ``-r`` lines, restricted versions, non-restricted versions
+
    - When packaging, symlinks are converted into files. This change is only
      noticed when the package is installed. Create an integration test
      which builds and installs a package in a test venv. Confirm package
@@ -37,6 +40,9 @@ Changelog
    Commit items for NEXT VERSION
    ..............................
 
+   - refactor: build plugins prefix plugin name to messages
+   - refactor(lock_toggle): improve instructions when missing .unlock or .lock files
+   - ci(quality-docs): separate workflow for docs
    - ci: bump pypa/gh-action-pypi-publish to 1.10.3
    - ci: drain-swamp-action version is 1.0.1 not v1.0.1
    - fix: click.Path parameters receive as pathlib.Path. Previously str

@@ -1548,9 +1548,12 @@ def refresh_links(inst, is_set_lock=None):
         pass
 
     msg_warn_lock_files = (
-        "{}. No corresponding .unlock / .lock files"
+        "Missing requirements folders and files. Prepare this: "
+        "{}. No corresponding .unlock / .lock files. "
         "Cannot make symlink. "
-        "In {}, prepare the missing folders and files"
+        "In {}, prepare the missing folders and files. "
+        "Helpful commands pipenv-unlock unlock, pipenv-unlock lock, "
+        "and pipenv-unlock refresh."
     )
     msg_warn_paths_malformed = (
         "Malformed .in file path. {exc} cwd: {path_cwd!r} abspath: {abspath!r}"

@@ -189,7 +189,7 @@ def before_version_infer(config_settings: dict[str, Any]) -> str | None:
     snippet_co = _snippet_co(config_settings, default=None)
 
     msg_info = (
-        f"{mod_path} is_set_lock: {is_set_lock!r} parent_dir {parent_dir!r} "
+        f"[{mod_path}] is_set_lock: {is_set_lock!r} parent_dir {parent_dir!r} "
         f"snippet_co {snippet_co!r} cwd: {cwd!r}"
     )
     log.info(msg_info)
@@ -197,32 +197,33 @@ def before_version_infer(config_settings: dict[str, Any]) -> str | None:
     try:
         inst = BackendType(cwd, parent_dir=parent_dir)
         log.info(
-            f"{mod_path} inst.path_config: {inst.path_config} "
+            f"[{mod_path}] inst.path_config: {inst.path_config} "
             f"abs?: {inst.path_config.is_absolute()}"
         )
         refresh_links(inst, is_set_lock=is_set_lock)
     except PyProjectTOMLReadError:
         msg_exc = (
-            f"Either not a file or lacks read permissions. {traceback.format_exc()}"
-        )
-        ret = msg_exc
-    except PyProjectTOMLParseError:
-        msg_exc = f"Cannot parse pyproject.toml. {traceback.format_exc()}"
-        ret = msg_exc
-    except MissingRequirementsFoldersFiles:
-        msg_exc = (
-            "Missing requirements folders and files. Prepare these "
+            f"[{mod_path}] Either not a file or lacks read permissions. "
             f"{traceback.format_exc()}"
         )
         ret = msg_exc
+    except PyProjectTOMLParseError:
+        msg_exc = f"[{mod_path}] Cannot parse pyproject.toml. {traceback.format_exc()}"
+        ret = msg_exc
+    except MissingRequirementsFoldersFiles as exc:
+        # f"{traceback.format_exc()}"
+        ret = f"[{mod_path}] {exc!s}"
     except AssertionError:
         msg_exc = (
-            "Either no pyproject.toml section, tool.setuptools.dynamic "
+            f"[{mod_path}] Either no pyproject.toml section, tool.setuptools.dynamic "
             "or no dependencies key"
         )
         ret = msg_exc
     else:
-        msg_info = f"{mod_path} path_config: {inst.path_config!r} parent_dir {inst.parent_dir!r}"
+        msg_info = (
+            f"[{mod_path}] path_config: {inst.path_config!r} "
+            f"parent_dir {inst.parent_dir!r}"
+        )
         log.info(msg_info)
         ret = None
 

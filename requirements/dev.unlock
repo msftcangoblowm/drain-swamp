@@ -1,18 +1,22 @@
-mypy
-pluggy
-black
-setuptools-scm
-pip-tools
-blackdoc
-flake8
+tomli>=1; python_version<"3.11"
+typing-extensions; python_version<"3.10"
+pip>=24.2
+setuptools>=75.1.0
 pytest>=7.1
-flake8-pyproject
-validate-pyproject
-pytest-regressions
-types-setuptools
-isort
-flake8-pyi
-twine
+black
+blackdoc
 click
 coverage
 drain-swamp-snippet
+flake8
+flake8-pyproject
+flake8-pyi
+isort
+mypy
+pip-tools
+pluggy
+pytest-regressions
+setuptools-scm
+twine
+types-setuptools
+validate-pyproject

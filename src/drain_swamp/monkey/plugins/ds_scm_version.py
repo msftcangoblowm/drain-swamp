@@ -122,9 +122,9 @@ def on_version_infer(config_settings: dict[str, Any]) -> str | None:
         if len(w) != 0:
             ret = str(w[0].message)
 
-    log.info(f"{mod_path} kind: {kind!r}")
+    log.info(f"[{mod_path}] kind: {kind!r}")
     config_settings_path = ConfigSettings.get_abs_path()
-    log.info(f"{mod_path} config_settings_path: {config_settings_path}")
+    log.info(f"[{mod_path}] config_settings_path: {config_settings_path}")
 
     if ret is not None:
         return ret
@@ -156,7 +156,7 @@ def on_version_infer(config_settings: dict[str, Any]) -> str | None:
                     if err is None:  # pragma: no cover
                         # on stderr, entrypoint did not provide an explanation
                         # make an adhoc msg
-                        ret = f"Exit code: {code} cmd {cmd}"
+                        ret = f"[{mod_path}] Exit code: {code} cmd {cmd}"
                     else:
                         # on stderr, entrypoint provided an explanation
                         ret = err
@@ -181,7 +181,7 @@ def on_version_infer(config_settings: dict[str, Any]) -> str | None:
                     if err is None:  # pragma: no cover
                         # on stderr, entrypoint did not provide an explanation
                         # make an adhoc msg
-                        ret = f"Exit code: {code} cmd {cmd}"
+                        ret = f"[{mod_path}] Exit code: {code} cmd {cmd}"
                     else:
                         # on stderr, entrypoint provided an explanation
                         ret = err

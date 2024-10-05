@@ -1,11 +1,17 @@
-pre-commit
-twine
-restview
-pluggy
-setuptools-scm
-tox-gh
-tox
-colorama>=0.4.6
-pip-tools
-click
+colorama>=0.4.6 ;platform_system=="Windows"
+tomli>=1; python_version<"3.11"
+typing-extensions; python_version<"3.10"
+pip>=24.2
+setuptools>=75.1.0
+readme_renderer<37
+
 drain-swamp-snippet
+click
+pip-tools
+pluggy
+pre-commit
+restview
+setuptools-scm
+tox
+tox-gh
+twine

@@ -3,7 +3,7 @@
 # https://github.com/pyscaffold/pyscaffold/blob/master/src/pyscaffold/templates/github_ci_workflow.template
 # https://docs.github.com/en/actions/using-workflows/storing-workflow-data-as-artifacts#passing-data-between-jobs-in-a-workflow
 
-name: "lint mypy"
+name: "Quality docs"
 
 on:
   push:
@@ -31,7 +31,7 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  get-toml:
+  get-toml-docs:
     name: "Get config-settings"
 
     runs-on: "${{ matrix.os }}"
@@ -40,7 +40,7 @@ jobs:
         os:
           - ubuntu-latest
         python-version:
-          - "3.9"
+          - "3.10"
       fail-fast: false
     outputs:
       config_settings: '${{ steps.config-settings-output.outputs.config_settings }}'
@@ -75,10 +75,10 @@ jobs:
       run: |
         echo 'config_settings=${{ env.DS_CONFIG_SETTINGS }}' >> "$GITHUB_OUTPUT"
 
-  lint:
-    name: "isort black flake8 etc"
+  docs:
+    name: "Build docs"
     needs:
-      get-toml
+      get-toml-docs
 
     runs-on: "${{ matrix.os }}"
     strategy:
@@ -86,8 +86,12 @@ jobs:
         os:
           - ubuntu-latest
         python-version:
-          - "3.9"
+          - "3.10"
       fail-fast: false
+
+    concurrency:
+      group: docs-${{ github.ref }}
+      cancel-in-progress: false  # quality then gh-pages
 
     steps:
     - name: Trans jobs artifact -- Download
@@ -111,75 +115,23 @@ jobs:
     - name: "Install Python"
       uses: actions/setup-python@v5.2.0
       with:
-        python-version: "${{ matrix.python-version }}" # Minimum of PYVERSIONS
+        python-version: "${{ matrix.python-version }}" # Doc version from PYVERSIONS
         # cache: pip
         # cache-dependency-path: |
         #  requirements/*${{ env.LOCK_SUFFIX }}
 
-    - name: "Install dependencies"
-      run: |
-        python -m pip install -r requirements/tox$LOCK_SUFFIX
-        python -m pip install -r requirements/prod$LOCK_SUFFIX
-        python -m pip install -r requirements/kit$LOCK_SUFFIX
-
-    # Create generated files: version file and .lnk files. sdist tarball ignored
-    - name: "Build sdist to run plugins. Create generated files"
-      run: |
-        # TOML file location ${{ runner.temp }}/${{ steps.outcome.inputs.toml_file_name }}
-        # env.DS_CONFIG_SETTINGS contains (OS independent) path to TOML file
-        cat '${{ env.DS_CONFIG_SETTINGS }}'
-        python -m build
-
-    - name: "Tox lint"
-      run: |
-        python -m tox -e lint
-
-  mypy:
-    name: "Check types"
-    needs:
-      get-toml
-
-    runs-on: "${{ matrix.os }}"
-    strategy:
-      matrix:
-        os:
-          - ubuntu-latest
-        python-version:
-          - "3.9"
-      fail-fast: false
-
-    steps:
-    - name: Trans jobs artifact -- Download
-      uses: actions/download-artifact@v4.1.8
-      with:
-        name: config-settings-toml-${{ matrix.os }}-${{ matrix.python-version }}
-        path: '${{ runner.temp }}'
-
-    - name: Trans jobs -- outputs --> DS_CONFIG_SETTINGS
+    - name: "Show environment"
       shell: bash
       run: |
-        echo 'DS_CONFIG_SETTINGS=${{ needs.get-toml.outputs.config_settings }}' >> "$GITHUB_ENV"
-
-    - name: "Check out the repo"
-      uses: actions/checkout@v4.2.0
-      with:
-        repository: '${{ github.repository }}'
-        # fetch all branches and tags instead of only fetching the ref/SHA that triggered the workflow
-        fetch-depth: 0
-
-    - name: "Install Python"
-      uses: actions/setup-python@v5.2.0
-      with:
-        python-version: "${{ matrix.python-version }}" # Minimum of PYVERSIONS, but at least 3.9
-        # cache: pip
-        # cache-dependency-path: |
-        #  requirements/*${{ env.LOCK_SUFFIX }}
+        set -xe
+        python -VV
+        python -m site
+        env
 
     - name: "Install dependencies"
       shell: bash
       run: |
-        # Runs on 3.9, but hashes supported by pip-tools is
-        # not supported by setuptools. So don't expect hashes
+        set -xe
         python -m pip install -r requirements/tox$LOCK_SUFFIX
         python -m pip install -r requirements/prod$LOCK_SUFFIX
         python -m pip install -r requirements/kit$LOCK_SUFFIX
@@ -193,7 +145,6 @@ jobs:
         cat '${{ env.DS_CONFIG_SETTINGS }}'
         python -m build
 
-    - name: "Tox mypy"
-      shell: bash
+    - name: "Tox docs"
       run: |
-        python -m tox -e mypy
+        python -m tox -e docs

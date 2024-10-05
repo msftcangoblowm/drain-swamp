@@ -1,5 +1,7 @@
-setuptools-scm
-pip-tools
-click
-pluggy
+pip>=24.2
+setuptools>=75.1.0
 drain-swamp-snippet
+click
+pip-tools
+pluggy
+setuptools-scm
