@@ -93,8 +93,7 @@ jobs:
 
     - name: "Install dependencies for build"
       run: |
-        python -m pip install -r requirements/prod$LOCK_SUFFIX
-        python -m pip install -r requirements/kit$LOCK_SUFFIX
+        python -m pip install -r requirements/kit$LOCK_SUFFIX -r requirements/prod$LOCK_SUFFIX
 
     # Create generated files: version file and .lnk files. sdist tarball ignored
     - name: "Build sdist to run plugins. Create generated files"

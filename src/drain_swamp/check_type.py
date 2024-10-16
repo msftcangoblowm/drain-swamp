@@ -2,16 +2,28 @@
 .. moduleauthor:: Dave Faulkmore <https://mastodon.social/@msftcangoblowme>
 
 .. py:data:: __all__
-   :type: tuple[str, str, str]
-   :value: ("is_ok", "is_relative_required", "is_iterable_not_str")
+   :type: tuple[str, str, str, str]
+   :value: ("is_ok", "is_relative_required", "is_iterable_not_str", "click_bool")
 
    Module exports
 
 .. py:data:: DEFAULT_EXTENSIONS
-   :type: tuple[str, ...]
-   :value: (".in",)
+   :type: tuple[str, str]
+   :value: (".in", ".shared.in")
 
    Acceptable file extensions.
+
+.. py:data:: CLICK_TRUE
+   :type: tuple[str, str, str, str, str, str]
+   :value: ("1", "true", "t", "yes", "y", "on")
+
+   These are recognized to mean True. Applicable to cli boolean fields
+
+.. py:data:: CLICK_FALSE
+   :type: tuple[str, str, str, str, str, str]
+   :value: ("0", "false", "f", "no", "n", "off")
+
+   These are recognized to mean True. Applicable to cli boolean fields
 
 """
 
@@ -20,7 +32,10 @@ from __future__ import annotations
 import sys
 from pathlib import PurePath
 
-from .constants import SUFFIX_IN
+from .constants import (
+    SUFFIX_IN,
+    SUFFIX_SHARED_IN,
+)
 
 if sys.version_info >= (3, 9):  # pragma: no cover
     from collections.abc import (
@@ -38,9 +53,10 @@ __all__ = (
     "is_ok",
     "is_relative_required",
     "is_iterable_not_str",
+    "click_bool",
 )
 
-DEFAULT_EXTENSIONS = (SUFFIX_IN,)
+DEFAULT_EXTENSIONS = (SUFFIX_IN, SUFFIX_SHARED_IN)
 CLICK_TRUE = ("1", "true", "t", "yes", "y", "on")
 CLICK_FALSE = ("0", "false", "f", "no", "n", "off")
 
@@ -120,7 +136,7 @@ def is_relative_required(
         path_relative is not None
         and issubclass(type(path_relative), PurePath)
         and not path_relative.is_absolute()
-        and path_relative.suffixes == lst_ext
+        and "".join(path_relative.suffixes) in lst_ext
     )
 
     return is_relative_path_acceptable

@@ -1,5 +1,5 @@
-tomli>=1; python_version<"3.11"
-typing-extensions; python_version<"3.10"
-pip<24.2
 get-pypi-latest-version
 pip-tools
+tomli>=2.0.2; python_version<"3.11"
+pip<24.2
+typing-extensions; python_version<"3.10"

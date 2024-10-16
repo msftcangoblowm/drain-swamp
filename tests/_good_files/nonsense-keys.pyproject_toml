@@ -19,7 +19,7 @@ dynamic = [
 
 [tool.setuptools.dynamic]
 # @@@ editable little_shop_of_horrors_shrine_candles
-dependencies = { file = ['requirements/prod.lock'] }
+dependencies = { file = ['requirements/prod.shared.lock'] }
 optional-dependencies.pip = { file = ['requirements/pip.lock'] }
 optional-dependencies.pip_tools = { file = ['requirements/pip-tools.lock'] }
 optional-dependencies.dev = { file = ['requirements/dev.lock'] }
@@ -30,7 +30,7 @@ optional-dependencies.docs = { file = ['docs/requirements.lock'] }
 version = {attr = 'drain_swamp._version.__version__'}
 
 [tool.pipenv-unlock]
-required = { shrine_candle = "prod", mommas_photo = 'requirements/prod.in' }
+required = { shrine_candle = "prod", mommas_photo = 'requirements/prod.shared.in' }
 
 # underscore: hyphen
 optionals = [

@@ -1,18 +1,18 @@
-colorama>=0.4.6 ;platform_system=="Windows"
-tomli>=1; python_version<"3.11"
-typing-extensions; python_version<"3.10"
-pip>=24.2
 setuptools>=75.1.0
-readme_renderer<37
-importlib-metadata>=8.5.0
-
-drain-swamp-snippet
 click
-pip-tools
-pluggy
-pre-commit
-restview
 setuptools-scm
-tox
-tox-gh
+tomli>=2.0.2; python_version<"3.11"
+importlib-metadata>=8.5.0
+pip-requirements-parser
+pre-commit
 twine
+pip>=24.2
+tox-gh
+tox
+drain-swamp-snippet
+pluggy
+pip-tools
+readme_renderer<37
+typing-extensions; python_version<"3.10"
+colorama>=0.4.6 ;platform_system=="Windows"
+restview

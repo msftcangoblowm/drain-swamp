@@ -50,7 +50,7 @@ __package__ = "drain_swamp"
 __all__ = ("TomlParser",)
 
 _logger = logging.getLogger(f"{g_app_name}.parser_in")
-is_module_debug = False
+is_module_debug = True
 
 
 class TomlParser:
@@ -228,7 +228,7 @@ class TomlParser:
 
            from drain_swamp.parser_in import get_pyproject_toml
 
-           path_config = Path("[proj path]/requirements/prod.in")
+           path_config = Path("[proj path]/requirements/prod.shared.in")
            d_pyproject_toml = get_pyproject_toml(path_config)
            config_tables = d_pyproject_toml.get("tool", {}).get("setuptools", {}).get("dynamic", {})
            for (key, value) in config_tables.items():

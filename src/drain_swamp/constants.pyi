@@ -6,6 +6,7 @@ __all__ = (
     "g_app_name",
     "package_name",
     "SUFFIX_IN",
+    "SUFFIX_SHARED_IN",
     "SUFFIX_LOCKED",
     "SUFFIX_UNLOCKED",
     "SUFFIX_SYMLINK",
@@ -19,6 +20,7 @@ __all__ = (
 g_app_name: Final[str]
 package_name: Final[str]
 SUFFIX_IN: Final[str]
+SUFFIX_SHARED_IN: Final[str]
 SUFFIX_LOCKED: Final[str]
 SUFFIX_UNLOCKED: Final[str]
 SUFFIX_SYMLINK: Final[str]

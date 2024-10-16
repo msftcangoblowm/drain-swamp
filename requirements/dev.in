@@ -1,8 +1,8 @@
 # Licensed under the AGPLv3+ License: https://www.gnu.org/licenses/
 # For details: https://github.com/msftcangoblowm/drain-swamp/blob/master/NOTICE.txt
 
--c pins.in
--r prod.in
+-c pins.shared.in
+-r prod.shared.in
 
 black
 blackdoc
@@ -17,3 +17,4 @@ validate-pyproject
 pytest>=7.1
 pytest-regressions
 types-setuptools
+logging-strict

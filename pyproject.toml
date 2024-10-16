@@ -82,7 +82,7 @@ scm-version = "drain_swamp.cli_scm_version:main"
 
 [tool.setuptools.dynamic]
 # @@@ editable little_shop_of_horrors_shrine_candles
-dependencies = { file = ['requirements/prod.lnk'] }
+dependencies = { file = ['requirements/prod.shared.lnk'] }
 optional-dependencies.pip = { file = ['requirements/pip.lnk'] }
 optional-dependencies.pip_tools = { file = ['requirements/pip-tools.lnk'] }
 optional-dependencies.dev = { file = ['requirements/dev.lnk'] }
@@ -102,7 +102,7 @@ folders = [
 
 # target contains: alphanumeric+underscore
 # relative path file stem contains: alphanumeric+hyphen
-required = { target = "prod", relative_path = 'requirements/prod.in' }
+required = { target = "prod", relative_path = 'requirements/prod.shared.in' }
 
 # target contains: alphanumeric+underscore
 # relative path file stem contains: alphanumeric+hyphen
@@ -144,7 +144,11 @@ warn_redundant_casts = true
 strict_equality = true
 
 [[tool.mypy.overrides]]
-module = ["docutils.*", "setuptools_scm.*"]
+module = [
+    "docutils.*",
+    "setuptools_scm.*",
+    "pip_requirements_parser.*",
+]
 ignore_missing_imports = true
 
 [tool.coverage.run]

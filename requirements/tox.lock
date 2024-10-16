@@ -1,4 +1,4 @@
-cachetools==5.3.3
+cachetools==5.5.0
     # via tox
 chardet==5.2.0
     # via tox
@@ -14,7 +14,7 @@ packaging==24.1
     # via
     #   pyproject-api
     #   tox
-platformdirs==4.2.1
+platformdirs==4.3.6
     # via
     #   tox
     #   virtualenv
@@ -22,9 +22,9 @@ pluggy==1.5.0
     # via tox
 pyproject-api==1.6.1
     # via tox
-tomli==2.0.1 ; python_version < "3.11"
+tomli==2.0.2 ; python_version < "3.11"
     # via
-    #   -c requirements/pins.in
+    #   -c requirements/pins.shared.in
     #   pyproject-api
     #   tox
 tox==4.14.2

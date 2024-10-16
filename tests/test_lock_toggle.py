@@ -102,7 +102,7 @@ testdata_lock_compile = (
     (
         Path(__file__).parent.joinpath("_good_files", "complete.pyproject_toml"),
         (
-            "requirements/prod.in",
+            "requirements/prod.shared.in",
             "requirements/pip.in",
             "requirements/pip-tools.in",
             "requirements/dev.in",
@@ -114,7 +114,7 @@ testdata_lock_compile = (
     (
         Path(__file__).parent.joinpath("_good_files", "complete.pyproject_toml"),
         (
-            "requirements/prod.in",
+            "requirements/prod.shared.in",
             "requirements/pip.in",
             "requirements/pip-tools.in",
             "requirements/dev.in",
@@ -190,8 +190,8 @@ def test_lock_compile(
 testdata_resolve_one_iteration = (
     (
         (
-            Path("requirements/prod.in"),
-            Path("requirements/pins.in"),
+            Path("requirements/prod.shared.in"),
+            Path("requirements/pins.shared.in"),
             Path("requirements/pip.in"),
         ),
         0,
@@ -200,8 +200,8 @@ testdata_resolve_one_iteration = (
         (
             Path("requirements/manage.in"),
             Path("requirements/tox.in"),
-            Path("requirements/prod.in"),
-            Path("requirements/pins.in"),
+            Path("requirements/prod.shared.in"),
+            Path("requirements/pins.shared.in"),
         ),
         1,
     ),
@@ -263,8 +263,8 @@ def test_resolve_one_iteration(
 testdata_resolve_loop = (
     (
         (
-            Path("requirements/prod.in"),
-            Path("requirements/pins.in"),
+            Path("requirements/prod.shared.in"),
+            Path("requirements/pins.shared.in"),
             Path("requirements/pip.in"),
         ),
         does_not_raise(),
@@ -273,16 +273,16 @@ testdata_resolve_loop = (
         (
             Path("requirements/manage.in"),
             Path("requirements/tox.in"),
-            Path("requirements/prod.in"),
-            Path("requirements/pins.in"),
+            Path("requirements/prod.shared.in"),
+            Path("requirements/pins.shared.in"),
         ),
         does_not_raise(),
     ),
     (
         (
             Path("requirements/manage.in"),
-            Path("requirements/prod.in"),
-            Path("requirements/pins.in"),
+            Path("requirements/prod.shared.in"),
+            Path("requirements/pins.shared.in"),
         ),
         pytest.raises(MissingRequirementsFoldersFiles),
     ),
@@ -426,8 +426,8 @@ testdata_methods_infiles = (
     (
         Path("requirements/manage.in"),
         Path("requirements/tox.in"),
-        Path("requirements/prod.in"),
-        Path("requirements/pins.in"),
+        Path("requirements/prod.shared.in"),
+        Path("requirements/pins.shared.in"),
     ),
 )
 ids_methods_infiles = ("resolvable requirements constraints",)
@@ -507,8 +507,8 @@ testdata_unlock_compile = (
             "_good_files", "complete-manage-pip-prod-unlock.pyproject_toml"
         ),
         (
-            "requirements/prod.in",
-            "requirements/pins.in",
+            "requirements/prod.shared.in",
+            "requirements/pins.shared.in",
             "requirements/pip.in",
             "requirements/manage.in",
         ),
@@ -520,8 +520,8 @@ testdata_unlock_compile = (
             "_good_files", "complete-manage-pip-prod-unlock.pyproject_toml"
         ),
         (
-            "requirements/prod.in",
-            "requirements/pins.in",
+            "requirements/prod.shared.in",
+            "requirements/pins.shared.in",
             "requirements/tox.in",
             "requirements/manage.in",
         ),
@@ -531,8 +531,8 @@ testdata_unlock_compile = (
     (
         Path(__file__).parent.joinpath("_good_files", "complete.pyproject_toml"),
         (
-            "requirements/prod.in",
-            "requirements/pins.in",
+            "requirements/prod.shared.in",
+            "requirements/pins.shared.in",
             "requirements/pip.in",
             "requirements/pip-tools.in",
             "requirements/dev.in",
@@ -739,24 +739,24 @@ testdata_refresh = (
             "_bad_files", "static_dependencies.pyproject_toml"
         ),
         (
-            "requirements/prod.in",
-            "requirements/pins.in",
+            "requirements/prod.shared.in",
+            "requirements/pins.shared.in",
             "requirements/pip.in",
             "requirements/tox.in",
             "requirements/manage.in",
         ),
         (
-            "requirements/prod.lock",
+            "requirements/prod.shared.lock",
             "requirements/pip.lock",
             "requirements/tox.lock",
             "requirements/manage.lock",
-            "requirements/prod.unlock",
+            "requirements/prod.shared.unlock",
             "requirements/pip.unlock",
             "requirements/tox.unlock",
             "requirements/manage.unlock",
         ),
         (
-            "requirements/prod.lnk",
+            "requirements/prod.shared.lnk",
             "requirements/pip.lnk",
             "requirements/tox.lnk",
             "requirements/manage.lnk",
@@ -769,21 +769,21 @@ testdata_refresh = (
             "_good_files", "complete-manage-pip-prod-unlock.pyproject_toml"
         ),
         (
-            "requirements/prod.in",
-            "requirements/pins.in",
+            "requirements/prod.shared.in",
+            "requirements/pins.shared.in",
             "requirements/pip.in",
             "requirements/manage.in",
         ),
         (
-            "requirements/prod.lock",
+            "requirements/prod.shared.lock",
             "requirements/pip.lock",
             "requirements/manage.lock",
-            "requirements/prod.unlock",
+            "requirements/prod.shared.unlock",
             "requirements/pip.unlock",
             "requirements/manage.unlock",
         ),
         (
-            "requirements/prod.lnk",
+            "requirements/prod.shared.lnk",
             "requirements/pip.lnk",
             "requirements/manage.lnk",
         ),
@@ -795,21 +795,21 @@ testdata_refresh = (
             "_good_files", "complete-manage-pip-prod-unlock.pyproject_toml"
         ),
         (
-            "requirements/prod.in",
-            "requirements/pins.in",
+            "requirements/prod.shared.in",
+            "requirements/pins.shared.in",
             "requirements/tox.in",
             "requirements/manage.in",
         ),
         (
-            "requirements/prod.lock",
+            "requirements/prod.shared.lock",
             "requirements/tox.lock",
             "requirements/manage.lock",
-            "requirements/prod.unlock",
+            "requirements/prod.shared.unlock",
             "requirements/tox.unlock",
             "requirements/manage.unlock",
         ),
         (
-            "requirements/prod.lnk",
+            "requirements/prod.shared.lnk",
             "requirements/tox.lnk",
             "requirements/manage.lnk",
         ),
@@ -819,8 +819,8 @@ testdata_refresh = (
     (
         Path(__file__).parent.joinpath("_good_files", "complete.pyproject_toml"),
         (
-            "requirements/prod.in",
-            "requirements/pins.in",
+            "requirements/prod.shared.in",
+            "requirements/pins.shared.in",
             "requirements/pip.in",
             "requirements/pip-tools.in",
             "requirements/dev.in",
@@ -829,14 +829,14 @@ testdata_refresh = (
             "docs/requirements.in",
         ),
         (
-            "requirements/prod.lock",
+            "requirements/prod.shared.lock",
             "requirements/pip.lock",
             "requirements/pip-tools.lock",
             "requirements/dev.lock",
             "requirements/tox.lock",
             "requirements/manage.lock",
             "docs/requirements.lock",
-            "requirements/prod.unlock",
+            "requirements/prod.shared.unlock",
             "requirements/pip.unlock",
             "requirements/pip-tools.unlock",
             "requirements/dev.unlock",
@@ -845,7 +845,7 @@ testdata_refresh = (
             "docs/requirements.unlock",
         ),
         (
-            "requirements/prod.lnk",
+            "requirements/prod.shared.lnk",
             "requirements/pip.lnk",
             "requirements/pip-tools.lnk",
             "requirements/dev.lnk",
@@ -995,7 +995,7 @@ def test_postprocess_abspath_to_relpath(tmp_path, prepare_folders_files):
     # prepare
     #    .in
     seq_create_in_files = (
-        "requirements/prod.in",
+        "requirements/prod.shared.in",
         "docs/requirements.in",
     )
     prepare_folders_files(seq_create_in_files, tmp_path)
@@ -1005,7 +1005,7 @@ def test_postprocess_abspath_to_relpath(tmp_path, prepare_folders_files):
         "#\n"
         "click==8.1.7\n"
         "    # via\n"
-        f"    #   -c {tmp_path!s}/docs/../requirements/prod.in\n"
+        f"    #   -c {tmp_path!s}/docs/../requirements/prod.shared.in\n"
         "    #   click-log\n"
         "    #   scriv\n"
         "    #   sphinx-external-toc-strict\n"
@@ -1017,7 +1017,7 @@ def test_postprocess_abspath_to_relpath(tmp_path, prepare_folders_files):
         "#\n"
         "click==8.1.7\n"
         "    # via\n"
-        "    #   -c docs/../requirements/prod.in\n"
+        "    #   -c docs/../requirements/prod.shared.in\n"
         "    #   click-log\n"
         "    #   scriv\n"
         "    #   sphinx-external-toc-strict\n"

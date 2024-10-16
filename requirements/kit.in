@@ -5,7 +5,7 @@
 # https://github.com/pypa/build/blob/main/setup.cfg#L32
 #   colorama;os_name == "nt"
 # We copy it here so it can get pinned.
-colorama>=0.4.6 ;platform_system=="Windows"
+colorama>=0.4.6; platform_system=="Windows"
 
 # pip-tools --> build --> importlib-metadata
 importlib-metadata>=8.5.0

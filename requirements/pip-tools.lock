@@ -1,4 +1,4 @@
-build==1.2.2
+build==1.2.2.post1
     # via pip-tools
 click==8.1.7
     # via pip-tools
@@ -14,7 +14,7 @@ pyproject-hooks==1.2.0
     #   pip-tools
 tomli==2.0.2 ; python_version < "3.11"
     # via
-    #   -c requirements/pins.in
+    #   -c requirements/pins.shared.in
     #   build
     #   pip-tools
 wheel==0.44.0

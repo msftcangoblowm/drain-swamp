@@ -152,7 +152,7 @@ def replace_suffixes(abspath_a, suffixes):
     :param abspath_a:
     :type abspath_a: pathlib.PurePath | pathlib.Path
     :param suffixes:
-    :type suffixes: str
+    :type suffixes: str | None
     :returns: abspath with replaced suffixes
     :rtype: pathlib.PurePath | pathlib.Path
     """
@@ -162,7 +162,11 @@ def replace_suffixes(abspath_a, suffixes):
     # Get rid of all suffixes
     stem = str_name_0.split(".")[0]
 
-    str_name_1 = f"{stem}{suffixes}"
+    if suffixes is not None:
+        str_name_1 = f"{stem}{suffixes}"
+    else:
+        str_name_1 = stem
+
     ret = path_parent / str_name_1
 
     return ret

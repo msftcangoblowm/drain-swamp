@@ -4,10 +4,10 @@
 package level constants
 
 .. py:data:: __all__
-   :type: tuple[str, str, str, str, str, str, str, str, str]
-   :value: ("g_app_name", "package_name", "SUFFIX_IN", "SUFFIX_LOCKED", \
-   "SUFFIX_UNLOCKED", "SUFFIX_SYMLINK", "PATH_PIP_COMPILE", "PROG_LOCK", \
-   "PROG_UNLOCK")
+   :type: tuple[str, str, str, str, str, str, str, str, str, str]
+   :value: ("g_app_name", "package_name", "SUFFIX_IN", "SUFFIX_SHARED_IN", \
+   "SUFFIX_LOCKED", "SUFFIX_UNLOCKED", "SUFFIX_SYMLINK", "PATH_PIP_COMPILE", \
+   "PROG_LOCK", "PROG_UNLOCK")
 
    Module exports
 
@@ -28,6 +28,12 @@ package level constants
    :value: ".in"
 
    Uncompiled requirements file suffix
+
+.. py:data:: SUFFIX_SHARED_IN
+   :type: str
+   :value: ".shared.in"
+
+   uncompiled requirements file suffix. Shared between venvs
 
 .. py:data:: SUFFIX_LOCKED
    :type: str
@@ -116,6 +122,7 @@ __all__ = (
     "g_app_name",
     "package_name",
     "SUFFIX_IN",
+    "SUFFIX_SHARED_IN",
     "SUFFIX_LOCKED",
     "SUFFIX_UNLOCKED",
     "SUFFIX_SYMLINK",
@@ -129,6 +136,7 @@ g_app_name = "drain_swamp"
 # package_name = re.sub(r"\W+", "-", g_app_name.lower())
 package_name = g_app_name.lower().replace("_", "-")
 SUFFIX_IN = ".in"
+SUFFIX_SHARED_IN = ".shared.in"
 SUFFIX_LOCKED = ".lock"
 SUFFIX_UNLOCKED = ".unlock"
 SUFFIX_SYMLINK = ".lnk"

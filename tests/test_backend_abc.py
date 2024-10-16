@@ -81,7 +81,7 @@ def test_try_dict_update(tmp_path, caplog, has_logging_occurred, prepare_folders
 
     # is_bypass == True; skips validating exists and is_file
     target_x = "prod"
-    relative_x_path = "requirements/prod.in"
+    relative_x_path = "requirements/prod.shared.in"
     dict_cli = dict()
     try_dict_update(dict_cli, tmp_path, target_x, Path(relative_x_path), is_bypass=True)
     assert len(dict_cli.keys()) == 1
@@ -112,8 +112,8 @@ def test_try_dict_update(tmp_path, caplog, has_logging_occurred, prepare_folders
 testdata_get_required_pyproject_toml = [
     (
         Path(__file__).parent.joinpath("_good_files", "complete.pyproject_toml"),
-        ("requirements/prod.in",),
-        ("prod", Path("requirements/prod.in")),
+        ("requirements/prod.shared.in",),
+        ("prod", Path("requirements/prod.shared.in")),
     ),
 ]
 ids_get_required_pyproject_toml = ("is_bypass True and False",)
@@ -130,9 +130,17 @@ def test_get_required_pyproject_toml(
     t_expected,
     tmp_path,
     prepare_folders_files,
+    caplog,
+    has_logging_occurred,
 ):
     """Test get_required_pyproject_toml."""
-    # pytest --showlocals --log-level INFO -k "test_get_required_pyproject_toml" -v tests
+    # pytest -vv --showlocals --log-level INFO -k "test_get_required_pyproject_toml" tests
+    LOGGING["loggers"][g_app_name]["propagate"] = True
+    logging.config.dictConfig(LOGGING)
+    logger = logging.getLogger(name=g_app_name)
+    logger.addHandler(hdlr=caplog.handler)
+    caplog.handler.level = logger.level
+
     tp = TomlParser(path)
     d_pyproject_toml = tp.d_pyproject_toml
     # is_bypass == True; skips validating exists and is_file
@@ -171,26 +179,27 @@ def test_get_required_pyproject_toml(
             assert isinstance(t_actual, Sequence)
             assert t_actual[0] == t_expected[0]
             assert t_actual[1] == tmp_path / t_expected[1]
+    assert has_logging_occurred(caplog)
 
 
 testdata_get_required_cli = [
     (
-        ("requirements/prod.in",),
-        ("prod", Path("requirements/prod.in")),
-        ("prod", Path("requirements/prod.in")),
+        ("requirements/prod.shared.in",),
+        ("prod", Path("requirements/prod.shared.in")),
+        ("prod", Path("requirements/prod.shared.in")),
     ),
     (
-        ("requirements/prod.in",),
-        ("prod", "requirements/prod.in"),
-        ("prod", Path("requirements/prod.in")),
+        ("requirements/prod.shared.in",),
+        ("prod", "requirements/prod.shared.in"),
+        ("prod", Path("requirements/prod.shared.in")),
     ),
     (
-        ("requirements/prod.in",),
+        ("requirements/prod.shared.in",),
         ("prod", 1.2345),
         None,
     ),
     (
-        ("requirements/prod.in",),
+        ("requirements/prod.shared.in",),
         None,
         None,
     ),
@@ -261,31 +270,31 @@ testdata_required = [
     (
         Path(__file__).parent.joinpath("_good_files", "complete.pyproject_toml"),
         None,
-        ("requirements/prod.in",),
-        ("prod", Path("requirements/prod.in")),
+        ("requirements/prod.shared.in",),
+        ("prod", Path("requirements/prod.shared.in")),
     ),
     (
         Path(__file__).parent.joinpath("_good_files", "complete.pyproject_toml"),
         "",
-        ("requirements/prod.in",),
-        ("prod", Path("requirements/prod.in")),
+        ("requirements/prod.shared.in",),
+        ("prod", Path("requirements/prod.shared.in")),
     ),
     (
         Path(__file__).parent.joinpath("_good_files", "complete.pyproject_toml"),
         "    ",
-        ("requirements/prod.in",),
-        ("prod", Path("requirements/prod.in")),
+        ("requirements/prod.shared.in",),
+        ("prod", Path("requirements/prod.shared.in")),
     ),
     (
         Path(__file__).parent.joinpath("_good_files", "complete.pyproject_toml"),
         1.12345,
-        ("requirements/prod.in",),
-        ("prod", Path("requirements/prod.in")),
+        ("requirements/prod.shared.in",),
+        ("prod", Path("requirements/prod.shared.in")),
     ),
     (
         Path(__file__).parent.joinpath("_good_files", "complete.pyproject_toml"),
         ("alt", "requirements/alt.in"),
-        ("requirements/prod.in", "requirements/alt.in"),
+        ("requirements/prod.shared.in", "requirements/alt.in"),
         ("alt", Path("requirements/alt.in")),
     ),
     (
@@ -303,7 +312,7 @@ testdata_required = [
     (
         Path(__file__).parent.joinpath("_good_files", "complete.pyproject_toml"),
         ("alt", Path("requirements/alt.in")),
-        ("requirements/prod.in", "requirements/alt.in"),
+        ("requirements/prod.shared.in", "requirements/alt.in"),
         ("alt", Path("requirements/alt.in")),
     ),
 ]
@@ -449,11 +458,11 @@ testdata_get_optionals_pyproject_toml = (
     ),
     (
         Path(__file__).parent.joinpath("_good_files", "nonsense-keys.pyproject_toml"),
-        5,
+        0,
     ),
     (
         Path(__file__).parent.joinpath("_good_files", "requires-none.pyproject_toml"),
-        5,
+        0,
     ),
 )
 ids_get_optionals_pyproject_toml = [
@@ -476,7 +485,7 @@ def test_get_optionals_pyproject_toml(
     prepare_folders_files,
 ):
     """Test get_optionals_pyproject_toml."""
-    # pytest --showlocals --log-level INFO -k "test_get_optionals_pyproject_toml" -v tests
+    # pytest  -vv --showlocals --log-level INFO -k "test_get_optionals_pyproject_toml" tests
     LOGGING["loggers"][g_app_name]["propagate"] = True
     logging.config.dictConfig(LOGGING)
     logger = logging.getLogger(name=g_app_name)
@@ -495,7 +504,8 @@ def test_get_optionals_pyproject_toml(
         is_bypass=True,
     )
     # assert has_logging_occurred(caplog)
-    assert len(d_actual.keys()) == expected_count
+    actual_count = len(d_actual.keys())
+    assert actual_count == expected_count
 
     """prepare
 
@@ -608,7 +618,7 @@ testdata_folders_implied_init = (
             "manage": "requirements/manage.in",
             "docs": "docs/requirements.in",
         },
-        ("prod", "requirements/prod.in"),
+        ("prod", "requirements/prod.shared.in"),
         {Path("requirements"), Path("docs")},
     ),
 )
@@ -899,17 +909,17 @@ testdata_resolve_symlinks = (
             "complete-lnk-files.pyproject_toml",
         ),
         {
-            "prod": "requirements/prod.in",
+            "prod": "requirements/prod.shared.in",
             "pip": "requirements/pip.in",
             "tox": "requirements/tox.in",
             "manage": "requirements/manage.in",
         },
         (
-            "requirements/prod.unlock",
+            "requirements/prod.shared.unlock",
             "requirements/pip.unlock",
             "requirements/tox.unlock",
             "requirements/manage.unlock",
-            "requirements/prod.lock",
+            "requirements/prod.shared.lock",
             "requirements/pip.lock",
             "requirements/tox.lock",
             "requirements/manage.lock",

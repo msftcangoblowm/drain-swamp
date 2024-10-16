@@ -21,6 +21,7 @@ Integration test
 
 """
 
+from collections.abc import Sequence
 from pathlib import (
     Path,
     PurePath,
@@ -100,23 +101,45 @@ def test_resolve_path(f_path, expected):
 
 
 testdata_replace_suffixes = (
+    ("ted.txt", [".tar", ".gz"], "ted.tar.gz"),
     (
         "ted.txt",
-        [".tar", ".gz"],
+        None,
+        "ted",
+    ),
+    (
+        "ted.txt",
+        "",
+        "ted",
     ),
 )
-ids_replace_suffixes = ("txt to tarball",)
+ids_replace_suffixes = (
+    "txt to tarball",
+    "suffixes None",
+    "suffixes empty str",
+)
 
 
 @pytest.mark.parametrize(
-    "relpath, suffixes",
+    "relpath, suffixes, expected_name",
     testdata_replace_suffixes,
     ids=ids_replace_suffixes,
 )
-def test_replace_suffixes(tmp_path, relpath, suffixes):
+def test_replace_suffixes(suffixes, expected_name, tmp_path, relpath):
     """Confirm can replace suffixes on an absolute path."""
     # pytest --showlocals --log-level INFO -k "test_replace_suffixes" tests
-    str_suffixes = "".join(suffixes)
+    is_nonstr_sequence = (
+        suffixes is not None
+        and isinstance(suffixes, Sequence)
+        and not isinstance(suffixes, str)
+    )
+    if is_nonstr_sequence:
+        str_suffixes = "".join(suffixes)
+    else:
+        str_suffixes = suffixes
+
     abspath_0 = tmp_path / relpath
     abspath_1 = replace_suffixes(abspath_0, str_suffixes)
-    assert abspath_1.suffixes == suffixes
+    if is_nonstr_sequence:
+        assert abspath_1.suffixes == suffixes
+    assert abspath_1.name == expected_name

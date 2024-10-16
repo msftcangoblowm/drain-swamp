@@ -208,66 +208,65 @@ def get_optionals_pyproject_toml(
         is_bypass = False
 
     d_tool = d_pyproject_toml.get("tool", {}).get(entrypoint_name, {})
-    for key, mixed_blob in d_tool.items():
-        is_optionals = (
-            key == "optionals"
-            and mixed_blob is not None
-            and isinstance(mixed_blob, Sequence)
-        )
-        if is_module_debug:  # pragma: no cover
-            _logger.info(f"is_optionals: {is_optionals}")
-        else:  # pragma: no cover
-            pass
+    key_optionals = "optionals"
+    d_optionals = {
+        key: mixed_blob
+        for key, mixed_blob in d_tool.items()
+        if key == key_optionals
+        and mixed_blob is not None
+        and isinstance(mixed_blob, Sequence)
+    }
 
-        if is_optionals:
-            for d_optional_dependency in mixed_blob:
-                if "target" in d_optional_dependency.keys():
-                    target = d_optional_dependency["target"]
-                else:  # pragma: no cover
-                    target = None
+    if is_module_debug:  # pragma: no cover
+        _logger.info(f"d_optionals: {d_optionals}")
+    else:  # pragma: no cover
+        pass
 
-                if "relative_path" in d_optional_dependency.keys():
-                    opt = d_optional_dependency["relative_path"]
-                else:  # pragma: no cover
-                    opt = None
+    if not len(d_optionals.keys()):
+        # in pyproject.toml [tool.pipenv-unlock], no required key nor dict value
+        pass
+    else:
+        mixed_blob = d_optionals[key_optionals]
+        for d_optional_dependency in mixed_blob:
+            if "target" in d_optional_dependency.keys():
+                target = d_optional_dependency["target"]
+            else:  # pragma: no cover
+                target = None
 
-                is_missing_expected_keys = target is None or opt is None
-                if is_missing_expected_keys:  # pragma: no cover
-                    """a dict, but no recognized keys. Expected target
-                    and relative_path"""
-                    continue
-                else:  # pragma: no cover
-                    pass
+            if "relative_path" in d_optional_dependency.keys():
+                opt = d_optional_dependency["relative_path"]
+            else:  # pragma: no cover
+                opt = None
 
-                is_pathlike = isinstance(opt, str) or issubclass(type(opt), PurePath)
-                if is_module_debug:  # pragma: no cover
-                    msg_info = f"is_pathlike: {is_pathlike}"
-                    _logger.info(msg_info)
-                else:  # pragma: no cover
-                    pass
-
-                if is_pathlike:
-                    path_opt = Path(opt)
-                    if is_module_debug:  # pragma: no cover
-                        msg_info = f"target / rel path: {target} / {path_opt}"
-                        _logger.info(msg_info)
-                    else:  # pragma: no cover
-                        pass
-
-                    try_dict_update(
-                        d_both,
-                        path_config,
-                        target,
-                        path_opt,
-                        is_bypass=is_bypass,
-                    )
-                else:  # pragma: no cover
-                    # unsupported type
-                    pass
-            else:
-                # empty sequence
+            is_missing_expected_keys = target is None or opt is None
+            if is_missing_expected_keys:  # pragma: no cover
+                """a dict, but no recognized keys. Expected target
+                and relative_path"""
+                continue
+            else:  # pragma: no cover
                 pass
-        else:  # pragma: no cover
+
+            path_opt = Path(opt)
+            is_relative = is_relative_required(path_relative=path_opt)
+
+            if is_module_debug:  # pragma: no cover
+                _logger.info(f"is_relative (pyproject.toml): {is_relative}")
+            else:  # pragma: no cover
+                pass
+
+            if is_relative:
+                try_dict_update(
+                    d_both,
+                    path_config,
+                    target,
+                    path_opt,
+                    is_bypass=is_bypass,
+                )
+            else:  # pragma: no cover
+                # unsupported type
+                pass
+        else:
+            # empty sequence
             pass
 
 
@@ -361,58 +360,68 @@ def get_required_pyproject_toml(
 
     ret = None
     d_tool = d_pyproject_toml.get("tool", {}).get(entrypoint_name, {})
-    for key, mixed_blob in d_tool.items():
-        is_required = (
-            key == "required"
-            and mixed_blob is not None
-            and isinstance(mixed_blob, dict)
-        )
+    key_required = "required"
+    d_required = {
+        key: mixed_blob
+        for key, mixed_blob in d_tool.items()
+        if key == key_required
+        and mixed_blob is not None
+        and isinstance(mixed_blob, dict)
+    }
+
+    if is_module_debug:  # pragma: no cover
+        _logger.info(f"d_required: {d_required}")
+    else:  # pragma: no cover
+        pass
+
+    if not len(d_required.keys()):
+        # in pyproject.toml [tool.pipenv-unlock], no required key nor dict value
+        pass
+    else:
+        mixed_blob = d_required[key_required]
+        is_target = "target" in mixed_blob.keys()
+        is_relative_path = "relative_path" in mixed_blob.keys()
+
         if is_module_debug:  # pragma: no cover
-            _logger.info(f"is_required: {is_required}")
+            _logger.info(f"is_target (pyproject.toml): {is_target}")
+            _logger.info(f"is_relative_path (pyproject.toml): {is_relative_path}")
         else:  # pragma: no cover
             pass
 
-        if is_required:
-            is_target = "target" in mixed_blob.keys()
-            is_relative_path = "relative_path" in mixed_blob.keys()
+        if is_target and is_relative_path:
+            target_b = cast(str, mixed_blob["target"])
+            path_rel_b = cast(str, mixed_blob["relative_path"])
+            # assumes default extensions
+            is_relative = is_relative_required(path_relative=Path(path_rel_b))
+
             if is_module_debug:  # pragma: no cover
-                _logger.info(f"is_target (pyproject.toml): {is_target}")
-                _logger.info(f"is_relative_path (pyproject.toml): {is_relative_path}")
+                _logger.info(f"is_relative (pyproject.toml): {is_relative}")
             else:  # pragma: no cover
                 pass
-            if is_target and is_relative_path:
-                target_b = cast(str, mixed_blob["target"])
-                path_rel_b = cast(str, mixed_blob["relative_path"])
-                # assumes default extensions
-                is_relative = is_relative_required(path_relative=Path(path_rel_b))
-                if is_module_debug:  # pragma: no cover
-                    _logger.info(f"is_relative (pyproject.toml): {is_relative}")
-                else:  # pragma: no cover
-                    pass
-                if is_relative:
-                    path_abs = path_config.joinpath(path_rel_b)
-                    if is_bypass:
+
+            if is_relative:
+                path_abs = path_config.joinpath(path_rel_b)
+                if is_bypass:
+                    ret = (target_b, path_abs)
+                else:
+                    is_file = path_abs.exists() and path_abs.is_file()
+
+                    if is_module_debug:  # pragma: no cover
+                        _logger.info(f"is_file (pyproject.toml): {is_file}")
+                    else:  # pragma: no cover
+                        pass
+
+                    if is_file:
                         ret = (target_b, path_abs)
                     else:
-                        is_file = path_abs.exists() and path_abs.is_file()
-                        if is_module_debug:  # pragma: no cover
-                            _logger.info(f"is_file (pyproject.toml): {is_file}")
-                        else:  # pragma: no cover
-                            pass
-                        if is_file:
-                            ret = (target_b, path_abs)
-                        else:
-                            # not a file
-                            ret = None
-                else:  # pragma: no cover
-                    # unexpected absolute path
-                    pass
+                        # not a file
+                        ret = None
             else:  # pragma: no cover
-                """dict does not contain both target and relative_path
-                keys and respective values"""
+                # unexpected absolute path
                 pass
         else:  # pragma: no cover
-            # in pyproject.toml [tool.pipenv-unlock], no required key nor dict value
+            """dict does not contain both target and relative_path
+            keys and respective values"""
             pass
 
     return ret

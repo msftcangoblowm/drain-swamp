@@ -41,7 +41,9 @@ ifeq ($(is_venv),1)
 	@if [[ "$(PY_X_Y)" = "3.10" ]]; then
 
 	$(VENV_BIN)/pip install --quiet --disable-pip-version-check -r pip-tools.lock
+	[[ -f pip-tools.lock ]] && cat /dev/null > pip-tools.lock
 	[[ -f requirements.lock ]] && cat /dev/null > requirements.lock
+	$(VENV_BIN)/$(PIP_COMPILE) -o pip-tools.lock pip-tools.in
 	$(VENV_BIN)/$(PIP_COMPILE) -o requirements.lock requirements.in
 
 	fi

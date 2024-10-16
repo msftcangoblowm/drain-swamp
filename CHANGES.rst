@@ -27,6 +27,13 @@ Changelog
    Known regressions
    ..................
 
+   - activate drain-swamp .venv
+     logging-strict has no dependency, drain-swamp. However from logging-strict
+     package base folder :code:`pre-commit run --all-files --show-diff-on-failure`
+     fails.
+     LookupError: toml section missing ...logging_strict/pyproject.toml does not
+     contain a tool.drain-swamp section
+
    - in ci, linux and macos build sdist kind="current" set-lock=1 version --> 0.1.dev1
      cause ?? Hints scm version plugin has issues
 
@@ -39,6 +46,18 @@ Changelog
 
    Commit items for NEXT VERSION
    ..............................
+
+   - fix(tox.ini): flake8-pyi and black disagree. Ignore flake8 failure
+   - chore: bump drain-swamp-snippet to 1.0.1
+   - chore: bump logging-strict to 1.3.4
+   - fix: add support for .shared.in (#13)
+   - fix: pins.in and prod.in now have extension .shared.in
+   - fix: For multiple suffixes check only last suffix
+   - feat: add pyproject_reading from setuptools-scm (MIT)
+   - feat(patch_pyproject_reading): add TOML array of tables support
+   - feat(pep518_read): find_pyproject_toml add support for test files
+   - fix(pep518_read): find_pyproject_toml given a valid file path, avoid reverse search
+   - ci: condense multiple pip calls
 
 .. scriv-start-here
 

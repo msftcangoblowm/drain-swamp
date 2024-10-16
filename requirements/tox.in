@@ -1,7 +1,7 @@
 # Licensed under the AGPLv3+ License: https://www.gnu.org/licenses/
 # For details: https://github.com/msftcangoblowm/drain-swamp/blob/master/NOTICE.txt
 
--c pins.in
+-c pins.shared.in
 
 # Build has a windows-only dependency on colorama:
 # https://github.com/pypa/build/blob/main/setup.cfg#L32

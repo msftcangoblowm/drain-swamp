@@ -114,12 +114,7 @@ jobs:
 
     - name: "Install dependencies -- tests"
       run: |
-        python -m pip install -r requirements/tox$LOCK_SUFFIX
-        python -m pip install -r requirements/prod$LOCK_SUFFIX
-
-    - name: "Install dependencies -- build"
-      run: |
-        python -m pip install -r requirements/kit$LOCK_SUFFIX
+        python -m pip install -r requirements/kit$LOCK_SUFFIX -r requirements/prod$LOCK_SUFFIX -r requirements/tox$LOCK_SUFFIX
 
     - name: build
       run: |

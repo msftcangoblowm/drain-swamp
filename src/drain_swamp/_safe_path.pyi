@@ -29,5 +29,5 @@ def resolve_joinpath(
 ) -> PureWindowsPath | PurePosixPath | type[Path]: ...
 def replace_suffixes(
     abspath_a: PurePath | Path,
-    suffixes: str,
+    suffixes: str | None,
 ) -> PurePath | Path: ...

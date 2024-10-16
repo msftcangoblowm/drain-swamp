@@ -23,7 +23,7 @@ authors = [  # Contact by mastodon please
 
 [tool.setuptools.dynamic]
 # @@@ editable little_shop_of_horrors_shrine_candles
-dependencies = { file = ['requirements/prod.lnk'] }
+dependencies = { file = ['requirements/prod.shared.lnk'] }
 optional-dependencies.pip = { file = ['requirements/pip.lnk'] }
 optional-dependencies.manage = { file = ['requirements/manage.lnk'] }
 # @@@ end
@@ -45,7 +45,7 @@ folders = [
     'ci',
 ]
 
-required = { target = "prod", relative_path = 'requirements/prod.in' }
+required = { target = "prod", relative_path = 'requirements/prod.shared.in' }
 
 # underscore: hyphen
 optionals = [

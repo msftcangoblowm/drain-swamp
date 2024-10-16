@@ -19,6 +19,7 @@ Python build backend with build plugins and dependency lock switch
 **new in 1.8.x**
 
 add dependency drain-swamp-snippet; use msftcangoblowm/drain-swamp-action;
+add support for .shared.in;
 
 **New in 1.7.x**
 

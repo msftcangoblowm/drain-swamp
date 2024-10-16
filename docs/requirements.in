@@ -1,7 +1,7 @@
 # Licensed under the AGPLv3+ License: https://www.gnu.org/licenses/
 # For details: https://github.com/msftcangoblowm/drain-swamp/blob/master/NOTICE.txt
 
--c ../requirements/prod.in
+-c ../requirements/prod.shared.in
 
 pip<24.2
 sphinx>=8

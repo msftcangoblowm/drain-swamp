@@ -9,19 +9,19 @@ are interlinked, e.g:
 
 .. code:: text
 
-   requirements/pins.in
+   requirements/pins.shared.in
    requirements/pip.in
    requirements/pip-tools.in
    requirements/dev.in
    requirements/kit.in
    requirements/mypy.in
    requirements/manage.in
-   requirments/prod.in
+   requirments/prod.shared.in
    requirments/tox.in
    docs/requirements.in
 
 An author only apply constraints in the most dire circumstances. This
-happens only within ``pins.in``. Equivalent to a .lock file, so ``-c``
+happens only within ``pins.shared.in``. Equivalent to a .lock file, so ``-c``
 is not allowed.
 
 Although should be obvious, it's not stated often enough; ``*.in`` files
@@ -29,14 +29,14 @@ should only contains top level (direct package) dependencies.
 
 .. code:: text
 
-   requirements/pins.in          # included by others
+   requirements/pins.shared.in   # included by others
    requirements/pip.in           # requirements/pip.lock
    requirements/pip-tools.in     # requirements/pip-tools.lock
    requirements/dev.in           # requirements/dev.lock
    requirements/kit.in           # requirements/kit.lock
    requirements/mypy.in          # requirements/mypy.lock
    requirements/manage.in        # requirements/manage.lock
-   requirments/prod.in           # requirments/prod.lock and also included by others
+   requirments/prod.shared.in    # requirments/prod.shared.lock Included by others
    requirments/tox.in            # requirments/tox.lock
    docs/requirements.in          # docs/requirements.lock
 
@@ -79,7 +79,7 @@ Then link this to your ``pyproject.toml`` file
    # From Dead Snow II -- best zombie movie ... ever!
    # Specifying a snippet_co turns on support for multiple snippets / file
    # @@@ editable may_the_force_be_with_you_tshirt
-   dependencies = { file = ["requirements/prod.lnk"] }
+   dependencies = { file = ["requirements/prod.shared.lnk"] }
    optional-dependencies.pip = { file = ["requirements/pip.lnk"] }
    optional-dependencies.pip_tools = { file = ["requirements/pip-tools.lnk"] }
    optional-dependencies.ui = { file = ["requirements/ui.lnk"] }
@@ -99,7 +99,7 @@ Then link this to your ``pyproject.toml`` file
    ]
 
    # pip-tools compatiable source file. Supports ``-c``, not ``-r``
-   required = { target = "prod", relative_path = "requirements/prod.in" }
+   required = { target = "prod", relative_path = "requirements/prod.shared.in" }
 
    # pip-tools compatiable source file. Supports ``-c``, not ``-r``
    # underscore: hyphen
@@ -122,17 +122,17 @@ To unlock dependencies
 
 :command:`pipenv-unlock unlock`
 
-pins.in
---------
+pins.shared.in
+---------------
 
-An example pins.in
+An example pins.shared.in
 
 This file does not produce a .lock or .unlock files. Consider it a
 ``.lock`` file. So all :command:`pip-compile` options must already be resolved
 
 .. code:: text
 
-   # strictyaml --> python-dateutil --> prod.pip
+   # strictyaml --> python-dateutil --> prod.shared.lock
    # python -m piptools compile does not see this postrelease. Instead chooses python-dateutil-2.8.2
    python-dateutil==2.9.0.post0
 
@@ -148,7 +148,7 @@ Created two python packages, each with strictyaml as a dependency.
 
 Needed to figure this out. And it's not fun. This is referred to as *dependency hell*!
 
-The ``pins.in`` file is only for really really bad situations where
+The ``pins.shared.in`` file is only for really really bad situations where
 a package author had no choice but to step in.
 
 This issue, actually, is better handled by the end user using :command:`uv`
@@ -168,8 +168,8 @@ In constraints files, there is no support for:
 
 .. code:: text
 
-   -c pins.in
-   -c prod.in
+   -c pins.shared.in
+   -c prod.shared.in
 
    black
    blackdoc
@@ -185,7 +185,7 @@ In constraints files, there is no support for:
 
 .. code:: text
 
-   -c pins.in
+   -c pins.shared.in
 
    typing-extensions  # backporting latest greatest typing features
    strictyaml         # yaml spec subset validate and parse
@@ -196,7 +196,7 @@ In constraints files, there is no support for:
 
 .. code:: text
 
-   # strictyaml --> python-dateutil --> prod.pip
+   # strictyaml --> python-dateutil --> prod.shared.lock
    # python -m piptools compile does not see this postrelease. Instead chooses python-dateutil-2.8.2
    python-dateutil==2.9.0.post0
 

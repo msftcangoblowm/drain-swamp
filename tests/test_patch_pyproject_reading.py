@@ -19,6 +19,8 @@ Integration test
 
 """
 
+import logging
+import logging.config
 from contextlib import nullcontext as does_not_raise
 from pathlib import (
     Path,
@@ -27,11 +29,16 @@ from pathlib import (
 
 import pytest
 
+from drain_swamp.constants import (
+    LOGGING,
+    g_app_name,
+)
 from drain_swamp.monkey.patch_pyproject_reading import (
     PyProjectData,
     ReadPyproject,
     ReadPyprojectStrict,
 )
+from drain_swamp.monkey.pyproject_reading import load_toml_or_inline_map
 
 testdata_pyproject_data = (
     (
@@ -184,3 +191,176 @@ def test_update_dict_strict():
     d_b = {"dist_name": "george"}
     ReadPyprojectStrict().update(d_a, d_b)
     assert "dist_name" in d_a.keys()
+
+
+testdata_toml_array_of_tables = (
+    (
+        (
+            "[project]\n"
+            """name = 'whatever'\n"""
+            """version = '0.0.1'\n"""
+            "[[tool.venvs]]\n"
+            """venv_base_path = '.doc/.venv'\n"""
+            """in_folder = 'docs'\n"""
+            "reqs = [\n"
+            """   'docs/pip-tools',\n"""
+            """   'docs/requirements',\n"""
+            "]\n"
+            "[[tool.venvs]]\n"
+            """venv_base_path = '.venv'\n"""
+            """in_folder = 'requirements'\n"""
+            "reqs = [\n"
+            """   'requirements/pip-tools',\n"""
+            """   'requirements/pip',\n"""
+            """   'requirements/prod.shared',\n"""
+            """   'requirements/kit',\n"""
+            """   'requirements/tox',\n"""
+            """   'requirements/mypy',\n"""
+            """   'requirements/manage',\n"""
+            """   'requirements/dev',\n"""
+            "]\n"
+        ),
+        2,
+        does_not_raise(),
+    ),
+    (
+        (
+            "[project]\n"
+            """name = 'whatever'\n"""
+            """version = '0.0.1'\n"""
+            "[[tool.venvs]]\n"
+            """venv_base_path = '.doc/.venv'\n"""
+            """in_folder = 'docs'\n"""
+            "reqs = [\n"
+            """   'docs/pip-tools',\n"""
+            """   'docs/requirements',\n"""
+            "]\n"
+            "[[tool.venvs]]\n"
+            """venv_base_path = '.venv'\n"""
+            """in_folder = 'requirements'\n"""
+            "reqs = [\n"
+            """   'requirements/pip-tools',\n"""
+            """   'requirements/pip',\n"""
+            """   'requirements/prod.shared',\n"""
+            """   'requirements/kit',\n"""
+            """   'requirements/tox',\n"""
+            """   'requirements/mypy',\n"""
+            """   'requirements/manage',\n"""
+            """   'requirements/dev',\n"""
+            "]\n"
+            "[[tool.venvs]]\n"
+            """venv_base_path = '.doc/.venv'\n"""
+            """in_folder = 'requirements'\n"""
+            "reqs = [\n"
+            """   'docs/pip-tools',\n"""
+            """   'docs/requirements',\n"""
+            "]\n"
+        ),
+        2,
+        does_not_raise(),
+    ),
+    (
+        (
+            "[project]\n"
+            """name = 'whatever'\n"""
+            """version = '0.0.1'\n"""
+            "[tool.venvs]\n"
+            """venv_base_path = '.doc/.venv'\n"""
+        ),
+        0,
+        pytest.raises(LookupError),
+    ),
+)
+ids_toml_array_of_tables = (
+    "two items",
+    "3rd item updates 1st",
+    "one table rather than array of tables. Result would not be a list",
+)
+
+
+@pytest.mark.parametrize(
+    "toml_contents, expected_section_items_count, expection",
+    testdata_toml_array_of_tables,
+    ids=ids_toml_array_of_tables,
+)
+def test_toml_array_of_tables(
+    toml_contents,
+    expected_section_items_count,
+    expection,
+    tmp_path,
+    caplog,
+    has_logging_occurred,
+):
+    """Support list[dict]"""
+    # pytest --showlocals -vv --log-level INFO -k "test_toml_array_of_tables" tests
+    LOGGING["loggers"][g_app_name]["propagate"] = True
+    logging.config.dictConfig(LOGGING)
+    logger = logging.getLogger(name=g_app_name)
+    logger.addHandler(hdlr=caplog.handler)
+    caplog.handler.level = logger.level
+
+    tool_name = "venvs"
+    key_name = "venv_base_path"
+
+    path_f = tmp_path / "pyproject.toml"
+    path_f.write_text(toml_contents)
+
+    with expection:
+        data_1 = ReadPyproject()(
+            path=path_f,
+            tool_name=tool_name,
+            key_name=key_name,
+            is_expect_list=True,
+        )
+    if isinstance(expection, does_not_raise):
+        assert isinstance(data_1, PyProjectData)
+
+        section_items = data_1.section
+        actual_count = len(section_items)
+        assert actual_count == expected_section_items_count
+
+    # assert has_logging_occurred(caplog)
+    pass
+
+
+testdata_load_toml_or_inline_map = (
+    (
+        None,
+        {},
+    ),
+    (
+        "",
+        {},
+    ),
+    (
+        "    ",
+        {},
+    ),
+    (
+        '{project = {name = "proj", version = "0.0.1"}}',
+        {"project": {"name": "proj", "version": "0.0.1"}},
+    ),
+    (
+        ("""[project]\n""" """name = 'proj'\n""" """version = '0.0.1'\n"""),
+        {"project": {"name": "proj", "version": "0.0.1"}},
+    ),
+)
+ids_load_toml_or_inline_map = (
+    "None",
+    "Empty str",
+    "nonsense white space. Actually empty str",
+    "TOML str embedded within a inline dict",
+    "Actual TOML data",
+)
+
+
+@pytest.mark.parametrize(
+    "str_in, d_expected",
+    testdata_load_toml_or_inline_map,
+    ids=ids_load_toml_or_inline_map,
+)
+def test_load_toml_or_inline_map(str_in, d_expected):
+    """Test load_toml_or_inline_map can take Any and smile."""
+    # pytest --showlocals -vv --log-level INFO -k "test_load_toml_or_inline_map" tests
+    d_actual = load_toml_or_inline_map(str_in)
+    assert d_actual == d_expected

@@ -124,9 +124,8 @@ jobs:
     - name: "Install dependencies"
       run: |
         set -xe
-        python -m pip install -r requirements/kit$LOCK_SUFFIX
-        python -m pip install -r requirements/prod$LOCK_SUFFIX
-        python -m pip install -r requirements/dev$LOCK_SUFFIX
+        python -m pip install -r requirements/kit$LOCK_SUFFIX -r requirements/prod$LOCK_SUFFIX -r requirements/dev$LOCK_SUFFIX
+
     - name: "Build sdist and whl"
       run: |
         # TOML file location ${{ runner.temp }}/${{ steps.outcome.inputs.toml_file_name }}

@@ -3,7 +3,7 @@
 
 # called by tox.ini [testenv:mypy]
 
-# -c pins.in
+-c pins.shared.in
 
 mypy
 types-setuptools

@@ -61,11 +61,11 @@ __all__ = (
 def _is_ok(test):
     """Check if non-empty str.
 
-    Edge case: contains only whitespace --> ``False``
+    Edge case: contains only whitespace --> False
 
     :param test: variable to test
     :type test: typing.Any | None
-    :returns: ``True`` if non-empty str otherwise ``False``
+    :returns: True if non-empty str otherwise False
     :rtype: bool
 
     .. note::
@@ -105,7 +105,7 @@ def find_project_root(srcs, stdin_filename=None):
 
     :param stdin_filename:
 
-       Default ``None``. stdin file name, considers files parent as the
+       Default None. stdin file name, considers files parent as the
        project top folder
 
     :type stdin_filename: str | None
@@ -241,20 +241,50 @@ def find_pyproject_toml(path_search_start, stdin_filename):
 
     :type path_search_start: tuple[str, ...]
     :param stdin_filename: ``pyproject.toml`` passed into stdin. May be a file
-    :type stdin_filename: str | ``None``
-    :returns: Absolute path to project ``pyproject.toml`` otherwise ``None``
-    :rtype: str | ``None``
+    :type stdin_filename: str | None
+    :returns: Absolute path to project ``pyproject.toml`` otherwise None
+    :rtype: str | None
     """
-    """2nd item, reason, is string describing the method by which the project
-    root was discovered"""
-    try:
-        path_project_root, _ = find_project_root(path_search_start, stdin_filename)
-    except PermissionError:  # pragma: no cover
-        # Causing PermissionError is platform.system dependent
-        return None
-    else:
-        path_pyproject_toml = path_project_root / "pyproject.toml"
-        if path_pyproject_toml.is_file():
-            return str(path_pyproject_toml)
+    is_ng = path_search_start is None or not isinstance(path_search_start, Sequence)
+
+    if is_ng:
+        ret = None
+    else:  # pragma: no cover
+        # Check if the 1st path is a project.toml or test file
+        item_0 = path_search_start[0]
+        if not isinstance(item_0, str):
+            ret = None
         else:
-            return None
+            path_idx0 = Path(item_0)
+            path_idx0_suffix = path_idx0.suffix
+            path_idx0_file_name = path_idx0.name
+            test_file_suffix = ".pyproject_toml"
+            is_test_file = path_idx0_suffix == test_file_suffix
+            is_target_file = path_idx0_file_name == "pyproject.toml"
+
+            if (is_test_file or is_target_file) and path_idx0.is_file():
+                is_found = True
+                ret = item_0
+            else:  # pragma: no cover
+                is_found = False
+
+            if is_found is False:
+                """2nd item, reason, is string describing the method by which the project
+                root was discovered"""
+                try:
+                    path_project_root, _ = find_project_root(
+                        path_search_start, stdin_filename
+                    )
+                except PermissionError:  # pragma: no cover
+                    # Causing PermissionError is platform.system dependent
+                    ret = None
+                else:
+                    path_pyproject_toml = path_project_root / "pyproject.toml"
+                    if path_pyproject_toml.is_file():
+                        ret = str(path_pyproject_toml)
+                    else:
+                        ret = None
+            else:  # pragma: no cover
+                pass
+
+    return ret

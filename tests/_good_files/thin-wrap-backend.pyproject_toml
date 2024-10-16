@@ -24,7 +24,7 @@ authors = [  # Contact by mastodon please
 
 [tool.setuptools.dynamic]
 # @@@ editable little_shop_of_horrors_shrine_candles
-dependencies = { file = ['requirements/prod.unlock'] }
+dependencies = { file = ['requirements/prod.shared.unlock'] }
 optional-dependencies.pip = { file = ['requirements/pip.unlock'] }
 optional-dependencies.manage = { file = ['requirements/manage.unlock'] }
 # @@@ end
@@ -41,7 +41,7 @@ folders = [
     'ci',
 ]
 
-required = { target = "prod", relative_path = 'requirements/prod.in' }
+required = { target = "prod", relative_path = 'requirements/prod.shared.in' }
 
 # underscore: hyphen
 optionals = [

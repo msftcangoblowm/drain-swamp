@@ -33,6 +33,7 @@ from contextlib import nullcontext as does_not_raise
 from pathlib import Path
 
 import pytest
+from logging_strict.tech_niques import get_locals
 
 from drain_swamp.backend_abc import (
     BackendType,
@@ -106,7 +107,7 @@ def test_load_factory_good(
     prep_pyproject_toml,
 ):
     """BackendType factory works with supported build backends."""
-    # pytest --showlocals --log-level INFO -k "test_load_factory_good" tests
+    # pytest -vv --showlocals --log-level INFO -k "test_load_factory_good" tests
     LOGGING["loggers"][g_app_name]["propagate"] = True
     logging.config.dictConfig(LOGGING)
     logger = logging.getLogger(name=g_app_name)
@@ -131,6 +132,15 @@ def test_load_factory_good(
     prepare_folders_files(seq_prepare_these, tmp_path)
 
     #    required
+    func_path = "drain_swamp.backend_abc.get_required_pyproject_toml"
+    t_out = get_locals(
+        func_path,
+        get_required_pyproject_toml,
+        *(d_pyproject_toml, tmp_path),
+        **{"is_bypass": True},
+    )
+    actual_required, d_locals = t_out
+
     t_required = get_required_pyproject_toml(
         d_pyproject_toml,
         tmp_path,

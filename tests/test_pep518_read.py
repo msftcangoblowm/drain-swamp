@@ -30,6 +30,8 @@ from pathlib import (
 )
 from unittest.mock import patch
 
+from logging_strict.tech_niques import get_locals
+
 from drain_swamp.constants import g_app_name
 from drain_swamp.pep518_read import (
     _is_ok,
@@ -152,18 +154,8 @@ class Pep518Sections(unittest.TestCase):
             patch("pathlib.Path.cwd", return_value=Path(f_d)),
         ):
             path_dir = Path(f_d)
-            path_dot_git = path_dir.joinpath(".git")
-            path_dot_git.mkdir(
-                mode=0o777,
-                parents=False,
-                exist_ok=False,
-            )
 
-            # pyproject.toml does not yet exist
-            srcs = ("-",)
-            stdin_filename = None
-            self.assertIsNone(find_pyproject_toml(srcs, stdin_filename))
-
+            # prepare
             path_f = path_dir.joinpath("pyproject.toml")
             path_f.touch(mode=0o666, exist_ok=False)
             str_toml = (
@@ -174,21 +166,19 @@ class Pep518Sections(unittest.TestCase):
             )
             path_f.write_text(str_toml)
 
-            """pyproject.toml exists, although stdin_filename not supplied
+            path_dot_git = path_dir.joinpath(".git")
+            path_dot_git.mkdir(
+                mode=0o777,
+                parents=False,
+                exist_ok=False,
+            )
 
-            make coverage says it's None, unittest and running coverage
-            on the module says it's a str.
-
-            It shouldn't be None
-            """
-            # self.assertIsInstance(find_pyproject_toml(srcs, stdin_filename), str)
-            pass
-
-            # pyproject.toml exists, stdin_filename supplied
+            # act
+            srcs = ("-",)
             stdin_filename = str(path_f)
-            self.assertIsInstance(find_pyproject_toml(srcs, stdin_filename), str)
-
             path_project_folder, reason = find_project_root(srcs, stdin_filename)
+
+            # verify
             self.assertTrue(issubclass(type(path_project_folder), PurePath))
             self.assertIsInstance(reason, str)
             self.assertEqual(reason, ".git directory")
@@ -234,10 +224,6 @@ class Pep518Sections(unittest.TestCase):
                 self.assertIsInstance(reason, str)
                 self.assertEqual(reason, reason_expected)
 
-                # must be a tuple[str], not tuple[Path]
-                stdin_filename = None
-                self.assertIsNone(find_pyproject_toml(srcs, stdin_filename))
-
             # PermissionError, **not** testing a filesystem base folder
             stdin_filename = None
             srcs = ("/root",)
@@ -249,8 +235,77 @@ class Pep518Sections(unittest.TestCase):
                     # supposed to be a inaccessible folder
                     find_project_root(srcs)
 
-            # self.assertIsNone(find_pyproject_toml(srcs, stdin_filename))
-            pass
+    def test_find_pyproject_toml(self):
+        """Test find_pyproject_toml."""
+        # 1st arg expects a Sequence
+        assert find_pyproject_toml(None, None) is None
+
+        # pyproject.toml does not yet exist
+        with (
+            tempfile.TemporaryDirectory() as f_d,
+            patch("pathlib.Path.cwd", return_value=Path(f_d)),
+        ):
+            srcs = ("-",)
+            stdin_filename = None
+            self.assertIsNone(find_pyproject_toml(srcs, stdin_filename))
+
+        # pyproject.toml exists, stdin_filename supplied
+        with (
+            tempfile.TemporaryDirectory() as f_d,
+            patch("pathlib.Path.cwd", return_value=Path(f_d)),
+        ):
+            # prepare
+            path_dir = Path(f_d)
+            path_f = path_dir.joinpath("pyproject.toml")
+            path_f.touch(mode=0o666, exist_ok=False)
+            str_toml = (
+                "[tool.asz.unittest]\n"
+                "util/test_pep518_read.py = 14\n\n"
+                "[tool.asz.recipe]\n"
+                "util/pep518_read = [14]\n\n"
+            )
+            path_f.write_text(str_toml)
+
+            # act
+            srcs = ("-",)
+            stdin_filename = str(path_f)
+            str_ret = find_pyproject_toml(srcs, stdin_filename)
+            self.assertIsInstance(str_ret, str)
+
+        # search fails
+        with (
+            tempfile.TemporaryDirectory() as f_d,
+            patch("pathlib.Path.cwd", return_value=Path(f_d)),
+        ):
+            srcs = (f_d,)
+            # must be a tuple[str], not tuple[Path]
+            stdin_filename = None
+            ret = find_pyproject_toml(srcs, stdin_filename)
+            self.assertIsNone(ret)
+
+        # A test file
+        path_f = Path(__file__).parent.joinpath(
+            "_good_files", "complete.pyproject_toml"
+        )
+        with (
+            tempfile.TemporaryDirectory() as f_d,
+            patch("pathlib.Path.cwd", return_value=Path(f_d)),
+        ):
+            srcs = (str(path_f),)
+            expected_path = srcs[0]
+            stdin_filename = None
+
+            # Get locals within function
+            func_path = "drain_swamp.pep518_read.find_pyproject_toml"
+            args = (srcs, stdin_filename)
+            kwargs = {}
+            t_ret = get_locals(func_path, find_pyproject_toml, *args, **kwargs)
+            ret, d_locals = t_ret
+
+            # actual call so coverage sees it
+            actual_path = find_pyproject_toml(srcs, stdin_filename)
+            self.assertIsNotNone(actual_path)
+            self.assertEqual(actual_path, expected_path)
 
 
 if __name__ == "__main__":  # pragma: no cover

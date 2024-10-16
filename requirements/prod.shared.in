@@ -1,7 +1,11 @@
 # Licensed under the AGPLv3+ License: https://www.gnu.org/licenses/
 # For details: https://github.com/msftcangoblowm/drain-swamp/blob/master/NOTICE.txt
 
-pip>=24.2
+##########
+# Careful! Affects two venvs. Nudges not a good idea here
+##########
+# pip>=24.2  # <-- conflicts with docs pip<24.2
+
 setuptools>=75.1.0
 
 # pip-tools --> build --> importlib-metadata
@@ -14,3 +18,4 @@ pip-tools       # lock requirements
 pluggy          # plugin support in build backend and setuptools.finalize_distribution_options entrypoint
 setuptools-scm  # get current version, `python setup.py --version`
 drain-swamp-snippet
+pip-requirements-parser

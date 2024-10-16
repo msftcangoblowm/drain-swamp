@@ -166,7 +166,7 @@ class DependencyLockLnkFile(abc.ABC):
 
            - :py:exc:`NotADirectoryError` -- Directory not found or not a directory
            - :py:exc:`FileNotFoundError` -- Source file not found
-           - :py:exc:`ValueError` -- destination symlink must suffix must be .lnk
+           - :py:exc:`ValueError` -- destination symlink suffix must be .lnk
            - :py:exc:`OSError` -- opening file descriptor on folder permission denied
 
         """
@@ -202,11 +202,10 @@ class DependencyLockLnkFile(abc.ABC):
             msg_exc = f"Source file not found: {src} folder: {path_cwd}"
             raise FileNotFoundError(msg_exc)
 
-        # Assert dest suffixes indicate it's a .lnk file
-        if path_parent_dest.suffixes != [
-            SUFFIX_SYMLINK,
-        ]:
-            msg_exc = "Destination symlink must suffix must be .lnk"
+        """Assert dest suffixes indicate it's a .lnk file. Careful can
+        have additional suffixes"""
+        if path_parent_dest.suffix != SUFFIX_SYMLINK:
+            msg_exc = "Destination symlink suffix must be .lnk"
             raise ValueError(msg_exc)
 
         # All implementations
@@ -483,7 +482,7 @@ class DependencyLockLnkFactory:
 
            - :py:exc:`NotADirectoryError` -- Directory not found or not a directory
            - :py:exc:`FileNotFoundError` -- Source file not found
-           - :py:exc:`ValueError` -- destination symlink must suffix must be .lnk
+           - :py:exc:`ValueError` -- destination symlink suffix must be .lnk
            - :py:exc:`OSError` -- opening file descriptor on folder permission denied
 
         .. todo:: Dynamically get implementations
@@ -608,7 +607,7 @@ def lock_compile(inst):
 
     # store pairs
     lst_pairs = []
-    t_excludes = ("pins.in",)
+    t_excludes = ("pins.shared.in",)
 
     # Look at the folders. Then convert all ``.in`` --> ``.lock``
     gen_unlocked_files = inst.in_files()
@@ -1357,7 +1356,7 @@ class InFiles:
             pass
 
         for in_ in self.zeroes:
-            if in_.stem != "pins":
+            if in_.stem != "pins.shared":
                 abspath_zero = in_.abspath(self.cwd)
                 file_name = f"{in_.stem}{SUFFIX_UNLOCKED}"
                 abspath_unlocked = abspath_zero.parent.joinpath(file_name)
@@ -1559,8 +1558,8 @@ def refresh_links(inst, is_set_lock=None):
         "Malformed .in file path. {exc} cwd: {path_cwd!r} abspath: {abspath!r}"
     )
     for in_ in files.zeroes:
-        if in_.stem == "pins":
-            # pins.in is used as-is
+        if in_.stem == "pins.shared":
+            # pins.shared.in is used as-is
             continue
         else:  # pragma: no cover
             if is_module_debug:  # pragma: no cover

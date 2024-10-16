@@ -27,7 +27,7 @@ charset-normalizer==3.3.2
     # via requests
 click==8.1.7
     # via
-    #   -c ../requirements/prod.in
+    #   -c ../requirements/prod.shared.in
     #   click-log
     #   interrogate
     #   scriv
@@ -78,7 +78,7 @@ markdown-it-py==3.0.0
     #   mdit-py-plugins
     #   myst-parser
     #   scriv
-markupsafe==2.1.5
+markupsafe==3.0.0
     # via jinja2
 mdit-py-plugins==0.4.2
     # via myst-parser
@@ -145,7 +145,7 @@ sphinx-paramlinks==0.6.0
     # via -r requirements.in
 sphinx-pyproject==0.3.0
     # via -r requirements.in
-sphinx-tabs==3.4.5
+sphinx-tabs==3.4.7
     # via -r requirements.in
 sphinxcontrib-applehelp==2.0.0
     # via sphinx
@@ -167,12 +167,12 @@ strictyaml==1.7.3
     # via sphinx-external-toc-strict
 tabulate==0.9.0
     # via interrogate
-tomli==2.0.2
+tomli==2.0.2 ; python_version < "3.11"
     # via
     #   dom-toml
     #   interrogate
     #   sphinx
-typing-extensions==4.12.2
+typing-extensions==4.12.2 ; python_version < "3.10"
     # via
     #   anyio
     #   domdf-python-tools

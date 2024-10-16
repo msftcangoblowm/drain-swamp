@@ -3,8 +3,8 @@
 
 # packaging and kitting
 
--c pins.in
--r prod.in
+-c pins.shared.in
+-r prod.shared.in
 -r tox.in
 
 # pypi.org

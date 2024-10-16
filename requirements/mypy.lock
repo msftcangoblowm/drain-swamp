@@ -2,9 +2,13 @@ mypy==1.10.0
     # via -r requirements/mypy.in
 mypy-extensions==1.0.0
     # via mypy
-tomli==2.0.1
-    # via mypy
+tomli==2.0.2 ; python_version < "3.11"
+    # via
+    #   -c requirements/pins.shared.in
+    #   mypy
 types-setuptools==70.1.0.20240627
     # via -r requirements/mypy.in
-typing-extensions==4.12.2
-    # via mypy
+typing-extensions==4.12.2 ; python_version < "3.10"
+    # via
+    #   -c requirements/pins.shared.in
+    #   mypy
