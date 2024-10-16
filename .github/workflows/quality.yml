@@ -118,7 +118,7 @@ jobs:
 
     - name: "Install dependencies"
       run: |
-        python -m pip install -r requirements/tox$LOCK_SUFFIX -r requirements/prod$LOCK_SUFFIX -r requirements/kit$LOCK_SUFFIX
+        python -m pip install -r requirements/tox$LOCK_SUFFIX -r requirements/prod.shared.unlock -r requirements/kit$LOCK_SUFFIX
 
     # Create generated files: version file and .lnk files. sdist tarball ignored
     - name: "Build sdist to run plugins. Create generated files"
@@ -178,9 +178,7 @@ jobs:
       run: |
         # Runs on 3.9, but hashes supported by pip-tools is
         # not supported by setuptools. So don't expect hashes
-        python -m pip install -r requirements/tox$LOCK_SUFFIX
-        python -m pip install -r requirements/prod$LOCK_SUFFIX
-        python -m pip install -r requirements/kit$LOCK_SUFFIX
+        python -m pip install -r requirements/tox$LOCK_SUFFIX -r requirements/prod.shared.unlock -r requirements/kit$LOCK_SUFFIX
 
     # Create generated files: version file and .lnk files. sdist tarball ignored
     - name: "Build sdist to run plugins. Create generated files"

@@ -124,7 +124,7 @@ jobs:
     - name: "Install dependencies"
       run: |
         set -xe
-        python -m pip install -r requirements/kit$LOCK_SUFFIX -r requirements/prod$LOCK_SUFFIX -r requirements/dev$LOCK_SUFFIX
+        python -m pip install -r requirements/kit$LOCK_SUFFIX -r requirements/dev$LOCK_SUFFIX
 
     - name: "Build sdist and whl"
       run: |

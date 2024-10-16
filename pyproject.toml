@@ -82,7 +82,7 @@ scm-version = "drain_swamp.cli_scm_version:main"
 
 [tool.setuptools.dynamic]
 # @@@ editable little_shop_of_horrors_shrine_candles
-dependencies = { file = ['requirements/prod.shared.lnk'] }
+dependencies = { file = ['requirements/prod.shared.unlock'] }
 optional-dependencies.pip = { file = ['requirements/pip.lnk'] }
 optional-dependencies.pip_tools = { file = ['requirements/pip-tools.lnk'] }
 optional-dependencies.dev = { file = ['requirements/dev.lnk'] }

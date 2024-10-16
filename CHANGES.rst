@@ -8,6 +8,9 @@ Changelog
    Feature request
    .................
 
+   - pipenv-unlock refresh ``--is-app`` to lock (required) dependencies.
+     Normally should be .unlock, not .lnk
+
    - Better order both .unlock and .lock dependencies:
      ``-c`` and ``-r`` lines, restricted versions, non-restricted versions
 
@@ -47,6 +50,9 @@ Changelog
    Commit items for NEXT VERSION
    ..............................
 
+   - fix(pyproject.toml): required dependencies unlock
+   - ci: pip install requirements on one line
+   - ci(release): try --use-pep517 to deal with setuptools#3319
    - fix(tox.ini): flake8-pyi and black disagree. Ignore flake8 failure
    - chore: bump drain-swamp-snippet to 1.0.1
    - chore: bump logging-strict to 1.3.4
