@@ -69,6 +69,8 @@ Changelog
    Commit items for NEXT VERSION
    ..............................
 
+   - chore: bump pyproject-hooks to 1.2.0
+   - chore: bump logging-strict to 1.3.5
    - fix: dist.metadata.name --> dist.name setuptools#3319
    - refactor: remove plugin ds_refresh_links
    - refactor: stop editing pyproject.toml snippet
