@@ -44,7 +44,6 @@ subtrees:
         - file: code/ext/pipenv_unlock/backend_abc
         - file: code/ext/pipenv_unlock/snippet_dependencies
         - file: code/ext/pipenv_unlock/lock_toggle
-        - file: code/ext/pipenv_unlock/snippet_pyproject_toml
       - file: code/ext/drain_swamp/index
         entries:
         - file: code/ext/drain_swamp/sphinx_conf
@@ -68,7 +67,6 @@ subtrees:
         - file: code/monkey/hooks/manager
       - file: code/monkey/plugins/index
         entries:
-        - file: code/monkey/plugins/refresh_links
         - file: code/monkey/plugins/scm_version
 - caption: Articles
   entries:

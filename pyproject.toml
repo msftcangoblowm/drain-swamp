@@ -81,13 +81,16 @@ drain-swamp = "drain_swamp.cli_igor:main"
 scm-version = "drain_swamp.cli_scm_version:main"
 
 [tool.setuptools.dynamic]
+# required dependencies app --> .lock package --> .unlock
+# optional-dependencies dev env --> .lock feature --> .unlock
+
 # @@@ editable little_shop_of_horrors_shrine_candles
 dependencies = { file = ['requirements/prod.shared.unlock'] }
-optional-dependencies.pip = { file = ['requirements/pip.lnk'] }
-optional-dependencies.pip_tools = { file = ['requirements/pip-tools.lnk'] }
-optional-dependencies.dev = { file = ['requirements/dev.lnk'] }
-optional-dependencies.manage = { file = ['requirements/manage.lnk'] }
-optional-dependencies.docs = { file = ['docs/requirements.lnk'] }
+optional-dependencies.pip = { file = ['requirements/pip.lock'] }
+optional-dependencies.pip_tools = { file = ['requirements/pip-tools.lock'] }
+optional-dependencies.dev = { file = ['requirements/dev.lock'] }
+optional-dependencies.manage = { file = ['requirements/manage.lock'] }
+optional-dependencies.docs = { file = ['docs/requirements.lock'] }
 # @@@ end
 
 version = {attr = "drain_swamp._version.__version__"}

@@ -101,6 +101,7 @@ class BackendType(abc.ABC):
         d_pyproject_toml: dict[str, Any],
         path_config: Path,
         required: tuple[str, Any] | None = None,
+        is_bypass: bool | None = False,
     ) -> tuple[str, Path] | None: ...
     @staticmethod
     def get_optionals(
@@ -133,7 +134,3 @@ class BackendType(abc.ABC):
     @classmethod
     def get_registered(cls) -> Iterator[type[Self]]: ...
     def in_files(self) -> Generator[Path, None, None]: ...
-    @staticmethod
-    def is_locked(
-        path_config: Path,
-    ) -> bool: ...

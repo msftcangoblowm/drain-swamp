@@ -5,8 +5,6 @@ pipenv-unlock package entrypoint
 
 Commands:
 
-- refresh
-- is_lock
 - unlock
 - lock
 
@@ -24,10 +22,11 @@ from pathlib import (
 )
 
 import click
-from drain_swamp_snippet import (
-    ReplaceResult,
-    Snip,
-)
+
+# from drain_swamp_snippet import (
+#     ReplaceResult,
+#     Snip,
+# )
 
 # pep366 ...
 # https://stackoverflow.com/a/34155199
@@ -86,29 +85,18 @@ else:
 
 # pep366 ...done
 
-from ._debug_mode import set_debug_mode
 from .backend_abc import BackendType
-from .constants import (
-    SUFFIX_LOCKED,
-    SUFFIX_UNLOCKED,
-    g_app_name,
-)
-from .exceptions import (
-    MissingRequirementsFoldersFiles,
+from .constants import g_app_name  # SUFFIX_LOCKED,; SUFFIX_UNLOCKED,
+from .exceptions import (  # MissingRequirementsFoldersFiles,
     PyProjectTOMLParseError,
     PyProjectTOMLReadError,
 )
 from .lock_toggle import (
     lock_compile,
-    refresh_links,
     unlock_compile,
 )
-from .snippet_dependencies import SnippetDependencies
-from .snippet_pyproject_toml import (
-    SNIPPET_NO_MATCH,
-    SNIPPET_VALIDATE_FAIL,
-    snippet_replace_suffixes,
-)
+
+# from .snippet_dependencies import SnippetDependencies
 
 _logger = logging.getLogger(f"{g_app_name}.cli_unlock")
 
@@ -124,11 +112,6 @@ help_additional_folder = (
     "Additional folder(s), not already known implicitly, containing .in "
     "files. A relative_path. Can be used multiple times"
 )
-help_snippet_co = (
-    "Snippet code, within a file, unique id of an editable region, aka snippet. "
-    "Only necessary if allows for multiple snippets"
-)
-help_set_lock = """Force dependency lock state. "1", "true", "t", "yes", "y", or "on" to lock; "0", "false", "f", "no", "n", "off" to unlock. refreshes .lnk symlinks"""
 
 EPILOG_LOCK_UNLOCK = """
 EXIT CODES
@@ -154,101 +137,12 @@ EXIT CODES
 9 -- In pyproject.toml, there is no snippet with that snippet code
 """
 
-EPILOG_IS_LOCK = """
-EXIT CODES
-
-0 -- is locked
-
-1 -- is unlocked
-
-2 -- Path not a file
-
-3 -- file is not ok for whatever reason
-
-4 -- Static dependencies. No tool.setuptools.dynamic section
-
-"""
-
-EPILOG_REFRESH = """
-0 -- symlinks refreshed
-
-2 -- An arg is invalid
-
-3 -- path given for config file either not a file or not read write
-
-4 -- pyproject.toml config file parse issue. Use validate-pyproject on it then try again
-
-5 -- Backend not supported. Need to add support for that backend. Submit an issue
-
-6 -- The pyproject.toml depends on the requirements folders and files. Create them
-
-7 -- In pyproject.toml no section, tool.setuptools.dynamic
-
-8 -- The snippet is invalid. Either nested snippets or start stop token out of order. Fix the snippet then try again
-
-9 -- In pyproject.toml, there is no snippet with that snippet code
-"""
-
 
 @click.group(
     context_settings={"help_option_names": ["-h", "--help"]},
 )
 def main():
     """Command-line for pipenv-unlock. Prints usage"""
-
-
-@main.command(
-    "is_lock",
-    context_settings={"ignore_unknown_options": True},
-    epilog=EPILOG_IS_LOCK,
-)
-@click.option(
-    "-p",
-    "--path",
-    default=Path.cwd(),
-    type=click.Path(
-        exists=True,
-        file_okay=True,
-        dir_okay=True,
-        resolve_path=True,
-        path_type=Path,
-    ),
-    help=help_path,
-)
-def state_is_lock(path):
-    """Check dependency locked: 0 locked, 1 unlocked else error code
-
-    If only one snippet, snippet_co is optional
-
-    Usage
-
-    .. code-block:: shell
-
-       pipenv-unlock is_lock
-
-    \f
-    :param path:
-
-       The root directory [default: pyproject.toml directory]
-
-    :type path: pathlib.Path
-    """
-    try:
-        out = BackendType.is_locked(path)
-    except (PyProjectTOMLParseError, PyProjectTOMLReadError) as e:
-        msg_exc = str(e)
-        click.secho(msg_exc, fg="red", err=True)
-        sys.exit(3)
-    except AssertionError as e:
-        # Static dependencies. No tool.setuptools.dynamic section
-        msg_exc = str(e)
-        click.secho(msg_exc, fg="red", err=True)
-        sys.exit(4)
-
-    if out:
-        sys.exit(0)
-    else:
-        sys.exit(1)
 
 
 @main.command(
@@ -316,15 +210,7 @@ def state_is_lock(path):
     multiple=True,
     help=help_additional_folder,
 )
-@click.option(
-    "-s",
-    "--snip",
-    "snippet_co",
-    default=None,
-    type=click.STRING,
-    help=help_snippet_co,
-)
-def dependencies_lock(path, required, optionals, additional_folders, snippet_co):
+def dependencies_lock(path, required, optionals, additional_folders):
     """Lock dependencies creates (``*.lock``) files
 
     Symlinks (``*.lnk``) files created during build time
@@ -447,6 +333,7 @@ def dependencies_lock(path, required, optionals, additional_folders, snippet_co)
         click.secho(msg_exc, fg="red", err=True)
         sys.exit(4)
 
+    """
     try:
         # new_contents = inst.compose(SUFFIX_LOCKED)
         new_contents = SnippetDependencies()(
@@ -464,6 +351,7 @@ def dependencies_lock(path, required, optionals, additional_folders, snippet_co)
         # raise click.ClickException(msg_exc)
         click.secho(msg_exc, fg="red", err=True)
         sys.exit(6)
+    """
 
     # create .lock files in their respective folders
     gen = lock_compile(inst)
@@ -479,6 +367,7 @@ def dependencies_lock(path, required, optionals, additional_folders, snippet_co)
         sys.exit(7)
 
     # update snippet
+    """
     fname = path / "pyproject.toml"
     snip = Snip(fname)
     is_success = snip.replace(new_contents, id_=snippet_co)
@@ -497,6 +386,8 @@ def dependencies_lock(path, required, optionals, additional_folders, snippet_co)
         sys.exit(9)
     else:
         sys.exit(0)
+    """
+    sys.exit(0)
 
 
 @main.command(
@@ -564,15 +455,7 @@ def dependencies_lock(path, required, optionals, additional_folders, snippet_co)
     multiple=True,
     help=help_additional_folder,
 )
-@click.option(
-    "-s",
-    "--snip",
-    "snippet_co",
-    default=None,
-    type=click.STRING,
-    help=help_snippet_co,
-)
-def dependencies_unlock(path, required, optionals, additional_folders, snippet_co):
+def dependencies_unlock(path, required, optionals, additional_folders):
     """Unlock dependencies creates (``*.unlock``) files
 
     Symlinks (``*.lnk``) files are created during build time
@@ -674,6 +557,7 @@ def dependencies_unlock(path, required, optionals, additional_folders, snippet_c
         click.secho(msg_exc, fg="red", err=True)
         sys.exit(4)
 
+    """
     # get contents for update to pyproject.toml
     try:
         # new_contents = inst.compose(SUFFIX_UNLOCKED)
@@ -712,176 +596,11 @@ def dependencies_unlock(path, required, optionals, additional_folders, snippet_c
         sys.exit(9)
     else:
         pass
+    """
 
     # creates / writes .unlock files
     gen = unlock_compile(inst)
     list(gen)  # execute generator
-
-
-@main.command(
-    "refresh",
-    context_settings={"ignore_unknown_options": True},
-    epilog=EPILOG_REFRESH,
-)
-@click.option(
-    "-p",
-    "--path",
-    default=Path.cwd(),
-    type=click.Path(
-        exists=False,
-        file_okay=False,
-        dir_okay=True,
-        resolve_path=True,
-        path_type=Path,
-    ),
-    help=help_path,
-)
-@click.option(
-    "-l",
-    "--set-lock",
-    "is_set_lock",
-    default=None,
-    type=click.BOOL,
-    help=help_set_lock,
-)
-@click.option(
-    "-s",
-    "--snip",
-    "snippet_co",
-    default=None,
-    type=click.STRING,
-    help=help_snippet_co,
-)
-def create_links(path, is_set_lock, snippet_co):
-    """From .lock .unlock files create symlink files .lnk
-
-    In ``pyproject.toml``,
-
-    .. code-block:: text
-
-       [build-system]
-       requires = [
-           "setuptools>=70.0.0",
-           "wheel",
-           "build",
-           "setuptools_scm>=8",
-           "click",
-           "pluggy",
-           "drain-swamp-snippet",
-       ]
-       build-backend = "setuptools.build_meta"
-       backend-path = ["_req_links"]
-
-    Executes ``_req_links.backend.py`` which calls,
-
-    .. code-block:: shell
-
-       python src/drain_swamp/cli_unlock.py refresh --set-lock=1
-
-    Usage
-
-    .. code-block:: shell
-
-       python -m build -C--set-lock=1 --sdist
-
-    Requires ``setuptools>=70.0.0``
-
-    \f
-
-    :param path:
-
-       The root directory [default: pyproject.toml directory]
-
-    :type path: pathlib.Path
-    :param is_set_lock:
-
-       Default None use current state. 0 make symlinks to ``.lock`` files; 1 set make
-       symlinks to ``.unlock`` files.
-
-    :type is_set_lock: int | None
-    :param snippet_co:
-
-       Snippet code, within a file, unique id of an editable region, aka snippet.
-       Only necessary if allows for multiple snippets
-
-    :type snippet_co: str | None
-    """
-    # print logging to stdout if __debug__ and not test suite
-    set_debug_mode(is_ci=True)
-
-    """
-    modpath = "drain_swamp.cli_unlock.create_links"
-    if __debug__:  # pragma: no cover
-        _logger.info(f"{modpath} path: {path!r}")
-    else:  # pragma: no cover
-        pass
-    """
-    pass
-
-    try:
-        inst = BackendType(path)
-    except PyProjectTOMLReadError:
-        msg_exc = (
-            f"Either not a file or lacks read permissions. {traceback.format_exc()}"
-        )
-        # raise click.ClickException(msg_exc)
-        click.secho(msg_exc, fg="red", err=True)
-        sys.exit(3)
-    except PyProjectTOMLParseError as e:
-        # msg_exc = f"Cannot parse pyproject.toml. {traceback.format_exc()}"
-        # raise click.ClickException(msg_exc)
-        click.secho(str(e), fg="red", err=True)
-        sys.exit(4)
-
-    """
-    if __debug__:  # pragma: no cover
-        _logger.info(f"{modpath} inst: {inst.__repr__()}")
-    else:  # pragma: no cover
-        pass
-    """
-    pass
-
-    """Create the .lnk (lock dependency state) symlinks
-    This normally occurs during package build time
-    PyProjectTOMLParseError and PyProjectTOMLReadError handling already done above
-    """
-    try:
-        refresh_links(inst, is_set_lock=is_set_lock)
-    except (MissingRequirementsFoldersFiles, OSError):
-        # OSError On Windows malformed path --> PermissionError
-        msg_exc = (
-            "Missing requirements folders and files. Prepare these "
-            f"{traceback.format_exc()}"
-        )
-        # raise click.ClickException(msg_exc)
-        click.secho(msg_exc, fg="red", err=True)
-        sys.exit(6)
-    except AssertionError:
-        msg_exc = (
-            "Either no pyproject.toml section, tool.setuptools.dynamic "
-            "or no dependencies key"
-        )
-        click.secho(msg_exc, fg="red", err=True)
-        sys.exit(7)
-
-    """
-    if __debug__:  # pragma: no cover
-        _logger.info(f"{modpath} update snippet...")
-    else:  # pragma: no cover
-        pass
-    """
-    pass
-
-    path_config = inst.path_config
-    err_or_none = snippet_replace_suffixes(path_config, snippet_co=snippet_co)
-    if err_or_none == ReplaceResult.VALIDATE_FAIL:
-        click.secho(SNIPPET_VALIDATE_FAIL, fg="red", err=True)
-        sys.exit(8)
-    elif err_or_none == ReplaceResult.NO_MATCH:
-        click.secho(SNIPPET_NO_MATCH.format(snippet_co), fg="red", err=True)
-        sys.exit(9)
-    else:  # pragma: no cover
-        pass
 
 
 if __name__ == "__main__":  # pragma: no cover

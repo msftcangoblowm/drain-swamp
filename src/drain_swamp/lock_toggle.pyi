@@ -22,7 +22,6 @@ from .backend_abc import BackendType
 
 __all__ = (
     "lock_compile",
-    "refresh_links",
     "unlock_compile",
 )
 
@@ -123,4 +122,3 @@ class InFiles:
     def write(self) -> Generator[Path, None, None]: ...
 
 def unlock_compile(inst: BackendType) -> Generator[Path, None, None]: ...
-def refresh_links(inst: BackendType, is_set_lock: bool | None = None) -> None: ...

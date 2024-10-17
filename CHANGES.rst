@@ -8,8 +8,14 @@ Changelog
    Feature request
    .................
 
-   - pipenv-unlock refresh ``--is-app`` to lock (required) dependencies.
-     Normally should be .unlock, not .lnk
+   - :code:`pipenv-unlock is_lock` should refer only to required dependencies.
+     lock=1 would be for an app, not a package
+
+   - :code:`pipenv-unlock refresh` (unlock lock) **shouldn't** overwrite links
+     in pyproject.toml
+
+     optional-dependencies may or may not be locked. Some may be additional features
+     rather than for package maintanence
 
    - Better order both .unlock and .lock dependencies:
      ``-c`` and ``-r`` lines, restricted versions, non-restricted versions
@@ -29,6 +35,19 @@ Changelog
 
    Known regressions
    ..................
+
+   - release.yml
+     affects:
+     py39
+     monkey/wrap_infer_version
+     reproduce:
+     encountered when using :code:`python -m build` getting dist.metadata.name
+     example:
+     e.g. gh workflow quality --> isort black flake8
+     https://github.com/msftcangoblowm/drain-swamp/actions/runs/11362396076/job/31604183207
+     discussion:
+     https://github.com/pypa/setuptools/issues/3452
+     https://github.com/pypa/setuptools/pull/3832
 
    - activate drain-swamp .venv
      logging-strict has no dependency, drain-swamp. However from logging-strict
@@ -50,6 +69,11 @@ Changelog
    Commit items for NEXT VERSION
    ..............................
 
+   - fix: dist.metadata.name --> dist.name setuptools#3319
+   - refactor: remove plugin ds_refresh_links
+   - refactor: stop editing pyproject.toml snippet
+   - refactor: remove .lnk stop using .lnk also in ci
+   - refactor: remove pipenv-unlock is_lock and pipenv-unlock refresh
    - fix(pyproject.toml): required dependencies unlock
    - ci: pip install requirements on one line
    - ci(release): try --use-pep517 to deal with setuptools#3319

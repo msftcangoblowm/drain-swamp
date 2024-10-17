@@ -25,9 +25,7 @@ Integration test
 
 import logging
 import logging.config
-import shutil
 import sys
-from contextlib import nullcontext as does_not_raise
 from pathlib import (
     Path,
     PurePath,
@@ -38,19 +36,13 @@ from unittest.mock import (
 )
 
 import pytest
-from drain_swamp_snippet import ReplaceResult
 
-from drain_swamp._run_cmd import run_cmd
-from drain_swamp._safe_path import (
-    resolve_joinpath,
-    resolve_path,
-)
+from drain_swamp._safe_path import resolve_joinpath
 from drain_swamp.backend_abc import (
     BackendType,
     ensure_folder,
     folders_additional_cli,
     folders_implied_init,
-    get_additional_folders_pyproject_toml,
     get_optionals_cli,
     get_optionals_pyproject_toml,
     get_required_cli,
@@ -61,7 +53,6 @@ from drain_swamp.constants import (
     LOGGING,
     g_app_name,
 )
-from drain_swamp.exceptions import PyProjectTOMLReadError
 from drain_swamp.parser_in import TomlParser
 
 if sys.version_info >= (3, 9):  # pragma: no cover
@@ -779,322 +770,19 @@ def test_ensure_folder(tmp_path):
         ensure_folder(inst.path_config)
 
 
-testdata_is_locked = (
-    (
-        "no_snippet_with_id_none.txt",
-        None,
-        "zzzzzzzzzzzzz\n# @@@ editable asdf\nblah blah blah\n# @@@ end\nzzzzzz\n# @@@ editable george\nhey there george\n# @@@ end\nzzzzzzz\n",
-        ReplaceResult.NO_MATCH,
-    ),
-    (
-        "no_snippet_with_that_id.txt",
-        "ted",
-        "zzzzzzzzzzzzz\n# @@@ editable asdf\nblah blah blah\n# @@@ end\nzzzzzz\n# @@@ editable george\nhey there george\n# @@@ end\nzzzzzzz\n",
-        ReplaceResult.NO_MATCH,
-    ),
-    (
-        "snippet_with_id_all_unlocked.txt",
-        "ted",
-        """zzzzzzzzzzzzz\n# @@@ editable ted\ndependencies = { file = ["requirements/prod.unlock"] }
-optional-dependencies.pip = { file = ["requirements/pip.unlock"] }
-optional-dependencies.pip_tools = { file = ["requirements/pip-tools.unlock"] }
-optional-dependencies.dev = { file = ["requirements/dev.unlock"] }
-optional-dependencies.manage = { file = ["requirements/manage.unlock"] }
-optional-dependencies.docs = { file = ["docs/requirements.unlock"] }\n# @@@ end\nzzzzzz\n# @@@ editable george\nhey there george\n# @@@ end\nzzzzzzz\n""",
-        False,
-    ),
-    (
-        "snippet_with_id_all_locked.txt",
-        "ted",
-        """zzzzzzzzzzzzz\n# @@@ editable ted\ndependencies = { file = ["requirements/prod.lock"] }
-optional-dependencies.pip = { file = ["requirements/pip.lock"] }
-optional-dependencies.pip_tools = { file = ["requirements/pip-tools.lock"] }
-optional-dependencies.dev = { file = ["requirements/dev.lock"] }
-optional-dependencies.manage = { file = ["requirements/manage.lock"] }
-optional-dependencies.docs = { file = ["docs/requirements.lock"] }\n# @@@ end\nzzzzzz\n# @@@ editable george\nhey there george\n# @@@ end\nzzzzzzz\n""",
-        True,
-    ),
-    (
-        "snippet_with_id_unlocked_no_matches.txt",
-        "ted",
-        """zzzzzzzzzzzzz\n# @@@ editable ted\ndependencies = { file = ["requirements/prod.pip"] }
-optional-dependencies.pip = { file = ["requirements/pip.pip"] }
-optional-dependencies.pip_tools = { file = ["requirements/pip-tools.pip"] }
-optional-dependencies.dev = { file = ["requirements/dev.pip"] }
-optional-dependencies.manage = { file = ["requirements/manage.pip"] }
-optional-dependencies.docs = { file = ["docs/requirements.pip"] }\n# @@@ end\nzzzzzz\n# @@@ editable george\nhey there george\n# @@@ end\nzzzzzzz\n""",
-        False,
-    ),
-)
-testdata_is_locked2 = (
-    (
-        Path(__file__).parent.joinpath(
-            "_good_files",
-            "complete.pyproject_toml",
-        ),
-        does_not_raise(),
-        True,
-    ),
-    (
-        Path(__file__).parent.joinpath(
-            "_good_files",
-            "complete-manage-pip-prod-unlock.pyproject_toml",
-        ),
-        does_not_raise(),
-        False,
-    ),
-    (
-        Path(__file__).parent.joinpath(
-            "_bad_files",
-            "static_dependencies.pyproject_toml",
-        ),
-        pytest.raises(AssertionError),
-        None,
-    ),
-    (
-        1.1234,
-        pytest.raises(PyProjectTOMLReadError),
-        None,
-    ),
-    (
-        1,
-        pytest.raises(PyProjectTOMLReadError),
-        None,
-    ),
-    (
-        None,
-        pytest.raises(PyProjectTOMLReadError),
-        None,
-    ),
-)
-ids_is_locked2 = (
-    "Locked",
-    "Unlocked",
-    "static dependencies. no tool.setuptools.dynamic section",
-    "unsupported type float --> PyProjectTOMLReadError",
-    "unsupported type int --> PyProjectTOMLReadError",
-    "unsupported type None --> PyProjectTOMLReadError",
-)
-
-
-@pytest.mark.parametrize(
-    "path_config, expectation, expected",
-    testdata_is_locked2,
-    ids=ids_is_locked2,
-)
-def test_is_locked(path_config, expectation, expected, tmp_path, prep_pyproject_toml):
-    """Check state of dependency lock."""
-    # pytest --showlocals --log-level INFO -k "test_is_locked" -v tests
-    # path_config invalids. Must be: pathlib.Path, absolute, to a file
-
-    # is_file_ok fails --> PyProjectTOMLReadError
-    with pytest.raises(PyProjectTOMLReadError):
-        BackendType.is_locked(tmp_path)
-
-    # prepare
-    #    does not check existance of requirements files
-    path_config_in_tmp = prep_pyproject_toml(path_config, tmp_path)
-
-    with expectation:
-        actual = BackendType.is_locked(path_config_in_tmp)
-
-    if isinstance(expectation, does_not_raise):
-        assert actual is expected
-
-
-testdata_resolve_symlinks = (
-    (
-        Path(__file__).parent.joinpath(
-            "_good_files",
-            "complete-lnk-files.pyproject_toml",
-        ),
-        {
-            "prod": "requirements/prod.shared.in",
-            "pip": "requirements/pip.in",
-            "tox": "requirements/tox.in",
-            "manage": "requirements/manage.in",
-        },
-        (
-            "requirements/prod.shared.unlock",
-            "requirements/pip.unlock",
-            "requirements/tox.unlock",
-            "requirements/manage.unlock",
-            "requirements/prod.shared.lock",
-            "requirements/pip.lock",
-            "requirements/tox.lock",
-            "requirements/manage.lock",
-        ),
-    ),
-)
-
-
-@pytest.mark.parametrize(
-    "path_config_src, d_ins, seq_unlocks",
-    testdata_resolve_symlinks,
-    ids=("complete link files",),
-)
-@pytest.mark.parametrize(
-    "is_set_lock, expected",
-    (
-        (
-            "0",
-            False,
-        ),
-        (
-            "1",
-            True,
-        ),
-    ),
-    ids=("unlock", "lock"),
-)
-def test_resolve_symlinks(
-    path_config_src,
-    d_ins,
-    seq_unlocks,
-    is_set_lock,
-    expected,
-    tmp_path,
-    prep_pyproject_toml,
-    prepare_folders_files,
-    path_project_base,
-    caplog,
-    has_logging_occurred,
-):
-    """Test and verify refresh symlinks"""
-    # pytest --showlocals --log-level INFO -k "test_resolve_symlinks" -v tests
-    LOGGING["loggers"][g_app_name]["propagate"] = True
-    logging.config.dictConfig(LOGGING)
-    logger = logging.getLogger(name=g_app_name)
-    logger.addHandler(hdlr=caplog.handler)
-    caplog.handler.level = logger.level
-
-    # prepare
-    #    pyproject.toml
-    path_f = prep_pyproject_toml(path_config_src, tmp_path)
-
-    #    .in
-    seq_ins = list(d_ins.values())
-    prepare_folders_files(seq_ins, tmp_path)
-
-    #    .lock and .unlock -- creates the folders
-    prepare_folders_files(seq_unlocks, tmp_path)
-
-    #    .lock and .unlock -- copy actual files needed by refresh
-    abspath_base = path_project_base()
-    for relpath_a in seq_unlocks:
-        src = str(resolve_joinpath(abspath_base, PurePath(relpath_a)))
-        dest = str(resolve_joinpath(tmp_path, PurePath(relpath_a)))
-        shutil.copy2(src, dest)
-
-    # act
-    cmd = (
-        resolve_path("pipenv-unlock"),
-        "refresh",
-        "--set-lock",
-        is_set_lock,
-    )
-
-    t_out = run_cmd(cmd, cwd=tmp_path)
-    out, err, exit_code, exc = t_out
-    logger.info(f"cmd: {cmd!r}")
-    if exit_code != 0:
-        logger.info(f"exc: {exc!r}")
-        logger.info(f"err: {err!r}")
-        logger.info(f"out: {out!r}")
-    assert has_logging_occurred(caplog)
-    assert exit_code == 0
-    assert exc is None
-
-    # verify
-    actual = BackendType.is_locked(path_f)
-    assert has_logging_occurred(caplog)
-    assert actual is expected
-
-
-@pytest.mark.parametrize(
-    "path_config_src, d_ins, seq_unlocks",
-    testdata_resolve_symlinks,
-    ids=("complete link files",),
-)
-def test_backend_abc_repr_normal(
-    path_config_src,
-    d_ins,
-    seq_unlocks,
-    tmp_path,
-    prep_pyproject_toml,
-    prepare_folders_files,
-    path_project_base,
-    caplog,
-    has_logging_occurred,
-):
-    """Log a realistic repr."""
-    # pytest --showlocals --log-level INFO -k "test_backend_abc_repr_normal" -v tests
-    LOGGING["loggers"][g_app_name]["propagate"] = True
-    logging.config.dictConfig(LOGGING)
-    logger = logging.getLogger(name=g_app_name)
-    logger.addHandler(hdlr=caplog.handler)
-    caplog.handler.level = logger.level
-
-    # prepare
-    #    pyproject.toml
-    path_f = prep_pyproject_toml(path_config_src, tmp_path)
-
-    #    additional folder: ``ci/``
-    prepare_folders_files(("ci/empty.txt",), tmp_path)
-    path_empty_file = resolve_joinpath(tmp_path, "ci/empty.txt")
-    path_empty_file.unlink()
-
-    #    .in
-    seq_ins = list(d_ins.values())
-    prepare_folders_files(seq_ins, tmp_path)
-
-    #    .lock and .unlock -- creates the folders
-    prepare_folders_files(seq_unlocks, tmp_path)
-
-    """
-    #    .lock and .unlock -- copy actual files needed by refresh
-    abspath_base = path_project_base()
-    for relpath_a in seq_unlocks:
-        src = str(resolve_joinpath(abspath_base, PurePath(relpath_a)))
-        dest = str(resolve_joinpath(tmp_path, PurePath(relpath_a)))
-        shutil.copy2(src, dest)
-    """
-    pass
-
-    inst = BackendType(path_f, parent_dir=tmp_path)
-
-    logger.info(f"folders_implied: {inst.folders_implied}")
-    logger.info(f"folders_additional: {inst.folders_additional}")
-    logger.info(f"inst: {inst!r}")
-
-    # May raise PyProjectTOMLParseError or PyProjectTOMLReadError
-    d_pyproject_toml, path_f = TomlParser.read(tmp_path)
-
-    is_bypasses = (
-        None,
-        0.12345,
-        True,
-        False,
-    )
-    for is_bypass in is_bypasses:
-        get_additional_folders_pyproject_toml(
-            d_pyproject_toml,
-            tmp_path,
-            inst.folders_implied,
-            is_bypass=is_bypass,
-        )
-
-    assert has_logging_occurred(caplog)
-
-
 testdata_backend_abc_repr_edge_cases = (
     Path(__file__).parent.joinpath(
         "_bad_files",
         "static_dependencies.pyproject_toml",
     ),
+    Path(__file__).parent.joinpath(
+        "_good_files",
+        "complete.pyproject_toml",
+    ),
 )
 ids_backend_abc_repr_edge_cases = (
     "static dependencies have no required nor optionals",
+    "with required",
 )
 
 
@@ -1130,8 +818,39 @@ def test_backend_abc_repr_edge_cases(
 
     inst = BackendType(path_f, parent_dir=tmp_path)
 
+    tp = TomlParser(path_f)
+    d_pyproject_toml = tp.d_pyproject_toml
+
+    # required file exists will fail. No requirement file; not copied into tmp_path
+    invalids = (
+        None,
+        1.2345,
+    )
+    for invalid in invalids:
+        t_c = BackendType.get_required(
+            d_pyproject_toml,
+            tmp_path,
+            required=None,
+            is_bypass=invalid,
+        )
+    assert t_c is None
+
+    # bypass file exists check
+    t_c = BackendType.get_required(
+        d_pyproject_toml,
+        tmp_path,
+        required=None,
+        is_bypass=True,
+    )
+    logger.info(f"t_c: {t_c!r}")
+
     logger.info(f"folders_implied: {inst.folders_implied}")
     logger.info(f"folders_additional: {inst.folders_additional}")
-    logger.info(f"inst: {inst!r}")
+    logger.info(f"inst.required: {inst.required!r}")
+
+    str_repr = repr(inst)
+    assert isinstance(str_repr, str)
+
+    logger.info(f"str_repr: {str_repr!r}")
 
     assert has_logging_occurred(caplog)

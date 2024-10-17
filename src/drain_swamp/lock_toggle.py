@@ -50,8 +50,8 @@ Example ``pyproject.toml``. specifies an additional folder, ``ci``.
    ]
 
 .. py:data:: __all__
-   :type: tuple[str, str, str]
-   :value: ("lock_compile", "refresh_links", "unlock_compile")
+   :type: tuple[str, str]
+   :value: ("lock_compile", "unlock_compile")
 
    Module exports
 
@@ -104,7 +104,6 @@ from .exceptions import MissingRequirementsFoldersFiles
 __package__ = "drain_swamp"
 __all__ = (
     "lock_compile",
-    "refresh_links",
     "unlock_compile",
 )
 
@@ -1441,175 +1440,3 @@ def unlock_compile(inst):
         yield from lst_called
 
     yield from ()
-
-
-def refresh_links(inst, is_set_lock=None):
-    """Create/refresh ``.lnk`` files
-
-    Does not write .lock or .unlock files
-
-    :param inst:
-
-       Backend subclass instance. Contains: dependencies, optional
-       dependencies, and various paths
-
-    :type inst: BackendType
-    :param is_set_lock:
-
-       Force the dependency lock. True to lock. False to unlock. None
-       to use current lock state
-
-    :type is_set_lock: bool | None
-    :raises:
-
-       - :py:exc:`drain_swamp.exceptions.MissingRequirementsFoldersFiles` --
-         there are unresolvable constraint(s)
-
-       - :py:exc:`AssertionError` -- In pyproject.toml no section,
-         tool.setuptools.dynamic
-
-       - :py:exc:`drain_swamp.exceptions.PyProjectTOMLParseError` --
-         either not found or cannot be parsed
-
-       - :py:exc:`drain_swamp.exceptions.PyProjectTOMLReadError` --
-         Either not a file or lacks read permission
-
-       - :py:exc:`TypeError` -- is_set_lock unsupported type expecting None or bool
-
-       - :py:exc:`OSError` -- on Windows, malformed in file path --> PermissionError
-
-    """
-    is_invalid_set_lock = is_set_lock is not None and not isinstance(is_set_lock, bool)
-    if is_invalid_set_lock:
-        msg_exc = (
-            "refresh_links parameter is_set_lock can be either None or "
-            f"a boolean, got {is_set_lock!r}"
-        )
-        raise TypeError(msg_exc)
-    else:  # pragma: no cover
-        pass
-
-    mod_path = "lock_toggle.refresh_links"
-    path_cwd = inst.parent_dir
-    path_config = inst.path_config
-    gen_unlocked_files = inst.in_files()
-    in_files = list(gen_unlocked_files)
-    del gen_unlocked_files
-
-    if is_module_debug:  # pragma: no cover
-        msg_info = f"{mod_path} in_files: {in_files}"
-        _logger.info(msg_info)
-    else:  # pragma: no cover
-        pass
-
-    # read in all .in files. key path_abs
-    try:
-        files = InFiles(path_cwd, in_files)
-        files.resolution_loop()
-    except MissingRequirementsFoldersFiles:
-        raise
-
-    if is_set_lock is None:
-        # Get dependency lock state from pyproject.toml
-        try:
-            is_locked = inst.is_locked(path_config)
-        except Exception:
-            # PyProjectTOMLParseError, PyProjectTOMLReadError, AssertionError
-            raise
-    else:
-        """To update symlinks to unlock dependencies
-
-        .. code-block:: shell
-
-           python -m build --config-setting="--set-lock=1" --sdist
-
-        To update symlinks to lock dependencies
-
-        .. code-block:: shell
-
-           python -m build --config-setting="--set-lock=0" --sdist
-
-        """
-        is_locked = is_set_lock
-    suffix = SUFFIX_LOCKED if is_locked else SUFFIX_UNLOCKED
-
-    if is_module_debug:  # pragma: no cover
-        msg_info = (
-            f"{mod_path} is_set_lock --> is_locked {is_set_lock!r} --> {is_locked!r}"
-        )
-        _logger.info(msg_info)
-        zeroes_count = len(list(files.zeroes))
-        msg_info = f"{mod_path} files.zeroes zeroes_count {zeroes_count}"
-        _logger.info(msg_info)
-        msg_info = f"{mod_path} files: {files}"
-        _logger.info(msg_info)
-    else:  # pragma: no cover
-        pass
-
-    msg_warn_lock_files = (
-        "Missing requirements folders and files. Prepare this: "
-        "{}. No corresponding .unlock / .lock files. "
-        "Cannot make symlink. "
-        "In {}, prepare the missing folders and files. "
-        "Helpful commands pipenv-unlock unlock, pipenv-unlock lock, "
-        "and pipenv-unlock refresh."
-    )
-    msg_warn_paths_malformed = (
-        "Malformed .in file path. {exc} cwd: {path_cwd!r} abspath: {abspath!r}"
-    )
-    for in_ in files.zeroes:
-        if in_.stem == "pins.shared":
-            # pins.shared.in is used as-is
-            continue
-        else:  # pragma: no cover
-            if is_module_debug:  # pragma: no cover
-                msg_info = f"{mod_path} files.zeroes InFile {in_}"
-                _logger.info(msg_info)
-            else:  # pragma: no cover
-                pass
-            abspath_zero = in_.abspath(path_cwd)
-            file_name = f"{in_.stem}{suffix}"
-            abspath = abspath_zero.parent.joinpath(file_name)
-
-            if is_module_debug:  # pragma: no cover
-                msg_info = f"{mod_path} abspath (before check is exists): {abspath!r}"
-                _logger.info(msg_info)
-            else:  # pragma: no cover
-                pass
-
-            is_dest_file_exists = abspath.exists() and abspath.is_file()
-
-            if not is_dest_file_exists:
-                # No lock/unlock file, so skip creating a symlink
-                msg_warn = msg_warn_lock_files.format(abspath, path_cwd)
-                raise MissingRequirementsFoldersFiles(msg_warn)
-            else:
-                try:
-                    _maintain_symlink(path_cwd, abspath)
-                except (NotADirectoryError, FileNotFoundError) as e:
-                    # cwd not a folder or lock/unlock file not exists
-                    msg_warn = msg_warn_lock_files.format(
-                        abspath,
-                        path_cwd,
-                    )
-                    raise MissingRequirementsFoldersFiles(msg_warn) from e
-                except OSError as e:
-                    # On Windows, malformed path to .in file
-                    d_args = {
-                        "exc": str(e),
-                        "abspath": abspath,
-                        "path_cwd": path_cwd,
-                    }
-                    msg_warn = msg_warn_paths_malformed.format(**d_args)
-                    raise OSError(msg_warn) from e
-                except Exception as e:  # pragma: no cover
-                    # Sad, but not the end of the world
-                    if is_module_debug:  # pragma: no cover
-                        msg_info = f"{mod_path} path_cwd: {path_cwd}"
-                        _logger.info(msg_info)
-                        msg_info = f"{mod_path} abspath: {abspath}"
-                        _logger.info(msg_info)
-                    else:  # pragma: no cover
-                        pass
-                    msg_exc = str(e)
-                    _logger.warning(msg_exc)

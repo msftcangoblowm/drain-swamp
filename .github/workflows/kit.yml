@@ -163,7 +163,7 @@ jobs:
 
       - name: "Install tools"
         run: |
-          python -m pip install -r requirements/kit$LOCK_SUFFIX
+          python -m pip install -r requirements/kit.lock
 
       - name: "Build wheels"
         env:
@@ -213,7 +213,7 @@ jobs:
 
       - name: "Install tools"
         run: |
-          python -m pip install -r requirements/kit$LOCK_SUFFIX
+          python -m pip install -r requirements/kit.lock
 
       - name: "Build sdist"
         env:
@@ -253,7 +253,7 @@ jobs:
 
       - name: "Install requirements"
         run: |
-          pypy3 -m pip install -r requirements/kit$LOCK_SUFFIX
+          pypy3 -m pip install -r requirements/kit.lock
 
       - name: "Build wheel"
         env:

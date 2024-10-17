@@ -32,7 +32,6 @@ Code manual
       - :doc:`backend abc <ext/pipenv_unlock/backend_abc>`
       - :doc:`snippet dependencies <ext/pipenv_unlock/snippet_dependencies>`
       - :doc:`lock toggle <ext/pipenv_unlock/lock_toggle>`
-      - :doc:`snippet pyproject.toml <ext/pipenv_unlock/snippet_pyproject_toml>`
 
    .. grid-item-card:: :material-twotone:`extension;2em;sd-text-success` drain-swamp utils
       :class-card: sd-border-0
@@ -94,7 +93,6 @@ drain-swamp has built-in build plugins and is extendable.
       :class-card: sd-border-0
 
       - :doc:`Plugins subpackage <monkey/plugins/index>`
-      - :doc:`Refresh links <monkey/plugins/refresh_links>`
       - :doc:`SCM version <monkey/plugins/scm_version>`
 
    .. grid-item-card:: :material-twotone:`build;2em;sd-text-success` Build integration

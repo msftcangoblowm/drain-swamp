@@ -202,8 +202,8 @@ def infer_version(dist):
        ``_req_links/backend.py``
 
     """
-    # In the future, remove this restriction
-    dist_name = dist.metadata.name
+    # In the future, remove this restriction. dist.metadata.name
+    dist_name = dist.name
     is_drain_swamp = dist_name is not None and dist_name == "drain_swamp"
     if is_drain_swamp:  # pragma: no cover
         return

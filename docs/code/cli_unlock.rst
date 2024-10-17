@@ -68,15 +68,9 @@ pipenv-unlock
          :header: command, creates, desc
          :widths: auto
 
-         :py:func:`is_lock <drain_swamp.cli_unlock.state_is_lock>`, "", "Check dependencies lock state"
          :py:func:`lock <drain_swamp.cli_unlock.dependencies_lock>`, ".lock", "Create lock dependency file"
          :py:func:`unlock <drain_swamp.cli_unlock.dependencies_unlock>`, ".unlock", "Create unlock dependency file"
-         :py:func:`refresh <drain_swamp.cli_unlock.create_links>`, ".lnk", "Create dependency lock state symlinks"
-
-   .. autofunction:: drain_swamp.cli_unlock.state_is_lock
 
    .. autofunction:: drain_swamp.cli_unlock.dependencies_lock
 
    .. autofunction:: drain_swamp.cli_unlock.dependencies_unlock
-
-   .. autofunction:: drain_swamp.cli_unlock.create_links
