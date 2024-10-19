@@ -4,6 +4,7 @@
 # packaging and kitting
 
 -c pins.shared.in
+-c pins-cffi.in
 -r prod.shared.in
 -r tox.in
 

@@ -2,6 +2,7 @@
 # For details: https://github.com/msftcangoblowm/drain-swamp/blob/master/NOTICE.txt
 
 -c pins.shared.in
+-c pins-cffi.in
 -r prod.shared.in
 
 black

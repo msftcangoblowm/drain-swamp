@@ -68,7 +68,7 @@ jeepney==0.8.0
     #   secretstorage
 keyring==25.1.0
     # via twine
-logging-strict==1.3.5
+logging-strict==1.3.6
     # via -r requirements/dev.in
 markdown-it-py==3.0.0
     # via rich

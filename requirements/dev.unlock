@@ -23,3 +23,4 @@ drain-swamp-snippet
 tomli>=2.0.2; python_version<"3.11"
 pytest>=7.1
 logging-strict
+cffi>=1.17.1

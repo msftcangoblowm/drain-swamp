@@ -264,6 +264,7 @@ testdata_resolve_loop = (
         (
             Path("requirements/prod.shared.in"),
             Path("requirements/pins.shared.in"),
+            Path("requirements/pins-cffi.in"),
             Path("requirements/pip.in"),
         ),
         does_not_raise(),
@@ -274,6 +275,7 @@ testdata_resolve_loop = (
             Path("requirements/tox.in"),
             Path("requirements/prod.shared.in"),
             Path("requirements/pins.shared.in"),
+            Path("requirements/pins-cffi.in"),
         ),
         does_not_raise(),
     ),
@@ -282,6 +284,7 @@ testdata_resolve_loop = (
             Path("requirements/manage.in"),
             Path("requirements/prod.shared.in"),
             Path("requirements/pins.shared.in"),
+            Path("requirements/pins-cffi.in"),
         ),
         pytest.raises(MissingRequirementsFoldersFiles),
     ),
@@ -508,6 +511,7 @@ testdata_unlock_compile = (
         (
             "requirements/prod.shared.in",
             "requirements/pins.shared.in",
+            "requirements/pins-cffi.in",
             "requirements/pip.in",
             "requirements/manage.in",
         ),
@@ -521,6 +525,7 @@ testdata_unlock_compile = (
         (
             "requirements/prod.shared.in",
             "requirements/pins.shared.in",
+            "requirements/pins-cffi.in",
             "requirements/tox.in",
             "requirements/manage.in",
         ),
@@ -532,6 +537,7 @@ testdata_unlock_compile = (
         (
             "requirements/prod.shared.in",
             "requirements/pins.shared.in",
+            "requirements/pins-cffi.in",
             "requirements/pip.in",
             "requirements/pip-tools.in",
             "requirements/dev.in",

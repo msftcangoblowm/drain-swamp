@@ -1,4 +1,4 @@
-tox-gh
+tox-gh-actions
 tox
 colorama>=0.4.6 ;platform_system=="Windows"
 tomli>=2.0.2; python_version<"3.11"

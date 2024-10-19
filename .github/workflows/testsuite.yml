@@ -34,16 +34,16 @@ concurrency:
 
 jobs:
   tests:
-    name: "${{ matrix.python-version }} on ${{ matrix.os }}"
-    runs-on: "${{ matrix.os }}-latest"
+    name: "${{ matrix.python-version }} on ${{ matrix.platform }}"
+    runs-on: "${{ matrix.platform }}"
     # Don't run tests if the branch name includes "-notests"
     if: "!contains(github.ref, '-notests')"
     strategy:
       matrix:
-        os:
-          - ubuntu
-          - macos
-          - windows
+        platform:
+          - ubuntu-latest
+          - macos-latest
+          - windows-latest
         python-version:
           # When changing this list, be sure to check the [gh] list in
           # tox.ini so that tox will run properly. PYVERSIONS
@@ -55,12 +55,11 @@ jobs:
           - "3.11"
           - "3.12"
           - "3.13"
-          # - "3.14" not available yet
           - "pypy-3.9"
           - "pypy-3.10"
         exclude:
           # https://github.com/pypy/pypy/issues/4958
-          - os: windows
+          - platform: windows-latest
             python-version: "pypy-3.9"
       fail-fast: false
 
@@ -120,15 +119,17 @@ jobs:
         cat '${{ env.DS_CONFIG_SETTINGS }}'
         python -m build
 
-    - name: "Run tox for ${{ matrix.python-version }}"
-      run: |
-        python -m tox -c tox-test.ini -- -rfsEX
+    - name: Test with tox
+      run: tox -vv -c tox-test.ini
+      env:
+        PLATFORM: ${{ matrix.platform }}
 
-    - name: "Retry tox for ${{ matrix.python-version }}"
+    - name: "Retry ${{ matrix.python-version }} ${{ matrix.platform }}"
+      # `exit 1` makes sure that the job remains red with flaky runs
       if: failure()
-      run: |
-        # `exit 1` makes sure that the job remains red with flaky runs
-        python -m tox -- -rfsEX --lf -vvvvv && exit 1
+      run: tox -vv -c tox-test.ini && exit 1
+      env:
+        PLATFORM: ${{ matrix.platform }}
 
   # This job aggregates test results. It's the required check for branch protection.
   # https://github.com/marketplace/actions/alls-green#why

@@ -69,6 +69,10 @@ Changelog
    Commit items for NEXT VERSION
    ..............................
 
+   - migrate from tox-gh --> tox-gh-actions
+   - chore: add pins-cffi.in. Adjust tests
+   - chore: bump cffi to 1.17.1
+   - chore: bump logging-strict to 1.3.6
    - chore: bump pyproject-hooks to 1.2.0
    - chore: bump logging-strict to 1.3.5
    - fix: dist.metadata.name --> dist.name setuptools#3319

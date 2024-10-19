@@ -16,3 +16,4 @@ readme_renderer<37
 typing-extensions; python_version<"3.10"
 colorama>=0.4.6 ;platform_system=="Windows"
 restview
+cffi>=1.17.1
