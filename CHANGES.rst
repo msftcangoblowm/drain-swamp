@@ -69,6 +69,9 @@ Changelog
    Commit items for NEXT VERSION
    ..............................
 
+   - fix(tox-test.ini): miss pypy-3.9 pypy-3.10 in env:COVERAGE_FILE
+   - chore: try coverage-conditional-plugin. Removed
+   - ci: bump msftcangoblowm/drain-swamp-action to 1.0.2
    - migrate from tox-gh --> tox-gh-actions
    - chore: add pins-cffi.in. Adjust tests
    - chore: bump cffi to 1.17.1

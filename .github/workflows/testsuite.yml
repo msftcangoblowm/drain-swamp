@@ -67,7 +67,7 @@ jobs:
     - id: prepare-config-settings
       name: >-
         Build Plugin parameters
-      uses: 'msftcangoblowm/drain-swamp-action@1.0.1'
+      uses: 'msftcangoblowm/drain-swamp-action@1.0.2'
       with:
         plugin_parameters: '{"set-lock": "${{ vars.DRAINSWAMP_SET_LOCK }}", "kind": "current"}'
         checkout: true
@@ -76,7 +76,7 @@ jobs:
     - name: "Download artifact"
       uses: actions/download-artifact@v4.1.8
       with:
-        name: config-settings-${{ matrix.os }}-${{ matrix.python-version }}
+        name: config-settings-${{ matrix.platform || matrix.os }}-${{ matrix.python-version }}
         path: '${{ runner.temp }}'
 
     - name: "Check out the repo"
@@ -120,14 +120,14 @@ jobs:
         python -m build
 
     - name: Test with tox
-      run: tox -vv -c tox-test.ini
+      run: python -m tox -vv -c tox-test.ini
       env:
         PLATFORM: ${{ matrix.platform }}
 
     - name: "Retry ${{ matrix.python-version }} ${{ matrix.platform }}"
       # `exit 1` makes sure that the job remains red with flaky runs
       if: failure()
-      run: tox -vv -c tox-test.ini && exit 1
+      run: python -m tox -vv -c tox-test.ini && exit 1
       env:
         PLATFORM: ${{ matrix.platform }}
 

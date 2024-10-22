@@ -34,10 +34,10 @@ from typing import (
     cast,
 )
 
-if sys.version_info >= (3, 11):  # pragma: no cover
+if sys.version_info >= (3, 11):  # pragma: no cover py-gte-311-else
     import tomllib
     from tomllib import loads as load_toml
-else:  # pragma: no cover
+else:  # pragma: no cover py-gte-311
     import tomli as tomllib
     from tomli import loads as load_toml
 

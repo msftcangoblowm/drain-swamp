@@ -27,13 +27,13 @@ jobs:
     name: "${{ matrix.python-version }} on ${{ matrix.os }}"
     if:
       ${{ !(contains('-notests', github.ref) || contains('refs/heads/master', github.ref)) }}
-    runs-on: "${{ matrix.os }}"
+    runs-on: "${{ matrix.platform }}"
     # If it doesn't finish in an hour, it's not going to. Don't spin for six
     # hours needlessly.
     timeout-minutes: 60
     strategy:
       matrix:
-        os:
+        platform:
           - windows-latest
         python-version:
           - "pypy-3.9-nightly"

@@ -4,8 +4,10 @@ from typing import Any
 
 try:
     from packaging.version import Version as Version
-except ImportError:  # pragma: no cover
-    from setuptools.extern.packaging.version import Version as Version  # type: ignore
+except (ModuleNotFoundError, ImportError):  # pragma: no cover
+    from setuptools.extern.packaging.version import (
+        Version as Version,  # type: ignore[no-redef]
+    )
 
 __all__ = (
     "SemVersion",

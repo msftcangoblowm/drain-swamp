@@ -49,10 +49,10 @@ __all__ = (
 try:
     # hardcoded import is bad
     from ._version import __version__
-except (ModuleNotFoundError, ImportError):  # pragma: no cover
+except (ModuleNotFoundError, ImportError):  # pragma: no cover has-version-file
     __version_app = "unreleased"
     __url__ = None
-else:
+else:  # pragma: no cover has-version-file-no
     # Removes epoch and local. Fixes version
     __version_app, local = sanitize_tag(__version__)
 

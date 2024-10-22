@@ -29,24 +29,16 @@
 
 from __future__ import annotations
 
-import sys
+from collections.abc import (
+    Generator,
+    Sequence,
+)
 from pathlib import PurePath
 
 from .constants import (
     SUFFIX_IN,
     SUFFIX_SHARED_IN,
 )
-
-if sys.version_info >= (3, 9):  # pragma: no cover
-    from collections.abc import (
-        Generator,
-        Sequence,
-    )
-else:  # pragma: no cover
-    from typing import (
-        Generator,
-        Sequence,
-    )
 
 __package__ = "drain_swamp"
 __all__ = (

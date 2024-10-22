@@ -42,14 +42,9 @@ These functions are lifted from the black project. With minor changes:
 
 from __future__ import annotations
 
-import sys
+from collections.abc import Sequence
 from pathlib import Path
 from typing import Any
-
-if sys.version_info >= (3, 9):  # pragma: no cover
-    from collections.abc import Sequence  # noqa: F401 Used by sphinx
-else:  # pragma: no cover
-    from typing import Sequence  # noqa: F401 Used by sphinx
 
 __package__ = "drain_swamp"
 __all__ = (
@@ -195,7 +190,7 @@ def find_project_root(srcs, stdin_filename=None):
         else:  # pragma: no cover
             pass
 
-    if is_none(srcs) or is_sequence_empty(srcs):  # pragma: no cover fallback
+    if is_none(srcs) or is_sequence_empty(srcs):  # pragma: no cover
         srcs = [str(Path.cwd().resolve())]
     else:  # pragma: no cover
         pass

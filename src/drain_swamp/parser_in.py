@@ -27,7 +27,6 @@ from pathlib import (
     Path,
     PurePath,
 )
-from typing import TYPE_CHECKING
 
 from .constants import g_app_name
 from .exceptions import (
@@ -36,14 +35,9 @@ from .exceptions import (
 )
 from .pep518_read import find_pyproject_toml
 
-if sys.version_info >= (3, 11):  # pragma: no cover
-    try:
-        import tomllib
-    except ImportError:
-        # Help users on older alphas
-        if not TYPE_CHECKING:
-            import tomli as tomllib
-else:  # pragma: no cover
+if sys.version_info >= (3, 11):  # pragma: no cover py-gte-311-else
+    import tomllib
+else:  # pragma: no cover py-gte-311
     import tomli as tomllib
 
 __package__ = "drain_swamp"

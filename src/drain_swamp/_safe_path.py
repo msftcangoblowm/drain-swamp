@@ -31,7 +31,7 @@ __all__ = (
 )
 
 
-def is_linux():  # pragma: no cover
+def is_linux():
     """Check platform is Linux.
 
     When messages are intended for Windows, but would like to see on
@@ -56,7 +56,7 @@ def is_win():
     return ret
 
 
-def is_macos():  # pragma: no cover
+def is_macos():
     """Check platform is MacOS
 
     :returns: True if platform is MacOS
@@ -75,9 +75,9 @@ def _to_purepath(relpath_b):
     :returns: Platform specific pure path
     :rtype: pathlib.PureWindowsPath | pathlib.PurePosixPath
     """
-    if is_win():  # pragma: no cover
+    if is_win():  # pragma: no cover no-cover-if-windows-no
         fix_b = PureWindowsPath(relpath_b)
-    else:  # pragma: no cover
+    else:  # pragma: no cover no-cover-if-windows
         fix_b = PurePosixPath(relpath_b)
 
     return fix_b
@@ -132,9 +132,9 @@ def resolve_joinpath(abspath_a, relpath_b):
     """
     str_fix_b = fix_relpath(relpath_b)
     is_path_subclass = issubclass(type(abspath_a), Path)
-    if is_win():  # pragma: no cover
+    if is_win():  # pragma: no cover no-cover-if-windows
         cls_pure = PureWindowsPath
-    else:  # pragma: no cover
+    else:  # pragma: no cover no-cover-if-windows-no
         cls_pure = PurePosixPath
 
     if is_path_subclass:

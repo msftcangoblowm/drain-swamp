@@ -1148,7 +1148,7 @@ class SemVersion:
         for long_, short_ in _map_release.items():
             if short_ == ret:
                 ret = long_
-            else:  # pragma: no cover continue
+            else:  # pragma: no cover
                 pass
         self._releaselevel = ret
 

@@ -257,7 +257,7 @@ class DependencyLockSymlink(DependencyLockLnkFile):
     IMPLEMENTATION = "os.symlink"
 
     @classmethod
-    def is_file(cls, abspath) -> bool:  # pragma: no cover
+    def is_file(cls, abspath) -> bool:  # pragma: no cover no-cover-if-windows-no
         """Encapsulate positive file/symlink check implementation.
 
         .. note:: Could become a file
@@ -277,7 +277,7 @@ class DependencyLockSymlink(DependencyLockLnkFile):
         return ret
 
     @classmethod
-    def is_not_file(cls, abspath) -> bool:  # pragma: no cover
+    def is_not_file(cls, abspath) -> bool:  # pragma: no cover no-cover-if-windows-no
         """Encapsulate file type check implementation.
 
         :param abspath: Absolute path to a file or folder
@@ -303,7 +303,12 @@ class DependencyLockSymlink(DependencyLockLnkFile):
 
         return ret
 
-    def __call__(self, src: str, dest: str, cwd_path: str) -> None:  # pragma: no cover
+    def __call__(
+        self,
+        src,
+        dest,
+        cwd_path,
+    ) -> None:  # pragma: no cover no-cover-if-windows-no
         """Create a copy by symlink.
 
         :param src: relative path to source file
@@ -375,7 +380,7 @@ class DependencyLockFile(DependencyLockLnkFile):
     IMPLEMENTATION = "shutil.copy2"
 
     @classmethod
-    def is_file(cls, abspath) -> bool:  # pragma: no cover
+    def is_file(cls, abspath) -> bool:  # pragma: no cover no-cover-if-windows
         """Encapsulate positive file type check implementation.
 
         :param abspath: Absolute path to a file or folder
@@ -389,7 +394,7 @@ class DependencyLockFile(DependencyLockLnkFile):
         return ret
 
     @classmethod
-    def is_not_file(cls, abspath) -> bool:  # pragma: no cover
+    def is_not_file(cls, abspath) -> bool:  # pragma: no cover no-cover-if-windows
         """Encapsulate negative file type check implementation.
 
         :param abspath: Absolute path to a file or folder
@@ -413,7 +418,12 @@ class DependencyLockFile(DependencyLockLnkFile):
 
         return ret
 
-    def __call__(self, src: str, dest: str, cwd_path: str) -> None:  # pragma: no cover
+    def __call__(
+        self,
+        src,
+        dest,
+        cwd_path,
+    ) -> None:  # pragma: no cover no-cover-if-windows
         """Create a copy by symlink.
 
         :param src: relative path to source file
@@ -468,7 +478,7 @@ class DependencyLockLnkFactory:
 
         return impl
 
-    def __call__(self, src: str, dest: str, cwd_path: str) -> None:
+    def __call__(self, src, dest, cwd_path) -> None:
         """Call the supported DependencyLockLnkFile subclass.
 
         :param src: relative path to source file

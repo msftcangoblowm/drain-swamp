@@ -24,10 +24,10 @@ permissions:
 
 jobs:
   build:
-    runs-on: "${{ matrix.os }}"
+    runs-on: "${{ matrix.platform }}"
     strategy:
       matrix:
-        os:
+        platform:
           - ubuntu-latest
         python-version:
           - "3.9"
@@ -39,7 +39,7 @@ jobs:
     - id: prepare-config-settings
       name: >-
         Build Plugin parameters
-      uses: 'msftcangoblowm/drain-swamp-action@1.0.1'
+      uses: 'msftcangoblowm/drain-swamp-action@1.0.2'
       with:
         plugin_parameters: '{"set-lock": "${{ vars.DRAINSWAMP_SET_LOCK }}", "kind": "tag"}'
         checkout: true
@@ -48,7 +48,7 @@ jobs:
     - name: "Download artifact"
       uses: actions/download-artifact@v4.1.8
       with:
-        name: config-settings-${{ matrix.os }}-${{ matrix.python-version }}
+        name: config-settings-${{ matrix.platform || matrix.os }}-${{ matrix.python-version }}
         path: '${{ runner.temp }}'
 
     - name: Checkout the repo

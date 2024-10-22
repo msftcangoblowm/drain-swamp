@@ -42,7 +42,7 @@ from __future__ import annotations
 
 import abc
 import logging
-import sys
+from collections.abc import Sequence
 from pathlib import (
     Path,
     PurePath,
@@ -73,11 +73,6 @@ from .constants import (
     g_app_name,
 )
 from .parser_in import TomlParser
-
-if sys.version_info >= (3, 9):  # pragma: no cover
-    from collections.abc import Sequence
-else:  # pragma: no cover
-    from typing import Sequence
 
 __package__ = "drain_swamp"
 __all__ = ("BackendType",)
