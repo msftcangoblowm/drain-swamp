@@ -69,6 +69,9 @@ Changelog
    Commit items for NEXT VERSION
    ..............................
 
+   - fix(testsuite): tox-test use -e to restrict to one python version
+   - fix(mypy): really annoying catch 22 try-except import block
+   - fix(tox-test.ini): revert darwin --> macos
    - fix(tox-test.ini): miss pypy-3.9 pypy-3.10 in env:COVERAGE_FILE
    - chore: try coverage-conditional-plugin. Removed
    - ci: bump msftcangoblowm/drain-swamp-action to 1.0.2

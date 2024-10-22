@@ -2,12 +2,7 @@ import types
 from pathlib import Path
 from typing import Any
 
-try:
-    from packaging.version import Version as Version
-except (ModuleNotFoundError, ImportError):  # pragma: no cover
-    from setuptools.extern.packaging.version import (
-        Version as Version,  # type: ignore[no-redef]
-    )
+from packaging.version import Version as Version
 
 __all__ = (
     "SemVersion",

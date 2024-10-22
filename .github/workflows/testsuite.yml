@@ -120,14 +120,14 @@ jobs:
         python -m build
 
     - name: Test with tox
-      run: python -m tox -vv -c tox-test.ini
+      run: python -m tox -vv -c tox-test.ini -e ${{ matrix.python-version }}
       env:
         PLATFORM: ${{ matrix.platform }}
 
     - name: "Retry ${{ matrix.python-version }} ${{ matrix.platform }}"
       # `exit 1` makes sure that the job remains red with flaky runs
       if: failure()
-      run: python -m tox -vv -c tox-test.ini && exit 1
+      run: python -m tox -vv -c tox-test.ini -e ${{ matrix.python-version }} && exit 1
       env:
         PLATFORM: ${{ matrix.platform }}
 
