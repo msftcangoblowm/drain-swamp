@@ -127,14 +127,12 @@ jobs:
 
     - name: Test with tox
       run: |
-        # env: PLATFORM: ${{ matrix.platform }}
         echo "env.OS_SHORT ${{ env.OS_SHORT }}"
         python -m tox -vv -c tox-test.ini -e ${{ matrix.python-version }}-${{ env.OS_SHORT }}
 
-    - name: "Retry ${{ matrix.python-version }}-${{ matrix.os-short }}"
+    - name: "Retry ${{ matrix.python-version }}-${{ matrix.platform }}"
       if: failure()
       run: |
-        # env: PLATFORM: ${{ matrix.platform }}
         echo "env.OS_SHORT ${{ env.OS_SHORT }}"
         # `exit 1` makes sure that the job remains red with flaky runs
         python -m tox -vv -c tox-test.ini -e ${{ matrix.python-version }}-${{ env.OS_SHORT }} && exit 1

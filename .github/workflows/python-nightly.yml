@@ -110,7 +110,7 @@ jobs:
         python -m site
         env
 
-    - name: "Install dependencies -- tests"
+    - name: "Install dependencies"
       run: |
         python -m pip install -r requirements/kit.lock -r requirements/prod.shared.unlock -r requirements/tox.lock
 
@@ -121,8 +121,13 @@ jobs:
         cat '${{ env.DS_CONFIG_SETTINGS }}'
         python -m build
 
+    - name: get-os-short
+      # tox needs just the OS; platform is `{OS}-{OS version}`
+      # matrix.os-short side effect, more matrix runs; total * [OS count]
+      run: |
+        python -c 'import os; lst="${{ matrix.platform }}".split("-"); os_short = lst[0]; env_file = os.environ.get("GITHUB_ENV"); f = open(env_file, "a"); print(f"OS_SHORT={os_short}", file=f); f.close();'
+
     - name: "Run tox"
       run: |
-        python -m tox -vv -c tox-test.ini
-      env:
-        PLATFORM: ${{ matrix.platform }}
+        echo "env.OS_SHORT ${{ env.OS_SHORT }}"
+        python -m tox -vv -c tox-test.ini -e ${{ matrix.python-version }}-${{ env.OS_SHORT }}

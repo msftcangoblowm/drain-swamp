@@ -69,6 +69,8 @@ Changelog
    Commit items for NEXT VERSION
    ..............................
 
+   - chore(branch-test-others): update to use env.OS_SHORT
+   - chore(python-nightly): update to use env.OS_SHORT
    - fix(tox-test.ini): from setenv remove COVERAGE_FILE
    - fix(tox-test.ini): allow coverage combine no data to combine error
    - fix(testsuite): env.OS_SHORT unavailable in same step
