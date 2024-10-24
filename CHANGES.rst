@@ -69,6 +69,7 @@ Changelog
    Commit items for NEXT VERSION
    ..............................
 
+   - fix(testsuite): append OS_SHORT into GITHUB_ENV
    - feat(tox-test.ini): add cov.pth to inform coverage about subprocess
    - fix(testsuite): try tox -e with matrix.os-short
    - fix(testsuite): tox-test use -e to restrict to one python version
