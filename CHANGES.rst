@@ -69,6 +69,8 @@ Changelog
    Commit items for NEXT VERSION
    ..............................
 
+   - feat(tox-test.ini): add cov.pth to inform coverage about subprocess
+   - fix(testsuite): try tox -e with matrix.os-short
    - fix(testsuite): tox-test use -e to restrict to one python version
    - fix(mypy): really annoying catch 22 try-except import block
    - fix(tox-test.ini): revert darwin --> macos

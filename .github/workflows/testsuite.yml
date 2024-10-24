@@ -44,6 +44,11 @@ jobs:
           - ubuntu-latest
           - macos-latest
           - windows-latest
+        os-short:
+          # tox needs just the OS; platform is `{OS}-{OS version}`
+          - "ubuntu"
+          - "macos"
+          - "windows"
         python-version:
           # When changing this list, be sure to check the [gh] list in
           # tox.ini so that tox will run properly. PYVERSIONS
@@ -120,14 +125,14 @@ jobs:
         python -m build
 
     - name: Test with tox
-      run: python -m tox -vv -c tox-test.ini -e ${{ matrix.python-version }}
+      run: python -m tox -vv -c tox-test.ini -e py${{ matrix.python-version }}-${{ matrix.os-short }}
       env:
         PLATFORM: ${{ matrix.platform }}
 
-    - name: "Retry ${{ matrix.python-version }} ${{ matrix.platform }}"
+    - name: "Retry ${{ matrix.python-version }}-${{ matrix.os-short }}"
       # `exit 1` makes sure that the job remains red with flaky runs
       if: failure()
-      run: python -m tox -vv -c tox-test.ini -e ${{ matrix.python-version }} && exit 1
+      run: python -m tox -vv -c tox-test.ini -e ${{ matrix.python-version }}-${{ matrix.os-short }} && exit 1
       env:
         PLATFORM: ${{ matrix.platform }}
 
