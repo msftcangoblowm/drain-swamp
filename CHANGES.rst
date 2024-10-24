@@ -69,6 +69,9 @@ Changelog
    Commit items for NEXT VERSION
    ..............................
 
+   - fix(tox-test.ini): from setenv remove COVERAGE_FILE
+   - fix(tox-test.ini): allow coverage combine no data to combine error
+   - fix(testsuite): env.OS_SHORT unavailable in same step
    - fix(testsuite): append OS_SHORT into GITHUB_ENV
    - feat(tox-test.ini): add cov.pth to inform coverage about subprocess
    - fix(testsuite): try tox -e with matrix.os-short

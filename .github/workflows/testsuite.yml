@@ -119,24 +119,25 @@ jobs:
         cat '${{ env.DS_CONFIG_SETTINGS }}'
         python -m build
 
-    # tox needs just the OS; platform is `{OS}-{OS version}`
-    # matrix.os-short side effect, more matrix runs; total * [OS count]
     - name: get-os-short
+      # tox needs just the OS; platform is `{OS}-{OS version}`
+      # matrix.os-short side effect, more matrix runs; total * [OS count]
       run: |
-        python -c 'import os; lst="${{ matrix.platform }}".split("-"); os_short = lst[0]; env_file = os.environ.get("GITHUB_ENV"); f = open(env_file, "a"); f.write(f"OS_SHORT={os_short}{os.linesep}"); f.close();'
-        echo "env.OS_SHORT ${{ env.OS_SHORT }}"
+        python -c 'import os; lst="${{ matrix.platform }}".split("-"); os_short = lst[0]; env_file = os.environ.get("GITHUB_ENV"); f = open(env_file, "a"); print(f"OS_SHORT={os_short}", file=f); f.close();'
 
     - name: Test with tox
-      env:
-        PLATFORM: ${{ matrix.platform }}
-      run: python -m tox -vv -c tox-test.ini -e ${{ matrix.python-version }}-${{ env.OS_SHORT }}
+      run: |
+        # env: PLATFORM: ${{ matrix.platform }}
+        echo "env.OS_SHORT ${{ env.OS_SHORT }}"
+        python -m tox -vv -c tox-test.ini -e ${{ matrix.python-version }}-${{ env.OS_SHORT }}
 
     - name: "Retry ${{ matrix.python-version }}-${{ matrix.os-short }}"
-      # `exit 1` makes sure that the job remains red with flaky runs
       if: failure()
-      run: python -m tox -vv -c tox-test.ini -e ${{ matrix.python-version }}-${{ env.OS_SHORT }} && exit 1
-      env:
-        PLATFORM: ${{ matrix.platform }}
+      run: |
+        # env: PLATFORM: ${{ matrix.platform }}
+        echo "env.OS_SHORT ${{ env.OS_SHORT }}"
+        # `exit 1` makes sure that the job remains red with flaky runs
+        python -m tox -vv -c tox-test.ini -e ${{ matrix.python-version }}-${{ env.OS_SHORT }} && exit 1
 
   # This job aggregates test results. It's the required check for branch protection.
   # https://github.com/marketplace/actions/alls-green#why
