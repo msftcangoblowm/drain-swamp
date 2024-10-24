@@ -8,25 +8,8 @@ Changelog
    Feature request
    .................
 
-   - :code:`pipenv-unlock is_lock` should refer only to required dependencies.
-     lock=1 would be for an app, not a package
-
-   - :code:`pipenv-unlock refresh` (unlock lock) **shouldn't** overwrite links
-     in pyproject.toml
-
-     optional-dependencies may or may not be locked. Some may be additional features
-     rather than for package maintanence
-
    - Better order both .unlock and .lock dependencies:
      ``-c`` and ``-r`` lines, restricted versions, non-restricted versions
-
-   - When packaging, symlinks are converted into files. This change is only
-     noticed when the package is installed. Create an integration test
-     which builds and installs a package in a test venv. Confirm package
-     installs without an OSError occurring
-
-   - On Windows, refresh links fails. Combining dependencies relative path with cwd path
-     Use __debug__ to turn on module level logging AND send the logging to stdout
 
    - Confirm setuptools-scm file finders are being called?
 
@@ -56,9 +39,6 @@ Changelog
      LookupError: toml section missing ...logging_strict/pyproject.toml does not
      contain a tool.drain-swamp section
 
-   - in ci, linux and macos build sdist kind="current" set-lock=1 version --> 0.1.dev1
-     cause ?? Hints scm version plugin has issues
-
    - rtd installs does not build or run a workflow. Does rtd give any workaround?
      Use github pages instead of rtd. Unless rtd respects workflows
 
@@ -69,48 +49,49 @@ Changelog
    Commit items for NEXT VERSION
    ..............................
 
-   - ci(python-nightly): for tox from python version strip -nightly
-   - chore(branch-test-others): update to use env.OS_SHORT
-   - chore(python-nightly): update to use env.OS_SHORT
-   - fix(tox-test.ini): from setenv remove COVERAGE_FILE
-   - fix(tox-test.ini): allow coverage combine no data to combine error
-   - fix(testsuite): env.OS_SHORT unavailable in same step
-   - fix(testsuite): append OS_SHORT into GITHUB_ENV
-   - feat(tox-test.ini): add cov.pth to inform coverage about subprocess
-   - fix(testsuite): try tox -e with matrix.os-short
-   - fix(testsuite): tox-test use -e to restrict to one python version
-   - fix(mypy): really annoying catch 22 try-except import block
-   - fix(tox-test.ini): revert darwin --> macos
-   - fix(tox-test.ini): miss pypy-3.9 pypy-3.10 in env:COVERAGE_FILE
-   - chore: try coverage-conditional-plugin. Removed
-   - ci: bump msftcangoblowm/drain-swamp-action to 1.0.2
-   - migrate from tox-gh --> tox-gh-actions
-   - chore: add pins-cffi.in. Adjust tests
-   - chore: bump cffi to 1.17.1
-   - chore: bump logging-strict to 1.3.6
-   - chore: bump pyproject-hooks to 1.2.0
-   - chore: bump logging-strict to 1.3.5
-   - fix: dist.metadata.name --> dist.name setuptools#3319
-   - refactor: remove plugin ds_refresh_links
-   - refactor: stop editing pyproject.toml snippet
-   - refactor: remove .lnk stop using .lnk also in ci
-   - refactor: remove pipenv-unlock is_lock and pipenv-unlock refresh
-   - fix(pyproject.toml): required dependencies unlock
-   - ci: pip install requirements on one line
-   - ci(release): try --use-pep517 to deal with setuptools#3319
-   - fix(tox.ini): flake8-pyi and black disagree. Ignore flake8 failure
-   - chore: bump drain-swamp-snippet to 1.0.1
-   - chore: bump logging-strict to 1.3.4
-   - fix: add support for .shared.in (#13)
-   - fix: pins.in and prod.in now have extension .shared.in
-   - fix: For multiple suffixes check only last suffix
-   - feat: add pyproject_reading from setuptools-scm (MIT)
-   - feat(patch_pyproject_reading): add TOML array of tables support
-   - feat(pep518_read): find_pyproject_toml add support for test files
-   - fix(pep518_read): find_pyproject_toml given a valid file path, avoid reverse search
-   - ci: condense multiple pip calls
-
 .. scriv-start-here
+
+.. _changes_1-8-5:
+
+Version 1.8.5 — 2024-10-24
+--------------------------
+
+- ci(python-nightly): for tox from python version strip -nightly
+- chore(branch-test-others): update to use env.OS_SHORT
+- chore(python-nightly): update to use env.OS_SHORT
+- ci(tox-test.ini): from setenv remove COVERAGE_FILE
+- ci(tox-test.ini): allow coverage combine no data to combine error
+- ci(testsuite): env.OS_SHORT unavailable in same step
+- ci(testsuite): append OS_SHORT into GITHUB_ENV
+- feat(tox-test.ini): add cov.pth to inform coverage about subprocess
+- ci(testsuite): try tox -e with matrix.os-short
+- ci(testsuite): tox-test use -e to restrict to one python version
+- fix(mypy): really annoying catch 22 try-except import block
+- ci: bump msftcangoblowm/drain-swamp-action to 1.0.2
+- chore: add pins-cffi.in. Adjust tests
+- chore: bump cffi to 1.17.1
+- chore: bump logging-strict to 1.3.6
+- chore: bump pyproject-hooks to 1.2.0
+- chore: bump logging-strict to 1.3.5
+- fix: dist.metadata.name --> dist.name setuptools#3319
+- refactor: remove plugin ds_refresh_links
+- refactor: stop editing pyproject.toml snippet
+- refactor: remove .lnk stop using .lnk also in ci
+- refactor: remove pipenv-unlock is_lock and pipenv-unlock refresh
+- fix(pyproject.toml): required dependencies unlock
+- ci: pip install requirements on one line
+- ci(release): try --use-pep517 to deal with setuptools#3319
+- fix(tox.ini): flake8-pyi and black disagree. Ignore flake8 failure
+- chore: bump drain-swamp-snippet to 1.0.1
+- chore: bump logging-strict to 1.3.4
+- fix: add support for .shared.in (#13)
+- fix: pins.in and prod.in now have extension .shared.in
+- fix: For multiple suffixes check only last suffix
+- feat: add pyproject_reading from setuptools-scm (MIT)
+- feat(patch_pyproject_reading): add TOML array of tables support
+- feat(pep518_read): find_pyproject_toml add support for test files
+- fix(pep518_read): find_pyproject_toml given a valid file path, avoid reverse search
+- ci: condense multiple pip calls
 
 .. _changes_1-8-3:
 
