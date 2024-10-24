@@ -69,6 +69,7 @@ Changelog
    Commit items for NEXT VERSION
    ..............................
 
+   - ci(python-nightly): for tox from python version strip -nightly
    - chore(branch-test-others): update to use env.OS_SHORT
    - chore(python-nightly): update to use env.OS_SHORT
    - fix(tox-test.ini): from setenv remove COVERAGE_FILE

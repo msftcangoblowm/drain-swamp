@@ -126,8 +126,10 @@ jobs:
       # matrix.os-short side effect, more matrix runs; total * [OS count]
       run: |
         python -c 'import os; lst="${{ matrix.platform }}".split("-"); os_short = lst[0]; env_file = os.environ.get("GITHUB_ENV"); f = open(env_file, "a"); print(f"OS_SHORT={os_short}", file=f); f.close();'
+        python -c 'import os; pyclean = "${{ matrix.python-version }}" if not "${{ matrix.python-version }}".endswith("-nightly") else "${{ matrix.python-version }}".strip("-nightly"); env_file = os.environ.get("GITHUB_ENV"); f = open(env_file, "a"); print(f"PY_CLEAN={pyclean}", file=f); f.close();'
 
     - name: "Run tox"
       run: |
         echo "env.OS_SHORT ${{ env.OS_SHORT }}"
-        python -m tox -vv -c tox-test.ini -e ${{ matrix.python-version }}-${{ env.OS_SHORT }}
+        echo "env.PY_CLEAN ${{ env.PY_CLEAN }}"
+        python -m tox -vv -c tox-test.ini -e ${{ env.PY_CLEAN }}-${{ env.OS_SHORT }}
