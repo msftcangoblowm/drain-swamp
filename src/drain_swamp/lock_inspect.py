@@ -506,8 +506,15 @@ class Pins(MutableSet[_T]):
         for venv_req in venv_reqs:
             req_relpath = venv_req.req_relpath
             for pin in pins:
-                if req_relpath in str(pin.file_abspath):
+                winsafe_relpath = str(Path(req_relpath))
+                winsafe_abspath = str(pin.file_abspath)
+
+                # relpath in abspath
+                is_winsafe_comparison = winsafe_relpath in winsafe_abspath
+                if is_winsafe_comparison:
                     pins_out.add(pin)
+                else:  # pragma: no cover
+                    pass
 
         return pins_out
 

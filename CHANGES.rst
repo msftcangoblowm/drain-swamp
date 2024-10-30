@@ -53,6 +53,7 @@ Changelog
    Commit items for NEXT VERSION
    ..............................
 
+   - fix(lock_inspect): Pins.subset_req Windows unsafe path comparison
    - refactor(lock_inspect): add _wrapper_pins_by_pkg Pins.by_pkg wrapper function
    - test(test_lock_inspect.py): use get_locals on _wrapper_pins_by_pkg
    - chore(MANIFEST.in): remove global include of .lnk files
