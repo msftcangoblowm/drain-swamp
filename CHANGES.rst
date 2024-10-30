@@ -53,14 +53,19 @@ Changelog
    Commit items for NEXT VERSION
    ..............................
 
-   - fix(lock_inspect): Pins.subset_req Windows unsafe path comparison
-   - refactor(lock_inspect): add _wrapper_pins_by_pkg Pins.by_pkg wrapper function
-   - test(test_lock_inspect.py): use get_locals on _wrapper_pins_by_pkg
-   - chore(MANIFEST.in): remove global include of .lnk files
-   - chore(tox-test.ini): turn on pytest verbose and show locals
-   - feat: add command pipenv-unlock fix (#14)
-
 .. scriv-start-here
+
+.. _changes_1-8-6:
+
+Version 1.8.6 — 2024-10-30
+--------------------------
+
+- feat: add command pipenv-unlock fix (#14)
+- fix(lock_inspect): Pins.subset_req Windows unsafe path comparison
+- refactor(lock_inspect): add _wrapper_pins_by_pkg Pins.by_pkg wrapper function
+- test(test_lock_inspect.py): use get_locals on _wrapper_pins_by_pkg
+- chore(MANIFEST.in): remove global include of .lnk files
+- chore(tox-test.ini): turn on pytest verbose and show locals
 
 .. _changes_1-8-5:
 
