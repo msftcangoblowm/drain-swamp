@@ -173,6 +173,13 @@ intersphinx_mapping = {
     ),
 }
 intersphinx_disabled_reftypes = ["std:doc"]
+autodoc_type_aliases = {
+    "TOML_RESULT": "drain_swamp.monkey.pyproject_reading.TOML_RESULT",
+    "TOML_LOADER": "drain_swamp.monkey.pyproject_reading.TOML_LOADER",
+    "_T": "drain_swamp.lock_inspect._T",
+    "PinsByPkg": "drain_swamp.lock_inspect.PinsByPkg",
+    "PkgsWithIssues": "drain_swamp.lock_inspect.PkgsWithIssues",
+}
 
 extlinks = {
     "pypi_org": (  # url to: aiologger

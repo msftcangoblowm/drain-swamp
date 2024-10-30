@@ -2,4 +2,5 @@
 # Project: packaging 24.0
 # Version: 24.0
 # The remainder of this file is compressed using zlib.
-packaging.version.Version py:class 1 version.html#packaging.version.Version -
+packaging.version.Version py:class 1 version.html#$ -
+packaging.specifiers.SpecifierSet py:class 1 specifiers.html#$ -

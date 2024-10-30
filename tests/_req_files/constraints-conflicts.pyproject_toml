@@ -1,0 +1,56 @@
+[build-system]
+requires = [
+    "setuptools>=70.0.0",
+    "wheel",
+    "build",
+    "setuptools_scm>=8",
+    "click",
+    "pluggy",
+    "drain-swamp-snippet",
+]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "complete-awesome-perfect"
+dynamic = [
+    "optional-dependencies",
+    "dependencies",
+    "version",
+]
+
+[tool.setuptools.dynamic]
+# @@@ editable little_shop_of_horrors_shrine_candles
+dependencies = { file = ['requirements/prod.shared.unlock'] }
+optional-dependencies.various = { file = ['requirements/constraints-various.lock'] }
+optional-dependencies.conflicts = { file = ['requirements/constraints-conflicts.lock'] }
+# @@@ end
+
+# Editted manually. From package base folder:
+# get tagged version, :code:`scm-version get`
+# get current version :code:`drain-swamp current`
+version = {attr = 'drain_swamp._version.__version__'}
+
+# For updating 'NOTICE.txt' and 'docs/conf.py'
+[tool.drain-swamp]
+copyright_start_year = 2024
+
+# For `pipenv-unlock unlock` and `pipenv-unlock lock`. aka making the .unlock and .lock files
+[tool.pipenv-unlock]
+folders = []
+
+required = { target = "prod", relative_path = 'requirements/prod.shared.in' }
+
+# underscore: hyphen
+optionals = [
+    { target = "various", relative_path = 'requirements/constraints-various.in' },
+    { target = "conflicts", relative_path = 'requirements/constraints-conflicts.in' },
+]
+
+# TOML format -- single quote path values <-- testing resolving resolvable conflicts
+[[tool.venvs]]
+venv_base_path = '.venv'
+reqs = [
+    'requirements/constraints-various',
+    'requirements/constraints-conflicts',
+    'requirements/prod.shared',
+]

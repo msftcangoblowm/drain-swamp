@@ -100,6 +100,10 @@ from .constants import (
     g_app_name,
 )
 from .exceptions import MissingRequirementsFoldersFiles
+from .lock_util import (
+    is_shared,
+    replace_suffixes_last,
+)
 
 __package__ = "drain_swamp"
 __all__ = (
@@ -544,18 +548,18 @@ def _maintain_symlink(path_cwd, abspath_src):
     src = str(relpath_src)
 
     # dest suffix is .lnk, so ValueError impossible
-    src_stem = abspath_src.stem
-    dest = f"{src_stem}{SUFFIX_SYMLINK}"
+    path_dest = replace_suffixes_last(abspath_src, SUFFIX_SYMLINK)
+    dest_path = str(path_dest)
 
     try:
         # Chooses supported implementation
-        DependencyLockLnkFactory()(src, dest, str(path_cwd))
+        DependencyLockLnkFactory()(src, dest_path, str(path_cwd))
     except Exception as e:  # pragma: no cover
         d_kwargs = {
             "mod_path": mod_path,
             "exc": str(e),
             "src": relpath_src,
-            "dest": dest,
+            "dest": dest_path,
             "path_cwd": path_cwd,
         }
         msg_warn = msg_warn_create_relative_symlink.format(**d_kwargs)
@@ -633,8 +637,7 @@ def lock_compile(inst):
     gen_unlocked_files = inst.in_files()
     for path_abs in gen_unlocked_files:
         if path_abs.name not in t_excludes:
-            file_name = f"{path_abs.stem}{SUFFIX_LOCKED}"
-            abspath_locked = path_abs.parent.joinpath(file_name)
+            abspath_locked = replace_suffixes_last(path_abs, SUFFIX_LOCKED)
             lst_pairs.append((str(path_abs), str(abspath_locked)))
         else:  # pragma: no cover
             # Not a ``*.in`` file. Ignore
@@ -1365,10 +1368,12 @@ class InFiles:
             pass
 
         for in_ in self.zeroes:
-            if in_.stem != "pins.shared":
-                abspath_zero = in_.abspath(self.cwd)
-                file_name = f"{in_.stem}{SUFFIX_UNLOCKED}"
-                abspath_unlocked = abspath_zero.parent.joinpath(file_name)
+            abspath_zero = in_.abspath(self.cwd)
+            is_shared_pin = abspath_zero.name.startswith("pins") and is_shared(
+                abspath_zero.name
+            )
+            if not is_shared_pin:
+                abspath_unlocked = replace_suffixes_last(abspath_zero, SUFFIX_UNLOCKED)
 
                 if is_module_debug:  # pragma: no cover
                     msg_info = f"InFiles.write abspath_unlocked: {abspath_unlocked}"
@@ -1420,7 +1425,7 @@ def unlock_compile(inst):
        Backend subclass instance which has folders property containing
        ``collections.abc.Sequence[pathlib.Path]``
 
-    :type inst: BackendType
+    :type inst: drain_swamp.backend_abc.BackendType
     :returns: Generator of abs path to .lock files
     :rtype: collections.abc.Generator[pathlib.Path, None, None]
     :raises:

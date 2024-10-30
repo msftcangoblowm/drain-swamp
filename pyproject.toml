@@ -120,6 +120,30 @@ optionals = [
 [tool.drain-swamp]
 copyright_start_year = 2024
 
+# Each venv relative path is predetermined
+# Into which venv goes which requirements is predetermined
+# TOML format, paths **must be** single quoted
+[[tool.venvs]]
+venv_base_path = '.venv'
+reqs = [
+    'requirements/prod.shared',
+    'requirements/pip',
+    'requirements/pip-tools',
+    'requirements/dev',
+    'requirements/tox',
+    'requirements/mypy',
+    'requirements/kit',
+    'requirements/dev',
+    'requirements/manage',
+]
+
+[[tool.venvs]]
+venv_base_path = '.doc/.venv'
+reqs = [
+    'requirements/prod.shared',
+    'docs/requirements',
+]
+
 [tool.pip-tools]
 no_header = true
 resolver = "backtracking"

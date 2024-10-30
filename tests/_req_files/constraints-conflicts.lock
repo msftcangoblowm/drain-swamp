@@ -1,0 +1,25 @@
+# a previous tagged release version gets innocently chosen
+# Solution: temporary nudge pin `isort>=5.13.2` or just sync to latest
+isort==5.13.1
+# a previous tagged release version **and** missing qualifier, `; python_version < "3.11"`
+# missing qualifier(s) --> warning message. Not the priority; don't fix
+# Solution: temporary nudge pin `tomli>=2.0.2` or just sync to latest
+tomli==2.0.1
+# a real conflict **not** solvable with a nudge pin --> warning message; can't fix
+pip==24.1
+# constaints-various.lock chose 4.12.2 constaints-conflicts.unlock `typing-extensions<4.12.2`
+# missing qualifier(s) --> warning message. Not the priority; don't fix
+# Solution: sync chose constrained (previous tagged release) 4.12.1
+typing-extensions==4.12.1
+# no discrepancy
+types-setuptools==70.1.0.20240627
+# missing qualifier; both qualifiers are equivalents. Which qualifier gets used?!
+colorama==0.4.6
+# if same versions and missing or varying qualifiers **is not fixed**!
+dolorama==0.4.6
+# no entries for this package in .unlock files. Nudge pins should be appended (to .unlock)
+jsort==5.13.1
+
+# Conflicts with a prod.shared.lock --> sensitive so dealt with manually
+importlib-metadata==8.5.2
+zipp==3.20.2

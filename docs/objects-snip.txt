@@ -77,6 +77,11 @@ drain_swamp.backend_abc.BackendType.load_factory.params.required py:parameter 1 
 drain_swamp.backend_abc.BackendType.load_factory.params.optionals py:parameter 1 code/ext/pipenv_unlock/backend_abc#$ -
 drain_swamp.backend_abc.BackendType.load_factory.params.parent_dir py:parameter 1 code/ext/pipenv_unlock/backend_abc#$ -
 drain_swamp.backend_abc.BackendType.load_factory.params.additional_folders py:parameter 1 code/ext/pipenv_unlock/backend_abc#$ -
+drain_swamp.lock_inspect._T py:class 1 code/ext/pipenv_unlock/lock_inspect#$ -
+drain_swamp.lock_inspect.PinsByPkg py:class 1 code/ext/pipenv_unlock/lock_inspect#$ -
+drain_swamp.lock_inspect.PkgsWithIssues py:class 1 code/ext/pipenv_unlock/lock_inspect#$ -
+drain_swamp.lock_inspect.monkey.pyproject_reading.TOML_RESULT py:class 1 code/monkey/pyproject_reading#$ -
+drain_swamp.lock_inspect.monkey.pyproject_reading.TOML_LOADER py:class 1 code/monkey/pyproject_reading#$ -
 code/cli_scm_version std:doc -1 code/cli_scm_version.html scm-version
 code/cli_igor std:doc -1 code/cli_igor.html drain-swamp
 code/cli_igor:main std:label -1 code/cli_igor.html#drain_swamp.cli_igor.main

@@ -7,6 +7,7 @@ Commands:
 
 - unlock
 - lock
+- fix
 
 Has pep366 support, without installing the package, can call the
 source code, as long has has required dependencies installed
@@ -14,6 +15,7 @@ source code, as long has has required dependencies installed
 """
 
 import logging
+import os
 import sys
 import traceback
 from pathlib import (
@@ -91,13 +93,16 @@ from .exceptions import (  # MissingRequirementsFoldersFiles,
     PyProjectTOMLParseError,
     PyProjectTOMLReadError,
 )
+from .lock_inspect import fix_requirements
 from .lock_toggle import (
     lock_compile,
     unlock_compile,
 )
+from .pep518_venvs import VenvMapLoader
 
 # from .snippet_dependencies import SnippetDependencies
 
+is_module_debug = False
 _logger = logging.getLogger(f"{g_app_name}.cli_unlock")
 
 # taken from pyproject.toml
@@ -111,6 +116,14 @@ help_optionals = (
 help_additional_folder = (
     "Additional folder(s), not already known implicitly, containing .in "
     "files. A relative_path. Can be used multiple times"
+)
+help_is_dry_run = "Do not apply changes, merely report what would have occurred"
+help_show_unresolvables = (
+    "Show unresolvable dependency conflicts. Needs manual intervention"
+)
+help_show_fixed = "Show fixed dependency issues"
+help_show_resolvable_shared = (
+    "Show shared resolvable dependency conflicts. Needs manual intervention"
 )
 
 EPILOG_LOCK_UNLOCK = """
@@ -135,6 +148,25 @@ EXIT CODES
 8 -- The snippet is invalid. Either nested snippets or start stop token out of order. Fix the snippet then try again
 
 9 -- In pyproject.toml, there is no snippet with that snippet code
+"""
+
+EPILOG_REQUIREMENTS_FIX = """
+EXIT CODES
+
+0 -- Evidently sufficient effort put into unittesting. Job well done, beer on me!
+
+2 -- entrypoint incorrect usage
+
+3 -- path given for config file reverse search cannot find a pyproject.toml file
+
+4 -- pyproject.toml config file parse issue. Expecting [[tool.venvs]] sections
+
+5 -- there is no cooresponding venv folder. Create it
+
+6 -- expecting [[tool.venvs]] field reqs should be a list of relative path without .in .unlock or .lock suffix
+
+7 -- for a venv, a requirements file not found. Create it
+
 """
 
 
@@ -601,6 +633,239 @@ def dependencies_unlock(path, required, optionals, additional_folders):
     # creates / writes .unlock files
     gen = unlock_compile(inst)
     list(gen)  # execute generator
+
+
+@main.command(
+    "fix",
+    context_settings={"ignore_unknown_options": True},
+    epilog=EPILOG_REQUIREMENTS_FIX,
+)
+@click.option(
+    "-p",
+    "--path",
+    default=Path.cwd(),
+    type=click.Path(
+        exists=False,
+        file_okay=True,
+        dir_okay=True,
+        resolve_path=True,
+        path_type=Path,
+    ),
+    help=help_path,
+)
+@click.option(
+    "-n",
+    "--dry-run",
+    "is_dry_run",
+    default=False,
+    help=help_is_dry_run,
+    is_flag=True,
+)
+@click.option(
+    "--show-unresolvables / --hide-unresolvables",
+    "show_unresolvables",
+    default=True,
+    help=help_show_unresolvables,
+    is_flag=True,
+)
+@click.option(
+    "--show-fixed / --hide-fixed",
+    "show_fixed",
+    default=True,
+    help=help_show_fixed,
+    is_flag=True,
+)
+@click.option(
+    "--show-resolvable-shared / --hide-resolvable-shared",
+    "show_resolvable_shared",
+    default=True,
+    help=help_show_resolvable_shared,
+    is_flag=True,
+)
+def requirements_fix(
+    path,
+    is_dry_run,
+    show_unresolvables,
+    show_fixed,
+    show_resolvable_shared,
+):
+    """Goes thru ``.lock`` and ``.unlock`` files, fixing resolvable
+    dependency resolution conflicts. Reporting what needs manual care.
+
+    For unresolvable or sensitive resolvable issues, manually apply
+    fixes to applicable ``[.shared].in`` files. Then rerun the cycle
+
+    .. code-block:: shell
+
+       pipenv-unlock lock
+       pipenv-unlock unlock
+       pipenv-unlock fix
+
+    Reporting:
+
+    - Resolved issues
+
+      Long list of resolved dependency issues. Every entry represents
+      tedious error prone work that no longer has to be done manually
+
+      Python users are tormented by dependency resolution conflicts.
+      With little or no possible relief besides applying manual fixes.
+
+    - Resolvable but file is shared across more than one venv.
+
+      These files end in ``.shared.{.unlock, .lock}`` suffixes.
+      Fix algo deals in one venv, not multiple venv. Instead of fixing,
+      issue is reported.
+
+    - unresolvable dependency conflict
+
+      Details the affected files and conflict details. Something has
+      to give. And a human needs to figure out what.
+
+      Find the offending dependency package and look at
+      ``pyproject.toml``. Paying attention to dependency version restrictions.
+
+      use a different package release version
+      or
+      raise the issue with the upstream package maintainers
+
+      Popular packages wield power for their mistakes to affect the most people.
+      Look out for abandonware or packages wrapping C code.
+
+    Assumes familiarity with and usage of:
+
+    - pyproject.toml ``[[ tool.venvs ]]`` sections
+
+    - ``.in``, ``.unlock``, and ``.lock`` files. Fix **not** applied to
+      ``(.shared).in`` files.
+
+    \f
+
+    :param path:
+
+       The root directory [default: pyproject.toml directory]
+
+    :type path: pathlib.Path
+    :param is_dry_run:
+
+       Default False. Should be a bool. Do not make changes. Merely
+       report what would have been changed
+
+    :type is_dry_run: typing.Any | None
+    :param show_unresolvables: Default True. Report unresolvable dependency conflicts
+    :type show_unresolvables: bool
+    :param show_fixed: Default True. Report fixed issues
+    :type show_fixed: bool
+    :param show_resolvable_shared:
+
+       Default True. Report resolvable issues affecting ``.shared.{.unlock, .lock}``
+       files.
+
+    :type show_resolvable_shared: bool
+    """
+    str_path = path.as_posix()
+
+    try:
+        loader = VenvMapLoader(str_path)
+    except FileNotFoundError:
+        # Couldn't find the pyproject.toml file
+        msg_exc = (
+            f"Reverse search lookup from {path!r} could not "
+            f"find a pyproject.toml file. {traceback.format_exc()}"
+        )
+        # raise click.ClickException(msg_exc)
+        click.secho(msg_exc, fg="red", err=True)
+        sys.exit(3)
+    except LookupError:
+        msg_exc = (
+            "In pyproject.toml, expecting sections [[tool.venvs]] "
+            f"{traceback.format_exc()}"
+        )
+        click.secho(msg_exc, fg="red", err=True)
+        sys.exit(4)
+
+    try:
+        t_results = fix_requirements(loader, is_dry_run=is_dry_run)
+    except NotADirectoryError as exc:
+        msg_exc = str(exc)
+        click.secho(msg_exc, fg="red", err=True)
+        sys.exit(5)
+    except ValueError as exc:
+        # section [[tool.venvs]] reqs is not a Sequence
+        msg_exc = str(exc)
+        click.secho(msg_exc, fg="red", err=True)
+        sys.exit(6)
+    except FileNotFoundError as exc:
+        msg_exc = str(exc)
+        click.secho(msg_exc, fg="red", err=True)
+        sys.exit(7)
+
+    d_resolved_msgs, d_unresolvables, d_applies_to_shared = t_results
+
+    venv_relpaths = d_resolved_msgs.keys()
+    for loop_venv_relpaths in venv_relpaths:
+        is_not_empty = loop_venv_relpaths in d_resolved_msgs.keys()
+        if is_not_empty:
+            resolved_msgs_count = len(d_resolved_msgs[loop_venv_relpaths])
+        else:  # pragma: no cover
+            resolved_msgs_count = 0
+
+        is_not_empty = loop_venv_relpaths in d_unresolvables.keys()
+        if is_not_empty:  # pragma: no cover
+            unresolvables_count = len(d_unresolvables[loop_venv_relpaths])
+        else:  # pragma: no cover
+            unresolvables_count = 0
+
+        is_not_empty = loop_venv_relpaths in d_applies_to_shared.keys()
+        if is_not_empty:  # pragma: no cover
+            applies_to_shared_count = len(d_applies_to_shared[loop_venv_relpaths])
+        else:  # pragma: no cover
+            applies_to_shared_count = 0
+
+        msg_info = (
+            f"unresolvables_count {unresolvables_count} "
+            f"{show_unresolvables}{os.linesep}"
+            f"applies_to_shared_count {applies_to_shared_count} "
+            f"{show_resolvable_shared}{os.linesep}"
+            f"resolved_msgs_count {resolved_msgs_count} "
+            f"{show_fixed}{os.linesep}"
+        )
+        _logger.info(msg_info)
+
+        is_show = unresolvables_count != 0 and show_unresolvables
+        if is_show:  # pragma: no cover
+            lst = d_unresolvables[loop_venv_relpaths]
+            zzz_unresolvables = f"Unresolvables ({loop_venv_relpaths}){os.linesep}"
+            for blob in lst:
+                zzz_unresolvables += f"{blob!r}{os.linesep}"
+            click.secho(zzz_unresolvables, err=True)
+        else:  # pragma: no cover
+            pass
+
+        is_show = applies_to_shared_count != 0 and show_resolvable_shared
+        if is_show:  # pragma: no cover
+            lst = d_applies_to_shared[loop_venv_relpaths]
+            zzz_resolvables_shared = (
+                f".shared resolvable (manually {loop_venv_relpaths}):"
+                f"{os.linesep}{os.linesep}"
+            )
+            for blob in lst:
+                zzz_resolvables_shared += f"{blob!r}{os.linesep}"
+            click.secho(zzz_resolvables_shared, err=True)
+        else:  # pragma: no cover
+            pass
+
+        is_show = resolved_msgs_count != 0 and show_fixed
+        if is_show:  # pragma: no cover
+            lst = d_resolved_msgs[loop_venv_relpaths]
+            zzz_fixed = f"Fixed ({loop_venv_relpaths}):{os.linesep}{os.linesep}"
+            for blob in lst:
+                zzz_fixed += f"{blob!r}{os.linesep}"
+            click.secho(zzz_fixed, err=True)
+        else:  # pragma: no cover
+            pass
+
+    sys.exit(0)
 
 
 if __name__ == "__main__":  # pragma: no cover

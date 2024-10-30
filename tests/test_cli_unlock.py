@@ -27,6 +27,7 @@ Integration test
 
 import logging
 import logging.config
+import shutil
 import traceback
 from pathlib import Path
 from unittest.mock import patch
@@ -40,12 +41,18 @@ from drain_swamp.cli_unlock import (
     dependencies_unlock,
     entrypoint_name,
     main,
+    requirements_fix,
 )
 from drain_swamp.constants import (
     LOGGING,
     g_app_name,
 )
 from drain_swamp.parser_in import TomlParser
+
+from .testdata_lock_inspect import (
+    ids_resolve_resolvable_conflicts,
+    testdata_resolve_resolvable_conflicts,
+)
 
 
 def test_cli_main():
@@ -647,3 +654,96 @@ def test_lock_unlock_and_back_optionals(
         assert has_logging_occurred(caplog)
 
         assert actual_count == expected_count
+
+
+@pytest.mark.parametrize(
+    "path_pyproject_toml, venv_path, base_relpaths, to_requirements_dir, expected_resolvable_count, expected_unresolvable_count,",
+    testdata_resolve_resolvable_conflicts,
+    ids=ids_resolve_resolvable_conflicts,
+)
+def test_cli_requirements_fix(
+    path_pyproject_toml,
+    venv_path,
+    base_relpaths,
+    to_requirements_dir,
+    expected_resolvable_count,
+    expected_unresolvable_count,
+    tmp_path,
+    caplog,
+    has_logging_occurred,
+    prepare_folders_files,
+    prep_pyproject_toml,
+):
+    """Same as resolve_resolvable_conflicts, but all venv requirements are fixed."""
+    # pytest -vv --showlocals --log-level INFO -k "test_cli_requirements_fix" tests
+    LOGGING["loggers"][g_app_name]["propagate"] = True
+    logging.config.dictConfig(LOGGING)
+    logger = logging.getLogger(name=g_app_name)
+    logger.addHandler(hdlr=caplog.handler)
+    caplog.handler.level = logger.level
+
+    runner = CliRunner()
+    with runner.isolated_filesystem(temp_dir=tmp_path) as tmp_dir_path:
+        path_tmp_dir = Path(tmp_dir_path)
+
+        # no pyproject.toml file --> 3
+        cmd = (
+            "--path",
+            path_tmp_dir,
+            "--dry-run",
+        )
+        result = runner.invoke(requirements_fix, cmd)
+        assert result.exit_code == 3
+
+        # prepare
+        #    Copy to base dir
+        path_dest_pyproject_toml = prep_pyproject_toml(
+            path_pyproject_toml, path_tmp_dir
+        )
+
+        # no .venv folder. Or anything else
+        cmd = (
+            "--path",
+            path_dest_pyproject_toml,
+            "--dry-run",
+        )
+        result = runner.invoke(requirements_fix, cmd)
+        assert result.exit_code == 5
+
+        #    venv_path must be a folder. If not or no folder --> NotADirectoryError
+        prep_these = (".venv/.python-version",)
+        prepare_folders_files(prep_these, path_tmp_dir)
+
+        # requirements files missing --> FileNotFoundError
+        cmd = (
+            "--path",
+            path_dest_pyproject_toml,
+            "--dry-run",
+        )
+        result = runner.invoke(requirements_fix, cmd, catch_exceptions=True)
+        assert result.exit_code == 7
+
+        #   Create requirements folder, since there are no base_relpaths
+        prep_these = ("requirements/junk.deleteme",)
+        prepare_folders_files(prep_these, path_tmp_dir)
+
+        #   Copy empties
+        prep_these = []
+        for suffix in (".in", ".unlock", ".lock"):
+            for base_relpath in base_relpaths:
+                prep_these.append(f"{base_relpath}{suffix}")
+            prepare_folders_files(prep_these, path_tmp_dir)
+
+        #    Copy real .unlock and .lock files
+        for abspath_src in to_requirements_dir:
+            src_abspath = str(abspath_src)
+            abspath_dest = path_tmp_dir / "requirements" / abspath_src.name
+            shutil.copy(src_abspath, abspath_dest)
+
+        cmd = (
+            "--path",
+            path_dest_pyproject_toml,
+            "--dry-run",
+        )
+        result = runner.invoke(requirements_fix, cmd, catch_exceptions=True)
+        assert result.exit_code == 0

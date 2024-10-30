@@ -1,13 +1,19 @@
 """
 From setuptools-scm (MIT)
 
+.. py:class:: TOML_RESULT
+
 .. py:data:: TOML_RESULT
-   :type: dict[str, Any]
+   :type: dict[str, typing.Any]
+   :noindex:
 
    TOML dict
 
+.. py:class:: TOML_LOADER
+
 .. py:data:: TOML_LOADER
-   :type: collections.abc.Callable[[str], drain_swamp.monkey.pyproject_reading.TOML_RESULT]
+   :type: collections.abc.Callable[[str], TOML_RESULT]
+   :noindex:
 
    A function that takes raw TOML str and converts into a TOML dict
 
@@ -18,7 +24,7 @@ From setuptools-scm (MIT)
 
    Module exports
 
-.. seelalso::
+.. seealso::
 
    `pyproject_reading.py <https://github.com/pypa/setuptools-scm/blob/main/src/setuptools_scm/_integration/toml.py>`_
 
@@ -66,7 +72,7 @@ def read_toml_content(path, default=None):
 
        - :py:exc:`FileNotFoundError` -- TOML file not found. Check the absolute path
 
-       - :py:exc:`tomlib.TOMLDecodeError` -- TOML parse error
+       - :py:exc:`tomllib.TOMLDecodeError` -- TOML parse error
 
     """
     try:

@@ -1183,5 +1183,5 @@ class BackendType:
                 _logger.info(msg_info)
             else:  # pragma: no cover
                 pass
-            yield from abs_path.glob(f"**/*{SUFFIX_IN}")
+            yield from abs_path.glob(pattern)
         yield from ()

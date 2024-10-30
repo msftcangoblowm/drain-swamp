@@ -174,6 +174,8 @@ def prepare_folders_files(request):
 
         :param tmp_path: Start absolute path
         :type tmp_path: pathlib.Path
+        :returns: Set of absolute paths of created files
+        :rtype: set[pathlib.Path]
         """
         set_abs_paths = set()
         is_seq = seq_rel_paths is not None and (

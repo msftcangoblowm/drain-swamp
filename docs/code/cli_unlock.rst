@@ -33,30 +33,35 @@ pipenv-unlock
 
       cli option ``--dir`` doc string
 
-   .. py:data:: help_snippet_co
+   .. py:data:: help_is_dry_run
       :type: str
 
-      cli option ``--snip`` doc string
+      cli option ``--dry-run`` doc string
 
-   .. py:data:: help_set_lock
+   .. py:data:: help_show_unresolvables
       :type: str
 
-      cli option ``--set-lock`` doc string
+      cli option ``--show-unresolvables`` doc string
+
+   .. py:data:: help_show_fixed
+      :type: str
+
+      cli option ``--show-fixed`` doc string
+
+   .. py:data:: help_show_resolvable_shared
+      :type: str
+
+      cli option ``--show-resolvable-shared`` doc string
 
    .. py:data:: EPILOG_LOCK_UNLOCK
       :type: str
 
       Exit codes explanation for command, ``lock`` and ``unlock``
 
-   .. py:data:: EPILOG_IS_LOCK
+   .. py:data:: EPILOG_REQUIREMENTS_FIX
       :type: str
 
-      Exit codes explanation for command, ``is_lock``
-
-   .. py:data:: EPILOG_REFRESH
-      :type: str
-
-      Exit codes explanation for command, ``refresh``
+      Exit codes explanation for command, ``fix``
 
    .. py:function:: main()
 
@@ -70,7 +75,10 @@ pipenv-unlock
 
          :py:func:`lock <drain_swamp.cli_unlock.dependencies_lock>`, ".lock", "Create lock dependency file"
          :py:func:`unlock <drain_swamp.cli_unlock.dependencies_unlock>`, ".unlock", "Create unlock dependency file"
+         :py:func:`fix <drain_swamp.cli_unlock.requirements_fix>`, "", "In requirements, fixes/reports dependency conflicts"
 
    .. autofunction:: drain_swamp.cli_unlock.dependencies_lock
 
    .. autofunction:: drain_swamp.cli_unlock.dependencies_unlock
+
+   .. autofunction:: drain_swamp.cli_unlock.requirements_fix

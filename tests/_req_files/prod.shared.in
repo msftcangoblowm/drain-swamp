@@ -1,0 +1,4 @@
+# .shared.* applies to one or more venv! Extra care must be taken
+
+# in .shared.*, nudge pins are not a good idea. If done, be cautious
+importlib-metadata>=8.5.0

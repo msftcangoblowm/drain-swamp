@@ -1,0 +1,7 @@
+tomli>=2.0.2; python_version<"3.11"
+pip>=24.2
+isort
+typing-extensions; python_version<"3.10"
+types-setuptools
+colorama>=0.4.5 ;platform_system=="Windows"
+dolorama>=0.4.6 ;platform_system=="Windows"

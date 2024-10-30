@@ -1,0 +1,8 @@
+isort
+tomli
+pip<24.2
+typing-extensions<4.12.2
+types-setuptools
+colorama;os_name == "nt"
+dolorama;os_name == "nt"
+importlib-metadata>=8.5.0

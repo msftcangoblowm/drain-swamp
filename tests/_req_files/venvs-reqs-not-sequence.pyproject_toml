@@ -1,0 +1,55 @@
+[build-system]
+requires = [
+    "setuptools>=70.0.0",
+    "wheel",
+    "build",
+    "setuptools_scm>=8",
+    "click",
+    "pluggy",
+    "drain-swamp-snippet",
+]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "complete-awesome-perfect"
+dynamic = [
+    "optional-dependencies",
+    "dependencies",
+    "version",
+]
+
+[tool.setuptools.dynamic]
+# @@@ editable little_shop_of_horrors_shrine_candles
+dependencies = { file = ['requirements/prod.shared.lock'] }
+optional-dependencies.pip = { file = ['requirements/pip.lock'] }
+optional-dependencies.pip_tools = { file = ['requirements/pip-tools.lock'] }
+optional-dependencies.dev = { file = ['requirements/dev.lock'] }
+optional-dependencies.manage = { file = ['requirements/manage.lock'] }
+optional-dependencies.docs = { file = ['docs/requirements.lock'] }
+# @@@ end
+
+version = {attr = 'drain_swamp._version.__version__'}
+
+[tool.drain-swamp]
+copyright_start_year = 2024
+
+[tool.pipenv-unlock]
+folders = [
+    'ci',
+]
+
+required = { target = "prod", relative_path = 'requirements/prod.shared.in' }
+
+# underscore: hyphen
+optionals = [
+    { target = "pip", relative_path = 'requirements/pip.in' },
+    { target = "pip_tools", relative_path = 'requirements/pip-tools.in' },
+    { target = "dev", relative_path = 'requirements/dev.in' },
+    { target = "manage", relative_path = 'requirements/manage.in' },
+    { target = "docs", relative_path = 'docs/requirements.in' },
+]
+
+# TOML format -- single quote path values
+[[tool.venvs]]
+venv_base_path = '.venv'
+reqs = 'requirements/pip-tools'

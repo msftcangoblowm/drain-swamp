@@ -8,8 +8,8 @@ Changelog
    Feature request
    .................
 
-   - Better order both .unlock and .lock dependencies:
-     ``-c`` and ``-r`` lines, restricted versions, non-restricted versions
+   - when no version conflict, detect when only qualifier differs,
+     add to resolvables list
 
    - Confirm setuptools-scm file finders are being called?
 
@@ -18,6 +18,10 @@ Changelog
 
    Known regressions
    ..................
+
+   - lock_inspect.get_issues and lock_inspect.fix_resolvables
+     If no version conflicts, only qualifiers differ, issue is not addressed.
+     Purposefully causing a version conflict, the qualifiers get fixed as well.
 
    - release.yml
      affects:
@@ -48,6 +52,8 @@ Changelog
 
    Commit items for NEXT VERSION
    ..............................
+
+   - feat: add command pipenv-unlock fix (#14)
 
 .. scriv-start-here
 
