@@ -53,6 +53,8 @@ Changelog
    Commit items for NEXT VERSION
    ..............................
 
+   - chore(MANIFEST.in): remove global include of .lnk files
+   - chore(tox-test.ini): turn on pytest verbose and show locals
    - feat: add command pipenv-unlock fix (#14)
 
 .. scriv-start-here

@@ -1,2 +1,1 @@
 include _req_links/backend.py
-global-include *.lnk
