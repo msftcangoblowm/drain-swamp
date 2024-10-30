@@ -101,10 +101,7 @@ from .lock_util import (
     is_shared,
     replace_suffixes_last,
 )
-from .pep518_venvs import (
-    VenvMap,
-    VenvReq,
-)
+from .pep518_venvs import VenvMap
 
 # Use dataclasses slots True for reduced memory usage and performance gain
 if sys.version_info >= (3, 10):  # pragma: no cover py-gte-310-else
@@ -538,71 +535,12 @@ class Pins(MutableSet[_T]):
         :returns: dict which has Pins grouped by package name
         :rtype: drain_swamp.lock_inspect.PinsByPkg
         """
-        if TYPE_CHECKING:
-            venv_req: VenvReq
-            d_by_pkg: PinsByPkg
-
-        possible_suffixes = (
-            SUFFIX_UNLOCKED,
-            SUFFIX_LOCKED,
-            f".shared{SUFFIX_UNLOCKED}",
-            f".shared{SUFFIX_LOCKED}",
+        d_by_pkg = _wrapper_pins_by_pkg(
+            loader,
+            venv_path,
+            suffix=suffix,
+            filter_by_pin=filter_by_pin,
         )
-        if (
-            suffix is None
-            or not isinstance(suffix, str)
-            or suffix not in possible_suffixes
-        ):
-            suffix = SUFFIX_LOCKED
-        else:  # pragma: no cover
-            pass
-
-        if filter_by_pin is None or not isinstance(filter_by_pin, bool):
-            filter_by_pin = True
-        else:  # pragma: no cover
-            pass
-
-        d_by_pkg = {}
-
-        # Load all venvs from pyproject.toml (or test file, .pyproject_toml)
-        venvs = VenvMap(loader)
-
-        # Limit to one venv. Mixing venvs is not allowed.
-        # Go thru, this venv, all reqs files
-        lst_venv_reqs = venvs.reqs(venv_path)
-        req_first = lst_venv_reqs[0]
-        path_venv = req_first.venv_abspath
-
-        try:
-            pins_locks = cls(
-                cls.from_loader(
-                    loader,
-                    path_venv,
-                    suffix=suffix,
-                    filter_by_pin=filter_by_pin,
-                )
-            )
-        except FileNotFoundError:
-            # A requirements file is missing
-            raise
-
-        for venv_req in lst_venv_reqs:
-            pins_req = cls(
-                cls.subset_req(lst_venv_reqs, pins_locks, venv_req.req_relpath)
-            )
-            for pin in pins_req:
-                pkg_name = pin.pkg_name
-                is_known_pkg = pin.pkg_name in d_by_pkg.keys()
-                if not is_known_pkg:
-                    # create set
-                    set_new = set()
-                    set_new.add(pin)
-                    d_by_pkg.update({pkg_name: set_new})
-                else:
-                    # update set
-                    pins = d_by_pkg[pkg_name]
-                    pins.add(pin)
-                    d_by_pkg.update({pkg_name: pins})
 
         return d_by_pkg
 
@@ -795,6 +733,71 @@ class Pins(MutableSet[_T]):
                 pass
 
         return d_out
+
+
+def _wrapper_pins_by_pkg(loader, venv_path, suffix=SUFFIX_LOCKED, filter_by_pin=True):
+    """Pins.by_pkg is a boundmethod that is not callable.
+    Wrap classmethod; this function will be callable
+    """
+    possible_suffixes = (
+        SUFFIX_UNLOCKED,
+        SUFFIX_LOCKED,
+        f".shared{SUFFIX_UNLOCKED}",
+        f".shared{SUFFIX_LOCKED}",
+    )
+    if suffix is None or not isinstance(suffix, str) or suffix not in possible_suffixes:
+        suffix = SUFFIX_LOCKED
+    else:  # pragma: no cover
+        pass
+
+    if filter_by_pin is None or not isinstance(filter_by_pin, bool):
+        filter_by_pin = True
+    else:  # pragma: no cover
+        pass
+
+    d_by_pkg = {}
+
+    # Load all venvs from pyproject.toml (or test file, .pyproject_toml)
+    venvs = VenvMap(loader)
+
+    # Limit to one venv. Mixing venvs is not allowed.
+    # Go thru, this venv, all reqs files
+    lst_venv_reqs = venvs.reqs(venv_path)
+    req_first = lst_venv_reqs[0]
+    path_venv = req_first.venv_abspath
+
+    try:
+        pins_locks = Pins(
+            Pins.from_loader(
+                loader,
+                path_venv,
+                suffix=suffix,
+                filter_by_pin=filter_by_pin,
+            )
+        )
+    except FileNotFoundError:
+        # A requirements file is missing
+        raise
+
+    for venv_req in lst_venv_reqs:
+        pins_req = Pins(
+            Pins.subset_req(lst_venv_reqs, pins_locks, venv_req.req_relpath)
+        )
+        for pin in pins_req:
+            pkg_name = pin.pkg_name
+            is_known_pkg = pin.pkg_name in d_by_pkg.keys()
+            if not is_known_pkg:
+                # create set
+                set_new = set()
+                set_new.add(pin)
+                d_by_pkg.update({pkg_name: set_new})
+            else:
+                # update set
+                pins = d_by_pkg[pkg_name]
+                pins.add(pin)
+                d_by_pkg.update({pkg_name: pins})
+
+    return d_by_pkg
 
 
 @dataclass(**DC_SLOTS)

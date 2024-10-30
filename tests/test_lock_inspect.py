@@ -30,6 +30,7 @@ from drain_swamp.constants import (
 from drain_swamp.lock_inspect import (
     Pin,
     Pins,
+    _wrapper_pins_by_pkg,
     fix_requirements,
     fix_resolvables,
     get_issues,
@@ -188,7 +189,7 @@ def test_pins_realistic(
     has_logging_occurred,
 ):
     """test Pins class."""
-    # pytest --showlocals --log-level INFO -k "test_pins_realistic" tests
+    # pytest -vv --showlocals --log-level INFO -k "test_pins_realistic" tests
     LOGGING["loggers"][g_app_name]["propagate"] = True
     logging.config.dictConfig(LOGGING)
     logger = logging.getLogger(name=g_app_name)
@@ -316,6 +317,12 @@ def test_pins_realistic(
     for pin_found in pins:
         assert isinstance(pin_found, Pin)
 
+    # Failing here under Windows. See what is happening inside the function
+    func_path = f"{g_app_name}.lock_inspect._wrapper_pins_by_pkg"
+    args = (loader, venv_path)
+    kwargs = {"suffix": None, "filter_by_pin": None}
+    t_ret = get_locals(func_path, _wrapper_pins_by_pkg, *args, **kwargs)  # noqa: F841
+
     # Reorganize Pin by pkgname. Need to prepare .lock file
     #    suffix None --> .lock, filter_by_pin None --> True
     pins_by_pkg = Pins.by_pkg(loader, venv_path, suffix=None, filter_by_pin=None)
@@ -394,6 +401,12 @@ def test_resolve_resolvable_conflicts(
 
     locks_by_pkg = Pins.by_pkg(loader, venv_path)
 
+    # Failing here under Windows. See what is happening inside the function
+    func_path = f"{g_app_name}.lock_inspect._wrapper_pins_by_pkg"
+    args = (loader, venv_path)
+    kwargs = {}
+    t_ret = get_locals(func_path, _wrapper_pins_by_pkg, *args, **kwargs)  # noqa: F841
+
     t_out = Pins.by_pkg_with_issues(loader, venv_path)
     locks_by_pkg_w_issues, locks_pkg_by_versions = t_out
 
@@ -412,12 +425,6 @@ def test_resolve_resolvable_conflicts(
     repr_unresolvable = repr(unresolvable)
     assert isinstance(repr_unresolvable, str)
 
-    """
-    func_path = f"{g_app_name}.lock_inspect.something"
-    args = (loader, venv_path)
-    kwargs = {}
-    t_ret = get_locals(func_path, something, *args, **kwargs)
-    """
     actual_resolvable_count = len(lst_resolvable)
     actual_unresolvable_count = len(lst_unresolvable)
     assert actual_resolvable_count == expected_resolvable_count

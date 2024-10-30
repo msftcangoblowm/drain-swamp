@@ -81,7 +81,7 @@ class Pins(MutableSet[_T]):
     def by_pkg(
         loader: VenvMapLoader,
         venv_path: str,
-        suffix: str | None = ".lock",
+        suffix: str | None = ...,
         filter_by_pin: bool | None = True,
     ) -> PinsByPkg: ...
     @classmethod
@@ -101,6 +101,12 @@ class Pins(MutableSet[_T]):
         venv_path: str,
     ) -> dict[str, str]: ...
 
+def _wrapper_pins_by_pkg(
+    loader: VenvMapLoader,
+    venv_path: str,
+    suffix: str | None = ...,
+    filter_by_pin: bool | None = True,
+) -> PinsByPkg: ...
 @dataclass(**DC_SLOTS)
 class Resolvable:
     venv_path: str | Path

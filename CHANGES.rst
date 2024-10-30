@@ -53,6 +53,8 @@ Changelog
    Commit items for NEXT VERSION
    ..............................
 
+   - refactor(lock_inspect): add _wrapper_pins_by_pkg Pins.by_pkg wrapper function
+   - test(test_lock_inspect.py): use get_locals on _wrapper_pins_by_pkg
    - chore(MANIFEST.in): remove global include of .lnk files
    - chore(tox-test.ini): turn on pytest verbose and show locals
    - feat: add command pipenv-unlock fix (#14)
