@@ -311,11 +311,38 @@ class VenvMapLoader:
 
         return l_data, project_base, pyproject_toml
 
-    def parse_data(self):
+    @property
+    def venv_relpaths(self):
+        """Get venvs' relative path.
+
+        Supplements parse_data
+
+        :returns: venvs' relative path
+        :rtype: tuple[pathlib.Path]
+        """
+        lst = []
+        for d_venv in self.l_data:
+            if "venv_base_path" in d_venv.keys():
+                venv_relpath = d_venv.get("venv_base_path", None)
+                if venv_relpath is not None:
+                    lst.append(venv_relpath)
+                else:  # pragma: no cover
+                    pass
+            else:  # pragma: no cover
+                pass
+
+        return tuple(lst)
+
+    def parse_data(self, check_suffixes=(".in", ".unlock", ".lock")):
         """Take raw TOML section array of tables and parse.
 
         Each datum is stored along with redundant metadata project_base and in_folder.
+        :param check_suffixes:
 
+           Default (".in", ".unlock", ".lock"). Suffixes of requirements file to
+           check exists and is file
+
+        :type check_suffixes: tuple[str, ...]
         :returns: All VenvReq and missing files
         :rtype: tuple[list[drain_swamp.pep518_venvs.VenvReq], list[str]]
 
@@ -332,6 +359,8 @@ class VenvMapLoader:
             venv_reqs: list[VenvReq]
             lst_missing: list[str]
             lst_missing_loc: list[str]
+
+        is_seq = check_suffixes is not None and isinstance(check_suffixes, Sequence)
 
         venv_reqs = []
         lst_missing = []
@@ -366,7 +395,10 @@ class VenvMapLoader:
                 resolve_joinpath(self.project_base, venv_relpath),
             )
             if not abspath_venv.is_dir():
-                msg_exc = f"venv base folder is not a folder {abspath_venv!r}"
+                msg_exc = (
+                    "All venv base folder(s) must exist. Missing folder "
+                    f"{abspath_venv!r}. Create it"
+                )
                 raise NotADirectoryError(msg_exc)
             else:  # pragma: no cover
                 pass
@@ -385,20 +417,27 @@ class VenvMapLoader:
             for req in reqs:
                 vr = VenvReq(self.project_base, venv_relpath, req, t_relpath_folders)
 
-                abspath_unlock = replace_suffixes_last(vr.req_abspath, ".unlock")
-                abspath_lock = replace_suffixes_last(vr.req_abspath, ".lock")
+                # Check file existance. Excludes support files
+                if is_seq:
+                    check_these = []
+                    for check_suffix in check_suffixes:
+                        abspath_req = replace_suffixes_last(
+                            vr.req_abspath, check_suffix
+                        )
+                        check_these.append(abspath_req)
 
-                check_these = (vr.req_abspath, abspath_unlock, abspath_lock)
-                lst_not_found = [
-                    path_f for path_f in check_these if not path_f.is_file()
-                ]
-                is_not_founds = len(lst_not_found) != 0
-                if is_not_founds:
-                    msg_missing = (
-                        f"venv: {venv_relpath!s} these requirements "
-                        f"files are missing: {lst_not_found!r}"
-                    )
-                    lst_missing_loc.append(msg_missing)
+                    lst_not_found = [
+                        path_f for path_f in check_these if not path_f.is_file()
+                    ]
+                    is_not_founds = len(lst_not_found) != 0
+                    if is_not_founds:
+                        msg_missing = (
+                            f"For venv: {venv_relpath!s}, missing requirements: "
+                            f"{lst_not_found!r}"
+                        )
+                        lst_missing_loc.append(msg_missing)
+                    else:  # pragma: no cover
+                        pass
                 else:  # pragma: no cover
                     pass
 
@@ -500,6 +539,12 @@ class VenvMap(Iterator[VenvReq]):
        Contains some paths and loaded unparsed mappings
 
     :vartype _loader: drain_swamp.pep518_venvs.VenvMapLoader
+    :ivar check_suffixes:
+
+       Default (".in", ".unlock", ".lock"). Suffixes of requirements file to
+       check exists and is file
+
+    :vartype check_suffixes: tuple[str, ...]
 
     .. py:attribute:: _iter
        :type: collections.abc.Iterator[drain_swamp.pep518_venvs.VenvReq]
@@ -545,12 +590,12 @@ class VenvMap(Iterator[VenvReq]):
 
     __slots__ = ("_loader", "_venvs", "_iter", "_missing")
 
-    def __init__(self, loader):
+    def __init__(self, loader, check_suffixes=(".in", ".unlock", ".lock")):
         """Class constructor."""
         # Load data should occur once. Not each iteration.
         self._loader = loader
 
-        venvs, missing = self._loader.parse_data()
+        venvs, missing = self._loader.parse_data(check_suffixes=check_suffixes)
 
         """Simplifies a Mapping down into a list[dataclass]. Each item
         contains both key and values"""
@@ -742,18 +787,19 @@ class VenvMap(Iterator[VenvReq]):
         :rtype: list[drain_swamp.pep518_venvs.VenvReq]
         :raises:
 
+           - :py:exc:`TypeError` -- venv relative path (as_posix) is a
+             str key. Unsupported type
+
            - :py:exc:`KeyError` -- No such venv found
 
         """
-        key_abspath = self.ensure_abspath(key)
-
         msg_exc_lookup = f"venv {key} not in [[tool.{TOML_SECTION_VENVS}]]"
-
-        set_venvs = {venv_req.venv_abspath for venv_req in self._venvs}
-        if key_abspath not in set_venvs:
+        if key not in self:
             raise KeyError(msg_exc_lookup)
         else:  # pragma: no cover
             pass
+
+        key_abspath = self.ensure_abspath(key)
 
         reqs = [
             venv_req for venv_req in self._venvs if venv_req.venv_abspath == key_abspath

@@ -1,10 +1,12 @@
 import logging
 from collections.abc import (
+    Generator,
     Iterator,
     MutableSet,
     Sequence,
 )
 from dataclasses import dataclass
+from functools import singledispatch
 from pathlib import Path
 from typing import (  # noqa: Y037
     Any,
@@ -20,6 +22,7 @@ from typing_extensions import (
     TypeAlias,
 )
 
+from .lock_infile import InFiles
 from .pep518_venvs import (
     VenvMapLoader,
     VenvReq,
@@ -68,7 +71,7 @@ class Pins(MutableSet[_T]):
     def from_loader(
         loader: VenvMapLoader,
         venv_path: str | Path,
-        suffix: str = ".unlock",
+        suffix: str = ...,
         filter_by_pin: bool | None = True,
     ) -> set[_T]: ...
     @staticmethod
@@ -132,6 +135,11 @@ class ResolvedMsg:
     abspath_f: Path
     nudge_pin_line: str
 
+def get_reqs(
+    loader: VenvMapLoader,
+    venv_path: str | None = None,
+    suffix_last: str = ...,
+) -> tuple[Path]: ...
 def get_issues(
     loader: VenvMapLoader,
     venv_path: str,
@@ -150,3 +158,32 @@ def fix_requirements(
     dict[str, UnResolvable],
     dict[str, tuple[str, Resolvable, Pin]],
 ]: ...
+def filter_by_venv_relpath(
+    loader: VenvMapLoader,
+    venv_current_relpath: str | None,
+) -> tuple[tuple[Path], InFiles]: ...
+def unlock_compile(loader: VenvMapLoader) -> Generator[Path, None, None]: ...
+@singledispatch
+def prepare_pairs(t_ins: object) -> Generator[tuple[str, str], None, None]: ...
+@prepare_pairs.register(tuple)
+def _(t_ins: tuple[Path]) -> Generator[tuple[str, str], None, None]: ...
+@prepare_pairs.register
+def _(
+    in_files: InFiles,
+    path_cwd: Path | None = None,
+) -> Generator[tuple[str, str], None, None]: ...
+def _compile_one(
+    in_abspath: str,
+    lock_abspath: str,
+    ep_path: str,
+    path_cwd: Path,
+    context: str | None = None,
+    timeout: Any = 15,
+) -> tuple[Path | None, None | str]: ...
+def lock_compile(
+    loader: VenvMapLoader,
+    venv_relpath: str,
+    timeout: Any = 15,
+) -> tuple[tuple[str, ...], tuple[str, ...]]: ...
+def is_timeout(failures: tuple[str, ...]) -> bool: ...
+def _postprocess_abspath_to_relpath(path_out: Path, path_parent: Path) -> None: ...

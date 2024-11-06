@@ -15,27 +15,53 @@ import logging
 import logging.config
 import os
 import shutil
-from collections.abc import Mapping
+from collections.abc import (
+    Generator,
+    Mapping,
+    Sequence,
+)
 from contextlib import nullcontext as does_not_raise
-from pathlib import Path
+from pathlib import (
+    Path,
+    PurePath,
+)
+from typing import cast
+from unittest.mock import patch
 
 import pytest
 from logging_strict.tech_niques import get_locals  # noqa: F401
+from pip_requirements_parser import InstallationError
 
-from drain_swamp._safe_path import replace_suffixes
+from drain_swamp._package_installed import is_package_installed
+from drain_swamp._safe_path import (
+    resolve_joinpath,
+    resolve_path,
+)
 from drain_swamp.constants import (
     LOGGING,
+    SUFFIX_IN,
+    SUFFIX_LOCKED,
+    SUFFIX_UNLOCKED,
     g_app_name,
 )
+from drain_swamp.exceptions import MissingRequirementsFoldersFiles
 from drain_swamp.lock_inspect import (
     Pin,
     Pins,
+    _compile_one,
+    _postprocess_abspath_to_relpath,
     _wrapper_pins_by_pkg,
+    filter_by_venv_relpath,
     fix_requirements,
     fix_resolvables,
     get_issues,
+    get_reqs,
+    is_timeout,
+    lock_compile,
+    prepare_pairs,
+    unlock_compile,
 )
-from drain_swamp.lock_util import is_shared
+from drain_swamp.lock_util import replace_suffixes_last
 from drain_swamp.pep518_venvs import VenvMapLoader
 
 from .testdata_lock_inspect import (
@@ -200,16 +226,27 @@ def test_pins_realistic(
     #    pyproject.toml or [something].pyproject_toml
     path_dest_config = prep_pyproject_toml(path_config, tmp_path)
 
-    #    requirements empty files and folders; no .unlock or .lock files
-    seq_rel_paths = ("requirements/pins.shared.in",)
-    prepare_folders_files(seq_rel_paths, tmp_path)
-
     #    venv folders must exist. This fixture creates files. So .python-version
     venvs_path = (
         ".venv/.python-version",
         ".doc/.venv/.python-version",
     )
     prepare_folders_files(venvs_path, tmp_path)
+
+    loader = VenvMapLoader(path_dest_config.as_posix())
+
+    # Have yet to prepare requirements files. Missing requirements files
+    with pytest.raises(MissingRequirementsFoldersFiles):
+        Pins.from_loader(
+            loader,
+            ".doc/.venv",
+            suffix=SUFFIX_UNLOCKED,
+            filter_by_pin=None,
+        )
+
+    #    requirements empty files and folders; no .unlock or .lock files
+    seq_rel_paths = ("requirements/pins.shared.in",)
+    prepare_folders_files(seq_rel_paths, tmp_path)
 
     #    requirements empty files and folders
     bases_path = (
@@ -224,33 +261,42 @@ def test_pins_realistic(
         "requirements/manage",
         "requirements/dev",
     )
-    suffixes = (".in", ".unlock", ".lock")
+    suffixes = (SUFFIX_IN, SUFFIX_UNLOCKED, SUFFIX_LOCKED)
     seq_rel_paths = []
     for suffix in suffixes:
         for base_path in bases_path:
             seq_rel_paths.append(f"{base_path}{suffix}")
     prepare_folders_files(seq_rel_paths, tmp_path)
 
-    is_first_1 = True
+    is_first = True
     for t_paths in seq_reqs:
         src_abspath, dest_relpath = t_paths
 
         #    overwrite 'requirements/dev.unlock'
-        abspath_dest = tmp_path / dest_relpath
-        if is_first_1:
-            is_first_1 = False
+        abspath_dest = cast("Path", resolve_joinpath(tmp_path, dest_relpath))
+        if is_first:
+            is_first = False
             abspath_dest_0 = abspath_dest
         shutil.copy(src_abspath, abspath_dest)
 
         #    pip-compile -o [file].lock [file].unlock
         #    careful no .shared
-        if is_shared(abspath_dest.name):
-            str_shared = ".shared"
-        else:
-            str_shared = ""
-        src_abspath_lock = replace_suffixes(src_abspath, f"{str_shared}.lock")
-        abspath_dest_lock = replace_suffixes(abspath_dest, f"{str_shared}.lock")
+        src_abspath_lock = replace_suffixes_last(src_abspath, SUFFIX_LOCKED)
+        abspath_dest_lock = replace_suffixes_last(abspath_dest, SUFFIX_LOCKED)
         shutil.copy(src_abspath_lock, abspath_dest_lock)
+
+    # Cause pip_requirements_parser.RequirementsFile.from_file to fail
+    with patch(
+        "pip_requirements_parser.RequirementsFile.from_file",
+        side_effect=InstallationError,
+    ):
+        with pytest.raises(MissingRequirementsFoldersFiles):
+            Pins.from_loader(
+                loader,
+                ".doc/.venv",
+                suffix=SUFFIX_UNLOCKED,
+                filter_by_pin=None,
+            )
 
     # Add package pip to Pins. Can pass into Pins a Sequence or a set
     pins_empty = Pins([])
@@ -269,12 +315,31 @@ def test_pins_realistic(
     #    Careful path must be a str
     loader = VenvMapLoader(path_dest_config.as_posix())
 
+    # Absolute path automagically converted to relative path
+    path_base_dir = loader.project_base
+    path_venv = cast("Path", resolve_joinpath(path_base_dir, venv_path))
+    lst_pins_autofixed = Pins.from_loader(
+        loader,
+        path_venv,
+        suffix=SUFFIX_UNLOCKED,
+        filter_by_pin=None,
+    )
+    assert len(lst_pins_autofixed) != 0
+
+    # get_reqs lacks filter_by_pin. Returns requirement files' absolute path
+    # Absolute path automagically converted to relative path
+    with pytest.raises(KeyError):
+        get_reqs(loader, ".dogfood", suffix_last=SUFFIX_UNLOCKED)
+
+    abspath_reqs = get_reqs(loader, path_venv, suffix_last=SUFFIX_UNLOCKED)
+    assert len(abspath_reqs) != 0
+
     #    filter_by_pin None --> True.
-    #    If Missing requirements --> FileNotFoundError
+    #    If Missing requirements --> MissingRequirementsFoldersFiles
     lst_pins = Pins.from_loader(
         loader,
         venv_path,
-        suffix=".unlock",
+        suffix=SUFFIX_UNLOCKED,
         filter_by_pin=None,
     )
     pins = Pins(lst_pins)
@@ -317,11 +382,23 @@ def test_pins_realistic(
     for pin_found in pins:
         assert isinstance(pin_found, Pin)
 
+    # Ensure Pins.from_loader works
+    lst_pins_0 = Pins.from_loader(
+        loader,
+        venv_path,
+        suffix=SUFFIX_LOCKED,
+        filter_by_pin=True,
+    )
+    is_there_will_be_pins = len(lst_pins_0) != 0
+    assert is_there_will_be_pins is True
+
     # Failing here under Windows. See what is happening inside the function
+    """
     func_path = f"{g_app_name}.lock_inspect._wrapper_pins_by_pkg"
     args = (loader, venv_path)
     kwargs = {"suffix": None, "filter_by_pin": None}
     t_ret = get_locals(func_path, _wrapper_pins_by_pkg, *args, **kwargs)  # noqa: F841
+    """
 
     # Reorganize Pin by pkgname. Need to prepare .lock file
     #    suffix None --> .lock, filter_by_pin None --> True
@@ -374,12 +451,12 @@ def test_resolve_resolvable_conflicts(
 
     loader = VenvMapLoader(path_dest_pyproject_toml.as_posix())
 
-    # Missing requirements files --> FileNotFoundError
-    with pytest.raises(FileNotFoundError):
+    # Missing requirements files --> MissingRequirementsFoldersFiles
+    with pytest.raises(MissingRequirementsFoldersFiles):
         get_issues(loader, venv_path)
 
-    # Missing requirements files --> FileNotFoundError
-    with pytest.raises(FileNotFoundError):
+    # Missing requirements files --> MissingRequirementsFoldersFiles
+    with pytest.raises(MissingRequirementsFoldersFiles):
         fix_resolvables((), loader, venv_path, is_dry_run=True)
 
     #   Create requirements folder, since there are no base_relpaths
@@ -388,7 +465,7 @@ def test_resolve_resolvable_conflicts(
 
     #   Copy empties
     prep_these = []
-    for suffix in (".in", ".unlock", ".lock"):
+    for suffix in (SUFFIX_IN, SUFFIX_UNLOCKED, SUFFIX_LOCKED):
         for base_relpath in base_relpaths:
             prep_these.append(f"{base_relpath}{suffix}")
         prepare_folders_files(prep_these, tmp_path)
@@ -480,15 +557,19 @@ def test_fix_requirements(
 
     #    No venv path folder --> NotADirectoryError
     with pytest.raises(NotADirectoryError):
-        fix_requirements(loader, is_dry_run=True)
+        fix_requirements(loader, venv_path, is_dry_run=True)
 
     #    venv_path must be a folder. If not or no folder --> NotADirectoryError
     prep_these = (".venv/.python-version",)
     prepare_folders_files(prep_these, tmp_path)
 
-    # missing requirements file(s) --> FileNotFoundError
-    with pytest.raises(FileNotFoundError):
-        fix_requirements(loader, is_dry_run=True)
+    # missing requirements file(s) --> MissingRequirementsFoldersFiles
+    with pytest.raises(MissingRequirementsFoldersFiles):
+        fix_requirements(loader, venv_path, is_dry_run=True)
+
+    # All venvs
+    with pytest.raises(MissingRequirementsFoldersFiles):
+        fix_requirements(loader, None, is_dry_run=True)
 
     #   Create requirements folder, since there are no base_relpaths
     prep_these = ("requirements/junk.deleteme",)
@@ -496,7 +577,7 @@ def test_fix_requirements(
 
     #   Copy empties
     prep_these = []
-    for suffix in (".in", ".unlock", ".lock"):
+    for suffix in (SUFFIX_IN, SUFFIX_UNLOCKED, SUFFIX_LOCKED):
         for base_relpath in base_relpaths:
             prep_these.append(f"{base_relpath}{suffix}")
         prepare_folders_files(prep_these, tmp_path)
@@ -508,10 +589,10 @@ def test_fix_requirements(
         shutil.copy(src_abspath, abspath_dest)
 
     # Act
-    fix_requirements(loader, is_dry_run=True)
+    fix_requirements(loader, venv_path, is_dry_run=True)
 
     # None --> False
-    t_results = fix_requirements(loader, is_dry_run=None)
+    t_results = fix_requirements(loader, venv_path, is_dry_run=None)
     assert isinstance(t_results, tuple)
     d_resolved_msgs, d_unresolvables, d_applies_to_shared = t_results
     assert isinstance(d_resolved_msgs, Mapping)
@@ -535,4 +616,413 @@ def test_fix_requirements(
         zzz_fixed += repr(d_resolved_msgs)
 
     # ignore results of another run
-    fix_requirements(loader, is_dry_run=1.12345)
+    fix_requirements(loader, venv_path, is_dry_run=1.12345)
+
+
+testdata_lock_file_paths_to_relpath = (
+    (
+        (
+            "requirements/prod.shared.in",
+            "docs/requirements.in",
+        ),
+        (
+            "#\n"
+            "click==8.1.7\n"
+            "    # via\n"
+            "    #   -c {tmp_path!s}/docs/../requirements/prod.shared.in\n"
+            "    #   click-log\n"
+            "    #   scriv\n"
+            "    #   sphinx-external-toc-strict\n"
+            "    #   uvicorn\n"
+            "sphobjinv==2.3.1.1\n"
+            "    # via -r {tmp_path!s}/docs/requirements.in\n\n"
+        ),
+        (
+            "#\n"
+            "click==8.1.7\n"
+            "    # via\n"
+            "    #   -c docs/../requirements/prod.shared.in\n"
+            "    #   click-log\n"
+            "    #   scriv\n"
+            "    #   sphinx-external-toc-strict\n"
+            "    #   uvicorn\n"
+            "sphobjinv==2.3.1.1\n"
+            "    # via -r docs/requirements.in\n\n"
+        ),
+        "docs/requirements.lock",
+    ),
+)
+ids_lock_file_paths_to_relpath = ("remove absolute paths from .lock file",)
+
+
+@pytest.mark.parametrize(
+    "seq_reqs_relpath, lock_file_contents, expected_contents, dest_relpath",
+    testdata_lock_file_paths_to_relpath,
+    ids=ids_lock_file_paths_to_relpath,
+)
+def test_lock_file_paths_to_relpath(
+    seq_reqs_relpath,
+    lock_file_contents,
+    expected_contents,
+    dest_relpath,
+    tmp_path,
+    prepare_folders_files,
+):
+    """When creating .lock files post processer abs path --> relative path."""
+    # pytest --showlocals --log-level INFO -k "test_lock_file_paths_to_relpath" tests
+    # prepare
+    #    .in
+    prepare_folders_files(seq_reqs_relpath, tmp_path)
+
+    #    .lock create with contents
+    path_doc_lock = cast("Path", resolve_joinpath(tmp_path, dest_relpath))
+    path_doc_lock.write_text(lock_file_contents.format(**{"tmp_path": tmp_path}))
+
+    # act
+    _postprocess_abspath_to_relpath(path_doc_lock, tmp_path)
+
+    # verify
+    #    Within file contents, absolute path of parent folder is absent
+    actual_contents = path_doc_lock.read_text()
+    is_not_occur_once = str(tmp_path) not in actual_contents
+    assert is_not_occur_once is True
+    assert actual_contents == expected_contents
+
+
+testdata_compile_one = (
+    pytest.param(
+        (
+            Path(__file__).parent.parent.joinpath("requirements/pins.shared.in"),
+            Path(__file__).parent.parent.joinpath("requirements/pip.in"),
+            Path(__file__).parent.parent.joinpath("requirements/pip-tools.in"),
+        ),
+        "requirements/pip-tools.in",
+        "requirements/pip-tools.out",
+    ),
+)
+ids_compile_one = ("pip-tools.in --> pip-tools.lock",)
+
+
+@pytest.mark.xfail(
+    not is_package_installed("pip-tools"),
+    reason="dependency package pip-tools is required",
+)
+@pytest.mark.parametrize(
+    "seq_copy_these, in_relpath, out_relpath",
+    testdata_compile_one,
+    ids=ids_compile_one,
+)
+def test_compile_one(
+    seq_copy_these,
+    in_relpath,
+    out_relpath,
+    tmp_path,
+):
+    """Lock a .in file."""
+    # pytest -vv --showlocals --log-level INFO -k "test_compile_one" tests
+    path_ep = resolve_path("pip-compile")
+    ep_path = str(path_ep)
+    path_cwd = tmp_path
+    context = ".venv"
+
+    # prepare
+    #    dest folders
+    path_dir = cast("Path", resolve_joinpath(tmp_path, "requirements"))
+    path_dir.mkdir(parents=True, exist_ok=True)
+
+    #    Copy real .in files
+    for abspath_src in seq_copy_these:
+        src_abspath = str(abspath_src)
+        abspath_dest = tmp_path / "requirements" / abspath_src.name
+        shutil.copy2(src_abspath, abspath_dest)
+    abspath_in = cast("Path", resolve_joinpath(tmp_path, in_relpath))
+    abspath_out = cast("Path", resolve_joinpath(tmp_path, out_relpath))
+    in_abspath = abspath_in.as_posix()
+    out_abspath = abspath_out.as_posix()
+
+    # Conforms to interface?
+    assert isinstance(in_abspath, str)
+    assert isinstance(out_abspath, str)
+    assert isinstance(ep_path, str)
+    assert issubclass(type(path_cwd), PurePath)
+    assert context is None or isinstance(context, str)
+
+    # act
+    optabspath_out, err_details = _compile_one(
+        in_abspath,
+        out_abspath,
+        ep_path,
+        path_cwd,
+        context=context,
+        timeout=PurePath,
+    )
+    # verify
+    t_failures = (err_details,)
+    if err_details is not None and is_timeout(t_failures):
+        pytest.skip("lock_compile requires a web connection")
+    else:
+        assert optabspath_out is not None
+        assert issubclass(type(optabspath_out), PurePath)
+        assert optabspath_out.exists() and optabspath_out.is_file()
+
+
+testdata_lock_compile_live = (
+    pytest.param(
+        Path(__file__).parent.joinpath("_req_files", "venvs_minimal.pyproject_toml"),
+        ".tools",
+        (
+            "requirements/pins.shared.in",
+            "requirements/pip.in",
+            "requirements/pip-tools.in",
+            "docs/pip-tools.in",
+        ),
+        "docs/pip-tools.in",
+        "docs/pip-tools.out",
+        does_not_raise(),
+    ),
+    pytest.param(
+        Path(__file__).parent.joinpath("_req_files", "venvs_minimal.pyproject_toml"),
+        ".venv",
+        (
+            "requirements/pins.shared.in",
+            "requirements/pip.in",
+            "requirements/pip-tools.in",
+            "docs/pip-tools.in",
+        ),
+        "requirements/pip-tools.in",
+        "requirements/pip-tools.out",
+        does_not_raise(),
+    ),
+)
+ids_lock_compile_live = (
+    "recipe for docs/pip-tools.in --> docs/pip-tools.lock",
+    "recipe for requirements/pip-tools.in --> requirements/pip-tools.lock",
+)
+
+
+@pytest.mark.xfail(
+    not is_package_installed("pip-tools"),
+    reason="dependency package pip-tools is required",
+)
+@pytest.mark.parametrize(
+    "path_config, venv_relpath, seq_reqs_relpath, in_relpath, out_relpath, expectation",
+    testdata_lock_compile_live,
+    ids=ids_lock_compile_live,
+)
+def test_lock_compile_live(
+    path_config,
+    venv_relpath,
+    seq_reqs_relpath,
+    in_relpath,
+    out_relpath,
+    expectation,
+    tmp_path,
+    path_project_base,
+    prep_pyproject_toml,
+    prepare_folders_files,
+    caplog,
+    has_logging_occurred,
+):
+    """Test lock compile"""
+    # pytest -vv --showlocals --log-level INFO -k "test_lock_compile_live" tests
+    LOGGING["loggers"][g_app_name]["propagate"] = True
+    logging.config.dictConfig(LOGGING)
+    logger = logging.getLogger(name=g_app_name)
+    logger.addHandler(hdlr=caplog.handler)
+    caplog.handler.level = logger.level
+
+    path_cwd = path_project_base()
+    # prepare
+    #    pyproject.toml
+    path_f = prep_pyproject_toml(path_config, tmp_path)
+
+    # Act
+    #    Test without copying over support files
+    loader = VenvMapLoader(path_f.as_posix())
+    with pytest.raises(NotADirectoryError):
+        lock_compile(loader, venv_relpath)
+    #    Test not filtering by venv relpath
+    with pytest.raises(NotADirectoryError):
+        lock_compile(loader, None)
+
+    #    create folders (venv and requirements folders)
+    venv_relpaths = (
+        ".venv",
+        ".tools",
+        "requirements",
+        "docs",
+    )
+    for create_relpath in venv_relpaths:
+        abspath_venv = cast("Path", resolve_joinpath(tmp_path, create_relpath))
+        abspath_venv.mkdir(parents=True, exist_ok=True)
+
+    # prepare
+    #    copy just the reqs .in --> .lock
+    abspath_src = cast("Path", resolve_joinpath(path_cwd, in_relpath))
+    abspath_dest = cast("Path", resolve_joinpath(tmp_path, in_relpath))
+    shutil.copy2(abspath_src, abspath_dest)
+
+    # Act
+    #    Test without copying over support files
+    loader = VenvMapLoader(path_f.as_posix())
+    with pytest.raises(MissingRequirementsFoldersFiles):
+        lock_compile(loader, venv_relpath)
+
+    # prepare
+    #    copy (ALL not just one venv) requirements to respective folders
+    for relpath_f in seq_reqs_relpath:
+        abspath_src = cast("Path", resolve_joinpath(path_cwd, relpath_f))
+        abspath_dest = cast("Path", resolve_joinpath(tmp_path, relpath_f))
+        shutil.copy2(abspath_src, abspath_dest)
+
+    # Act
+    loader = VenvMapLoader(path_f.as_posix())
+
+    # overloaded function prepare_pairs
+    with expectation:
+        t_ins, files = filter_by_venv_relpath(loader, venv_relpath)
+    if isinstance(expectation, does_not_raise):
+        gen = prepare_pairs(t_ins)
+        assert isinstance(gen, Generator)
+        list(gen)  # execute Generator
+        gen = prepare_pairs(files, path_cwd=tmp_path)
+        assert isinstance(gen, Generator)
+        list(gen)  # execute Generator
+        # path_cwd must be provided and be a Path
+        with pytest.raises(AssertionError):
+            gen = prepare_pairs(files, path_cwd=None)
+            list(gen)  # execute Generator
+
+        # Fallback
+        with pytest.raises(NotImplementedError):
+            gen = prepare_pairs(None)
+            list(gen)
+
+    with expectation:
+        """
+        func_path = f"{g_app_name}.lock_inspect.lock_compile"
+        args = (loader, venv_relpath)
+        kwargs = {}
+        t_ret = get_locals(func_path, lock_compile, *args, **kwargs)  # noqa: F841
+        t_status, t_locals = t_ret
+        """
+        t_status = lock_compile(
+            loader,
+            venv_relpath,
+            timeout=PurePath,
+        )
+    # Verify
+    if isinstance(expectation, does_not_raise):
+        # assert has_logging_occurred(caplog)
+        assert t_status is not None
+        assert isinstance(t_status, tuple)
+        t_compiled, t_failures = t_status
+        assert isinstance(t_failures, tuple)
+        assert isinstance(t_compiled, tuple)
+        if is_timeout(t_failures):
+            pytest.skip("lock_compile requires a web connection")
+        else:
+            is_no_failures = len(t_failures) == 0
+            assert is_no_failures
+            compiled_count = len(t_compiled)
+            assert compiled_count == 1
+
+
+@pytest.mark.parametrize(
+    "path_config, venv_relpath, seq_reqs_relpath, in_relpath, out_relpath, expectation",
+    testdata_lock_compile_live,
+    ids=ids_lock_compile_live,
+)
+def test_unlock_compile_live(
+    path_config,
+    venv_relpath,
+    seq_reqs_relpath,
+    in_relpath,
+    out_relpath,
+    expectation,
+    tmp_path,
+    path_project_base,
+    prep_pyproject_toml,
+    prepare_folders_files,
+    caplog,
+    has_logging_occurred,
+):
+    """Test lock compile"""
+    # pytest -vv --showlocals --log-level INFO -k "test_unlock_compile_live" tests
+    LOGGING["loggers"][g_app_name]["propagate"] = True
+    logging.config.dictConfig(LOGGING)
+    logger = logging.getLogger(name=g_app_name)
+    logger.addHandler(hdlr=caplog.handler)
+    caplog.handler.level = logger.level
+
+    path_cwd = path_project_base()
+    # prepare
+    #    pyproject.toml
+    path_f = prep_pyproject_toml(path_config, tmp_path)
+
+    # Act
+    #    Test without copying over support files
+    loader = VenvMapLoader(path_f.as_posix())
+    with pytest.raises(NotADirectoryError):
+        gen = unlock_compile(loader, venv_relpath)
+        list(gen)
+
+    #    create folders (venv and requirements folders)
+    venv_relpaths = (
+        ".venv",
+        ".tools",
+        "requirements",
+        "docs",
+    )
+    for create_relpath in venv_relpaths:
+        abspath_venv = cast("Path", resolve_joinpath(tmp_path, create_relpath))
+        abspath_venv.mkdir(parents=True, exist_ok=True)
+
+    #    Test without copying over support files
+    loader = VenvMapLoader(path_f.as_posix())
+    with pytest.raises(MissingRequirementsFoldersFiles):
+        gen = unlock_compile(loader, venv_relpath)
+        list(gen)
+
+    # prepare
+    #    copy (ALL not just one venv) requirements to respective folders
+    for relpath_f in seq_reqs_relpath:
+        abspath_src = cast("Path", resolve_joinpath(path_cwd, relpath_f))
+        abspath_dest = cast("Path", resolve_joinpath(tmp_path, relpath_f))
+        shutil.copy2(abspath_src, abspath_dest)
+
+    # prepare
+    #    copy just the reqs .in --> .lock
+    abspath_src = cast("Path", resolve_joinpath(path_cwd, in_relpath))
+    abspath_dest = cast("Path", resolve_joinpath(tmp_path, in_relpath))
+    shutil.copy2(abspath_src, abspath_dest)
+
+    # Act
+    #    Without filtering by venv relpath
+    loader = VenvMapLoader(path_f.as_posix())
+
+    with expectation:
+        gen = unlock_compile(
+            loader,
+            venv_relpath,
+        )
+        abspath_unlocks = list(gen)
+    # Verify
+    if isinstance(expectation, does_not_raise):
+        assert abspath_unlocks is not None
+        assert isinstance(abspath_unlocks, Sequence)
+        assert len(abspath_unlocks) != 0
+
+    # Act
+    #    With filtering by venv relpath
+    with expectation:
+        gen = unlock_compile(
+            loader,
+            None,
+        )
+        abspath_unlocks = list(gen)
+    # Verify
+    if isinstance(expectation, does_not_raise):
+        assert abspath_unlocks is not None
+        assert isinstance(abspath_unlocks, Sequence)
+        assert len(abspath_unlocks) != 0

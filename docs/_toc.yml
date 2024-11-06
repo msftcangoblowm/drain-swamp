@@ -18,7 +18,7 @@ subtrees:
 - entries:
   - file: code/index
     entries:
-    - file: code/cli_unlock
+    - file: code/cli_dependencies
     - file: code/cli_igor
     - file: code/cli_scm_version
     - title: Snip
@@ -42,11 +42,10 @@ subtrees:
       entries:
       - file: code/ext/pipenv_unlock/index
         entries:
-        - file: code/ext/pipenv_unlock/backend_abc
-        - file: code/ext/pipenv_unlock/snippet_dependencies
-        - file: code/ext/pipenv_unlock/lock_toggle
         - file: code/ext/pipenv_unlock/lock_inspect
+        - file: code/ext/pipenv_unlock/lock_infile
         - file: code/ext/pipenv_unlock/lock_util
+        - file: code/ext/pipenv_unlock/snippet_dependencies
       - file: code/ext/drain_swamp/index
         entries:
         - file: code/ext/drain_swamp/sphinx_conf

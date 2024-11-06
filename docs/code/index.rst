@@ -13,7 +13,7 @@ Code manual
    .. grid-item-card:: :material-twotone:`login;2em;sd-text-success` Entrypoints
       :class-card: sd-border-0
 
-      - :doc:`cli_unlock`
+      - :doc:`cli_dependencies`
       - :doc:`cli_igor`
       - :doc:`cli_scm_version`
 
@@ -29,9 +29,11 @@ Code manual
    .. grid-item-card:: :material-twotone:`lock_open;2em;sd-text-success` Dependency locking
       :class-card: sd-border-0
 
-      - :doc:`backend abc <ext/pipenv_unlock/backend_abc>`
+      - :doc:`lock infile <ext/pipenv_unlock/lock_infile>`
+      - :doc:`lock inspect <ext/pipenv_unlock/lock_inspect>`
+      - :doc:`lock util <ext/pipenv_unlock/lock_util>`
       - :doc:`snippet dependencies <ext/pipenv_unlock/snippet_dependencies>`
-      - :doc:`lock toggle <ext/pipenv_unlock/lock_toggle>`
+
 
    .. grid-item-card:: :material-twotone:`extension;2em;sd-text-success` drain-swamp utils
       :class-card: sd-border-0
@@ -49,6 +51,7 @@ Code manual
       - :doc:`Exceptions <general/exceptions>`
       - :doc:`Check type <general/check_type>`
       - :doc:`pyproject.toml read <general/pep518_read>`
+      - :doc:`pyproject.toml venvs <general/pep518_venvs>`
       - :doc:`pyproject.toml parser <general/parser_in>`
       - :doc:`Package metadata <general/package_metadata>`
       - :doc:`Package installed <general/package_installed>`

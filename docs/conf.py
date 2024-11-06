@@ -179,6 +179,8 @@ autodoc_type_aliases = {
     "_T": "drain_swamp.lock_inspect._T",
     "PinsByPkg": "drain_swamp.lock_inspect.PinsByPkg",
     "PkgsWithIssues": "drain_swamp.lock_inspect.PkgsWithIssues",
+    "T_REQUIRED": "drain_swamp.snippet_dependencies.T_REQUIRED",
+    "T_OPTIONALS": "drain_swamp.snippet_dependencies.T_OPTIONALS",
 }
 
 extlinks = {

@@ -18,23 +18,15 @@ import logging
 import os
 import sys
 import traceback
-from pathlib import (
-    Path,
-    PurePath,
-)
+from pathlib import Path
 
 import click
-
-# from drain_swamp_snippet import (
-#     ReplaceResult,
-#     Snip,
-# )
 
 # pep366 ...
 # https://stackoverflow.com/a/34155199
 if __name__ == "__main__" and __spec__ is None:  # pragma: no cover
     # Package not installed
-    # python src/drain_swamp/cli_unlock.py unlock --snip=little_shop_of_horrors_shrine_candles
+    # python src/drain_swamp/cli_dependencies.py unlock
     import importlib.util
 
     path_d = Path(__file__).parent
@@ -69,8 +61,7 @@ elif (
     __name__ == "__main__" and isinstance(__package__, str) and len(__package__) == 0
 ):  # pragma: no cover
     # When package is not installed
-    # python -m drain_swamp.cli_unlock lock --snip=little_shop_of_horrors_shrine_candles
-    # python -m drain_swamp.cli_unlock unlock --snip=little_shop_of_horrors_shrine_candles
+    # python -m drain_swamp.cli_dependencies {lock,unlock,fix}
     dotted_path = "drain_swamp"
     path_pkg_base_dir = Path(__file__).parent.parent
     sys.path.insert(1, str(path_pkg_base_dir))
@@ -80,43 +71,31 @@ elif (
 
     __package__ = dotted_path
 else:
-    # pipenv-unlock unlock --snip=little_shop_of_horrors_shrine_candles
-    # pipenv-unlock lock --snip=little_shop_of_horrors_shrine_candles
+    # pipenv-unlock {unlock,lock,fix}
     # __package__ = "drain_swamp"
     pass
 
 # pep366 ...done
 
-from .backend_abc import BackendType
-from .constants import g_app_name  # SUFFIX_LOCKED,; SUFFIX_UNLOCKED,
-from .exceptions import (  # MissingRequirementsFoldersFiles,
-    PyProjectTOMLParseError,
-    PyProjectTOMLReadError,
-)
-from .lock_inspect import fix_requirements
-from .lock_toggle import (
+from .constants import g_app_name
+from .exceptions import MissingRequirementsFoldersFiles
+from .lock_inspect import (
+    fix_requirements,
+    is_timeout,
     lock_compile,
     unlock_compile,
 )
 from .pep518_venvs import VenvMapLoader
 
-# from .snippet_dependencies import SnippetDependencies
-
 is_module_debug = False
-_logger = logging.getLogger(f"{g_app_name}.cli_unlock")
+_logger = logging.getLogger(f"{g_app_name}.cli_dependencies")
 
 # taken from pyproject.toml
 entrypoint_name = "pipenv-unlock"  # noqa: F401
 
 help_path = "The root directory [default: pyproject.toml directory]"
-help_required = "relative to --path, required dependencies .in file"
-help_optionals = (
-    "relative to --path, optional dependencies .in file. Can be used multiple times"
-)
-help_additional_folder = (
-    "Additional folder(s), not already known implicitly, containing .in "
-    "files. A relative_path. Can be used multiple times"
-)
+help_venv_path = "Limit call to one venv. Supply posix style relative path"
+help_timeout = "Web connection time out in seconds"
 help_is_dry_run = "Do not apply changes, merely report what would have occurred"
 help_show_unresolvables = (
     "Show unresolvable dependency conflicts. Needs manual intervention"
@@ -126,28 +105,52 @@ help_show_resolvable_shared = (
     "Show shared resolvable dependency conflicts. Needs manual intervention"
 )
 
-EPILOG_LOCK_UNLOCK = """
+EPILOG_LOCK = """
 EXIT CODES
 
 0 -- Evidently sufficient effort put into unittesting. Job well done, beer on me!
 
-1 -- Unused. Reason: too generic
+1 -- Failures occurred. failed compiles report onto stderr
 
-2 -- Unused. Reason: Bad taste left in mouth after experience with argparse
+2 -- entrypoint incorrect usage
 
-3 -- path given for config file either not a file or not read write
+3 -- path given for config file reverse search cannot find a pyproject.toml file
 
-4 -- pyproject.toml config file parse issue. Use validate-pyproject on it then try again
+4 -- pyproject.toml config file parse issue. Expecting [[tool.venvs]] sections
 
-5 -- Backend not supported. Need to add support for that backend. Submit an issue
+5 -- package pip-tools is required to lock package dependencies. Install it
 
-6 -- The pyproject.toml depends on the requirements folders and files. Create them
+6 -- Missing some .in files. Support file(s) not checked
 
-7 -- For locking dependencies, pip-tools package must be installed. Not installed
+7 -- venv base folder does not exist. Create it
 
-8 -- The snippet is invalid. Either nested snippets or start stop token out of order. Fix the snippet then try again
+8 -- expecting [[tool.venvs]] field reqs to be a sequence
 
-9 -- In pyproject.toml, there is no snippet with that snippet code
+9 -- No such venv found
+
+10 -- timeout occurred. Check web connection
+
+"""
+
+EPILOG_UNLOCK = """
+EXIT CODES
+
+0 -- Evidently sufficient effort put into unittesting. Job well done, beer on me!
+
+2 -- entrypoint incorrect usage
+
+3 -- path given for config file reverse search cannot find a pyproject.toml file
+
+4 -- pyproject.toml config file parse issue. Expecting [[tool.venvs]] sections
+
+6 -- Missing some .in files. Support file(s) not checked
+
+7 -- venv base folder does not exist. Create it
+
+8 -- expecting [[tool.venvs]] field reqs to be a sequence
+
+9 -- No such venv found
+
 """
 
 EPILOG_REQUIREMENTS_FIX = """
@@ -165,7 +168,7 @@ EXIT CODES
 
 6 -- expecting [[tool.venvs]] field reqs should be a list of relative path without .in .unlock or .lock suffix
 
-7 -- for a venv, a requirements file not found. Create it
+8 -- Missing .in, .unlock, and/or .lock files
 
 """
 
@@ -180,7 +183,7 @@ def main():
 @main.command(
     "lock",
     context_settings={"ignore_unknown_options": True},
-    epilog=EPILOG_LOCK_UNLOCK,
+    epilog=EPILOG_LOCK,
 )
 @click.option(
     "-p",
@@ -196,58 +199,22 @@ def main():
     help=help_path,
 )
 @click.option(
-    "-r",
-    "--required",
+    "-v",
+    "--venv-relpath",
     default=None,
-    type=(
-        str,
-        click.Path(
-            exists=False,
-            file_okay=True,
-            dir_okay=False,
-            path_type=Path,
-        ),
-    ),
-    help=help_required,
-    nargs=2,
+    help=help_venv_path,
 )
 @click.option(
-    "-o",
-    "--optional",
-    "optionals",
-    type=(
-        str,
-        click.Path(
-            exists=False,
-            file_okay=True,
-            dir_okay=False,
-            path_type=Path,
-        ),
-    ),
-    help=help_optionals,
-    multiple=True,
-    nargs=2,
+    "-t",
+    "--timeout",
+    default=15,
+    type=click.INT,
+    help=help_timeout,
 )
-@click.option(
-    "-d",
-    "--dir",
-    "additional_folders",
-    type=click.Path(
-        exists=False,
-        file_okay=False,
-        dir_okay=True,
-        resolve_path=True,
-        path_type=Path,
-    ),
-    multiple=True,
-    help=help_additional_folder,
-)
-def dependencies_lock(path, required, optionals, additional_folders):
+def dependencies_lock(path, venv_relpath, timeout):
     """Lock dependencies creates (``*.lock``) files
 
-    Symlinks (``*.lnk``) files created during build time
-
-    Disadvantages
+    Disadvantages of locking dependencies
 
     1. FOSS is ``as-is``, largely unpaid work, often lacks necessary
        skillset, often doesn't care to do tedious tasks, is pressed for
@@ -264,9 +231,8 @@ def dependencies_lock(path, required, optionals, additional_folders):
 
     4. ``pipenv`` says don't automate updating dependency lock files thru CI/CD
 
-    5. ``pip-tools``, mistakes occur, choosing wrong dependency version.
-       Had this occur. Latest version is a post release (python-dateutil-2.9.0.post0
-       Sometimes choose previous release and other times not. Causing dependency hell
+    5. Multiple calls to ``pip-compile`` **always** causes avoidable mistakes;
+       choosing non-sync'ed dependency versions.
 
     Advantage
 
@@ -283,11 +249,11 @@ def dependencies_lock(path, required, optionals, additional_folders):
 
     Usage
 
-    pipenv-unlock lock --snip="little_shop_of_horrors_shrine_candles"
+    pipenv-unlock lock
 
     or
 
-    python src/drain_swamp/cli_unlock.py lock
+    python src/drain_swamp/cli_dependencies.py lock
 
     \f
 
@@ -296,136 +262,82 @@ def dependencies_lock(path, required, optionals, additional_folders):
        The root directory [default: pyproject.toml directory]
 
     :type path: pathlib.Path
-    :param required:
-
-       relative to --path, required dependencies .in file
-
-    :type required: tuple[str, pathlib.Path]
-    :param optionals:
-
-       relative to --path, optional dependencies .in file. Can be used multiple times
-
-    :type optionals: collections.abc.Sequence[tuple[str, pathlib.Path]]
-    :param additional_folders:
-
-       Additional folder(s), not already known implicitly, containing .in
-       files. A relative_path. Can be used multiple times
-
-    :type additional_folders: collections.abc.Sequence[pathlib.Path]
-    :param snippet_co:
-
-       Snippet code, within a file, unique id of an editable region, aka snippet.
-       Only necessary if allows for multiple snippets
-
-    :type snippet_co: str | None
+    :param venv_relpath: Filter by venv relative path
+    :type venv_relpath: pathlib.Path
     """
-    # cli optionals. No user input validation yet
-    # Sequence[tuple[str, pathlib.Path]] | None --> dict[str, Path]
-    has_optionals = (
-        optionals is not None and isinstance(optionals, tuple) and len(optionals) > 0
-    )
-    if has_optionals:
-        d_optionals = {}
-        for target, relative_path in optionals:
-            if target not in d_optionals.keys():
-                d_optionals[target] = relative_path
-            else:  # pragma: no cover
-                pass
-    else:
-        d_optionals = {}
-
-    # additional folders
-    #    list[str | Path] --> tuple[Path]
-    s_additionals = set()
-    for add_dir in additional_folders:
-        if issubclass(type(add_dir), PurePath):  # pragma: no cover
-            # This is what click should be providing
-            s_additionals.add(add_dir)
-        else:  # pragma: no cover
-            pass
-    t_add_folders = tuple(s_additionals)
+    str_path = path.as_posix()
 
     try:
-        inst = BackendType(
-            path,
-            required=required,
-            optionals=d_optionals,
-            additional_folders=t_add_folders,
-        )
-    except PyProjectTOMLReadError:
+        loader = VenvMapLoader(str_path)
+    except FileNotFoundError:
+        # Couldn't find the pyproject.toml file
         msg_exc = (
-            f"Either not a file or lacks read permissions. {traceback.format_exc()}"
+            f"Reverse search lookup from {path!r} could not "
+            f"find a pyproject.toml file. {traceback.format_exc()}"
         )
         # raise click.ClickException(msg_exc)
         click.secho(msg_exc, fg="red", err=True)
         sys.exit(3)
-    except PyProjectTOMLParseError:
-        msg_exc = f"Cannot parse pyproject.toml. {traceback.format_exc()}"
-        # raise click.ClickException(msg_exc)
+    except LookupError:
+        msg_exc = "In pyproject.toml, expecting sections [[tool.venvs]]. Create them"
         click.secho(msg_exc, fg="red", err=True)
         sys.exit(4)
 
-    """
-    try:
-        # new_contents = inst.compose(SUFFIX_LOCKED)
-        new_contents = SnippetDependencies()(
-            SUFFIX_LOCKED,
-            inst.parent_dir,
-            inst.in_files(),
-            inst.required,
-            inst.optionals,
-        )
-    except MissingRequirementsFoldersFiles:
-        msg_exc = (
-            "Missing requirements folders and files. Prepare these "
-            f"{traceback.format_exc()}"
-        )
-        # raise click.ClickException(msg_exc)
-        click.secho(msg_exc, fg="red", err=True)
-        sys.exit(6)
-    """
+    # compile .lock files
 
-    # create .lock files in their respective folders
-    gen = lock_compile(inst)
     try:
-        list(gen)  # execute generator
-    except AssertionError:
-        msg_exc = (
-            "pip-tools is required to lock package dependencies. Install "
-            f"it. {traceback.format_exc()}"
-        )
-        # raise click.ClickException(msg_exc)
-        click.secho(msg_exc, fg="red", err=True)
+        t_status = lock_compile(loader, venv_relpath, timeout)
+    except (MissingRequirementsFoldersFiles, AssertionError) as exc:
+        # Careful MissingRequirementsFoldersFiles is a subclass of AssertionError
+        # Missing ``.in`` files. Support file(s) not checked
+        if isinstance(exc, MissingRequirementsFoldersFiles):
+            click.secho(str(exc), fg="red", err=True)
+            sys.exit(6)
+        else:
+            msg_exc = (
+                "pip-tools is required to lock package dependencies. Install "
+                f"it. {traceback.format_exc()}"
+            )
+            # raise click.ClickException(msg_exc)
+            click.secho(msg_exc, fg="red", err=True)
+            sys.exit(5)
+    except NotADirectoryError as exc:
+        # venv folder needs to exist
+        click.secho(str(exc), fg="red", err=True)
         sys.exit(7)
-
-    # update snippet
-    """
-    fname = path / "pyproject.toml"
-    snip = Snip(fname)
-    is_success = snip.replace(new_contents, id_=snippet_co)
-    if is_success == ReplaceResult.VALIDATE_FAIL:
-        msg_exc = (
-            "Snippet is invalid. Validation failed. Either nested or "
-            "unmatched start end tokens"
-        )
-        click.secho(msg_exc, fg="red", err=True)
+    except ValueError as exc:
+        # expecting ``[[tool.venvs]]`` field reqs to be a sequence
+        click.secho(str(exc), fg="red", err=True)
         sys.exit(8)
-    elif is_success == ReplaceResult.NO_MATCH:
-        msg_exc = (
-            f"In pyproject.toml, there is no snippet with snippet code {snippet_co}"
-        )
-        click.secho(msg_exc, fg="red", err=True)
+    except KeyError as exc:
+        # No such venv found
+        click.secho(str(exc), fg="red", err=True)
         sys.exit(9)
     else:
-        sys.exit(0)
-    """
-    sys.exit(0)
+        is_tuple_two_items = (
+            t_status is not None and isinstance(t_status, tuple) and len(t_status) == 2
+        )
+        assert is_tuple_two_items
+        t_compiled, t_failures = t_status
+        assert isinstance(t_failures, tuple)
+        assert isinstance(t_compiled, tuple)
+        if is_timeout(t_failures):
+            click.secho("Timeout occurred. Check web connection", err=True)
+            sys.exit(10)
+        else:
+            is_failures = len(t_failures) != 0
+            if is_failures:
+                click.secho(f"failures {t_failures}", err=True)
+                sys.exit(1)
+            else:  # pragma: no cover
+                # quiet
+                sys.exit(0)
 
 
 @main.command(
     "unlock",
     context_settings={"ignore_unknown_options": True},
-    epilog=EPILOG_LOCK_UNLOCK,
+    epilog=EPILOG_UNLOCK,
 )
 @click.option(
     "-p",
@@ -441,77 +353,24 @@ def dependencies_lock(path, required, optionals, additional_folders):
     help=help_path,
 )
 @click.option(
-    "-r",
-    "--required",
+    "-v",
+    "--venv-relpath",
     default=None,
-    type=(
-        str,
-        click.Path(
-            exists=False,
-            file_okay=True,
-            dir_okay=False,
-            path_type=Path,
-        ),
-    ),
-    help=help_required,
-    nargs=2,
+    help=help_venv_path,
 )
-@click.option(
-    "-o",
-    "--optional",
-    "optionals",
-    type=(
-        str,
-        click.Path(
-            exists=False,
-            file_okay=True,
-            dir_okay=False,
-            path_type=Path,
-        ),
-    ),
-    help=help_optionals,
-    nargs=2,
-    multiple=True,
-)
-@click.option(
-    "-d",
-    "--dir",
-    "additional_folders",
-    type=click.Path(
-        exists=False,
-        file_okay=False,
-        dir_okay=True,
-        resolve_path=True,
-        path_type=Path,
-    ),
-    multiple=True,
-    help=help_additional_folder,
-)
-def dependencies_unlock(path, required, optionals, additional_folders):
+def dependencies_unlock(path, venv_relpath):
     """Unlock dependencies creates (``*.unlock``) files
 
-    Symlinks (``*.lnk``) files are created during build time
-
-    Consciously choose not to lock package dependencies
-
-    Know that might not be available or always paying constant attention.
-    Whilst package dependency lock requires frequent updating.
-
-    It's a big ask, considering:
-
-    - distracted by other projects and paid jobs
-
-    - cynical
-
-    - intend to pick up a drug habit, die, or discover girls
+    Package dependencies are only locked if the package is an app.
+    A ``.in`` resolves ``-r`` and ``-c``, which can be understood by pip
 
     Usage
 
-    pipenv-unlock unlock --snip="little_shop_of_horrors_shrine_candles"
+    pipenv-unlock unlock
 
     or
 
-    python src/drain_swamp/cli_unlock.py unlock
+    python src/drain_swamp/cli_dependencies.py unlock
 
     \f
 
@@ -520,119 +379,50 @@ def dependencies_unlock(path, required, optionals, additional_folders):
        The root directory [default: pyproject.toml directory]
 
     :type path: pathlib.Path
-    :param required:
-
-       relative to --path, required dependencies .in file
-
-    :type required: tuple[str, pathlib.Path]
-    :param optionals:
-
-       relative to --path, optional dependencies .in file. Can be used multiple times
-
-    :type optionals: collections.abc.Sequence[tuple[str, pathlib.Path]]
-    :param additional_folders:
-
-       Additional folder(s), not already known implicitly, containing .in
-       files. A relative_path. Can be used multiple times
-
-    :type additional_folders: collections.abc.Sequence[pathlib.Path]
-    :param snippet_co:
-
-       Snippet code, within a file, unique id of an editable region, aka snippet.
-       Only necessary if allows for multiple snippets
-
-    :type snippet_co: str | None
+    :param venv_relpath: Filter by venv relative path
+    :type venv_relpath: pathlib.Path
     """
-    # No user input validation yet
-    # Sequence[tuple[str, pathlib.Path]] | None --> dict[str, Path]
-    has_optionals = (
-        optionals is not None and isinstance(optionals, tuple) and len(optionals) > 0
-    )
-    if has_optionals:
-        d_optionals = {}
-        for target, relative_path in optionals:
-            if target not in d_optionals.keys():
-                d_optionals[target] = relative_path
-            else:  # pragma: no cover
-                pass
-    else:
-        d_optionals = {}
-
-    # additional folders
-    #    list[str | Path] --> tuple[Path]
-    s_additionals = set()
-    for add_dir in additional_folders:
-        if issubclass(type(add_dir), PurePath):  # pragma: no cover
-            # This is what click should be providing
-            s_additionals.add(add_dir)
-        else:  # pragma: no cover
-            pass
-    t_add_folders = tuple(s_additionals)
+    str_path = path.as_posix()
 
     try:
-        inst = BackendType(
-            path,
-            required=required,
-            optionals=d_optionals,
-            additional_folders=t_add_folders,
-        )
-    except PyProjectTOMLReadError:
+        loader = VenvMapLoader(str_path)
+    except FileNotFoundError:
+        # Couldn't find the pyproject.toml file
         msg_exc = (
-            f"Either not a file or lacks read permissions. {traceback.format_exc()}"
+            f"Reverse search lookup from {path!r} could not "
+            f"find a pyproject.toml file. {traceback.format_exc()}"
         )
         # raise click.ClickException(msg_exc)
         click.secho(msg_exc, fg="red", err=True)
         sys.exit(3)
-    except PyProjectTOMLParseError:
-        msg_exc = f"Cannot parse pyproject.toml. {traceback.format_exc()}"
-        # raise click.ClickException(msg_exc)
+    except LookupError:
+        msg_exc = "In pyproject.toml, expecting sections [[tool.venvs]]. Create them"
         click.secho(msg_exc, fg="red", err=True)
         sys.exit(4)
 
-    """
-    # get contents for update to pyproject.toml
+    # resolve ``.in`` --> ``.unlock`` files
+    gen = unlock_compile(loader, venv_relpath)
     try:
-        # new_contents = inst.compose(SUFFIX_UNLOCKED)
-        new_contents = SnippetDependencies()(
-            SUFFIX_UNLOCKED,
-            inst.parent_dir,
-            inst.in_files(),
-            inst.required,
-            inst.optionals,
-        )
-    except MissingRequirementsFoldersFiles:
-        msg_exc = (
-            "Missing requirements folders and files. Prepare these "
-            f"{traceback.format_exc()}"
-        )
-        # raise click.ClickException(msg_exc)
-        click.secho(msg_exc, fg="red", err=True)
+        lst = list(gen)  # execute generator
+    except MissingRequirementsFoldersFiles as exc:
+        # Missing ``.in`` files. Support file(s) not checked
+        click.secho(str(exc), fg="red", err=True)
         sys.exit(6)
-
-    # update snippet -- pyproject.toml
-    fname = path / "pyproject.toml"
-    snip = Snip(fname)
-    is_success = snip.replace(new_contents, id_=snippet_co)
-    if is_success == ReplaceResult.VALIDATE_FAIL:
-        msg_exc = (
-            "Snippet is invalid. Validation failed. Either nested or "
-            "unmatched start end tokens"
-        )
-        click.secho(msg_exc, fg="red", err=True)
+    except NotADirectoryError as exc:
+        # venv folder needs to exist
+        click.secho(str(exc), fg="red", err=True)
+        sys.exit(7)
+    except ValueError as exc:
+        # expecting ``[[tool.venvs]]`` field reqs to be a sequence
+        click.secho(str(exc), fg="red", err=True)
         sys.exit(8)
-    elif is_success == ReplaceResult.NO_MATCH:
-        msg_exc = (
-            f"In pyproject.toml, there is no snippet with snippet code {snippet_co}"
-        )
-        click.secho(msg_exc, fg="red", err=True)
+    except KeyError as exc:
+        # No such venv found
+        click.secho(str(exc), fg="red", err=True)
         sys.exit(9)
     else:
-        pass
-    """
-
-    # creates / writes .unlock files
-    gen = unlock_compile(inst)
-    list(gen)  # execute generator
+        click.secho(f"created {lst!s}", err=True)
+        sys.exit(0)
 
 
 @main.command(
@@ -652,6 +442,12 @@ def dependencies_unlock(path, required, optionals, additional_folders):
         path_type=Path,
     ),
     help=help_path,
+)
+@click.option(
+    "-v",
+    "--venv-relpath",
+    default=None,
+    help=help_venv_path,
 )
 @click.option(
     "-n",
@@ -684,6 +480,7 @@ def dependencies_unlock(path, required, optionals, additional_folders):
 )
 def requirements_fix(
     path,
+    venv_relpath,
     is_dry_run,
     show_unresolvables,
     show_fixed,
@@ -746,6 +543,8 @@ def requirements_fix(
        The root directory [default: pyproject.toml directory]
 
     :type path: pathlib.Path
+    :param venv_relpath: Filter by venv relative path
+    :type venv_relpath: pathlib.Path
     :param is_dry_run:
 
        Default False. Should be a bool. Do not make changes. Merely
@@ -777,15 +576,14 @@ def requirements_fix(
         click.secho(msg_exc, fg="red", err=True)
         sys.exit(3)
     except LookupError:
-        msg_exc = (
-            "In pyproject.toml, expecting sections [[tool.venvs]] "
-            f"{traceback.format_exc()}"
-        )
+        msg_exc = "In pyproject.toml, expecting sections [[tool.venvs]]. Create them"
         click.secho(msg_exc, fg="red", err=True)
         sys.exit(4)
 
+    # No FileNotFoundError. Missing requirement or constraint logged
+    # See drain_swamp.lock_infile.InFiles.files
     try:
-        t_results = fix_requirements(loader, is_dry_run=is_dry_run)
+        t_results = fix_requirements(loader, venv_relpath, is_dry_run=is_dry_run)
     except NotADirectoryError as exc:
         msg_exc = str(exc)
         click.secho(msg_exc, fg="red", err=True)
@@ -795,10 +593,11 @@ def requirements_fix(
         msg_exc = str(exc)
         click.secho(msg_exc, fg="red", err=True)
         sys.exit(6)
-    except FileNotFoundError as exc:
+    except MissingRequirementsFoldersFiles as exc:
+        # Missing .in, .unlock, and/or .lock files
         msg_exc = str(exc)
         click.secho(msg_exc, fg="red", err=True)
-        sys.exit(7)
+        sys.exit(8)
 
     d_resolved_msgs, d_unresolvables, d_applies_to_shared = t_results
 

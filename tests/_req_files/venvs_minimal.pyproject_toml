@@ -11,6 +11,7 @@ requires = [
 build-backend = "setuptools.build_meta"
 
 [project]
+name = "complete-awesome-perfect"
 dynamic = [
     "optional-dependencies",
     "dependencies",
@@ -29,14 +30,33 @@ optional-dependencies.docs = { file = ['docs/requirements.lock'] }
 
 version = {attr = 'drain_swamp._version.__version__'}
 
+[tool.drain-swamp]
+copyright_start_year = 2024
+
 [tool.pipenv-unlock]
-required = { shrine_candle = "prod", mommas_photo = 'requirements/prod.shared.in' }
+folders = [
+    'ci',
+]
+
+required = { target = "prod", relative_path = 'requirements/prod.shared.in' }
 
 # underscore: hyphen
 optionals = [
-    { shrine_candle = "pip", mommas_photo = 'requirements/pip.in' },
-    { shrine_candle = "pip_tools", mommas_photo = 'requirements/pip-tools.in' },
-    { shrine_candle = "dev", mommas_photo = 'requirements/dev.in' },
-    { shrine_candle = "manage", mommas_photo = 'requirements/manage.in' },
-    { shrine_candle = "docs", mommas_photo = 'docs/requirements.in' },
+    { target = "pip", relative_path = 'requirements/pip.in' },
+    { target = "pip_tools", relative_path = 'requirements/pip-tools.in' },
+    { target = "dev", relative_path = 'requirements/dev.in' },
+    { target = "manage", relative_path = 'requirements/manage.in' },
+    { target = "docs", relative_path = 'docs/requirements.in' },
+]
+
+# TOML format -- single quote path values
+[[tool.venvs]]
+venv_base_path = '.tools'
+reqs = [
+    'docs/pip-tools',
+]
+[[tool.venvs]]
+venv_base_path = '.venv'
+reqs = [
+    'requirements/pip-tools',
 ]

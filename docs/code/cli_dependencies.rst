@@ -1,11 +1,11 @@
 pipenv-unlock
 ==============
 
-.. py:module:: drain_swamp.cli_unlock
+.. py:module:: drain_swamp.cli_dependencies
    :platform: Unix
    :synopsis: Entrypoint pipenv-unlock
 
-   Entrypoint for dependency locks
+   Entrypoint for dependency lock unlock and fix
 
    .. py:data:: entrypoint_name
       :type: str
@@ -18,20 +18,15 @@ pipenv-unlock
 
       cli option ``--path`` doc string
 
-   .. py:data:: help_required
+   .. py:data:: help_venv_path
       :type: str
 
-      cli option ``--required`` doc string
+      cli option ``--venv-relpath`` doc string
 
-   .. py:data:: help_optional
+   .. py:data:: help_timeout
       :type: str
 
-      cli option ``--optional`` doc string
-
-   .. py:data:: help_additional_folder
-      :type: str
-
-      cli option ``--dir`` doc string
+      cli option ``--timeout`` doc string
 
    .. py:data:: help_is_dry_run
       :type: str
@@ -53,10 +48,15 @@ pipenv-unlock
 
       cli option ``--show-resolvable-shared`` doc string
 
-   .. py:data:: EPILOG_LOCK_UNLOCK
+   .. py:data:: EPILOG_LOCK
       :type: str
 
-      Exit codes explanation for command, ``lock`` and ``unlock``
+      Exit codes explanation for command, ``lock``
+
+   .. py:data:: EPILOG_UNLOCK
+      :type: str
+
+      Exit codes explanation for command, ``unlock``
 
    .. py:data:: EPILOG_REQUIREMENTS_FIX
       :type: str
@@ -73,12 +73,12 @@ pipenv-unlock
          :header: command, creates, desc
          :widths: auto
 
-         :py:func:`lock <drain_swamp.cli_unlock.dependencies_lock>`, ".lock", "Create lock dependency file"
-         :py:func:`unlock <drain_swamp.cli_unlock.dependencies_unlock>`, ".unlock", "Create unlock dependency file"
-         :py:func:`fix <drain_swamp.cli_unlock.requirements_fix>`, "", "In requirements, fixes/reports dependency conflicts"
+         :py:func:`lock <drain_swamp.cli_dependencies.dependencies_lock>`, ".lock", "Create lock dependency file"
+         :py:func:`unlock <drain_swamp.cli_dependencies.dependencies_unlock>`, ".unlock", "Create unlock dependency file"
+         :py:func:`fix <drain_swamp.cli_dependencies.requirements_fix>`, "", "In requirements, fixes/reports dependency conflicts"
 
-   .. autofunction:: drain_swamp.cli_unlock.dependencies_lock
+   .. autofunction:: drain_swamp.cli_dependencies.dependencies_lock
 
-   .. autofunction:: drain_swamp.cli_unlock.dependencies_unlock
+   .. autofunction:: drain_swamp.cli_dependencies.dependencies_unlock
 
-   .. autofunction:: drain_swamp.cli_unlock.requirements_fix
+   .. autofunction:: drain_swamp.cli_dependencies.requirements_fix

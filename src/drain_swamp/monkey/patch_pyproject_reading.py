@@ -176,8 +176,16 @@ class ReadPyprojectBase(abc.ABC):
         :rtype: PyProjectData
         :raises:
 
+           - :py:exc:`FileNotFoundError` -- pyproject.toml not found
+
            - :py:exc:`LookupError` -- Either toml file parsing failed
              or no such section
+
+           - :py:exc:`KeyError` -- pyproject.toml section not found
+
+        .. todo::
+
+           Do a reverse search for the pyproject.toml file
 
         """
         mod_path = (

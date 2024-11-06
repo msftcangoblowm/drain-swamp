@@ -2,8 +2,8 @@
 .. moduleauthor:: Dave Faulkmore <https://mastodon.social/@msftcangoblowme>
 
 .. py:data:: __all__
-   :type: tuple[str]
-   :value: ("SnippetDependencies",)
+   :type: tuple[str, str, str]
+   :value: ("SnippetDependencies", "get_required_and_optionals", "generate_snippet")
 
    Module's exports
 
@@ -12,20 +12,68 @@
 
    Module level logger
 
+.. py:data:: is_module_debug
+   :type: bool
+   :value: False
+
+   turn on/off module level log messages
+
+.. py:class:: T_REQUIRED
+
+.. py:data:: T_REQUIRED
+   :type: tuple[str, pathlib.Path] | None
+   :noindex:
+
+   Required dependency
+
+.. py:class:: T_OPTIONALS
+
+.. py:data:: T_OPTIONALS
+   :type: collections.abc.Mapping[str, pathlib.Path]
+   :noindex:
+
+   Optional dependencies
+
 """
 
-from __future__ import annotations
-
 import logging
-from pathlib import PurePosixPath
+from collections.abc import (
+    Mapping,
+    Sequence,
+)
+from pathlib import (
+    Path,
+    PurePath,
+)
+from typing import (
+    Union,
+    cast,
+)
 
-from .constants import g_app_name
+from ._safe_path import resolve_joinpath
+from .constants import (
+    SUFFIX_IN,
+    SUFFIX_LOCKED,
+    g_app_name,
+)
 from .exceptions import MissingRequirementsFoldersFiles
+from .lock_infile import InFiles
+from .lock_util import replace_suffixes_last
+from .monkey.patch_pyproject_reading import ReadPyproject
+from .pep518_venvs import VenvMapLoader
 
 __package__ = "drain_swamp"
-__all__ = ("SnippetDependencies",)
+__all__ = (
+    "SnippetDependencies",
+    "get_required_and_optionals",
+    "generate_snippet",
+)
 
 _logger = logging.getLogger(f"{g_app_name}.snippet_dependencies")
+is_module_debug = False
+
+T_REQUIRED = Union[tuple[str, Path], None]
+T_OPTIONALS = Mapping[str, Path]
 
 
 def _fix_suffix(suffix):
@@ -45,26 +93,6 @@ def _fix_suffix(suffix):
         ret = suffix
 
     return ret
-
-
-def _check_are_requirements_files(in_files):
-    """Check there are dependency requirements files.
-
-    Which every Python package will have.
-
-    :param in_files: Dependency requirements ``.in`` files
-    :type in_files: collections.abc.Sequence[pathlib.Path]
-    :raises:
-
-        - :py:exc:`drain_swamp.exceptions.MissingRequirementsFoldersFiles` --
-          No requirements folders and files. Abort and provide user feedback
-
-    """
-
-    is_empty = len(in_files) == 0
-    if is_empty:
-        msg_exc = "There are no requirements folders and files. Prepare these"
-        raise MissingRequirementsFoldersFiles(msg_exc)
 
 
 class SnippetDependencies:
@@ -198,27 +226,29 @@ class SnippetDependencies:
         :returns: tool.setuptools.dynamic dependencies line
         :rtype: collections.abc.Iterator[str]
         """
-        _logger.info(f"path_required: {self._required} {type(self._required)}")
+        if is_module_debug:  # pragma: no cover
+            msg_info = f"path_required: {self._required} {type(self._required)}"
+            _logger.info(msg_info)
+        else:  # pragma: no cover
+            pass
+
         if self._required is None:
             yield from ()
         else:
             # tuple[str, Path]
             target, path_required_abs = self._required
-            path_rel = PurePosixPath(path_required_abs).relative_to(
-                PurePosixPath(self._parent_dir),
-            )
-            path_dir = path_rel.parent
-
-            # file stem contains hyphens, not underscores
-            stem = path_rel.stem
-            stem = stem.replace("_", "-")
-
-            path_dir_final = path_dir.joinpath(f"{stem}{suffix}")
-
-            # TOML format -- paths use single quote, not double quote
-            ret = f"""dependencies = {{ file = ['{path_dir_final}'] }}"""
-
-            yield ret
+            is_abspath = PurePath(path_required_abs).is_absolute()
+            if is_abspath:
+                abspath_f = replace_suffixes_last(path_required_abs, suffix)
+                path_rel = PurePath(abspath_f).relative_to(
+                    PurePath(self._parent_dir),
+                )
+                rel_path = path_rel.as_posix()
+                # TOML format -- paths use single quote, not double quote
+                ret = f"""dependencies = {{ file = ['{rel_path}'] }}"""
+                yield ret
+            else:  # pragma: no cover
+                yield from ()
 
         yield from ()
 
@@ -244,27 +274,27 @@ class SnippetDependencies:
         """
         for target, path_abs in self._optionals.items():
             # Even on Windows, treat as a posix path
-            path_rel = PurePosixPath(path_abs).relative_to(
-                PurePosixPath(self._parent_dir),
-            )
+            is_abspath = PurePath(path_abs).is_absolute()
+            if is_abspath:
+                target_l = target.replace("-", "_")
 
-            # file stem contains hyphens, not underscores
-            path_rel_r = path_rel.parent
-            stem_r = path_rel.stem
-            stem_r = stem_r.replace("_", "-")
-            path_full_r = path_rel_r.joinpath(f"{stem_r}{suffix}")
-
-            target_l = target.replace("-", "_")
-            # TOML format -- paths use single quote, not double quote
-            ret = (
-                f"""optional-dependencies.{target_l} = {{ file = ["""
-                f"""'{str(path_full_r)}'] }}"""
-            )
-            yield ret
+                abspath_f = replace_suffixes_last(path_abs, suffix)
+                path_rel = PurePath(abspath_f).relative_to(
+                    PurePath(self._parent_dir),
+                )
+                rel_path = path_rel.as_posix()
+                # TOML format -- paths use single quote, not double quote
+                ret = (
+                    f"""optional-dependencies.{target_l} = {{ file = ["""
+                    f"""'{rel_path}'] }}"""
+                )
+                yield ret
+            else:  # pragma: no cover
+                yield from ()
 
         yield from ()
 
-    def __call__(self, suffix, parent_dir, gen_in_files, required, optionals):
+    def __call__(self, suffix, parent_dir, required, optionals):
         """Create the new contents to be placed into the snippet.
         ``pyproject.toml`` required and optional-dependencies.
 
@@ -272,8 +302,6 @@ class SnippetDependencies:
         :type suffix: str
         :param parent_dir: Folder absolute path
         :type parent_dir: pathlib.Path
-        :param gen_in_files: dependency requirements ``.in`` file absolute paths
-        :type gen_in_files: collections.abc.Generator[pathlib.Path, None, None]
         :param required:
 
            Default None. From cli, relative path to required dependencies .in file
@@ -286,27 +314,159 @@ class SnippetDependencies:
         :type optionals: dict[str, pathlib.Path]
         :returns: tool.setuptools.dynamic dependencies and optional-dependencies lines
         :rtype: str
-        :raises:
-
-            - :py:exc:`drain_swamp.exceptions.MissingRequirementsFoldersFiles` --
-              No requirements folders and files. Abort and provide user feedback
-
         """
         self._parent_dir = parent_dir
+
+        # Need to check valid absolute paths to requirement files
         self._required = required
         self._optionals = optionals
 
         str_suffix = _fix_suffix(suffix)
 
-        in_files = list(gen_in_files)
-        # May raise MissingRequirementsFoldersFiles
-        _check_are_requirements_files(in_files)
-
         ret = []
-        ret.extend(list(self._compose_dependencies_line(str_suffix)))
-        ret.extend(list(self._compose_optional_lines(str_suffix)))
+        gen_req = self._compose_dependencies_line(str_suffix)
+        for req_line in gen_req:
+            ret.append(req_line)
+
+        gen_opt = self._compose_optional_lines(str_suffix)
+        for req_line in gen_opt:
+            ret.append(req_line)
+
         # TOML format line endings **MUST** be \n, not \r\n
         sep = "\n"
         lines = sep.join(ret)
 
         return lines
+
+
+def get_required_and_optionals(path_cwd, path_f, tool_name=("pipenv-unlock",)):
+    """
+    :param path_cwd: Project base folder or test base folder
+    :type path_cwd: pathlib.Path
+    :param path_f: pyproject.toml absolute path
+    :type path_f: pathlib.Path
+    :param tool_name: pyproject.toml section(s) name
+    :type tool_name: str | collections.abc.Sequence[str]
+    :returns:
+
+       All dependencies absolute Path, required dependency absolute Path
+       or None, Mapping of target and optional dependencies absolute Path
+
+    :rtype: tuple[collections.abc.Sequence[pathlib.Path], drain_swamp.snippet_dependencies.T_REQUIRED, drain_swamp.snippet_dependencies.T_OPTIONALS]
+    """
+    #    required and optionals
+    abspath_ins = []
+    d_section = ReadPyproject()(path=path_f, tool_name=tool_name).section
+    d_required_raw = d_section.get("required", {})
+    # tuple[str, Path] | None
+    if isinstance(d_required_raw, Mapping):
+        required_relpath = d_required_raw.get("relative_path", None)
+        if required_relpath is not None:
+            abspath_dest = cast("Path", resolve_joinpath(path_cwd, required_relpath))
+            abspath_dest_in = replace_suffixes_last(abspath_dest, SUFFIX_IN)
+            t_required = (
+                d_required_raw.get("target", ""),
+                abspath_dest_in,
+            )
+            abspath_dest_in.parent.mkdir(parents=True, exist_ok=True)
+            abspath_ins.append(abspath_dest_in)
+        else:
+            t_required = None
+    else:  # pragma: no cover
+        t_required = None
+
+    d_optionals = {}
+    lst_optionals_raw = d_section.get("optionals", [])
+    is_seq = lst_optionals_raw is not None and isinstance(lst_optionals_raw, Sequence)
+    if is_seq:
+        for d_optional_dependency in lst_optionals_raw:
+            optstr_target = d_optional_dependency.get("target", None)
+            optstr_relpath = d_optional_dependency.get("relative_path", None)
+            is_target = (
+                optstr_target is not None
+                and isinstance(optstr_target, str)
+                and len(optstr_target.strip()) != 0
+            )
+            is_relpath = (
+                optstr_relpath is not None
+                and isinstance(optstr_relpath, str)
+                and len(optstr_relpath.strip()) != 0
+            )
+            if is_target and is_relpath:
+                abspath_dest = cast("Path", resolve_joinpath(path_cwd, optstr_relpath))
+                abspath_dest_in = replace_suffixes_last(abspath_dest, SUFFIX_IN)
+                abspath_dest_in.parent.mkdir(parents=True, exist_ok=True)
+                d_optionals[optstr_target] = abspath_dest_in
+                abspath_ins.append(abspath_dest_in)
+            else:  # pragma: no cover
+                pass
+    else:  # pragma: no cover
+        pass
+
+    return abspath_ins, t_required, d_optionals
+
+
+def generate_snippet(
+    path_cwd,
+    path_config,
+    tool_name=("pipenv-unlock",),
+    suffix_last=SUFFIX_LOCKED,
+):
+    """
+    :param path_cwd: Project base folder or test base folder
+    :type path_cwd: pathlib.Path
+    :param path_config: Path to pyproject.toml file
+    :type path_config: pathlib.Path
+    :param tool_name: pyproject.toml section(s) name
+    :type tool_name: str | collections.abc.Sequence[str]
+    :param suffix_last: Default ".lock". Last suffix
+    :type suffix_last: str
+    :returns: Snippet content ready for coping into snippet
+    :rtype: str
+    :raises:
+
+       - :py:exc:`AssertionError` -- pyproject.toml must be relative to cwd
+
+       - :py:exc:`drain_swamp.exceptions.MissingRequirementsFoldersFiles` --
+         missing dependency support files
+
+       - :py:exc:`ValueError` --
+
+       - :py:exc:`KeyError` -- pyproject section field missing. Cannot retrieve value
+
+    """
+    assert path_config.is_relative_to(path_cwd)
+
+    abspath_ins, t_required, d_optionals = get_required_and_optionals(
+        path_cwd,
+        path_config,
+        tool_name=tool_name,
+    )
+
+    #    empty folders -- venv base folders. Prevents NotADirectoryError
+    loader = VenvMapLoader(path_config.as_posix())
+    venv_relpaths = loader.venv_relpaths
+    for relpath in venv_relpaths:
+        path_dir = cast("Path", resolve_joinpath(path_cwd, relpath))
+        path_dir.mkdir(parents=True, exist_ok=True)
+
+    try:
+        in_files = InFiles(path_cwd, abspath_ins)
+        in_files.resolution_loop()
+    except (MissingRequirementsFoldersFiles, ValueError, KeyError):
+        raise
+    # in_files_count = len(list(in_files.zeroes))
+
+    str_lines_all = SnippetDependencies()(
+        suffix_last,
+        path_cwd,
+        t_required,
+        d_optionals,
+    )
+
+    # TOML format -- Even on Windows, line seperator must be "\n"
+    # if len(str_lines_all) != 0:
+    #     lines = str_lines_all.split("\n")
+    # else:
+    #     lines = []
+    return str_lines_all

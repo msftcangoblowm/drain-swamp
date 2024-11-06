@@ -4,7 +4,6 @@
 drain-swamp pytest conftest.py
 """
 
-import copy
 import re
 import shutil
 from collections.abc import Sequence
@@ -18,11 +17,6 @@ import pytest
 
 from drain_swamp._run_cmd import run_cmd
 from drain_swamp._safe_path import resolve_path
-from drain_swamp.backend_abc import (
-    get_optionals_cli,
-    get_optionals_pyproject_toml,
-    get_required_pyproject_toml,
-)
 
 from .wd_wrapper import WorkDir
 
@@ -258,128 +252,6 @@ def prep_pyproject_toml(request):
                 and path_delete_me.is_file()
             ):
                 path_delete_me.unlink()
-
-
-@pytest.fixture()
-def prep_cmd_unlock_lock():
-    """Prepare the cmd for:
-
-    - drain_swamp.cli_unlock.dependencies_lock
-
-    - drain_swamp.cli_unlock.dependencies_unlock
-
-    """
-
-    def _method(
-        path_tmp_dir,
-        t_req=(),
-        d_opts={},
-        add_folders=(),
-        snip_co=None,
-    ):
-        """Prepare the cmd for pipenv-unlock [lock|unlock].
-
-        :param path_tmp_dir: temp folder path
-        :type path_tmp_dir: pathlib.Path
-        :param t_req:
-        :type t_req: tuple[str, pathlib.Path] | None
-        :param d_opts: cli optionals target / relative path
-        :type d_opts: dict[str, pathlib.Path]
-        :param add_folders:
-
-           relative paths to additional folders which contain ``.in`` requirements files
-
-        :type add_folders: list[pathlib.Path]
-        :returns:
-
-           cmd usable with :py:mod:`subprocess` or :py:class:`click.testing.CliRunner`
-
-        :rtype: list[str | pathlib.Path]
-        """
-        cmd = [
-            "--path",
-            path_tmp_dir,
-        ]
-
-        if t_req is not None and len(t_req) == 2:
-            cmd.append("--required")
-            cmd.append(t_req[0])
-            cmd.append(t_req[1])
-
-        for target, path_rel in d_opts.items():
-            cmd.append("--optional")
-            cmd.append(target)
-            cmd.append(path_rel)
-
-        for path_dir in add_folders:
-            cmd.append("--dir")
-            cmd.append(path_dir)
-
-        if snip_co is not None:
-            cmd.append("--snip")
-            cmd.append(snip_co)
-
-        return cmd
-
-    return _method
-
-
-@pytest.fixture()
-def prepare_files_empties(prepare_folders_files):
-    """Fixture for preparing empty files."""
-
-    def _method(d_pyproject_toml, path_dir, d_add_files={}, d_optionals={}):
-        """Prepare empty files.
-
-        :param d_pyproject_toml: dict of a ``pyproject.toml``
-        :type d_pyproject_toml: dict[str, typing.Any]
-        :param path_dir: A temporary folder to place the file tree
-        :type path_dir: pathlib.Path
-        :param d_add_files:
-
-           Default empty dict. Additional files. Not to be confused with
-           cli optionals. Relative paths
-
-        :type d_add_files: dict[str, pathlib.Path]
-        """
-        # pyproject.toml optionals + additional files (w/o optionals_cli)
-        d_both = copy.deepcopy(d_add_files)
-        get_optionals_pyproject_toml(
-            d_both,
-            d_pyproject_toml,
-            path_dir,
-            is_bypass=True,
-        )
-        seq_prepare_these = list(d_both.values())
-        prepare_folders_files(seq_prepare_these, path_dir)
-
-        d_both.clear()
-
-        # optionals_cli
-        d_both = copy.deepcopy(d_optionals)
-        get_optionals_cli(
-            d_both,
-            path_dir,
-            d_optionals,
-        )
-        seq_prepare_these = list(d_both.values())
-        prepare_folders_files(seq_prepare_these, path_dir)
-
-        # required -- pyproject.toml
-        t_required = get_required_pyproject_toml(
-            d_pyproject_toml,
-            path_dir,
-            is_bypass=True,
-        )
-        if (
-            t_required is not None
-            and isinstance(t_required, Sequence)
-            and len(t_required) == 2
-        ):
-            seq_prepare_these = (t_required[1],)
-            prepare_folders_files(seq_prepare_these, path_dir)
-
-    return _method
 
 
 @pytest.fixture

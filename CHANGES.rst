@@ -8,6 +8,13 @@ Changelog
    Feature request
    .................
 
+   - lock_infiles InFiles constraints are not in InFiles. Need to check for that
+     and add as an InFile
+     pytest --showlocals tests/test_cli_dependencies.py::test_lock_unlock_docs_venv[unlock\ and\ locks\ for\ drain-swamp\ and\ docs]
+
+   - Pins.from_loader, acts on one venv, from the VenvMap, creates Pins.
+     What about the support files; The constraints and requirements?
+
    - when no version conflict, detect when only qualifier differs,
      add to resolvables list
 
@@ -52,6 +59,13 @@ Changelog
 
    Commit items for NEXT VERSION
    ..............................
+
+   - feat: approach for requirements organize by venvs rather than folders
+   - docs(conf.py): add autodoc_type_aliases for documenting TypeAlias
+   - feat(lock_inspect): add unlock_compile implementation
+   - refactor(lock_toggle): move InFile related --> lock_infile
+   - test: lock_util.replace_suffixes_last rather than _safe_path.replace_suffixes
+   - test(lock_infile): add test for InFiles.write
 
 .. scriv-start-here
 

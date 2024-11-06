@@ -13,52 +13,39 @@ Unit test -- Module
    --showlocals tests/test_snippet_dependencies.py && coverage report \
    --data-file=.coverage --include="**/snippet_dependencies.py"
 
-Integration test
-
-.. code-block:: shell
-
-   make coverage
-   pytest --showlocals --cov="drain_swamp" --cov-report=term-missing \
-   --cov-config=pyproject.toml tests
-
 """
 
 import logging
 import logging.config
-from collections.abc import (
-    Generator,
-    Sequence,
-)
+import shutil
 from contextlib import nullcontext as does_not_raise
 from pathlib import Path
+from typing import cast
 
 import pytest
-from logging_strict.tech_niques import get_locals
 
-from drain_swamp.backend_abc import (
-    BackendType,
-    get_optionals_pyproject_toml,
-    get_required_pyproject_toml,
-)
+from drain_swamp._safe_path import resolve_joinpath
 from drain_swamp.constants import (
     LOGGING,
+    SUFFIX_IN,
     g_app_name,
 )
 from drain_swamp.exceptions import MissingRequirementsFoldersFiles
-from drain_swamp.parser_in import TomlParser
+from drain_swamp.lock_util import replace_suffixes_last
 from drain_swamp.snippet_dependencies import (
-    SnippetDependencies,
     _fix_suffix,
+    generate_snippet,
+    get_required_and_optionals,
 )
 
-testdata_fix_suffix = [
+testdata_fix_suffix = (
     ("md", ".md"),
     (".md", ".md"),
-]
-ids_fix_suffix = [
+)
+ids_fix_suffix = (
     "without prefix period",
     "with prefix period",
-]
+)
 
 
 @pytest.mark.parametrize(
@@ -73,159 +60,157 @@ def test_fix_suffix(suffix, expected):
     assert actual == expected
 
 
-testdata_load_factory_good = (
+testdata_get_required_and_optionals = (
     (
-        Path(__file__).parent.joinpath("_good_files", "complete.pyproject_toml"),
+        Path(__file__).parent.joinpath(
+            "_bad_files", "keys-wrong-data-type.pyproject_toml"
+        ),
+        0,
+        None,
+        0,
+    ),
+)
+ids_get_required_and_optionals = ("pipenv-unlock section unexpected field types",)
+
+
+@pytest.mark.parametrize(
+    "path_config, files_count_expected, required_expected, optionals_expected",
+    testdata_get_required_and_optionals,
+    ids=ids_get_required_and_optionals,
+)
+def test_get_required_and_optionals(
+    path_config,
+    files_count_expected,
+    required_expected,
+    optionals_expected,
+    tmp_path,
+    path_project_base,
+    prep_pyproject_toml,
+):
+    """Test parsing pyproject.toml section tool.pipenv-unlock"""
+    # pytest -vv --showlocals --log-level INFO -k "test_get_required_and_optionals" tests
+    path_cwd = path_project_base()
+    # prepare
+    #    pyproject.toml
+    path_f = prep_pyproject_toml(path_config, tmp_path)
+
+    # act
+    abspath_ins, t_required, lst_optionals = get_required_and_optionals(
+        path_cwd,
+        path_f,
+    )
+    assert len(abspath_ins) == files_count_expected
+    assert t_required is required_expected
+    assert len(lst_optionals) == optionals_expected
+
+
+testdata_snippet_dependencies_create = (
+    (
+        Path(__file__).parent.joinpath("_req_files", "venvs_minimal.pyproject_toml"),
+        ".tools",
+        (
+            "requirements/pins.shared",
+            "docs/pip-tools",
+            "requirements/pins-cffi.in",
+            "requirements/tox.in",
+        ),
+        9,
+        6,
         does_not_raise(),
-        "setuptools",
     ),
     (
         Path(__file__).parent.joinpath("_good_files", "requires-none.pyproject_toml"),
+        ".venv",
+        (),
+        0,
+        0,
+        does_not_raise(),
+    ),
+    (
+        Path(__file__).parent.joinpath("_req_files", "venvs_minimal.pyproject_toml"),
+        ".tools",
+        (
+            "requirements/pins.shared",
+            "docs/pip-tools",
+        ),
+        9,
+        6,
         pytest.raises(MissingRequirementsFoldersFiles),
-        "setuptools",
     ),
 )
-ids_load_factory_good = (
+ids_snippet_dependencies_create = (
     "setuptools backend",
-    "no package dependencies. Empty dict",
+    "no package dependencies",
+    "missing a few requirements files",
 )
 
 
 @pytest.mark.parametrize(
-    "path_config, expectation, backend_expected",
-    testdata_load_factory_good,
-    ids=ids_load_factory_good,
+    (
+        "path_config, venv_path, seq_reqs_relpath, reqs_count_expected, "
+        "line_count_expected, expectation"
+    ),
+    testdata_snippet_dependencies_create,
+    ids=ids_snippet_dependencies_create,
 )
-def test_load_factory_good(
+def test_snippet_dependencies_create(
     path_config,
+    venv_path,
+    seq_reqs_relpath,
+    reqs_count_expected,
+    line_count_expected,
     expectation,
-    backend_expected,
     tmp_path,
     caplog,
     has_logging_occurred,
+    path_project_base,
     prepare_folders_files,
     prep_pyproject_toml,
 ):
-    """BackendType factory works with supported build backends."""
-    # pytest -vv --showlocals --log-level INFO -k "test_load_factory_good" tests
+    """Buils dependencies and optional dependencies snippet contents."""
+    # pytest -vv --showlocals --log-level INFO -k "test_snippet_dependencies_create" tests
     LOGGING["loggers"][g_app_name]["propagate"] = True
     logging.config.dictConfig(LOGGING)
     logger = logging.getLogger(name=g_app_name)
     logger.addHandler(hdlr=caplog.handler)
     caplog.handler.level = logger.level
 
+    path_cwd = path_project_base()
+
     # prepare
-    #    create folders and files
-    tp = TomlParser(path_config)
-    d_pyproject_toml = tp.d_pyproject_toml
-
-    #    optionals
-    d_optionals = dict()
-    get_optionals_pyproject_toml(
-        d_optionals,
-        d_pyproject_toml,
-        tmp_path,
-        is_bypass=True,
-    )
-    seq_prepare_these = list(d_optionals.values())
-    logger.info(f"prepare optionals: {seq_prepare_these}")
-    prepare_folders_files(seq_prepare_these, tmp_path)
-
-    #    required
-    func_path = "drain_swamp.backend_abc.get_required_pyproject_toml"
-    t_out = get_locals(
-        func_path,
-        get_required_pyproject_toml,
-        *(d_pyproject_toml, tmp_path),
-        **{"is_bypass": True},
-    )
-    actual_required, d_locals = t_out
-
-    t_required = get_required_pyproject_toml(
-        d_pyproject_toml,
-        tmp_path,
-        is_bypass=True,
-    )
-    msg_info = f"prepare required (t_required): {t_required}"
-    logger.info(msg_info)
-    if (
-        t_required is not None
-        and isinstance(t_required, Sequence)
-        and len(t_required) == 2
-    ):
-        seq_prepare_these = (t_required[1],)
-        logger.info(f"prepare required: {seq_prepare_these}")
-        prepare_folders_files(seq_prepare_these, tmp_path)
-
-    #    required
-    t_required = BackendType.get_required(
-        d_pyproject_toml,
-        path_config,
-        required=None,
-    )
-
-    lst_files = list(tmp_path.glob("**/*.in"))
-    logger.info(f"lst_files: {lst_files}")
-
-    assert has_logging_occurred(caplog)
-
     #    pyproject.toml
     path_f = prep_pyproject_toml(path_config, tmp_path)
 
-    # Confirm backend name
-    inst_backend = BackendType(path_f, parent_dir=tmp_path)
+    #    copy reqs files
+    #    TODO: Ensure folder has no missing requirement files
+    for relpath in seq_reqs_relpath:
+        abspath_src = cast("Path", resolve_joinpath(path_cwd, relpath))
+        abspath_src_in = replace_suffixes_last(abspath_src, SUFFIX_IN)
+        src_in_abspath = str(abspath_src_in)
+        abspath_dest = cast("Path", resolve_joinpath(tmp_path, relpath))
+        abspath_dest_in = replace_suffixes_last(abspath_dest, SUFFIX_IN)
+        abspath_dest_in.parent.mkdir(parents=True, exist_ok=True)
+        shutil.copy2(src_in_abspath, abspath_dest_in)
 
-    assert inst_backend.path_config == path_f
-    assert inst_backend.parent_dir != path_f
+    abspath_ins, t_required, d_optionals = get_required_and_optionals(tmp_path, path_f)
 
-    # BackendType.parent_dir setter only accepts folder
-    parent_dir_before = inst_backend.parent_dir
-    assert parent_dir_before.exists() and parent_dir_before.is_dir()
-    assert parent_dir_before == tmp_path
-    #    not a folder. Coerses file --> folder
-    inst_backend.parent_dir = tmp_path.joinpath(inst_backend.path_config.name)
-    del inst_backend
-    inst_backend = BackendType(path_config, parent_dir=tmp_path)
+    #    copy ``.in`` files
+    for abspath_dest_in in abspath_ins:
+        relpath = abspath_dest_in.relative_to(tmp_path)
+        abspath_src_in = cast("Path", resolve_joinpath(path_cwd, relpath))
+        src_in_abspath = str(abspath_src_in)
+        abspath_dest_in.parent.mkdir(parents=True, exist_ok=True)
+        shutil.copy2(src_in_abspath, abspath_dest_in)
 
-    suffixes = (
-        ".lock",
-        ".unlock",
-    )
-    for suffix in suffixes:
-        gen_in_files = inst_backend.in_files()
-        in_files = list(gen_in_files)
-        in_files_count = len(in_files)
-
-        gen_in_files = inst_backend.in_files()
-        assert isinstance(gen_in_files, Generator)
-        with expectation:
-            str_lines_all = SnippetDependencies()(
-                suffix,
-                inst_backend.parent_dir,
-                gen_in_files,
-                inst_backend.required,
-                inst_backend.optionals,
-            )
-        if isinstance(expectation, does_not_raise):
-            # TOML format -- Even on Windows, line seperator must be "\n"
+    with expectation:
+        # MissingRequirementsFoldersFiles --> halts creating snippet
+        # ValueError, KeyError
+        str_lines_all = generate_snippet(tmp_path, path_f)
+    if isinstance(expectation, does_not_raise):
+        # TOML format -- Even on Windows, line seperator must be "\n"
+        if len(str_lines_all) != 0:
             lines = str_lines_all.split("\n")
-            lines_count = len(lines)
-            # Assumes there are no duplicate required or optionals
-            assert in_files_count == lines_count
-
-        # Empty required = None
-        gen_in_files = inst_backend.in_files()
-        assert isinstance(gen_in_files, Generator)
-        with expectation:
-            str_lines_all = SnippetDependencies()(
-                suffix,
-                inst_backend.parent_dir,
-                gen_in_files,
-                None,
-                inst_backend.optionals,
-            )
-            # TOML format -- Even on Windows, line seperator must be "\n"
-            lines = str_lines_all.split("\n")
-            lines_count = len(lines)
-            in_files_wo_required = in_files_count - 1
-            assert in_files_wo_required == lines_count
+        else:
+            lines = []
+        lines_count_actual = len(lines)
+        assert lines_count_actual == line_count_expected

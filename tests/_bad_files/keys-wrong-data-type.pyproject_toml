@@ -19,6 +19,7 @@ dynamic = [
 
 [tool.setuptools.dynamic]
 # @@@ editable little_shop_of_horrors_shrine_candles
+dependencies = { file = ['requirements/prod.shared.lock'] }
 optional-dependencies.pip = { file = ['requirements/pip.lock'] }
 optional-dependencies.pip_tools = { file = ['requirements/pip-tools.lock'] }
 optional-dependencies.dev = { file = ['requirements/dev.lock'] }
@@ -29,18 +30,9 @@ optional-dependencies.docs = { file = ['docs/requirements.lock'] }
 version = {attr = 'drain_swamp._version.__version__'}
 
 [tool.pipenv-unlock]
-required = {}
+required = 4
+optionals = 4
 
-# underscore: hyphen
-optionals = [
-    { target = "pip", relative_path = '' },
-    { target = "pip_tools", relative_path = '' },
-    { target = "dev", relative_path = '' },
-    { target = "manage", relative_path = '' },
-    { target = "docs", relative_path = '' },
-]
-
-# production venv has no dependencies
 [[tool.venvs]]
 venv_base_path = '.venv'
-reqs = []
+reqs = 4

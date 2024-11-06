@@ -76,7 +76,7 @@ drain_swamp = "drain_swamp.monkey.wrap_infer_version:infer_version"
 use_scm_version = "drain_swamp.monkey.wrap_version_keyword:version_keyword"
 
 [project.scripts]
-pipenv-unlock = "drain_swamp.cli_unlock:main"
+pipenv-unlock = "drain_swamp.cli_dependencies:main"
 drain-swamp = "drain_swamp.cli_igor:main"
 scm-version = "drain_swamp.cli_scm_version:main"
 

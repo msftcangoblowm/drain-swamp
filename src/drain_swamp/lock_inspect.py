@@ -62,9 +62,11 @@ the constraints are easy to find. Rather than digging thru a bunch of
 
 from __future__ import annotations
 
+import fileinput
 import io
 import logging
 import os
+import re
 import sys
 from collections.abc import (
     Iterator,
@@ -75,7 +77,11 @@ from dataclasses import (
     dataclass,
     field,
 )
-from pathlib import Path
+from functools import singledispatch
+from pathlib import (
+    Path,
+    PurePath,
+)
 from pprint import pprint
 from typing import (
     TYPE_CHECKING,
@@ -91,17 +97,29 @@ from pip_requirements_parser import (
     RequirementsFile,
 )
 
-from ._safe_path import resolve_joinpath
+from ._package_installed import is_package_installed
+from ._run_cmd import run_cmd
+from ._safe_path import (
+    resolve_joinpath,
+    resolve_path,
+)
+from .check_type import is_ok
 from .constants import (
+    SUFFIX_IN,
     SUFFIX_LOCKED,
     SUFFIX_UNLOCKED,
     g_app_name,
 )
+from .exceptions import MissingRequirementsFoldersFiles
+from .lock_infile import InFiles
 from .lock_util import (
     is_shared,
     replace_suffixes_last,
 )
-from .pep518_venvs import VenvMap
+from .pep518_venvs import (
+    TOML_SECTION_VENVS,
+    VenvMap,
+)
 
 # Use dataclasses slots True for reduced memory usage and performance gain
 if sys.version_info >= (3, 10):  # pragma: no cover py-gte-310-else
@@ -398,13 +416,16 @@ class Pins(MutableSet[_T]):
         return ret
 
     @staticmethod
-    def from_loader(loader, venv_path, suffix=".unlock", filter_by_pin=True):
+    def from_loader(loader, venv_path, suffix=SUFFIX_UNLOCKED, filter_by_pin=True):
         """Factory. From a venv, get all Pins.
 
         :param loader: Contains some paths and loaded not parsed venv reqs
         :type loader: drain_swamp.pep518_venvs.VenvMapLoader
-        :param venv_path: Relative or absolute path to venv base folder
-        :type venv_path: str | pathlib.Path
+        :param venv_path:
+
+           Relative path to venv base folder. Acts as a key
+
+        :type venv_path: typing.Any
         :param suffix:
 
            Default ``.unlock``. End suffix of compiled requirements file.
@@ -417,7 +438,8 @@ class Pins(MutableSet[_T]):
         :rtype: set[drain_swamp.lock_inspect._T]
         :raises:
 
-            - :py:exc:`FileNotFoundError` -- requirements file not found. Create it
+            - :py:exc:`drain_swamp.exceptions.MissingRequirementsFoldersFiles` --
+              missing requirements file(s). Create it
 
         """
         if filter_by_pin is None or not isinstance(filter_by_pin, bool):
@@ -425,36 +447,45 @@ class Pins(MutableSet[_T]):
         else:  # pragma: no cover
             pass
 
+        """Relative path acts as a dict key. An absolute path is not a key.
+        Selecting by always nonexistent key returns empty Sequence, abspath_reqs"""
+        is_abs_path = is_ok(venv_path) and Path(venv_path).is_absolute()
+        is_abspath = (
+            venv_path is not None
+            and issubclass(type(venv_path), PurePath)
+            and venv_path.is_absolute()
+        )
+        if is_abs_path or is_abspath:
+            venv_path = Path(venv_path).relative_to(loader.project_base).as_posix()
+        else:  # pragma: no cover
+            pass
+
+        # NotADirectoryError, ValueError, KeyError, MissingRequirementsFoldersFiles
+        abspath_reqs = get_reqs(loader, venv_path, suffix_last=suffix)
+
         pins = set()
+        for abspath_req in abspath_reqs:
 
-        venvs = VenvMap(loader)
-        reqs = venvs.reqs(venv_path)
-        for path_in_ in reqs:
-            # requirements .unlock files, not the source within .in files
-            # where to apply ``nudges`` is another story.
-            path_venvreq = cast(
-                "Path",
-                resolve_joinpath(path_in_.project_base, path_in_.req_relpath),
-            )
-            path_unlock = replace_suffixes_last(path_venvreq, suffix)
-
-            """ Take only enough details to identify package as a pin.
+            """Take only enough details to identify package as a pin.
 
             In .unlock files, ``-c`` and ``-r`` are resolved. Therefore
             ``options`` section will be empty
             """
             try:
-                rf = RequirementsFile.from_file(path_unlock)
+                rf = RequirementsFile.from_file(abspath_req)
             except InstallationError as exc:
                 msg_exc = (
                     f"For venv {venv_path!s}, requirements file not "
-                    f"found {path_unlock!r}. Create it"
+                    f"found {abspath_req!r}. Create it"
                 )
-                raise FileNotFoundError(msg_exc) from exc
+                raise MissingRequirementsFoldersFiles(msg_exc) from exc
 
             d_rf_all = rf.to_dict()
             rf_reqs = d_rf_all["requirements"]
-            if rf_reqs is not None and isinstance(rf_reqs, list) and len(rf_reqs) != 0:
+            has_reqs = (
+                rf_reqs is not None and isinstance(rf_reqs, list) and len(rf_reqs) != 0
+            )
+            if has_reqs:
                 for d_req in rf_reqs:
                     pkg_name = d_req.get("name", "")
                     # list[specifier]
@@ -463,14 +494,14 @@ class Pins(MutableSet[_T]):
                     # Only keep package which have specifiers e.g. ``pip>=24.2``
                     if filter_by_pin is True:
                         if Pin.is_pin(specifiers):
-                            pin = Pin(path_unlock, pkg_name)
+                            pin = Pin(abspath_req, pkg_name)
                             pins.add(pin)
                         else:  # pragma: no cover
                             # non-Pin --> filtered out
                             pass
                     else:
                         # Do not apply filter. All entries
-                        pin = Pin(path_unlock, pkg_name)
+                        pin = Pin(abspath_req, pkg_name)
                         pins.add(pin)
             else:  # pragma: no cover
                 pass
@@ -717,7 +748,7 @@ class Pins(MutableSet[_T]):
         locks_by_pkg = Pins.by_pkg(
             loader,
             venv_path,
-            suffix=".unlock",
+            suffix=SUFFIX_UNLOCKED,
             filter_by_pin=False,
         )
 
@@ -742,7 +773,12 @@ class Pins(MutableSet[_T]):
         return d_out
 
 
-def _wrapper_pins_by_pkg(loader, venv_path, suffix=SUFFIX_LOCKED, filter_by_pin=True):
+def _wrapper_pins_by_pkg(
+    loader,
+    venv_path,
+    suffix=SUFFIX_LOCKED,
+    filter_by_pin=True,
+):
     """Pins.by_pkg is a boundmethod that is not callable.
     Wrap classmethod; this function will be callable
     """
@@ -752,12 +788,16 @@ def _wrapper_pins_by_pkg(loader, venv_path, suffix=SUFFIX_LOCKED, filter_by_pin=
         f".shared{SUFFIX_UNLOCKED}",
         f".shared{SUFFIX_LOCKED}",
     )
-    if suffix is None or not isinstance(suffix, str) or suffix not in possible_suffixes:
+    is_suffix_ng = (
+        suffix is None or not isinstance(suffix, str) or suffix not in possible_suffixes
+    )
+    if is_suffix_ng:
         suffix = SUFFIX_LOCKED
     else:  # pragma: no cover
         pass
 
-    if filter_by_pin is None or not isinstance(filter_by_pin, bool):
+    is_filter_arg_ng = filter_by_pin is None or not isinstance(filter_by_pin, bool)
+    if is_filter_arg_ng:
         filter_by_pin = True
     else:  # pragma: no cover
         pass
@@ -770,20 +810,18 @@ def _wrapper_pins_by_pkg(loader, venv_path, suffix=SUFFIX_LOCKED, filter_by_pin=
     # Limit to one venv. Mixing venvs is not allowed.
     # Go thru, this venv, all reqs files
     lst_venv_reqs = venvs.reqs(venv_path)
-    req_first = lst_venv_reqs[0]
-    path_venv = req_first.venv_abspath
+    # req_first = lst_venv_reqs[0]
+    # path_venv = req_first.venv_abspath
 
     try:
-        pins_locks = Pins(
-            Pins.from_loader(
-                loader,
-                path_venv,
-                suffix=suffix,
-                filter_by_pin=filter_by_pin,
-            )
+        lst_pins = Pins.from_loader(
+            loader,
+            venv_path,
+            suffix=suffix,
+            filter_by_pin=filter_by_pin,
         )
-    except FileNotFoundError:
-        # A requirements file is missing
+        pins_locks = Pins(lst_pins)
+    except MissingRequirementsFoldersFiles:
         raise
 
     for venv_req in lst_venv_reqs:
@@ -982,6 +1020,95 @@ class ResolvedMsg:
     nudge_pin_line: str
 
 
+def get_reqs(loader, venv_path=None, suffix_last=SUFFIX_IN):
+    """get absolute path to requirement files
+
+    Filtering by venv relative or absolute path is recommended
+
+    :param loader: Contains some paths and loaded unparsed mappings
+    :type loader: drain_swamp.pep518_venvs.VenvMapLoader
+    :param venv_path: Filter by venv relative or absolute path
+    :type venv_path: typing.Any
+    :param suffix_last: Default ``.in``. Last suffix is replaced, not all suffixes
+    :type suffix_last: str
+    :returns: Sequence of absolute path to requirements files
+    :rtype: tuple[pathlib.Path]
+    :raises:
+
+       - :py:exc:`NotADirectoryError` -- venv relative paths do not correspond to
+         actual venv folders
+
+       - :py:exc:`ValueError` -- expecting [[tool.venvs]] field reqs to be a
+         sequence
+
+       - :py:exc:`KeyError` -- No such venv found
+
+       - :py:exc:`drain_swamp.exceptions.MissingRequirementsFoldersFiles` --
+         There are missing ``.in`` files. Support file(s) not checked
+
+    """
+    """Relative path acts as a dict key. An absolute path is not a key.
+    Selecting by always nonexistent key returns empty Sequence"""
+    is_abs_path = is_ok(venv_path) and Path(venv_path).is_absolute()
+    is_abspath = (
+        venv_path is not None
+        and issubclass(type(venv_path), PurePath)
+        and venv_path.is_absolute()
+    )
+    if is_abs_path or is_abspath:
+        venv_path = Path(venv_path).relative_to(loader.project_base).as_posix()
+    else:  # pragma: no cover
+        pass
+    check_suffixes = (suffix_last,)
+
+    venv_relpaths = loader.venv_relpaths
+
+    # Ensure requirements files defined in [[tool.venvs]] reqs exists
+    try:
+        venvs = VenvMap(loader, check_suffixes=check_suffixes)
+        msg_missing = "\n".join(venvs.missing)
+        is_missing = len(venvs.missing) != 0
+        if is_missing:
+            raise MissingRequirementsFoldersFiles(msg_missing)
+        else:  # pragma: no cover
+            pass
+        assert len(venvs.missing) == 0, msg_missing
+    except (NotADirectoryError, ValueError, AssertionError):
+        raise
+
+    set_out = set()
+    is_get_all = venv_path is None
+    is_venvs_found = venv_path is not None and venv_path in venv_relpaths
+    if is_get_all or is_venvs_found:
+        venv_relpaths_filtered = [
+            venv_path_key
+            for venv_path_key in venv_relpaths
+            if is_get_all or venv_path_key == venv_path
+        ]
+        for venv_path_key in venv_relpaths_filtered:
+            # filtered so no KeyError
+            reqs = venvs.reqs(venv_path_key)
+
+            for path_in_ in reqs:
+                # requirements .unlock files, not the source within .in files
+                # where to apply ``nudges`` is another story.
+                path_venvreq = cast(
+                    "Path",
+                    resolve_joinpath(path_in_.project_base, path_in_.req_relpath),
+                )
+                abspath_req = replace_suffixes_last(path_venvreq, suffix_last)
+                set_out.add(abspath_req)
+    else:
+        # venv_path not in venv_relpaths
+        msg_warn = (
+            f"venv {venv_path} not in [[tool.{TOML_SECTION_VENVS}]] "
+            f"venv paths {venv_relpaths}"
+        )
+        raise KeyError(msg_warn)
+
+    return tuple(set_out)
+
+
 def get_issues(loader, venv_path):
     """Look thru all the packages with discrepanies. Which have existing
     nudge(s). Find where those nudges are in the ``.in`` files.
@@ -1004,7 +1131,7 @@ def get_issues(loader, venv_path):
         unresolvables: list[UnResolvable]
         resolvables: list[Resolvable]
 
-    # missing requirements --> FileNotFoundError
+    # missing requirements --> MissingRequirementsFoldersFiles
     try:
         t_out = Pins.by_pkg_with_issues(loader, venv_path)
         locks_by_pkg_w_issues, locks_pkg_by_versions = t_out
@@ -1012,8 +1139,8 @@ def get_issues(loader, venv_path):
         d_qualifiers = Pins.qualifiers_by_pkg(loader, venv_path)
         """Search thru .unlock file to identify current pins, but not
         source ``.in`` file."""
-        pins_current = Pins(Pins.from_loader(loader, venv_path, suffix=".unlock"))
-    except FileNotFoundError:
+        pins_current = Pins(Pins.from_loader(loader, venv_path, suffix=SUFFIX_UNLOCKED))
+    except MissingRequirementsFoldersFiles:
         raise
 
     unresolvables = []
@@ -1169,7 +1296,8 @@ def fix_resolvables(
     :rtype: tuple[list[drain_swamp.lock_inspect.ResolvedMsg], list[tuple[str, str, drain_swamp.lock_inspect.Resolvable, drain_swamp.lock_inspect.Pin]]]
     :raises:
 
-       - :py:exc:`FileNotFoundError` -- one or more requirements files is missing
+       - :py:exc:`drain_swamp.exceptions.MissingRequirementsFoldersFiles` --
+         one or more requirements files is missing
 
     """
     if TYPE_CHECKING:
@@ -1196,7 +1324,7 @@ def fix_resolvables(
                 filter_by_pin=False,
             )
         )
-    except FileNotFoundError:
+    except MissingRequirementsFoldersFiles:
         raise
 
     # Query all requirements . Do both, but first, ``.lock``
@@ -1256,12 +1384,14 @@ def fix_resolvables(
     return fixed_issues, applies_to_shared
 
 
-def fix_requirements(loader, is_dry_run=False):
+def fix_requirements(loader, venv_relpath, is_dry_run=False):
     """Iterate thru venv. Treat .unlock / .lock as a pair. Fix
     requirements files pair(s).
 
     :param loader: Contains some paths and loaded unparsed mappings
     :type loader: drain_swamp.pep518_venvs.VenvMapLoader
+    :param venv_relpath: venv relative path is a key. To choose a tools.venvs.req
+    :type venv_relpath: str
     :param is_dry_run:
 
        Default False. Should be a bool. Do not make changes. Merely
@@ -1281,6 +1411,9 @@ def fix_requirements(loader, is_dry_run=False):
        - :py:exc:`ValueError` -- expecting [[tool.venvs]] field reqs should be a
          list of relative path without .in .unlock or .lock suffix
 
+       - :py:exc:`drain_swamp.exceptions.MissingRequirementsFoldersFiles` --
+         missing constraints or requirements files or folders
+
     """
     if is_dry_run is None or not isinstance(is_dry_run, bool):
         is_dry_run = False
@@ -1292,41 +1425,52 @@ def fix_requirements(loader, is_dry_run=False):
     d_resolvable_shared = {}
 
     try:
-        venv_map = VenvMap(loader)
+        VenvMap(loader)
     except (NotADirectoryError, ValueError):
         raise
 
+    if is_ok(venv_relpath):
+        # One
+        venv_relpaths = [venv_relpath]
+    else:
+        # All
+        venv_relpaths = loader.venv_relpaths
+
     # Do once per venv, not (venv * reqs) times
-    venv_done = []
+    """
+    set_venv_relpaths = set()
     for venv_req in venv_map:
         venv_relpath = venv_req.venv_relpath
-        if venv_relpath in venv_done:
-            # already did this venv
-            continue
-        else:
-            # prevent repeat of this venv
-            venv_done.append(venv_relpath)
+        set_venv_relpaths.add(venv_relpath)
+    """
+    pass
+
+    for venv_relpath_tmp in venv_relpaths:
 
         """For a particular venv, get list of resolvable and unresolvable
         dependency conflicts"""
-        t_actionable = get_issues(loader, venv_relpath)
-        lst_resolvable, lst_unresolvable = t_actionable
+        try:
+            t_actionable = get_issues(loader, venv_relpath_tmp)
+            lst_resolvable, lst_unresolvable = t_actionable
+        except MissingRequirementsFoldersFiles:
+            # Missing constraints or requirements files
+            raise
 
         """Resolve the resolvable dependency conflicts. Refrain from attempting to
         fix resolvable conflicts involving .shared requirements files."""
         t_results = fix_resolvables(
             lst_resolvable,
             loader,
-            venv_relpath,
+            venv_relpath_tmp,
             is_dry_run=is_dry_run,
         )
         fixed_issues, applies_to_shared = t_results
 
         # group by venv -- resolved_msgs
-        d_resolved_msgs[venv_relpath] = fixed_issues
+        d_resolved_msgs[venv_relpath_tmp] = fixed_issues
 
         # group by venv -- unresolvables
-        d_unresolvables[venv_relpath] = lst_unresolvable
+        d_unresolvables[venv_relpath_tmp] = lst_unresolvable
 
         # group by venv -- resolvable .shared
         #     venv_path, suffix (.unlock or .lock), resolvable, pin
@@ -1336,3 +1480,405 @@ def fix_requirements(loader, is_dry_run=False):
         d_resolvable_shared[venv_relpath] = resolvable_shared_filtered
 
     return d_resolved_msgs, d_unresolvables, d_resolvable_shared
+
+
+def filter_by_venv_relpath(loader, venv_current_relpath):
+    """Facilitate call more than once
+
+    Could do all in one shot by supplying :code:`venv_path=None`
+
+    :param loader: Contains some paths and loaded unparsed mappings
+    :type loader: drain_swamp.pep518_venvs.VenvMapLoader
+    :param venv_current_relpath:
+
+       A venv relative path. Is a dict key so shouldn't be an absolute path
+
+    :type venv_current_relpath: str | None
+    :returns: Container of InFile
+    :rtype: tuple[tuple[pathlib.Path], drain_swamp.lock_infile.InFiles]
+    :raises:
+
+       - :py:exc:`drain_swamp.exceptions.MissingRequirementsFoldersFiles` --
+         Missing requirements files or folders
+
+       - :py:exc:`NotADirectoryError` -- venv base folder not found
+
+       - :py:exc:`ValueError` -- InFiles constructor expecting 2nd arg to be a Sequence
+
+       - :py:exc:`KeyError` -- venv relative path no matches. Check
+         pyproject.toml tool.venvs.reqs
+
+    """
+    path_cwd = loader.project_base
+    try:
+        # Implementation specific
+        t_abspath_in = get_reqs(loader, venv_path=venv_current_relpath)
+        # Generic
+        files = InFiles(path_cwd, t_abspath_in)
+        files.resolution_loop()
+    except MissingRequirementsFoldersFiles:
+        raise
+    except (NotADirectoryError, ValueError, KeyError):
+        raise
+
+    return t_abspath_in, files
+
+
+def unlock_compile(loader, venv_relpath):
+    """``.in`` requirement files can contain ``-r`` and ``-c`` lines.
+    Relative path to requirement files and constraint files respectively.
+
+    Originally thought ``-c`` was a :command:`pip-compile` convention,
+    not a pip convention. Opps!
+
+    Resolve the ``-r`` and ``-c`` to create ``.unlock`` file
+
+    package dependencies
+
+    - For a package which is an app, lock them.
+
+    - For a normal package, always must be unlocked.
+
+    optional dependencies
+
+    - additional feature --> leave unlocked
+
+    - For develop environment --> lock them
+
+    :param loader: Contains some paths and loaded unparsed mappings
+    :type loader: drain_swamp.pep518_venvs.VenvMapLoader
+    :param venv_relpath: venv relative path is a key. To choose a tools.venvs.req
+    :type venv_relpath: str
+    :returns: Generator of abs path to .unlock files
+    :rtype: collections.abc.Generator[pathlib.Path, None, None]
+    """
+    if is_ok(venv_relpath):
+        # Only one venv
+        _, files = filter_by_venv_relpath(loader, venv_relpath)
+        gen = files.write()
+        lst_called = list(gen)
+        for abspath in lst_called:
+            assert abspath.exists() and abspath.is_file()
+
+        yield from lst_called
+    else:
+        # All venv (w/o filtering)
+        for venv_path in loader.venv_relpaths:
+            _, files = filter_by_venv_relpath(loader, venv_path)
+            gen = files.write()
+            lst_called = list(gen)
+            for abspath in lst_called:
+                assert abspath.exists() and abspath.is_file()
+
+            yield from lst_called
+
+    yield from ()
+
+
+def _compile_one(
+    in_abspath,
+    lock_abspath,
+    ep_path,
+    path_cwd,
+    context=None,
+    timeout=15,
+):
+    """Run subprocess to compile ``.in`` --> ``.lock``.
+
+    Serial, it's what's for breakfast
+
+    :param in_abspath: ``.in`` file absolute path
+    :type in_abspath: str
+    :param lock_abspath: output absolute path. Should have ``.lock`` last suffix
+    :type lock_abspath: str
+    :param ep_path: Absolute path to binary executable
+    :type ep_path: str
+    :param path_cwd: package base folder absolute Path
+    :type path_cwd: pathlib.Path
+    :param context: Venv path context. Which venv compiling .lock for
+    :type context: str | None
+    :param timeout: Default 15. Give ``pip --timeout`` in seconds
+    :type timeout: typing.Any
+    :returns:
+
+       On success, Path to ``.lock`` file otherwise None. 2nd is error
+       and exception details
+
+    :rtype: tuple[pathlib.Path | None, None | str]
+    """
+    dotted_path = f"{g_app_name}.lock_inspect._compile_one"
+
+    if timeout is None or not isinstance(timeout, int):
+        timeout = 15
+    else:  # pragma: no cover
+        pass
+
+    cmd = (
+        ep_path,
+        "--allow-unsafe",
+        "--no-header",
+        "--resolver",
+        "backtracking",
+        f"--pip-args '--timeout={timeout!s}'",
+        "-o",
+        lock_abspath,
+        in_abspath,
+    )
+
+    if is_module_debug:  # pragma: no cover
+        msg_info = f"{dotted_path} ({context}) cmd: {cmd}"
+        _logger.info(msg_info)
+    else:  # pragma: no cover
+        pass
+
+    t_ret = run_cmd(cmd, cwd=path_cwd)
+    _, err, exit_code, exc = t_ret
+
+    if exit_code != 0:  # pragma: no cover
+        """timeout error message
+
+        WARNING: Retrying (Retry(total=4, connect=None, read=None, redirect=None,
+        status=None)) after connection broken by 'NewConnectionError('
+        <pip._vendor.urllib3.connection.HTTPSConnection object at 0x7fe86a05d670>:
+        Failed to establish a new connection: [Errno -3] Temporary failure
+        in name resolution')': /simple/pip-tools/
+
+        Search for ``Failed to establish a new connection`` to detect timeouts
+        """
+        err = err.lstrip()
+        if exit_code == 1 and "Failed to establish a new connection" in err:
+            err = "timeout (15s)"
+            err_details = err
+        else:
+            err_details = f"{err}{os.linesep}{exc}"
+            msg_warn = (
+                f"{dotted_path} ({context}) {cmd!r} exit code "
+                f"{exit_code} {err} {exc}"
+            )
+            _logger.warning(msg_warn)
+    else:  # pragma: no cover
+        err_details = None
+
+    path_out = Path(lock_abspath)
+    is_confirm = path_out.exists() and path_out.is_file()
+    if is_confirm:
+        if is_module_debug:  # pragma: no cover
+            msg_info = f"{dotted_path} ({context}) yield: {path_out!s}"
+            _logger.info(msg_info)
+        else:  # pragma: no cover
+            msg_warn = f"{dotted_path} ({context}) .lock created: {path_out!s}"
+            _logger.warning(msg_warn)
+
+        # abspath --> relpath
+        _postprocess_abspath_to_relpath(path_out, path_cwd)
+
+        ret = path_out, err_details
+    else:
+        """File not created. ``.in`` file contained errors that needs
+        to be fixed. Log info adds context. Gives explanation about consequences
+        """
+        if is_module_debug:  # pragma: no cover
+            msg_info = (
+                f"{dotted_path} ({context}) {in_abspath} malformed. "
+                f"pip-compile did not create: {path_out!s}."
+            )
+            _logger.info(msg_info)
+        else:  # pragma: no cover
+            pass
+        ret = None, err_details
+
+    return ret
+
+
+@singledispatch
+def prepare_pairs(t_ins):
+    """Fallback for unsupported data types without implementations
+
+    Do not add type annotations. It's correct as-is.
+
+    :raises:
+
+       - :py:exc:`NotImplementedError` -- No implementation for 1st arg unsupported type
+
+    """
+    msg_warn = f"No implemenatation for type {t_ins}"
+    raise NotImplementedError(msg_warn)
+
+
+@prepare_pairs.register(tuple)
+def _(t_ins: tuple[Path]):
+    """Prepare (.in .lock pairs) of only the direct requirements,
+    not the support files.
+
+    :param t_ins: Absolute path of the requirement ``.in`` file(s)
+    :type t_ins: tuple[pathlib.Path]
+    :returns: Yield .in .lock pairs. Absolute paths.
+    :rtype: collections.abc.Generator[tuple[str, str], None, None]
+    """
+    for abspath_in in t_ins:
+        abspath_locked = replace_suffixes_last(abspath_in, SUFFIX_LOCKED)
+        yield str(abspath_in), str(abspath_locked)
+    yield from ()
+
+
+@prepare_pairs.register
+def _(in_files: InFiles, path_cwd=None):
+    """This would prepare (.in .lock pairs), not only for the reqs,
+    but also the support files. Compiling the support files is not needed.
+
+    But here is how to do that.
+
+    :param in_files:
+
+       Requirements. After resolution_loop, so contains both reqs and support files
+
+    :type in_files: drain_swamp.lock_infile.InFiles
+    :param path_cwd: cwd so can get the requirement file's absolute path
+    :type path_cwd: pathlib.Path | None
+    :returns: Yield .in .lock pairs. Absolute paths.
+    :rtype: collections.abc.Generator[tuple[str, str], None, None]
+    """
+    assert path_cwd is not None and issubclass(type(path_cwd), PurePath)
+    gen = in_files.zeroes
+    for in_ in gen:
+        abspath_in = in_.abspath(path_cwd)
+        abspath_locked = replace_suffixes_last(abspath_in, SUFFIX_LOCKED)
+
+        yield str(abspath_in), str(abspath_locked)
+    yield from ()
+
+
+def lock_compile(loader, venv_relpath, timeout=15):
+    """In a subprocess, call :command:`pip-compile` to create ``.lock`` files
+
+    :param loader: Contains some paths and loaded unparsed mappings
+    :type loader: drain_swamp.pep518_venvs.VenvMapLoader
+    :param venv_relpath: venv relative path is a key. To choose a tools.venvs.req
+    :type venv_relpath: str
+    :param timeout: Default 15. Give ``pip --timeout`` in seconds
+    :type timeout: typing.Any
+    :returns: Generator of abs path to .lock files
+    :rtype: tuple[tuple[str, ...], tuple[str, ...]]
+    :raises:
+
+       - :py:exc:`AssertionError` -- package pip-tools is not installed
+
+    """
+    dotted_path = f"{g_app_name}.lock_inspect.lock_compile"
+    is_installed = is_package_installed("pip-tools")
+    path_ep = resolve_path("pip-compile")
+    assert is_installed is True and path_ep is not None
+    ep_path = str(path_ep)
+
+    if timeout is None or not isinstance(timeout, int):
+        timeout = 15
+    else:  # pragma: no cover
+        pass
+
+    path_cwd = loader.project_base
+
+    compiled = []
+    failures = []
+
+    if is_ok(venv_relpath):
+        # One
+        venv_relpaths = [venv_relpath]
+    else:
+        # All
+        venv_relpaths = loader.venv_relpaths
+
+    for venv_relpath_tmp in venv_relpaths:
+        context = venv_relpath_tmp
+        t_ins, files = filter_by_venv_relpath(loader, venv_relpath_tmp)
+        gen_pairs = prepare_pairs(t_ins)
+        pairs = list(gen_pairs)
+
+        if is_module_debug:  # pragma: no cover
+            msg_info = f"{dotted_path} pairs {pairs!r}"
+            _logger.info(msg_info)
+        else:  # pragma: no cover
+            pass
+
+        for in_abspath, lock_abspath in pairs:
+            # Conforms to interface?
+            assert isinstance(in_abspath, str)
+            assert isinstance(lock_abspath, str)
+            assert isinstance(ep_path, str)
+            assert issubclass(type(path_cwd), PurePath)
+            assert context is None or isinstance(context, str)
+
+            if is_module_debug:  # pragma: no cover
+                msg_info = (
+                    f"{dotted_path} _compile_one (before) cwd {path_cwd} "
+                    f"binary {ep_path} {in_abspath} {lock_abspath}"
+                )
+                _logger.info(msg_info)
+            else:  # pragma: no cover
+                pass
+
+            optabspath_lock, err_details = _compile_one(
+                in_abspath,
+                lock_abspath,
+                ep_path,
+                path_cwd,
+                context=context,
+                timeout=timeout,
+            )
+            # if timeout cannot add to compiled. If no timeout, maybe failures empty
+            if optabspath_lock is None:  # pragma: no cover
+                msg = f"venv {venv_relpath_tmp} {lock_abspath} {err_details}"
+                lst_alias = failures
+            else:  # pragma: no cover
+                # Path
+                msg = lock_abspath
+                lst_alias = compiled
+            lst_alias.append(msg)
+
+    return (tuple(compiled), tuple(failures))
+
+
+def is_timeout(failures):
+    """lock_compile returns both success and failures. Detect
+    if the cause of the failure was timeout(s)
+
+    :param failures: Sequence of verbose error message and traceback
+    :type failures: tuple[str, ...]
+    :returns: True if web (actually SSL) connection timeout occurred
+    :rtype: bool
+    """
+    if len(failures) != 0:  # pragma: no cover
+        failure_0 = failures[0]
+        is_timeout = re.search("timeout.+s", failure_0)
+    else:  # pragma: no cover
+        is_timeout = False
+
+    return is_timeout
+
+
+def _postprocess_abspath_to_relpath(path_out, path_parent):
+    """Within a lock file (contents), if an absolute path make relative
+    by removing parent path
+
+    To see the lock file format
+
+    .. code-block:: shell
+
+       pip-compile --dry-run docs/requirements.in
+
+    :param path_out: Absolute path of the requirements file
+    :type path_out: pathlib.Path
+    :param path_parent: Absolute path to the parent folder of the requirements file
+    :type path_parent: pathlib.Path
+    """
+    files = (path_out,)
+    # py310 encoding="utf-8"
+    with fileinput.input(files, inplace=True) as f:
+        for line in f:
+            is_lock_requirement_line = line.startswith("    # ")
+            if is_lock_requirement_line:
+                # process line
+                line_modified = line.replace(f"{path_parent!s}/", "")
+                sys.stdout.write(line_modified)
+            else:  # pragma: no cover
+                # do not modify line
+                sys.stdout.write(line)
