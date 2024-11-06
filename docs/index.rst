@@ -28,14 +28,15 @@
 
 \* Python 3.9 through 3.13, PyPy
 
+**new in 2.0.x**
+
+approach for requirements organize by venvs rather than folders;
+new implementation for pipenv-unlock commands;
+
 **new in 1.8.x**
 
 add dependency drain-swamp-snippet; use msftcangoblowm/drain-swamp-action;
 add support for .shared.in; command pipenv-unlock fix;
-
-**New in 1.7.x**
-
-Windows support; patch strftime;
 
 .. raw:: html
 

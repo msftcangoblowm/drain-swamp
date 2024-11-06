@@ -242,7 +242,6 @@ def test_lock_unlock_docs_venv(
 ):
     """Test dependency lock and unlock."""
     # pytest -vv --showlocals --log-level INFO -k "test_lock_unlock_docs_venv" -v tests
-    # pytest --showlocals tests/test_cli_dependencies.py::test_lock_unlock_docs_venv[unlock\ for\ drain-swamp\ and\ docs]
     # pytest --showlocals tests/test_cli_dependencies.py::test_lock_unlock_docs_venv[lock\ for\ drain-swamp\ and\ docs]
     # python [path to project base]src/drain_swamp/cli_dependencies.py unlock --path=[tmp path folder] --venv-relpath='.doc/.venv'
     # python [path to project base]src/drain_swamp/cli_dependencies.py unlock --path=[tmp path folder]

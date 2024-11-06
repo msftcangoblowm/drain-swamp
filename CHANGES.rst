@@ -8,16 +8,6 @@ Changelog
    Feature request
    .................
 
-   - lock_infiles InFiles constraints are not in InFiles. Need to check for that
-     and add as an InFile
-     pytest --showlocals tests/test_cli_dependencies.py::test_lock_unlock_docs_venv[unlock\ and\ locks\ for\ drain-swamp\ and\ docs]
-
-   - Pins.from_loader, acts on one venv, from the VenvMap, creates Pins.
-     What about the support files; The constraints and requirements?
-
-   - when no version conflict, detect when only qualifier differs,
-     add to resolvables list
-
    - Confirm setuptools-scm file finders are being called?
 
    - self hosted package server. See article
@@ -25,6 +15,18 @@ Changelog
 
    Known regressions
    ..................
+
+   - Detection should not be limited to only version conflicts. When
+     to apply qualifiers should be configurable.
+
+     Currently there must be a version conflict, then qualifiers are fixed.
+     Qualifier fix is clumsy, either apply always or not.
+
+   - pipenv-unlock commands require all venv direct requirements files
+     and support files. So if there are two venvs, and running command
+     against venv B, venv A support files are also required.
+
+     Pins.from_loader also affected
 
    - lock_inspect.get_issues and lock_inspect.fix_resolvables
      If no version conflicts, only qualifiers differ, issue is not addressed.
@@ -60,15 +62,19 @@ Changelog
    Commit items for NEXT VERSION
    ..............................
 
-   - test(lock_infile): fix test_infiles_write rstrip end of file newlines
-   - feat: approach for requirements organize by venvs rather than folders
-   - docs(conf.py): add autodoc_type_aliases for documenting TypeAlias
-   - feat(lock_inspect): add unlock_compile implementation
-   - refactor(lock_toggle): move InFile related --> lock_infile
-   - test: lock_util.replace_suffixes_last rather than _safe_path.replace_suffixes
-   - test(lock_infile): add test for InFiles.write
-
 .. scriv-start-here
+
+.. _changes_2-0-0:
+
+Version 2.0.0 — 2024-11-06
+--------------------------
+
+- feat: approach for requirements organize by venvs rather than folders
+- feat(lock_inspect): add unlock_compile implementation
+- refactor(lock_toggle): move InFile related --> lock_infile
+- docs(conf.py): add autodoc_type_aliases for documenting TypeAlias
+- test: lock_util.replace_suffixes_last rather than _safe_path.replace_suffixes
+- test(lock_infile): add test for InFiles.write
 
 .. _changes_1-8-6:
 
