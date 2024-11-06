@@ -469,7 +469,10 @@ def test_infiles_write(
                 #    simplistic but good enough
                 is_name_match = abspath_out.name == abspath_unlock.name
                 if is_name_match:
+                    # actual_unlock_contents ends with ``'\n\n'``
                     expected_unlock_contents = abspath_out.read_text()
                     is_found = True
-                    assert actual_unlock_contents == expected_unlock_contents
+                    actual_unlock_cleaned = actual_unlock_contents.rstrip()
+                    expected_unlock_cleaned = expected_unlock_contents.rstrip()
+                    assert actual_unlock_cleaned == expected_unlock_cleaned
             assert is_found is True

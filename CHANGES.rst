@@ -60,6 +60,7 @@ Changelog
    Commit items for NEXT VERSION
    ..............................
 
+   - test(lock_infile): fix test_infiles_write rstrip end of file newlines
    - feat: approach for requirements organize by venvs rather than folders
    - docs(conf.py): add autodoc_type_aliases for documenting TypeAlias
    - feat(lock_inspect): add unlock_compile implementation
