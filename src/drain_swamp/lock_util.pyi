@@ -3,6 +3,7 @@ from typing import Any
 
 ENDINGS: tuple[str, str, str]
 __all__ = (
+    "ENDINGS",
     "is_shared",
     "replace_suffixes_last",
 )

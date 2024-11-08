@@ -100,6 +100,7 @@ from pip_requirements_parser import (
 from ._package_installed import is_package_installed
 from ._run_cmd import run_cmd
 from ._safe_path import (
+    get_venv_python_abspath,
     resolve_joinpath,
     resolve_path,
 )
@@ -1580,7 +1581,7 @@ def _compile_one(
     lock_abspath,
     ep_path,
     path_cwd,
-    context=None,
+    venv_relpath,
     timeout=15,
 ):
     """Run subprocess to compile ``.in`` --> ``.lock``.
@@ -1595,8 +1596,12 @@ def _compile_one(
     :type ep_path: str
     :param path_cwd: package base folder absolute Path
     :type path_cwd: pathlib.Path
-    :param context: Venv path context. Which venv compiling .lock for
-    :type context: str | None
+    :param venv_relpath:
+
+       From the venv relative path, get the Python interpreter absolute path
+       and pass thru to pip.
+
+    :type venv_relpath: str
     :param timeout: Default 15. Give ``pip --timeout`` in seconds
     :type timeout: typing.Any
     :returns:
@@ -1613,20 +1618,55 @@ def _compile_one(
     else:  # pragma: no cover
         pass
 
+    """pip-compile runs with Python interpreter A.
+    pip runs against Python interpreter B.
+
+    Do not know whether or not Python interpreter B is setup in venv
+    relative path folder
+    """
+    try:
+        venv_python_abspath = get_venv_python_abspath(path_cwd, venv_relpath)
+    except NotADirectoryError:  # pragma: no cover
+        # venv not setup with appropriate python interpreter version.
+        # pip-compile results will be wrong, but **might** still run
+        line_python = ""
+        msg_warn = (
+            f"venv not setup under folder, {venv_relpath} "
+            "with the appropriate python interpreter version. "
+            "Running pip-compile with current python executable. "
+            "pip-compile results will be wrong, but might still run."
+        )
+        _logger.warning(msg_warn)
+    else:  # pragma: no cover
+        # venv found. Hopefully with the correct Python interpreter version
+        is_file = (
+            Path(venv_python_abspath).exists() and Path(venv_python_abspath).is_file()
+        )
+        if is_file:
+            line_python = (f"--pip-args='--python={venv_python_abspath!s}'",)
+        else:
+            """Couldn't find Python interpreter, fallback to current one
+            In tests, base folder is tmp_path, not path_cwd. Needs a
+            *parent_dir* override param
+            """
+            line_python = ""
+
     cmd = (
         ep_path,
         "--allow-unsafe",
         "--no-header",
         "--resolver",
         "backtracking",
-        f"--pip-args '--timeout={timeout!s}'",
+        "--pip-args='--isolated'",
+        f"--pip-args='--timeout={timeout!s}'",
+        f"{line_python}",
         "-o",
         lock_abspath,
         in_abspath,
     )
 
     if is_module_debug:  # pragma: no cover
-        msg_info = f"{dotted_path} ({context}) cmd: {cmd}"
+        msg_info = f"{dotted_path} ({venv_relpath}) cmd: {cmd}"
         _logger.info(msg_info)
     else:  # pragma: no cover
         pass
@@ -1652,7 +1692,7 @@ def _compile_one(
         else:
             err_details = f"{err}{os.linesep}{exc}"
             msg_warn = (
-                f"{dotted_path} ({context}) {cmd!r} exit code "
+                f"{dotted_path} ({venv_relpath}) {cmd!r} exit code "
                 f"{exit_code} {err} {exc}"
             )
             _logger.warning(msg_warn)
@@ -1663,10 +1703,10 @@ def _compile_one(
     is_confirm = path_out.exists() and path_out.is_file()
     if is_confirm:
         if is_module_debug:  # pragma: no cover
-            msg_info = f"{dotted_path} ({context}) yield: {path_out!s}"
+            msg_info = f"{dotted_path} ({venv_relpath}) yield: {path_out!s}"
             _logger.info(msg_info)
         else:  # pragma: no cover
-            msg_warn = f"{dotted_path} ({context}) .lock created: {path_out!s}"
+            msg_warn = f"{dotted_path} ({venv_relpath}) .lock created: {path_out!s}"
             _logger.warning(msg_warn)
 
         # abspath --> relpath
@@ -1679,7 +1719,7 @@ def _compile_one(
         """
         if is_module_debug:  # pragma: no cover
             msg_info = (
-                f"{dotted_path} ({context}) {in_abspath} malformed. "
+                f"{dotted_path} ({venv_relpath}) {in_abspath} malformed. "
                 f"pip-compile did not create: {path_out!s}."
             )
             _logger.info(msg_info)
@@ -1775,6 +1815,7 @@ def lock_compile(loader, venv_relpath, timeout=15):
     else:  # pragma: no cover
         pass
 
+    # TODO: during testing, this is tmp_path, not package base folder
     path_cwd = loader.project_base
 
     compiled = []
@@ -1788,7 +1829,6 @@ def lock_compile(loader, venv_relpath, timeout=15):
         venv_relpaths = loader.venv_relpaths
 
     for venv_relpath_tmp in venv_relpaths:
-        context = venv_relpath_tmp
         t_ins, files = filter_by_venv_relpath(loader, venv_relpath_tmp)
         gen_pairs = prepare_pairs(t_ins)
         pairs = list(gen_pairs)
@@ -1799,17 +1839,17 @@ def lock_compile(loader, venv_relpath, timeout=15):
         else:  # pragma: no cover
             pass
 
+        assert isinstance(ep_path, str)
+        assert issubclass(type(path_cwd), PurePath)
+        assert venv_relpath_tmp is not None or isinstance(venv_relpath_tmp, str)
         for in_abspath, lock_abspath in pairs:
             # Conforms to interface?
             assert isinstance(in_abspath, str)
             assert isinstance(lock_abspath, str)
-            assert isinstance(ep_path, str)
-            assert issubclass(type(path_cwd), PurePath)
-            assert context is None or isinstance(context, str)
 
             if is_module_debug:  # pragma: no cover
                 msg_info = (
-                    f"{dotted_path} _compile_one (before) cwd {path_cwd} "
+                    f"{dotted_path} (before _compile_one) cwd {path_cwd} "
                     f"binary {ep_path} {in_abspath} {lock_abspath}"
                 )
                 _logger.info(msg_info)
@@ -1821,7 +1861,7 @@ def lock_compile(loader, venv_relpath, timeout=15):
                 lock_abspath,
                 ep_path,
                 path_cwd,
-                context=context,
+                venv_relpath_tmp,
                 timeout=timeout,
             )
             # if timeout cannot add to compiled. If no timeout, maybe failures empty

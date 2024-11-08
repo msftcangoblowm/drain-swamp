@@ -10,8 +10,8 @@ Utils for handling: .in, .shared.in, .unlock, .shared.unlock, .lock, and .shared
    End suffix indicating one of the requirement lock file types
 
 .. py:data:: __all__
-   :type: tuple[str, str]
-   :value: ("is_shared", "replace_suffixes_last")
+   :type: tuple[str, str, str]
+   :value: ("ENDINGS", "is_shared", "replace_suffixes_last")
 
    Module exports
 
@@ -30,6 +30,7 @@ from ._safe_path import replace_suffixes
 
 ENDINGS = (".in", ".unlock", ".lock")
 __all__ = (
+    "ENDINGS",
     "is_shared",
     "replace_suffixes_last",
 )

@@ -2,6 +2,7 @@ import enum
 import logging
 from collections.abc import (
     Generator,
+    Hashable,
     Sequence,
 )
 from dataclasses import (
@@ -26,7 +27,7 @@ is_module_debug: Final[bool]
 
 def strip_inline_comments(val: str) -> str: ...
 @dataclass
-class InFile:
+class InFile(Hashable):
     relpath: str
     stem: str
     constraints: set[str] = ...
@@ -40,6 +41,7 @@ class InFile:
     def resolve(self, constraint: str, requirements: set[str]) -> None: ...
     def __hash__(self) -> int: ...
     def __eq__(self, right: object) -> bool: ...
+    def __lt__(self, right: object) -> bool: ...
 
 class InFileType(enum.Enum):
     FILES = enum.auto()

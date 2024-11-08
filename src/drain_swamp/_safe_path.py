@@ -4,9 +4,10 @@
 Portions of a Path take into account platform must be dealt withpSafely deal with paths.
 
 .. py:data:: __all__
-   :type: tuple[str, str, str, str, str, str, str]
+   :type: tuple[str, str, str, str, str, str, str, str]
    :value: ("fix_relpath", "is_linux", "is_macos", "is_win", \
-   "replace_suffixes", "resolve_path", "resolve_joinpath")
+   "replace_suffixes", "resolve_path", "resolve_joinpath", \
+   "get_venv_python_abspath")
 
    Module exports
 
@@ -16,9 +17,11 @@ import platform
 import shutil
 from pathlib import (
     Path,
+    PurePath,
     PurePosixPath,
     PureWindowsPath,
 )
+from typing import cast
 
 __all__ = (
     "fix_relpath",
@@ -28,6 +31,7 @@ __all__ = (
     "replace_suffixes",
     "resolve_path",
     "resolve_joinpath",
+    "get_venv_python_abspath",
 )
 
 
@@ -170,3 +174,70 @@ def replace_suffixes(abspath_a, suffixes):
     ret = path_parent / str_name_1
 
     return ret
+
+
+def get_venv_python_abspath(path_cwd, venv_relpath):
+    """Within the package base folder, venv(s) should have been created
+    within subfolder(s).
+
+    Given the package base folder and the venv relative path, get the
+    platform specific python executable absolute path
+
+    :param path_cwd: package base folder absolute path
+    :type path_cwd: pathlib.Path | pathlib.PurePath
+    :param venv_relpath:
+
+       venv Base posix style relative path. Even for Windows.
+
+    :type venv_relpath: str
+    :returns: venv's python executable absolute path
+    :rtype: str
+
+    :raises:
+
+       - :py:exc:`TypeError` -- 1st arg Unsupported type. Expecting Path or PurePath
+
+       - :py:exc:`NotADirectoryError` -- Missing venv folder. May indicate run under
+         gh workflow or tox
+
+    """
+    is_path_cwd_ng = path_cwd is None or not issubclass(type(path_cwd), PurePath)
+    if is_path_cwd_ng:
+        msg_warn = (
+            "Expecting either Path or PurePath got unsupported type "
+            f"{type(path_cwd)}"
+        )
+        raise TypeError(msg_warn)
+    else:  # pragma: no cover
+        pass
+
+    """Guessing path to python executable.
+    :code:`sys.executable` or :code:`sys._base_executable` are for the
+    current venv. Which is unhelpful.
+    """
+    if is_win():  # pragma: no cover
+        # Should be posix path. Even for Windows
+        binary_posix_relpath = "Scripts/python.exe"
+    else:  # pragma: no cover
+        binary_posix_relpath = "bin/python"
+
+    abspath_venv = cast("Path", resolve_joinpath(path_cwd, venv_relpath))
+    is_venv_folder_exists = not abspath_venv.exists() and not abspath_venv.is_dir()
+
+    if is_venv_folder_exists:
+        """gh workflow and tox, only one Python executable.
+        Would need to setup venv w/ appropriate and respective python interpretor
+        """
+        reason = "venv relative path did not find a folder containing a venv"
+        raise NotADirectoryError(reason)
+    else:
+        abspath_venv_python = cast(
+            "Path",
+            resolve_joinpath(
+                abspath_venv,
+                binary_posix_relpath,
+            ),
+        )
+        venv_python_abspath = str(abspath_venv_python)
+
+    return venv_python_abspath

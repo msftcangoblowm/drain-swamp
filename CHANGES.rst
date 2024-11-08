@@ -8,6 +8,12 @@ Changelog
    Feature request
    .................
 
+   - For tests, to :code:`pipenv-unlock lock`, add param --venv-base-path.
+     Currently venv-base-path comes from VenvMapLoader.project_base. During
+     tests that folder is tmp_path, not package base folder
+
+   - Post process alphabetize ``.unlock`` file
+
    - Confirm setuptools-scm file finders are being called?
 
    - self hosted package server. See article
@@ -61,6 +67,13 @@ Changelog
 
    Commit items for NEXT VERSION
    ..............................
+
+   - feat(lock_infile): sort InFiles.files alphabetically
+   - fix(lock_infile): strictly scrutinize InFile.stem and InFile.relpath
+   - feat: add tox-req.ini tie venv requirements to respective py interpreter version (#17)
+   - feat: pipenv-unlock lock subprocess to use venv py executable otherwise issue warning (#17)
+   - feat(_safe_path): add get_venv_python_abspath to get venv py executable absolute path (#17)
+   - chore(tox.ini): add target format. Separate from lint
 
 .. scriv-start-here
 

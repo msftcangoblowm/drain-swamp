@@ -177,7 +177,7 @@ def _compile_one(
     lock_abspath: str,
     ep_path: str,
     path_cwd: Path,
-    context: str | None = None,
+    venv_relpath: str,
     timeout: Any = 15,
 ) -> tuple[Path | None, None | str]: ...
 def lock_compile(

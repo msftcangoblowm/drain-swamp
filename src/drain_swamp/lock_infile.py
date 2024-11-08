@@ -26,7 +26,10 @@ import enum
 import logging
 import os
 import pathlib
-from collections.abc import Sequence
+from collections.abc import (
+    Hashable,
+    Sequence,
+)
 from pathlib import (
     Path,
     PurePath,
@@ -40,6 +43,7 @@ from .constants import (
 )
 from .exceptions import MissingRequirementsFoldersFiles
 from .lock_util import (
+    ENDINGS,
     is_shared,
     replace_suffixes_last,
 )
@@ -75,8 +79,10 @@ def strip_inline_comments(val):
 
 
 @dataclasses.dataclass
-class InFile:
-    """
+class InFile(Hashable):
+    """Represents one ``.in`` file. Which *may contain* constraints
+    ``-c`` and requirements ``-r`` line(s).
+
     :ivar relpath: Relative path to requirements file
     :vartype relpath: str
     :ivar stem:
@@ -99,6 +105,10 @@ class InFile:
        attempt made to resolve package versions.
 
     :vartype requirements: set[str]
+    :raises:
+
+       - :py:exc:`ValueError` -- relpath or stem have issues or unrelated
+
     """
 
     relpath: str
@@ -114,6 +124,55 @@ class InFile:
         is_path = issubclass(type(self.relpath), PurePath)
         if is_path:
             self.relpath = str(self.relpath)
+        else:  # pragma: no cover
+            pass
+
+        # Remove ambiguity. relpath should contain at least one suffix
+        relpath_suffix_last = Path(self.relpath).suffix
+        relpath_name = Path(self.relpath).name
+        relpath_suffixes = Path(self.relpath).suffixes
+        suffixes_count = len(relpath_suffixes)
+        is_no_suffixes = suffixes_count == 0
+        if is_no_suffixes:
+            # no suffixes
+            msg_warn = (
+                f"relpath {self.relpath} expected to have one or more suffix "
+                "e.g. .shared.in, .in, .unlock, .lock, ..."
+            )
+            is_suffixes_ok = False
+        else:
+            if suffixes_count == 1 and is_shared(relpath_name):
+                # shared, but lacks .in, .unlock, or .lock
+                msg_warn = (
+                    f"relpath {self.relpath} suffix is .shared, but lacks last "
+                    f"suffix. Either: {ENDINGS}"
+                )
+                is_suffixes_ok = False
+            elif relpath_suffix_last not in ENDINGS:
+                # not an expected last suffix
+                msg_warn = (
+                    f"relpath {self.relpath} suffix can optionally "
+                    f"include .shared, and should have either of these: {ENDINGS}"
+                )
+                is_suffixes_ok = False
+            else:
+                # Acceptable relpath
+                is_suffixes_ok = True
+                pass
+        if not is_suffixes_ok:
+            raise ValueError(msg_warn)
+        else:  # pragma: no cover
+            pass
+
+        is_stem_not_in = self.stem not in self.relpath
+        is_stem_eq_name = self.stem == Path(self.relpath).name
+        is_stem_ng = is_stem_not_in or is_stem_eq_name
+        if is_stem_ng:
+            msg_warn = (
+                f"InFile.stem {self.stem} has no relation to "
+                f"InFile.relpath {self.relpath}. Fix it"
+            )
+            raise ValueError(msg_warn)
         else:  # pragma: no cover
             pass
 
@@ -246,6 +305,40 @@ class InFile:
 
         return ret
 
+    def __lt__(self, right):
+        """Try comparing using stem. If both A and B have the same
+        stem. Compare using relpath
+
+        Implementing __hash__, __eq__, and __lt__ is the minimal
+        requirement for supporting the python built-tin sorted method
+
+        :param right: right side of the comparison
+        :type right: typing.Any
+        :returns: True if A < B otherwise False
+        :rtype: bool
+        :raises:
+
+           - :py:exc:`TypeError` -- right operand is unsupported type
+
+        """
+        is_ng = right is None or not isinstance(right, InFile)
+        if is_ng:
+            msg_warn = f"Expecting an InFile got unsupported type {type(right)}"
+            raise TypeError(msg_warn)
+        else:  # pragma: no cover
+            pass
+
+        # InFiles container stores InFile within a set. So no duplicates
+        # Compares tuple(stem_a, relpath_a) vs tuple(stem_b, relpath_b)
+        is_stem_eq = self.stem == right.stem
+        if not is_stem_eq:
+            is_lt = self.stem < right.stem
+        else:
+            # stems match so compare entire relpath
+            is_lt = self.relpath < right.relpath
+
+        return is_lt
+
 
 class InFileType(enum.Enum):
     """Each .in files constaints and requirements have to be resolved.
@@ -362,12 +455,12 @@ class InFiles:
 
     @property
     def files(self):
-        """Generator of InFile
+        """Generator of sorted InFile
 
         :returns: Yields InFile. These tend to contain constraints
         :rtype: collections.abc.Generator[drain_swamp.lock_infile.InFile, None, None]
         """
-        yield from self._files
+        yield from sorted(self._files)
 
     @files.setter
     def files(self, val):

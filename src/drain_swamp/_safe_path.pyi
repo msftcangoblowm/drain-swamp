@@ -13,6 +13,7 @@ __all__ = (
     "replace_suffixes",
     "resolve_path",
     "resolve_joinpath",
+    "get_venv_python_abspath",
 )
 
 def is_linux() -> bool: ...
@@ -31,3 +32,7 @@ def replace_suffixes(
     abspath_a: PurePath | Path,
     suffixes: str | None,
 ) -> PurePath | Path: ...
+def get_venv_python_abspath(
+    path_cwd: Path | PurePath,
+    venv_relpath: str,
+) -> str: ...

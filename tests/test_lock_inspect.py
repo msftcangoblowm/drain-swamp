@@ -753,7 +753,7 @@ def test_compile_one(
         out_abspath,
         ep_path,
         path_cwd,
-        context=context,
+        context,
         timeout=PurePath,
     )
     # verify

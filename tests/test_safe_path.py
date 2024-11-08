@@ -22,6 +22,7 @@ Integration test
 """
 
 from collections.abc import Sequence
+from contextlib import nullcontext as does_not_raise
 from pathlib import (
     Path,
     PurePath,
@@ -30,11 +31,28 @@ from pathlib import (
 import pytest
 
 from drain_swamp._safe_path import (
+    get_venv_python_abspath,
+    is_linux,
+    is_macos,
     is_win,
     replace_suffixes,
     resolve_joinpath,
     resolve_path,
 )
+from drain_swamp.pep518_venvs import VenvMapLoader
+
+
+def test_platform_checks():
+    """Not caring about the result, run is_[platform] checks."""
+    # pytest --showlocals --log-level INFO -k "test_platform_checks" tests
+    fcns = (
+        is_linux,
+        is_macos,
+        is_win,
+    )
+    for fcn in fcns:
+        bool_result = fcn()
+        assert isinstance(bool_result, bool)
 
 
 def test_resolve_joinpath(tmp_path):
@@ -143,3 +161,55 @@ def test_replace_suffixes(suffixes, expected_name, tmp_path, relpath):
     if is_nonstr_sequence:
         assert abspath_1.suffixes == suffixes
     assert abspath_1.name == expected_name
+
+
+def test_get_venv_python_abspath(
+    tmp_path,
+    path_project_base,
+):
+    """Confirm drain-swamp venv relpaths are real venv, not just folders."""
+    # pytest --showlocals --log-level INFO -k "test_get_venv_python_abspath" tests
+    path_cwd = path_project_base()
+
+    # FileNotFoundError (pyproject.toml) or LookupError (section tool.venvs)
+    expectation = does_not_raise()
+    with expectation:
+        loader = VenvMapLoader(str(path_cwd))
+    if isinstance(expectation, does_not_raise):
+        venv_relpaths = loader.venv_relpaths
+        for venv_relpath in venv_relpaths:
+            """Get the python executable path from the cwd base path
+            and venv relative path.
+            """
+            fcn = get_venv_python_abspath
+            args = (path_cwd, venv_relpath)
+            kwargs = {}
+            try:
+                abspath_venv_python_executable = fcn(*args, **kwargs)
+            except NotADirectoryError:
+                # pytest-venv can be given a path to a pyenv python shim
+                # pip-compile --pip-args='--python=[pyenv_python_shim_abspath]' ...
+                reason = (
+                    f"No venv at relative path {venv_relpath}. "
+                    "Run context may preclude creating a venv with the "
+                    "correct interpreter version."
+                )
+                pytest.skip(reason)
+            else:
+                venv_python_executable_abspath = Path(abspath_venv_python_executable)
+                # TODO: test has executable permission
+                is_file = (
+                    venv_python_executable_abspath.exists()
+                    and venv_python_executable_abspath.is_file()
+                )
+                assert is_file is True
+
+        # Force a NotADirectoryError
+        venv_relpath = resolve_joinpath(
+            path_cwd, "a-crack-addiction-would-be-healthier"
+        )
+        with pytest.raises(NotADirectoryError):
+            get_venv_python_abspath(path_cwd, venv_relpath)
+
+        with pytest.raises(TypeError):
+            get_venv_python_abspath(None, venv_relpath)

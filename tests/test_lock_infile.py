@@ -15,6 +15,7 @@ Unit test -- Module
 
 import logging
 import logging.config
+import operator
 import shutil
 from collections.abc import Sequence
 from contextlib import nullcontext as does_not_raise
@@ -34,11 +35,13 @@ from drain_swamp.constants import (
     LOGGING,
     g_app_name,
 )
+from drain_swamp.exceptions import MissingRequirementsFoldersFiles
 from drain_swamp.lock_infile import (
     InFile,
     InFiles,
     InFileType,
 )
+from drain_swamp.lock_util import replace_suffixes_last
 
 testdata_resolve_one_iteration = (
     (
@@ -218,29 +221,29 @@ def test_resolve_loop(
         pass
 
 
-testdata_infile = (
+testdata_infile_instance = (
     (
         Path("requirements/pip.in"),
         ("requirements/pins.in",),
         ("pip", "setuptools", "setuptools-scm"),
     ),
 )
-ids_infile = ("pip.in 1 constraint 3 requirements",)
+ids_infile_instance = ("pip.in 1 constraint 3 requirements",)
 
 
 @pytest.mark.parametrize(
     "relpath, constraints, requirements",
-    testdata_infile,
-    ids=ids_infile,
+    testdata_infile_instance,
+    ids=ids_infile_instance,
 )
-def test_infile(
+def test_infile_instance(
     relpath,
     constraints,
     requirements,
     path_project_base,
 ):
     """InFiles calls check_path before call to InFile, which does no checks"""
-    # pytest --showlocals --log-level INFO -k "test_infile" tests
+    # pytest --showlocals --log-level INFO -k "test_infile_instance" tests
     # prepare
     path_cwd = path_project_base()
     set_constraints = {cons for cons in constraints}
@@ -279,6 +282,54 @@ def test_infile(
     path_f = cast("Path", resolve_joinpath(path_cwd, "deleteme.txt"))
     with pytest.raises(FileNotFoundError):
         in_.check_path(path_cwd, path_f)
+
+
+testdata_infile_badies = (
+    (
+        "requirements/prod.shared",
+        "prod.shared",
+    ),
+    (
+        "requirements/prod",
+        "prod",
+    ),
+    (
+        "requirements/prod.shared.frog",
+        "prod.shared",
+    ),
+    (
+        "requirements/prod.frog",
+        "prod",
+    ),
+    (
+        "requirements/prod.in",
+        "george.shared",
+    ),
+    (
+        "requirements/prod.shared.in",
+        "prod.shared.in",
+    ),
+)
+ids_infile_badies = (
+    "no ENDING",
+    "No suffixes",
+    ".shared then unknown ENDING",
+    "not .shared then unknown ENDING",
+    "stem unrelated to relpath",
+    "stem is not a stem. In relpath",
+)
+
+
+@pytest.mark.parametrize(
+    "relpath, stem",
+    testdata_infile_badies,
+    ids=ids_infile_badies,
+)
+def test_infile_badies(relpath, stem):
+    """Test InFile. Demonstrate invalid relpath."""
+    # pytest --showlocals --log-level INFO -k "test_infile_badies" tests
+    with pytest.raises(ValueError):
+        InFile(relpath, stem)
 
 
 def test_cls_infiles_exceptions(
@@ -416,8 +467,17 @@ testdata_infiles_write = (
         "requirements",
         does_not_raise(),
     ),
+    (
+        (Path(__file__).parent.parent.joinpath("requirements", "manage.in"),),
+        (Path(__file__).parent.parent.joinpath("requirements", "manage.unlock"),),
+        "requirements",
+        pytest.raises(MissingRequirementsFoldersFiles),
+    ),
 )
-ids_infiles_write = ("",)
+ids_infiles_write = (
+    "Create an .shared.unlock file",
+    "missing requirements and constraints files",
+)
 
 
 @pytest.mark.parametrize(
@@ -438,14 +498,14 @@ def test_infiles_write(
 
     # prepare
     #    dest folder
-    abspath_dest_dir = tmp_path / dest_relpath
+    abspath_dest_dir = cast("Path", resolve_joinpath(tmp_path, dest_relpath))
     abspath_dest_dir.mkdir()
 
     #    InFiles
     in_files = []
     for abspath_in in abspath_ins:
         src_abspath = str(abspath_in)
-        abspath_dest = abspath_dest_dir / abspath_in.name
+        abspath_dest = cast("Path", resolve_joinpath(abspath_dest_dir, abspath_in.name))
         in_files.append(abspath_dest)
         shutil.copy(src_abspath, abspath_dest)
     in_files_count = len(in_files)
@@ -476,3 +536,94 @@ def test_infiles_write(
                     expected_unlock_cleaned = expected_unlock_contents.rstrip()
                     assert actual_unlock_cleaned == expected_unlock_cleaned
             assert is_found is True
+
+
+testdata_infile_sort = (
+    (
+        (
+            "requirements/pip-tools.in",
+            "doc/pip-tools.in",
+            "requirements/pip.in",
+            "requirements/prod.shared.in",
+            "requirements/dev.in",
+        ),
+        (
+            "requirements/dev.in",
+            "requirements/pip.in",
+            "doc/pip-tools.in",
+            "requirements/pip-tools.in",
+            "requirements/prod.shared.in",
+        ),
+    ),
+)
+ids_infile_sort = ("requirements files from multiple folders",)
+
+
+@pytest.mark.parametrize(
+    "relpaths, expected_order",
+    testdata_infile_sort,
+    ids=ids_infile_sort,
+)
+def test_infile_sort(relpaths, expected_order, tmp_path, caplog):
+    """On InFile, test built-in function sorted."""
+    # pytest --showlocals --log-level INFO -k "test_infile_sort" tests
+    LOGGING["loggers"][g_app_name]["propagate"] = True
+    logging.config.dictConfig(LOGGING)
+    logger = logging.getLogger(name=g_app_name)
+    logger.addHandler(hdlr=caplog.handler)
+    caplog.handler.level = logger.level
+
+    # Compares hash(stem, relpath)
+    in_a = InFile("docs/pip-tools.in", "pip-tools")
+    in_b = InFile("requirements/pip-tools.in", "pip-tools")
+    assert in_a < in_b
+
+    """Unsupported type comparisons --> TypeError. Eventhough
+    InFile.__gt__ is not implemented"""
+    a_and_b = (
+        (4, in_b, operator.lt),
+        (in_b, 4, operator.gt),
+    )
+    for a, b, oper in a_and_b:
+        with pytest.raises(TypeError):
+            oper(a, b)
+
+    # right is not an InFile --> TypeError
+    invalids = (
+        None,
+        1.2345,
+    )
+    for right in invalids:
+        with pytest.raises(TypeError):
+            in_a.__lt__(right)
+
+    # prepare
+    # empty InFiles
+    in_files = InFiles(tmp_path, [])
+
+    for f_relpath in relpaths:
+        abspath_f = cast("Path", resolve_joinpath(tmp_path, f_relpath))
+        abspath_f_in = replace_suffixes_last(abspath_f, ".in")
+        abspath_f_in.parent.mkdir(parents=True, exist_ok=True)
+        abspath_f.touch()
+        stem_f = abspath_f_in.stem
+
+        relpath_f_in = abspath_f_in.relative_to(tmp_path)
+
+        in_ = InFile(relpath_f_in, stem_f)
+        # append an InFile to InFiles
+        in_files.file = in_
+
+    # act
+    #    Requires InFile to implement __hash__, __eq__, and __lt__
+    ins_sorted = sorted(in_files.files)
+    assert isinstance(ins_sorted, Sequence)
+    assert not isinstance(ins_sorted, InFiles)
+    # verify
+    #    In expected order. Not possible for there to have been duplicates
+    for idx, in_ in ins_sorted:
+        relpath_expected = expected_order[idx]
+        abspath_g = cast("Path", resolve_joinpath(tmp_path, relpath_expected))
+        abspath_g_in = replace_suffixes_last(abspath_g, ".in")
+        relpath_g_in = abspath_g_in.relative_to(tmp_path)
+        assert Path(in_.relpath) == relpath_g_in
