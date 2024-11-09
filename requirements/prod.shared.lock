@@ -2,13 +2,13 @@ build==1.2.2.post1
     # via pip-tools
 click==8.1.7
     # via
-    #   -r requirements/prod.in
+    #   -r requirements/prod.shared.in
     #   pip-tools
 drain-swamp-snippet==1.0.1
-    # via -r requirements/prod.in
+    # via -r requirements/prod.shared.in
 importlib-metadata==8.5.0
     # via
-    #   -r requirements/prod.in
+    #   -r requirements/prod.shared.in
     #   build
 packaging==24.1
     # via
@@ -16,11 +16,11 @@ packaging==24.1
     #   pip-requirements-parser
     #   setuptools-scm
 pip-requirements-parser==32.0.1
-    # via -r requirements/prod.in
+    # via -r requirements/prod.shared.in
 pip-tools==7.4.1
-    # via -r requirements/prod.in
+    # via -r requirements/prod.shared.in
 pluggy==1.5.0
-    # via -r requirements/prod.in
+    # via -r requirements/prod.shared.in
 pyparsing==3.2.0
     # via pip-requirements-parser
 pyproject-hooks==1.2.0
@@ -28,13 +28,13 @@ pyproject-hooks==1.2.0
     #   build
     #   pip-tools
 setuptools-scm==8.1.0
-    # via -r requirements/prod.in
-tomli==2.0.2 ; python_version < "3.11"
+    # via -r requirements/prod.shared.in
+tomli==2.0.2
     # via
     #   build
     #   pip-tools
     #   setuptools-scm
-typing-extensions==4.12.2 ; python_version < "3.10"
+typing-extensions==4.12.2
     # via setuptools-scm
 wheel==0.43.0
     # via pip-tools
@@ -46,6 +46,6 @@ pip==24.2
     # via pip-tools
 setuptools==75.1.0
     # via
-    #   -r requirements/prod.in
+    #   -r requirements/prod.shared.in
     #   pip-tools
     #   setuptools-scm

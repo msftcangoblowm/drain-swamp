@@ -1,2 +1,4 @@
-types-setuptools
 mypy
+tomli>=2.0.2; python_version<"3.11"
+types-setuptools
+typing-extensions; python_version<"3.10"

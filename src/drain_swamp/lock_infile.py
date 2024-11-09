@@ -754,6 +754,7 @@ class InFiles:
         _files and _zeroes are both type, set. Modifying an element
         modifies element within the set
         """
+        meth_path = f"{g_app_name}.lock_infile.InFiles.resolve_zeroes"
         # Take the win, early and often!
         self.move_zeroes()
 
@@ -791,7 +792,7 @@ class InFiles:
 
                 if is_module_debug:  # pragma: no cover
                     msg_info = (
-                        f"resolve_zeroes constraint {constraint_relpath} "
+                        f"{meth_path} constraint {constraint_relpath} "
                         f"in zeroes {is_in_zeroes} in files {is_in_files}"
                     )
                     _logger.info(msg_info)
@@ -805,7 +806,7 @@ class InFiles:
                     )
 
                     if is_module_debug:  # pragma: no cover
-                        msg_info = f"resolve_zeroes in_ (before) {in_}"
+                        msg_info = f"{meth_path} in_ (before) {in_}"
                         _logger.info(msg_info)
                     else:  # pragma: no cover
                         pass
@@ -813,7 +814,7 @@ class InFiles:
                     in_.resolve(constraint_relpath, item.requirements)
 
                     if is_module_debug:  # pragma: no cover
-                        msg_info = f"resolve_zeroes in_ (after) {in_}"
+                        msg_info = f"{meth_path} in_ (after) {in_}"
                         _logger.info(msg_info)
                     else:  # pragma: no cover
                         pass
@@ -834,24 +835,58 @@ class InFiles:
              there are unresolvable constraint(s)
 
         """
-        initial_count = len(list(self.files))
-        current_count = initial_count
-        previous_count = initial_count
-        while current_count != 0:
+        meth_path = f"{g_app_name}.lock_infile.InFiles.resolution_loop"
+        initial_count_files = len(list(self.files))
+        initial_count_zeroes = len(list(self.zeroes))
+        current_count_files = initial_count_files
+        previous_count_files = initial_count_files
+        current_count_zeroes = initial_count_zeroes
+        previous_count_zeroes = initial_count_zeroes
+        while current_count_files != 0:
+            if is_module_debug:  # pragma: no cover
+                msg_info = (
+                    f"{meth_path} (before resolve_zeroes) resolution current "
+                    f"state. previous_count files {previous_count_files} "
+                    f"current count files {current_count_files} "
+                    f"previous count zeroes {previous_count_zeroes} "
+                    f"current count zeroes {current_count_zeroes} "
+                    f"files {self._files}\n"
+                    f"zeroes {self._zeroes}"
+                )
+                _logger.info(msg_info)
+            else:  # pragma: no cover
+                pass
+
             self.resolve_zeroes()
-            current_count = len(list(self.files))
+            current_count_files = len(list(self.files))
+            current_count_zeroes = len(list(self.zeroes))
             # Check previous run results vs current run results, if same raise Exception
-            is_resolved = current_count == 0
-            is_same_result = previous_count == current_count
+            is_resolved = current_count_files == 0
+            is_result_same_files = previous_count_files == current_count_files
+            is_result_same_zeroes = previous_count_zeroes == current_count_zeroes
+
+            if is_module_debug:  # pragma: no cover
+                msg_info = (
+                    f"{meth_path} (after resolve_zeroes) "
+                    "resolution current state. current count files "
+                    f"{current_count_files} "
+                    f"current count zeroes {current_count_zeroes} "
+                    f"files {self._files}\n"
+                    f"zeroes {self._zeroes}"
+                )
+                _logger.info(msg_info)
+            else:  # pragma: no cover
+                pass
 
             # raise exception if not making any progress
-            if not is_resolved and is_same_result:
+            is_result_same = is_result_same_files and is_result_same_zeroes
+            if not is_resolved and is_result_same:
                 unresolvable_requirement_files = [in_.relpath for in_ in self.files]
                 missing_contraints = [in_.constraints for in_ in self.files]
                 msg_warn = (
-                    "Missing .in requirements file(s). Unable to resolve "
-                    "constraint(s). Files with unresolvable constraints: "
-                    f"{unresolvable_requirement_files}. "
+                    f"{meth_path} Missing .in requirements file(s). "
+                    "Unable to resolve constraint(s). Files with "
+                    f"unresolvable constraints: {unresolvable_requirement_files}. "
                     f"Missing constraints: {missing_contraints}"
                 )
                 _logger.warning(msg_warn)
@@ -859,7 +894,8 @@ class InFiles:
             else:  # pragma: no cover
                 pass
 
-            previous_count = current_count
+            previous_count_files = current_count_files
+            previous_count_zeroes = current_count_zeroes
 
     def write(self):
         """After resolving all constraints. Write out all .unlock files
@@ -891,13 +927,16 @@ class InFiles:
                 is_file = abspath_unlocked.exists() and abspath_unlocked.is_file()
 
                 if is_module_debug:  # pragma: no cover
-                    _logger.info(f"InFiles.write is_file: {is_file}")
+                    msg_info = f"InFiles.write is_file: {is_file}"
+                    _logger.info(msg_info)
                 else:  # pragma: no cover
                     pass
 
                 if is_file:
                     sep = os.linesep
-                    contents = sep.join(list(in_.requirements))
+                    lst_reqs_unsorted = list(in_.requirements)
+                    lst_reqs_alphabetical = sorted(lst_reqs_unsorted)
+                    contents = sep.join(lst_reqs_alphabetical)
                     contents = f"{contents}{sep}"
                     abspath_unlocked.write_text(contents)
                     yield abspath_unlocked

@@ -1643,7 +1643,7 @@ def _compile_one(
             Path(venv_python_abspath).exists() and Path(venv_python_abspath).is_file()
         )
         if is_file:
-            line_python = (f"--pip-args='--python={venv_python_abspath!s}'",)
+            line_python = f"--pip-args='--python={venv_python_abspath!s}'"
         else:
             """Couldn't find Python interpreter, fallback to current one
             In tests, base folder is tmp_path, not path_cwd. Needs a

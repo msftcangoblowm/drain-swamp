@@ -12,8 +12,6 @@ Changelog
      Currently venv-base-path comes from VenvMapLoader.project_base. During
      tests that folder is tmp_path, not package base folder
 
-   - Post process alphabetize ``.unlock`` file
-
    - Confirm setuptools-scm file finders are being called?
 
    - self hosted package server. See article
@@ -21,6 +19,40 @@ Changelog
 
    Known regressions
    ..................
+
+   - support ``.in`` files also gets converted into ``.unlock``.
+     Converts all zeroes. Could like to differentiate between zeroes and support
+     e.g. pins-cffi.in --> pins-cffi.unlock
+     Reproduce:
+     :code:`cd .tox && tox --root=.. -c ../tox-req.ini -e base --workdir=.; cd - &>/dev/null`
+     Cause: stored in one set, zeroes. There is no set, support
+     Severity: annoying nuisance
+
+   - duplicate lines (.lock) requirements/tox.lock
+     Reproduce:
+     :code:`cd .tox && tox --root=.. -c ../tox-req.ini -e base --workdir=.; cd - &>/dev/null`
+     Cause: :code:`pipenv-unlock fix`
+     Severity: Bug
+
+   - duplicate lines (.lock) requirements/manage.lock
+     ``tox>=4.15.1`` extra lines occur many times
+     Severity: Bug
+
+   - duplicate lines (.unlock) requirements/manage.unlock
+     ``tox>=4.15.1`` occurs twice
+     Reproduce:
+     :code:`cd .tox && tox --root=.. -c ../tox-req.ini -e base --workdir=.; cd - &>/dev/null`
+     Severity: Bug
+
+   - duplicate lines (.unlock) requirements/tox.unlock
+     Not alphabetized. Duplicate tox package line.
+     Reproduce:
+     :code:`cd .tox && tox --root=.. -c ../tox-req.ini -e base --workdir=.; cd - &>/dev/null`
+     Cause: :code:`pipenv-unlock fix`
+
+   - duplicate lines (.unlock) docs/requirements.unlock. Due to prod.shared.in
+     Reproduce:
+     :code:`cd .tox && tox --root=.. -c ../tox-req.ini -e docs --workdir=.; cd - &>/dev/null`
 
    - Detection should not be limited to only version conflicts. When
      to apply qualifiers should be configurable.
@@ -68,6 +100,8 @@ Changelog
    Commit items for NEXT VERSION
    ..............................
 
+   - fix(lock_infile): resolution loop sort alphabetically (#16)
+   - fix(lock_infile): resolution loop detect missing reqs both factors files and zeroes count
    - feat(lock_infile): sort InFiles.files alphabetically
    - fix(lock_infile): strictly scrutinize InFile.stem and InFile.relpath
    - feat: add tox-req.ini tie venv requirements to respective py interpreter version (#17)

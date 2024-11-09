@@ -126,22 +126,21 @@ copyright_start_year = 2024
 [[tool.venvs]]
 venv_base_path = '.venv'
 reqs = [
-    'requirements/prod.shared',
+    'requirements/dev',
+    'requirements/kit',
     'requirements/pip',
     'requirements/pip-tools',
-    'requirements/dev',
-    'requirements/tox',
-    'requirements/mypy',
-    'requirements/kit',
-    'requirements/dev',
+    'requirements/prod.shared',
     'requirements/manage',
+    'requirements/mypy',
+    'requirements/tox',
 ]
 
 [[tool.venvs]]
 venv_base_path = '.doc/.venv'
 reqs = [
-    'requirements/prod.shared',
     'docs/requirements',
+    'requirements/prod.shared',
 ]
 
 [tool.pip-tools]

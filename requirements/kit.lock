@@ -30,13 +30,12 @@ pyproject-hooks==1.2.0
     # via build
 setuptools-scm==8.1.0
     # via -r requirements/kit.in
-tomli==2.0.2 ; python_version < "3.11"
+tomli==2.0.2
     # via
     #   build
     #   cibuildwheel
-    #   pyproject-hooks
     #   setuptools-scm
-typing-extensions==4.12.2 ; python_version < "3.10"
+typing-extensions==4.12.2
     # via
     #   cibuildwheel
     #   setuptools-scm

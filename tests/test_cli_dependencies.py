@@ -131,7 +131,7 @@ def test_venvmap_loader_exceptions(
     prep_pyproject_toml,
 ):
     """Test VenvMapLoader exceptions 3 and 4."""
-    # pytest -vv --showlocals --log-level INFO -k "test_venvmap_loader_exceptions" -v tests
+    # pytest -vv --showlocals --log-level INFO -k "test_venvmap_loader_exceptions" tests
     LOGGING["loggers"][g_app_name]["propagate"] = True
     logging.config.dictConfig(LOGGING)
     logger = logging.getLogger(name=g_app_name)
