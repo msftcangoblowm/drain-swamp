@@ -1224,7 +1224,54 @@ def get_issues(loader, venv_path):
     return resolvables, unresolvables
 
 
-def write_to_file_nudge_pin(path_f: Path, pkg_name: str, nudge_pin_line: str) -> None:
+def _extract_full_package_name(line, pkg_name_desired):
+    """Extract first occurrence of exact package name
+
+    :param line:
+
+       .unlock or .lock file line. Has package name, but might not be exact
+
+    :type line: str
+    :param pkg_name_desired: pkg name would like an exact match
+    :type pkg_name_desired: str
+    :returns: pkg name If line contains exact match for package otherwise None
+    :rtype: str | None
+
+    .. seealso::
+
+       `pep044 <https://peps.python.org/pep-0440>`_
+       `escape characters <https://docs.python.org/3/library/re.html#re.escape>`_
+
+    """
+    mod_path = f"{g_app_name}.lock_inspect._extract_full_package_name"
+    pattern = r"^(\S+)(?=(==|<=|>=|<|>|~=|!=|===|@| @|@ | @ | ;|; |;| ; ))"
+    m = re.match(pattern, line)
+
+    if m is None:
+        if is_module_debug:  # pragma: no cover
+            msg_info = (
+                f"{mod_path} failed to parse pkg from line: {line}{os.linesep}"
+                f"pkg_name_desired {pkg_name_desired}"
+            )
+            _logger.info(msg_info)
+        else:  # pragma: no cover
+            pass
+        ret = None
+    else:
+        """for debugging results of re.match. Use along with
+        logging_strict.tech_niques.get_locals"""
+        groups = m.groups(default=None)  # noqa: F841
+        group_0 = m.group(0)
+        if group_0.rstrip() == pkg_name_desired:
+            ret = group_0.rstrip()
+        else:
+            # e.g. desired ``tox`` line contains ``tox-gh-action``
+            ret = None
+
+    return ret
+
+
+def write_to_file_nudge_pin(path_f, pkg_name, nudge_pin_line):
     """Nudge pin must include a newline (os.linesep)
     If package line exists in file, overwrite. Otherwise append nudge pin line
 
@@ -1246,19 +1293,36 @@ def write_to_file_nudge_pin(path_f: Path, pkg_name: str, nudge_pin_line: str) ->
         with open(path_f, mode="r", encoding="utf-8") as f:
             is_found = False
             for line in f:
+                is_empty_line = len(line.strip()) == 0
                 is_comment = line.startswith("#")
-                if is_comment or pkg_name not in line:
+
+                # This would match e.g. tox and tox-gh-actions
+                # Need an exact match
+                is_pkg_startswith = line.startswith(pkg_name)
+
+                if is_pkg_startswith:
+                    pkg_actual = _extract_full_package_name(line, pkg_name)
+                    if pkg_actual is None:
+                        is_pkg_not = True
+                    else:
+                        is_pkg_not = False
+                else:
+                    is_pkg_not = True
+
+                if is_empty_line or is_comment or is_pkg_not:
                     g.writelines([line])
                 else:
                     # found. Replace line rather than remove line
                     is_found = True
                     g.writelines([nudge_pin_line])
-                    # If not replaced, append line
+
+        # If not replaced, append line
         if not is_found:
             g.writelines([nudge_pin_line])
         else:  # pragma: no cover
             pass
         contents = g.getvalue()
+
     # overwrites entire file
     path_f.write_text(contents)
 
@@ -1328,59 +1392,75 @@ def fix_resolvables(
     except MissingRequirementsFoldersFiles:
         raise
 
+    """
+    if is_module_debug:  # pragma: no cover
+        msg_info = f"{mod_path} pins_lock: {pins_lock}"
+        _logger.info(msg_info)
+    else:  # pragma: no cover
+        pass
+    """
+    pass
+
+    # Limit resolvables to a single venv
+    resolvables_one_venv = [
+        resolvable for resolvable in resolvables if resolvable.venv_path == venv_path
+    ]
+
     # Query all requirements . Do both, but first, ``.lock``
     suffixes = (SUFFIX_LOCKED, SUFFIX_UNLOCKED)
-    for suffix in suffixes:
-        is_unlock = suffix == SUFFIX_UNLOCKED
+    for resolvable in resolvables_one_venv:
+        # Potential affected files
+        for pin in pins_lock:
+            is_shared_type = is_shared(pin.file_abspath.name)
+            is_match = pin.pkg_name == resolvable.pkg_name
+            if not is_match:  # pragma: no cover
+                pass
+            else:
+                for suffix in suffixes:
+                    # In ``suffixes`` tuple, lock is first entry
+                    is_lock = suffix == SUFFIX_LOCKED
+                    if is_lock:
+                        path_f = pin.file_abspath
+                    else:
+                        path_f = replace_suffixes_last(
+                            pin.file_abspath,
+                            SUFFIX_UNLOCKED,
+                        )
 
-        for resolvable in resolvables:
-            # Deal with fixing one venv at a time
-            if resolvable.venv_path == venv_path:
-                # Potential affected files
-                for pin in pins_lock:
-                    path_f = pin.file_abspath
-                    is_shared_type = is_shared(path_f.name)
-
-                    if is_unlock:
-                        path_f = replace_suffixes_last(path_f, SUFFIX_UNLOCKED)
-                    else:  # pragma: no cover
-                        pass
-
-                    is_match = pin.pkg_name == resolvable.pkg_name
-                    if is_match:
-                        if is_shared_type:
-                            """``.shared.*`` files affect multiple venv.
-                            Nudge pin takes into account one venv. Inform
-                            the human"""
+                    if is_shared_type:
+                        """``.shared.*`` files affect multiple venv.
+                        Nudge pin takes into account one venv. Inform
+                        the human"""
+                        if is_lock:
+                            # One entry rather than two.
+                            # Implied affects both .unlock and .lock
                             applies_to_shared.append(
                                 (venv_path, suffix, resolvable, pin)
                             )
+                        else:  # pragma: no cover
+                            pass
+                    else:
+                        # remove any line dealing with this package
+                        # append resolvable.nudge_unlock
+                        if is_lock:
+                            nudge = resolvable.nudge_lock
                         else:
-                            # remove any line dealing with this package
-                            # append resolvable.nudge_unlock
-                            if is_unlock:
-                                nudge = resolvable.nudge_unlock
-                            else:
-                                nudge = resolvable.nudge_lock
-                            nudge_pin_line = (
-                                f"{nudge}{resolvable.qualifiers}{os.linesep}"
-                            )
+                            nudge = resolvable.nudge_unlock
 
-                            if not is_dry_run:
-                                write_to_file_nudge_pin(
-                                    path_f, pin.pkg_name, nudge_pin_line
-                                )
-                            else:  # pragma: no cover
-                                pass
+                        nudge_pin_line = f"{nudge}{resolvable.qualifiers}{os.linesep}"
 
-                            msg_fixed = ResolvedMsg(
-                                venv_path, path_f, nudge_pin_line.rstrip()
+                        if not is_dry_run:
+                            write_to_file_nudge_pin(
+                                path_f, pin.pkg_name, nudge_pin_line
                             )
-                            fixed_issues.append(msg_fixed)
-                    else:  # pragma: no cover
-                        pass
-            else:  # pragma: no cover
-                pass
+                        else:  # pragma: no cover
+                            pass
+
+                        # Report resolved dependency conflict
+                        msg_fixed = ResolvedMsg(
+                            venv_path, path_f, nudge_pin_line.rstrip()
+                        )
+                        fixed_issues.append(msg_fixed)
 
     return fixed_issues, applies_to_shared
 
@@ -1437,17 +1517,7 @@ def fix_requirements(loader, venv_relpath, is_dry_run=False):
         # All
         venv_relpaths = loader.venv_relpaths
 
-    # Do once per venv, not (venv * reqs) times
-    """
-    set_venv_relpaths = set()
-    for venv_req in venv_map:
-        venv_relpath = venv_req.venv_relpath
-        set_venv_relpaths.add(venv_relpath)
-    """
-    pass
-
     for venv_relpath_tmp in venv_relpaths:
-
         """For a particular venv, get list of resolvable and unresolvable
         dependency conflicts"""
         try:

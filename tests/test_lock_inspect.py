@@ -49,6 +49,7 @@ from drain_swamp.lock_inspect import (
     Pin,
     Pins,
     _compile_one,
+    _extract_full_package_name,
     _postprocess_abspath_to_relpath,
     _wrapper_pins_by_pkg,
     filter_by_venv_relpath,
@@ -1026,3 +1027,87 @@ def test_unlock_compile_live(
         assert abspath_unlocks is not None
         assert isinstance(abspath_unlocks, Sequence)
         assert len(abspath_unlocks) != 0
+
+
+testdata_extract_full_package_name = (
+    (
+        'colorama ;platform_system=="Windows"',
+        "colorama",
+        "colorama",
+    ),
+    (
+        'tomli; python_version<"3.11"',
+        "tomli",
+        "tomli",
+    ),
+    (
+        "pip @ remote",
+        "pip",
+        "pip",
+    ),
+    (
+        "pip@ remote",
+        "pip",
+        "pip",
+    ),
+    (
+        "pip @remote",
+        "pip",
+        "pip",
+    ),
+    (
+        "tox>=1.1.0",
+        "tox",
+        "tox",
+    ),
+    (
+        "tox-gh-action>=1.1.0",
+        "tox",
+        None,
+    ),
+)
+ids_extract_full_package_name = (
+    "space semicolon",
+    "semicolon space",
+    "space at space",
+    "at space",
+    "space at",
+    "exact pkg name operator ge",
+    "not a match",
+)
+
+
+@pytest.mark.parametrize(
+    "line, search_for, expected_pkg_name",
+    testdata_extract_full_package_name,
+    ids=ids_extract_full_package_name,
+)
+def test_extract_full_package_name(
+    line,
+    search_for,
+    expected_pkg_name,
+    caplog,
+):
+    """For a particular package, check line is an exact match."""
+    # pytest -vv --showlocals --log-level INFO -k "test_extract_full_package_name" tests
+    LOGGING["loggers"][g_app_name]["propagate"] = True
+    logging.config.dictConfig(LOGGING)
+    logger = logging.getLogger(name=g_app_name)
+    logger.addHandler(hdlr=caplog.handler)
+    caplog.handler.level = logger.level
+
+    func_path = f"{g_app_name}.lock_inspect._extract_full_package_name"
+    args = (line, search_for)
+    kwargs = {}
+    t_ret = get_locals(  # noqa: F841
+        func_path,
+        _extract_full_package_name,
+        *args,
+        **kwargs,
+    )
+
+    pkg_name_actual = _extract_full_package_name(line, search_for)
+    if expected_pkg_name is None:
+        assert pkg_name_actual is None
+    else:
+        assert pkg_name_actual == expected_pkg_name

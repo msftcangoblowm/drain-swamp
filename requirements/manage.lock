@@ -1,6 +1,6 @@
 backports-tarfile==1.1.1
     # via jaraco-context
-bleach==6.1.0
+bleach==6.2.0
     # via readme-renderer
 build==1.2.2.post1
     # via pip-tools

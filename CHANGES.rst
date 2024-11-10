@@ -8,10 +8,6 @@ Changelog
    Feature request
    .................
 
-   - For tests, to :code:`pipenv-unlock lock`, add param --venv-base-path.
-     Currently venv-base-path comes from VenvMapLoader.project_base. During
-     tests that folder is tmp_path, not package base folder
-
    - Confirm setuptools-scm file finders are being called?
 
    - self hosted package server. See article
@@ -20,39 +16,27 @@ Changelog
    Known regressions
    ..................
 
-   - support ``.in`` files also gets converted into ``.unlock``.
-     Converts all zeroes. Could like to differentiate between zeroes and support
+   - Switch operator ``pip<24.2`` --> ``pip>=24.1.2``
+     Affects docs/requirements.unlock
+     Reproduce:
+     :code:`cd .tox && tox --root=.. -c ../tox-req.ini -e docs --workdir=.; cd - &>/dev/null`
+     Occurs during fix, not unlock/lock
+
+     requirements/prod.shared.lock -- ``pip==24.2 # via pip-tools``
+     docs/requirements.lock        -- ``pip==24.1.2``
+     docs/requirements.unlock      -- ``pip<24.2``
+     docs/requirements.in          -- ``pip<24.2``
+
+   - support ``.in`` files
+     Description:
+     Also gets converted into ``.unlock``. Converts all zeroes.
+     Differentiate between zeroes and support.
      e.g. pins-cffi.in --> pins-cffi.unlock
      Reproduce:
      :code:`cd .tox && tox --root=.. -c ../tox-req.ini -e base --workdir=.; cd - &>/dev/null`
      Cause: stored in one set, zeroes. There is no set, support
      Severity: annoying nuisance
-
-   - duplicate lines (.lock) requirements/tox.lock
-     Reproduce:
-     :code:`cd .tox && tox --root=.. -c ../tox-req.ini -e base --workdir=.; cd - &>/dev/null`
      Cause: :code:`pipenv-unlock fix`
-     Severity: Bug
-
-   - duplicate lines (.lock) requirements/manage.lock
-     ``tox>=4.15.1`` extra lines occur many times
-     Severity: Bug
-
-   - duplicate lines (.unlock) requirements/manage.unlock
-     ``tox>=4.15.1`` occurs twice
-     Reproduce:
-     :code:`cd .tox && tox --root=.. -c ../tox-req.ini -e base --workdir=.; cd - &>/dev/null`
-     Severity: Bug
-
-   - duplicate lines (.unlock) requirements/tox.unlock
-     Not alphabetized. Duplicate tox package line.
-     Reproduce:
-     :code:`cd .tox && tox --root=.. -c ../tox-req.ini -e base --workdir=.; cd - &>/dev/null`
-     Cause: :code:`pipenv-unlock fix`
-
-   - duplicate lines (.unlock) docs/requirements.unlock. Due to prod.shared.in
-     Reproduce:
-     :code:`cd .tox && tox --root=.. -c ../tox-req.ini -e docs --workdir=.; cd - &>/dev/null`
 
    - Detection should not be limited to only version conflicts. When
      to apply qualifiers should be configurable.
@@ -65,6 +49,15 @@ Changelog
      against venv B, venv A support files are also required.
 
      Pins.from_loader also affected
+
+   - Cannot test ``.doc/.venv`` venv
+     Description:
+     venv-base-path comes from VenvMapLoader.project_base. During
+     tests, that folder is tmp_path, not package base folder
+     Proposed solution:
+     use tox so py interpreter version is known
+     Reproduce:
+     :code:`pipenv-unlock lock --venv-relpath='.doc/.venv'`
 
    - lock_inspect.get_issues and lock_inspect.fix_resolvables
      If no version conflicts, only qualifiers differ, issue is not addressed.
@@ -100,6 +93,7 @@ Changelog
    Commit items for NEXT VERSION
    ..............................
 
+   - fix(lock_inspect): get package name in line exact match algo
    - fix(lock_infile): resolution loop sort alphabetically (#16)
    - fix(lock_infile): resolution loop detect missing reqs both factors files and zeroes count
    - feat(lock_infile): sort InFiles.files alphabetically

@@ -144,6 +144,15 @@ def get_issues(
     loader: VenvMapLoader,
     venv_path: str,
 ) -> tuple[list[Resolvable], list[UnResolvable]]: ...
+def _extract_full_package_name(
+    line: str,
+    pkg_name_desired: str,
+) -> str | None: ...
+def write_to_file_nudge_pin(
+    path_f: Path,
+    pkg_name: str,
+    nudge_pin_line: str,
+) -> None: ...
 def fix_resolvables(
     resolvables: Sequence[Resolvable],
     loader: VenvMapLoader,
