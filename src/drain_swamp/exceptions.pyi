@@ -1,6 +1,7 @@
 __all__ = (
     "PyProjectTOMLParseError",
     "PyProjectTOMLReadError",
+    "MissingPackageBaseFolder",
     "MissingRequirementsFoldersFiles",
 )
 
@@ -11,4 +12,7 @@ class PyProjectTOMLParseError(ValueError):
     def __init__(self, msg: str) -> None: ...
 
 class MissingRequirementsFoldersFiles(AssertionError):
+    def __init__(self, msg: str) -> None: ...
+
+class MissingPackageBaseFolder(AssertionError):
     def __init__(self, msg: str) -> None: ...

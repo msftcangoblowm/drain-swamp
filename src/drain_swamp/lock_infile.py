@@ -4,8 +4,8 @@
 Separate out ``.in`` processing from ``.unlock`` and ``.lock`` implementations
 
 .. py:data:: __all__
-   :type: tuple[str, str, str, str]
-   :value: ("strip_inline_comments", "InFileType", "InFile", "InFiles")
+   :type: tuple[str, str, str]
+   :value: ("strip_inline_comments", "InFile", "InFiles")
 
 .. py:data:: _logger
    :type: logging.Logger
@@ -22,7 +22,6 @@ Separate out ``.in`` processing from ``.unlock`` and ``.lock`` implementations
 
 import copy
 import dataclasses
-import enum
 import logging
 import os
 import pathlib
@@ -42,9 +41,14 @@ from .constants import (
     g_app_name,
 )
 from .exceptions import MissingRequirementsFoldersFiles
+from .lock_datum import (
+    InFileType,
+    in_generic,
+)
 from .lock_util import (
-    ENDINGS,
+    check_relpath,
     is_shared,
+    is_suffixes_ok,
     replace_suffixes_last,
 )
 
@@ -52,7 +56,6 @@ _logger = logging.getLogger(f"{g_app_name}.lock_infile")
 is_module_debug = False
 __all__ = (
     "strip_inline_comments",
-    "InFileType",
     "InFile",
     "InFiles",
 )
@@ -118,52 +121,18 @@ class InFile(Hashable):
 
     def __post_init__(self):
         """relpath given as a Path, convert into a str.
-        :py:func:`drain_swamp.lock_infile.InFile.check_path` should
+        :py:func:`drain_swamp.lock_util.check_relpath` should
         have already been performed/called prior
         """
-        is_path = issubclass(type(self.relpath), PurePath)
-        if is_path:
-            self.relpath = str(self.relpath)
-        else:  # pragma: no cover
-            pass
-
         # Remove ambiguity. relpath should contain at least one suffix
-        relpath_suffix_last = Path(self.relpath).suffix
-        relpath_name = Path(self.relpath).name
-        relpath_suffixes = Path(self.relpath).suffixes
-        suffixes_count = len(relpath_suffixes)
-        is_no_suffixes = suffixes_count == 0
-        if is_no_suffixes:
-            # no suffixes
-            msg_warn = (
-                f"relpath {self.relpath} expected to have one or more suffix "
-                "e.g. .shared.in, .in, .unlock, .lock, ..."
-            )
-            is_suffixes_ok = False
+        try:
+            path_f = is_suffixes_ok(self.relpath)
+        except (ValueError, TypeError):
+            raise
         else:
-            if suffixes_count == 1 and is_shared(relpath_name):
-                # shared, but lacks .in, .unlock, or .lock
-                msg_warn = (
-                    f"relpath {self.relpath} suffix is .shared, but lacks last "
-                    f"suffix. Either: {ENDINGS}"
-                )
-                is_suffixes_ok = False
-            elif relpath_suffix_last not in ENDINGS:
-                # not an expected last suffix
-                msg_warn = (
-                    f"relpath {self.relpath} suffix can optionally "
-                    f"include .shared, and should have either of these: {ENDINGS}"
-                )
-                is_suffixes_ok = False
-            else:
-                # Acceptable relpath
-                is_suffixes_ok = True
-                pass
-        if not is_suffixes_ok:
-            raise ValueError(msg_warn)
-        else:  # pragma: no cover
-            pass
+            self.relpath = str(path_f)
 
+        # Check stem
         is_stem_not_in = self.stem not in self.relpath
         is_stem_eq_name = self.stem == Path(self.relpath).name
         is_stem_ng = is_stem_not_in or is_stem_eq_name
@@ -175,48 +144,6 @@ class InFile(Hashable):
             raise ValueError(msg_warn)
         else:  # pragma: no cover
             pass
-
-    @staticmethod
-    def check_path(cwd, path_to_check):
-        """Check Path. Should not be a str
-
-        :param cwd: Package base folder
-        :type cwd: pathlib.Path
-        :param path_to_check: Hopefully a relative Path
-        :type path_to_check: typing.Any
-        :raises:
-
-           - :py:exc:`TypeError` -- Sequence contains one or more unsupported types
-           - :py:exc:`ValueError` -- Requirements file, (.in), not relative to base folder
-           - :py:exc:`FileNotFoundError` -- Requirements file, (.in), not found
-
-        """
-        # contains only Path
-        is_path = path_to_check is not None and issubclass(
-            type(path_to_check), PurePath
-        )
-        if not is_path:
-            msg_exc = (
-                f"in_files Sequence contains unsupported type, {type(path_to_check)}"
-            )
-            raise TypeError(msg_exc)
-        else:  # pragma: no cover
-            pass
-
-        # FileNotFoundError
-        is_abs_path = path_to_check.is_absolute() and path_to_check.is_file()
-        if not is_abs_path:
-            msg_exc = "Requirement (.in) file does not exist"
-            raise FileNotFoundError(msg_exc)
-
-        # relative to self.cwd
-        try:
-            path_to_check.relative_to(cwd)
-        except Exception as e:
-            msg_exc = (
-                f"requirements file, {path_to_check}, not relative to folder, {cwd}"
-            )
-            raise ValueError(msg_exc) from e
 
     def abspath(self, path_package_base):
         """Get the absolute path. The relative path is relative to the
@@ -340,44 +267,6 @@ class InFile(Hashable):
         return is_lt
 
 
-class InFileType(enum.Enum):
-    """Each .in files constaints and requirements have to be resolved.
-    This occurs recursively. Once resolved, InFile is moved from FILES --> ZEROES set
-
-    .. py:attribute:: FILES
-       :value: "_files"
-
-       .in file that has unresolved -c (constraints) and -r (requirements)
-
-    .. py:attribute:: ZEROES
-       :value: "_zeroes"
-
-       .in file that have all -c (constraints) and -r (requirements) resolved
-
-    """
-
-    FILES = "_files"
-    ZEROES = "_zeroes"
-
-    def __str__(self):
-        """Resolve to the InFiles set's name
-
-        :returns: InFiles set's name
-        :rtype: str
-        """
-        return f"{self.value}"
-
-    def __eq__(self, other):
-        """Equality check
-
-        :param other: Should be same Enum class
-        :type other: typing.Any
-        :returns: True if equal otherwise False
-        :rtype: bool
-        """
-        return self.__class__ is other.__class__ and other.value == self.value
-
-
 @dataclasses.dataclass
 class InFiles:
     """Container of InFile
@@ -485,7 +374,7 @@ class InFiles:
             cls = type(self)
             path_abs = val
             try:
-                InFile.check_path(self.cwd, path_abs)
+                check_relpath(self.cwd, path_abs)
             except (TypeError, ValueError, FileNotFoundError):  # pragma: no cover
                 # Not Path and absolute so won't create InFile and add it to container
                 msg_warn = f"{mod_path} Requirement file does not exist! {path_abs!r}"
@@ -600,10 +489,10 @@ class InFiles:
         :type val: typing.Any
         :param set_name:
 
-           Default :py:attr:`drain_swamp.lock_infile.InFileType.FILES`.
+           Default :py:attr:`drain_swamp.lock_datum.InFileType.FILES`.
            Which set to search thru. zeroes or files
 
-        :type set_name: drain_swamp.lock_infile.InFileType | None
+        :type set_name: drain_swamp.lock_datum.InFileType | None
         :returns: True if InFile contained within zeroes otherwise False
         :rtype: bool
         """
@@ -650,8 +539,16 @@ class InFiles:
         :returns: True if InFile contained within zeroes otherwise False
         :rtype: bool
         """
+        # ret = self.in_generic(val, set_name=InFileType.ZEROES)
+        ret = in_generic(
+            self,
+            val,
+            "relpath",
+            set_name=InFileType.ZEROES,
+            is_abspath_ok=False,
+        )
 
-        return self.in_generic(val, set_name=InFileType.ZEROES)
+        return ret
 
     def __contains__(self, val):
         """Check if within InFiles
@@ -661,7 +558,15 @@ class InFiles:
         :returns: True if InFile contained within InFiles otherwise False
         :rtype: bool
         """
-        return self.in_generic(val)
+        # ret = self.in_generic(val)
+        ret = in_generic(
+            self,
+            val,
+            "relpath",
+            set_name=InFileType.FILES,
+            is_abspath_ok=False,
+        )
+        return ret
 
     def get_by_relpath(self, relpath, set_name=InFileType.FILES):
         """Get the index and :py:class:`~drain_swamp.lock_infile.InFile`
@@ -670,7 +575,7 @@ class InFiles:
         :type relpath: str
         :param set_name:
 
-           Default :py:attr:`drain_swamp.lock_infile.InFileType.FILES`.
+           Default :py:attr:`drain_swamp.lock_datum.InFileType.FILES`.
            Which set to search thru. zeroes or files.
 
         :type set_name: str | None
@@ -732,7 +637,7 @@ class InFiles:
                 pass
 
         if is_module_debug:  # pragma: no cover
-            msg_info = f"self.zeroes (after): {self._zeroes}"
+            msg_info = f"self.zeroes (after): {self.zeroes}"
             _logger.info(msg_info)
         else:  # pragma: no cover
             pass
@@ -742,7 +647,7 @@ class InFiles:
             self._files.remove(in_)
 
         if is_module_debug:  # pragma: no cover
-            msg_info = f"self.files (after): {self._files}"
+            msg_info = f"self.files (after): {self.files}"
             _logger.info(msg_info)
         else:  # pragma: no cover
             pass

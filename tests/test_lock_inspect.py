@@ -16,15 +16,11 @@ import logging.config
 import os
 import shutil
 from collections.abc import (
-    Generator,
     Mapping,
     Sequence,
 )
 from contextlib import nullcontext as does_not_raise
-from pathlib import (
-    Path,
-    PurePath,
-)
+from pathlib import Path
 from typing import cast
 from unittest.mock import patch
 
@@ -32,11 +28,7 @@ import pytest
 from logging_strict.tech_niques import get_locals  # noqa: F401
 from pip_requirements_parser import InstallationError
 
-from drain_swamp._package_installed import is_package_installed
-from drain_swamp._safe_path import (
-    resolve_joinpath,
-    resolve_path,
-)
+from drain_swamp._safe_path import resolve_joinpath
 from drain_swamp.constants import (
     LOGGING,
     SUFFIX_IN,
@@ -45,128 +37,31 @@ from drain_swamp.constants import (
     g_app_name,
 )
 from drain_swamp.exceptions import MissingRequirementsFoldersFiles
-from drain_swamp.lock_inspect import (
+from drain_swamp.lock_datum import (
     Pin,
+    PinDatum,
+)
+from drain_swamp.lock_inspect import (
     Pins,
-    _compile_one,
-    _extract_full_package_name,
-    _postprocess_abspath_to_relpath,
     _wrapper_pins_by_pkg,
-    filter_by_venv_relpath,
     fix_requirements,
     fix_resolvables,
     get_issues,
-    get_reqs,
-    is_timeout,
-    lock_compile,
-    prepare_pairs,
     unlock_compile,
 )
+from drain_swamp.lock_loader import LoaderPin
 from drain_swamp.lock_util import replace_suffixes_last
-from drain_swamp.pep518_venvs import VenvMapLoader
+from drain_swamp.pep518_venvs import (
+    VenvMapLoader,
+    get_reqs,
+)
 
 from .testdata_lock_inspect import (
+    ids_lock_compile_live,
     ids_resolve_resolvable_conflicts,
+    testdata_lock_compile_live,
     testdata_resolve_resolvable_conflicts,
 )
-
-testdata_pin_is_pin = (
-    (
-        "typing-extensions",
-        '''typing-extensions; python_version<"3.10"''',
-        [],
-        '''; python_version<"3.10"''',
-        does_not_raise(),
-        False,
-    ),
-    (
-        "tomli",
-        '''tomli>=2.0.2; python_version<"3.11"''',
-        [">=2.0.2"],
-        '''; python_version<"3.11"''',
-        does_not_raise(),
-        True,
-    ),
-    (
-        "pip",
-        "pip>=24.2",
-        [">=24.2"],
-        None,
-        does_not_raise(),
-        True,
-    ),
-    (
-        "isort",
-        "isort",
-        [],
-        None,
-        does_not_raise(),
-        False,
-    ),
-)
-ids_pin_is_pin = (
-    "Not a pin, but has qualifiers",
-    "pin and has qualifiers",
-    "nudge pin",
-    "just a normal package. No package version nor qualifiers",
-)
-
-
-@pytest.mark.parametrize(
-    "pkg_name, line, specifiers, qualifiers_expected, expectation, expected_is_pin",
-    testdata_pin_is_pin,
-    ids=ids_pin_is_pin,
-)
-def test_pin_is_pin(
-    pkg_name,
-    line,
-    specifiers,
-    qualifiers_expected,
-    expectation,
-    expected_is_pin,
-):
-    """Defines whats a pin and whats not. Qualifiers is not enough."""
-    # pytest --showlocals --log-level INFO -k "test_pin_is_pin" tests
-    # act
-    file_abspath = Path(__file__).parent.joinpath(
-        "_req_files",
-        "constraints-various.unlock",
-    )
-
-    with expectation:
-        pin = Pin(file_abspath, pkg_name)
-
-    if isinstance(expectation, does_not_raise):
-        # verify
-        actual_is_pin = Pin.is_pin(pin.specifiers)
-        assert actual_is_pin is expected_is_pin
-
-
-testdata_pin_exceptions = (
-    (
-        Path(__file__).parent.joinpath(
-            "_req_files",
-            "empty.unlock",
-        ),
-        "isort",
-        pytest.raises(KeyError),
-    ),
-)
-ids_pin_exceptions = ("nonexistant package",)
-
-
-@pytest.mark.parametrize(
-    "file_abspath, pkg_name, expectation",
-    testdata_pin_exceptions,
-    ids=ids_pin_exceptions,
-)
-def test_pin_exceptions(file_abspath, pkg_name, expectation):
-    """Normally requirements are loaded from file, not randomly requested."""
-    # pytest --showlocals --log-level INFO -k "test_pin_exceptions" tests
-    # literally an empty file
-    with expectation:
-        Pin(file_abspath, pkg_name)
-
 
 testdata_pins_realistic = (
     (
@@ -238,7 +133,7 @@ def test_pins_realistic(
 
     # Have yet to prepare requirements files. Missing requirements files
     with pytest.raises(MissingRequirementsFoldersFiles):
-        Pins.from_loader(
+        LoaderPin()(
             loader,
             ".doc/.venv",
             suffix=SUFFIX_UNLOCKED,
@@ -292,7 +187,7 @@ def test_pins_realistic(
         side_effect=InstallationError,
     ):
         with pytest.raises(MissingRequirementsFoldersFiles):
-            Pins.from_loader(
+            LoaderPin()(
                 loader,
                 ".doc/.venv",
                 suffix=SUFFIX_UNLOCKED,
@@ -319,13 +214,14 @@ def test_pins_realistic(
     # Absolute path automagically converted to relative path
     path_base_dir = loader.project_base
     path_venv = cast("Path", resolve_joinpath(path_base_dir, venv_path))
-    lst_pins_autofixed = Pins.from_loader(
+    set_pins_autofixed = LoaderPin()(
         loader,
         path_venv,
         suffix=SUFFIX_UNLOCKED,
         filter_by_pin=None,
     )
-    assert len(lst_pins_autofixed) != 0
+    assert isinstance(set_pins_autofixed, set)
+    assert len(set_pins_autofixed) != 0
 
     # get_reqs lacks filter_by_pin. Returns requirement files' absolute path
     # Absolute path automagically converted to relative path
@@ -337,13 +233,13 @@ def test_pins_realistic(
 
     #    filter_by_pin None --> True.
     #    If Missing requirements --> MissingRequirementsFoldersFiles
-    lst_pins = Pins.from_loader(
+    set_pins = LoaderPin()(
         loader,
         venv_path,
         suffix=SUFFIX_UNLOCKED,
         filter_by_pin=None,
     )
-    pins = Pins(lst_pins)
+    pins = Pins(set_pins)
 
     # repr -- non-empty set
     repr_pins = repr(pins)
@@ -384,13 +280,13 @@ def test_pins_realistic(
         assert isinstance(pin_found, Pin)
 
     # Ensure Pins.from_loader works
-    lst_pins_0 = Pins.from_loader(
+    set_pins_0 = LoaderPin()(
         loader,
         venv_path,
         suffix=SUFFIX_LOCKED,
         filter_by_pin=True,
     )
-    is_there_will_be_pins = len(lst_pins_0) != 0
+    is_there_will_be_pins = len(set_pins_0) != 0
     assert is_there_will_be_pins is True
 
     # Failing here under Windows. See what is happening inside the function
@@ -410,7 +306,8 @@ def test_pins_realistic(
     assert pkg_count_actual == pkg_count_expected
     for pkg_name, pins_same_pkg in pins_by_pkg.items():
         assert isinstance(pins_same_pkg, set)
-        assert isinstance(list(pins_same_pkg)[0], Pin)
+        # isinstance cannot be used with TypeVar drain_swamp.load_datum.DATUM
+        assert isinstance(list(pins_same_pkg)[0], (Pin, PinDatum))
         assert len(pins_same_pkg) == 1
 
     # assert has_logging_occurred(caplog)
@@ -620,315 +517,6 @@ def test_fix_requirements(
     fix_requirements(loader, venv_path, is_dry_run=1.12345)
 
 
-testdata_lock_file_paths_to_relpath = (
-    (
-        (
-            "requirements/prod.shared.in",
-            "docs/requirements.in",
-        ),
-        (
-            "#\n"
-            "click==8.1.7\n"
-            "    # via\n"
-            "    #   -c {tmp_path!s}/docs/../requirements/prod.shared.in\n"
-            "    #   click-log\n"
-            "    #   scriv\n"
-            "    #   sphinx-external-toc-strict\n"
-            "    #   uvicorn\n"
-            "sphobjinv==2.3.1.1\n"
-            "    # via -r {tmp_path!s}/docs/requirements.in\n\n"
-        ),
-        (
-            "#\n"
-            "click==8.1.7\n"
-            "    # via\n"
-            "    #   -c docs/../requirements/prod.shared.in\n"
-            "    #   click-log\n"
-            "    #   scriv\n"
-            "    #   sphinx-external-toc-strict\n"
-            "    #   uvicorn\n"
-            "sphobjinv==2.3.1.1\n"
-            "    # via -r docs/requirements.in\n\n"
-        ),
-        "docs/requirements.lock",
-    ),
-)
-ids_lock_file_paths_to_relpath = ("remove absolute paths from .lock file",)
-
-
-@pytest.mark.parametrize(
-    "seq_reqs_relpath, lock_file_contents, expected_contents, dest_relpath",
-    testdata_lock_file_paths_to_relpath,
-    ids=ids_lock_file_paths_to_relpath,
-)
-def test_lock_file_paths_to_relpath(
-    seq_reqs_relpath,
-    lock_file_contents,
-    expected_contents,
-    dest_relpath,
-    tmp_path,
-    prepare_folders_files,
-):
-    """When creating .lock files post processer abs path --> relative path."""
-    # pytest --showlocals --log-level INFO -k "test_lock_file_paths_to_relpath" tests
-    # prepare
-    #    .in
-    prepare_folders_files(seq_reqs_relpath, tmp_path)
-
-    #    .lock create with contents
-    path_doc_lock = cast("Path", resolve_joinpath(tmp_path, dest_relpath))
-    path_doc_lock.write_text(lock_file_contents.format(**{"tmp_path": tmp_path}))
-
-    # act
-    _postprocess_abspath_to_relpath(path_doc_lock, tmp_path)
-
-    # verify
-    #    Within file contents, absolute path of parent folder is absent
-    actual_contents = path_doc_lock.read_text()
-    is_not_occur_once = str(tmp_path) not in actual_contents
-    assert is_not_occur_once is True
-    assert actual_contents == expected_contents
-
-
-testdata_compile_one = (
-    pytest.param(
-        (
-            Path(__file__).parent.parent.joinpath("requirements/pins.shared.in"),
-            Path(__file__).parent.parent.joinpath("requirements/pip.in"),
-            Path(__file__).parent.parent.joinpath("requirements/pip-tools.in"),
-        ),
-        "requirements/pip-tools.in",
-        "requirements/pip-tools.out",
-    ),
-)
-ids_compile_one = ("pip-tools.in --> pip-tools.lock",)
-
-
-@pytest.mark.xfail(
-    not is_package_installed("pip-tools"),
-    reason="dependency package pip-tools is required",
-)
-@pytest.mark.parametrize(
-    "seq_copy_these, in_relpath, out_relpath",
-    testdata_compile_one,
-    ids=ids_compile_one,
-)
-def test_compile_one(
-    seq_copy_these,
-    in_relpath,
-    out_relpath,
-    tmp_path,
-):
-    """Lock a .in file."""
-    # pytest -vv --showlocals --log-level INFO -k "test_compile_one" tests
-    path_ep = resolve_path("pip-compile")
-    ep_path = str(path_ep)
-    path_cwd = tmp_path
-    context = ".venv"
-
-    # prepare
-    #    dest folders
-    path_dir = cast("Path", resolve_joinpath(tmp_path, "requirements"))
-    path_dir.mkdir(parents=True, exist_ok=True)
-
-    #    Copy real .in files
-    for abspath_src in seq_copy_these:
-        src_abspath = str(abspath_src)
-        abspath_dest = tmp_path / "requirements" / abspath_src.name
-        shutil.copy2(src_abspath, abspath_dest)
-    abspath_in = cast("Path", resolve_joinpath(tmp_path, in_relpath))
-    abspath_out = cast("Path", resolve_joinpath(tmp_path, out_relpath))
-    in_abspath = abspath_in.as_posix()
-    out_abspath = abspath_out.as_posix()
-
-    # Conforms to interface?
-    assert isinstance(in_abspath, str)
-    assert isinstance(out_abspath, str)
-    assert isinstance(ep_path, str)
-    assert issubclass(type(path_cwd), PurePath)
-    assert context is None or isinstance(context, str)
-
-    # act
-    optabspath_out, err_details = _compile_one(
-        in_abspath,
-        out_abspath,
-        ep_path,
-        path_cwd,
-        context,
-        timeout=PurePath,
-    )
-    # verify
-    t_failures = (err_details,)
-    if err_details is not None and is_timeout(t_failures):
-        pytest.skip("lock_compile requires a web connection")
-    else:
-        assert optabspath_out is not None
-        assert issubclass(type(optabspath_out), PurePath)
-        assert optabspath_out.exists() and optabspath_out.is_file()
-
-
-testdata_lock_compile_live = (
-    pytest.param(
-        Path(__file__).parent.joinpath("_req_files", "venvs_minimal.pyproject_toml"),
-        ".tools",
-        (
-            "requirements/pins.shared.in",
-            "requirements/pip.in",
-            "requirements/pip-tools.in",
-            "docs/pip-tools.in",
-        ),
-        "docs/pip-tools.in",
-        "docs/pip-tools.out",
-        does_not_raise(),
-    ),
-    pytest.param(
-        Path(__file__).parent.joinpath("_req_files", "venvs_minimal.pyproject_toml"),
-        ".venv",
-        (
-            "requirements/pins.shared.in",
-            "requirements/pip.in",
-            "requirements/pip-tools.in",
-            "docs/pip-tools.in",
-        ),
-        "requirements/pip-tools.in",
-        "requirements/pip-tools.out",
-        does_not_raise(),
-    ),
-)
-ids_lock_compile_live = (
-    "recipe for docs/pip-tools.in --> docs/pip-tools.lock",
-    "recipe for requirements/pip-tools.in --> requirements/pip-tools.lock",
-)
-
-
-@pytest.mark.xfail(
-    not is_package_installed("pip-tools"),
-    reason="dependency package pip-tools is required",
-)
-@pytest.mark.parametrize(
-    "path_config, venv_relpath, seq_reqs_relpath, in_relpath, out_relpath, expectation",
-    testdata_lock_compile_live,
-    ids=ids_lock_compile_live,
-)
-def test_lock_compile_live(
-    path_config,
-    venv_relpath,
-    seq_reqs_relpath,
-    in_relpath,
-    out_relpath,
-    expectation,
-    tmp_path,
-    path_project_base,
-    prep_pyproject_toml,
-    prepare_folders_files,
-    caplog,
-    has_logging_occurred,
-):
-    """Test lock compile"""
-    # pytest -vv --showlocals --log-level INFO -k "test_lock_compile_live" tests
-    LOGGING["loggers"][g_app_name]["propagate"] = True
-    logging.config.dictConfig(LOGGING)
-    logger = logging.getLogger(name=g_app_name)
-    logger.addHandler(hdlr=caplog.handler)
-    caplog.handler.level = logger.level
-
-    path_cwd = path_project_base()
-    # prepare
-    #    pyproject.toml
-    path_f = prep_pyproject_toml(path_config, tmp_path)
-
-    # Act
-    #    Test without copying over support files
-    loader = VenvMapLoader(path_f.as_posix())
-    with pytest.raises(NotADirectoryError):
-        lock_compile(loader, venv_relpath)
-    #    Test not filtering by venv relpath
-    with pytest.raises(NotADirectoryError):
-        lock_compile(loader, None)
-
-    #    create folders (venv and requirements folders)
-    venv_relpaths = (
-        ".venv",
-        ".tools",
-        "requirements",
-        "docs",
-    )
-    for create_relpath in venv_relpaths:
-        abspath_venv = cast("Path", resolve_joinpath(tmp_path, create_relpath))
-        abspath_venv.mkdir(parents=True, exist_ok=True)
-
-    # prepare
-    #    copy just the reqs .in --> .lock
-    abspath_src = cast("Path", resolve_joinpath(path_cwd, in_relpath))
-    abspath_dest = cast("Path", resolve_joinpath(tmp_path, in_relpath))
-    shutil.copy2(abspath_src, abspath_dest)
-
-    # Act
-    #    Test without copying over support files
-    loader = VenvMapLoader(path_f.as_posix())
-    with pytest.raises(MissingRequirementsFoldersFiles):
-        lock_compile(loader, venv_relpath)
-
-    # prepare
-    #    copy (ALL not just one venv) requirements to respective folders
-    for relpath_f in seq_reqs_relpath:
-        abspath_src = cast("Path", resolve_joinpath(path_cwd, relpath_f))
-        abspath_dest = cast("Path", resolve_joinpath(tmp_path, relpath_f))
-        shutil.copy2(abspath_src, abspath_dest)
-
-    # Act
-    loader = VenvMapLoader(path_f.as_posix())
-
-    # overloaded function prepare_pairs
-    with expectation:
-        t_ins, files = filter_by_venv_relpath(loader, venv_relpath)
-    if isinstance(expectation, does_not_raise):
-        gen = prepare_pairs(t_ins)
-        assert isinstance(gen, Generator)
-        list(gen)  # execute Generator
-        gen = prepare_pairs(files, path_cwd=tmp_path)
-        assert isinstance(gen, Generator)
-        list(gen)  # execute Generator
-        # path_cwd must be provided and be a Path
-        with pytest.raises(AssertionError):
-            gen = prepare_pairs(files, path_cwd=None)
-            list(gen)  # execute Generator
-
-        # Fallback
-        with pytest.raises(NotImplementedError):
-            gen = prepare_pairs(None)
-            list(gen)
-
-    with expectation:
-        """
-        func_path = f"{g_app_name}.lock_inspect.lock_compile"
-        args = (loader, venv_relpath)
-        kwargs = {}
-        t_ret = get_locals(func_path, lock_compile, *args, **kwargs)  # noqa: F841
-        t_status, t_locals = t_ret
-        """
-        t_status = lock_compile(
-            loader,
-            venv_relpath,
-            timeout=PurePath,
-        )
-    # Verify
-    if isinstance(expectation, does_not_raise):
-        # assert has_logging_occurred(caplog)
-        assert t_status is not None
-        assert isinstance(t_status, tuple)
-        t_compiled, t_failures = t_status
-        assert isinstance(t_failures, tuple)
-        assert isinstance(t_compiled, tuple)
-        if is_timeout(t_failures):
-            pytest.skip("lock_compile requires a web connection")
-        else:
-            is_no_failures = len(t_failures) == 0
-            assert is_no_failures
-            compiled_count = len(t_compiled)
-            assert compiled_count == 1
-
-
 @pytest.mark.parametrize(
     "path_config, venv_relpath, seq_reqs_relpath, in_relpath, out_relpath, expectation",
     testdata_lock_compile_live,
@@ -1027,87 +615,3 @@ def test_unlock_compile_live(
         assert abspath_unlocks is not None
         assert isinstance(abspath_unlocks, Sequence)
         assert len(abspath_unlocks) != 0
-
-
-testdata_extract_full_package_name = (
-    (
-        'colorama ;platform_system=="Windows"',
-        "colorama",
-        "colorama",
-    ),
-    (
-        'tomli; python_version<"3.11"',
-        "tomli",
-        "tomli",
-    ),
-    (
-        "pip @ remote",
-        "pip",
-        "pip",
-    ),
-    (
-        "pip@ remote",
-        "pip",
-        "pip",
-    ),
-    (
-        "pip @remote",
-        "pip",
-        "pip",
-    ),
-    (
-        "tox>=1.1.0",
-        "tox",
-        "tox",
-    ),
-    (
-        "tox-gh-action>=1.1.0",
-        "tox",
-        None,
-    ),
-)
-ids_extract_full_package_name = (
-    "space semicolon",
-    "semicolon space",
-    "space at space",
-    "at space",
-    "space at",
-    "exact pkg name operator ge",
-    "not a match",
-)
-
-
-@pytest.mark.parametrize(
-    "line, search_for, expected_pkg_name",
-    testdata_extract_full_package_name,
-    ids=ids_extract_full_package_name,
-)
-def test_extract_full_package_name(
-    line,
-    search_for,
-    expected_pkg_name,
-    caplog,
-):
-    """For a particular package, check line is an exact match."""
-    # pytest -vv --showlocals --log-level INFO -k "test_extract_full_package_name" tests
-    LOGGING["loggers"][g_app_name]["propagate"] = True
-    logging.config.dictConfig(LOGGING)
-    logger = logging.getLogger(name=g_app_name)
-    logger.addHandler(hdlr=caplog.handler)
-    caplog.handler.level = logger.level
-
-    func_path = f"{g_app_name}.lock_inspect._extract_full_package_name"
-    args = (line, search_for)
-    kwargs = {}
-    t_ret = get_locals(  # noqa: F841
-        func_path,
-        _extract_full_package_name,
-        *args,
-        **kwargs,
-    )
-
-    pkg_name_actual = _extract_full_package_name(line, search_for)
-    if expected_pkg_name is None:
-        assert pkg_name_actual is None
-    else:
-        assert pkg_name_actual == expected_pkg_name

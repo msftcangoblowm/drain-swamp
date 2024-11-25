@@ -4,9 +4,10 @@
 Package wide exceptions
 
 .. py:data:: __all__
-   :type: tuple[str, str, str]
+   :type: tuple[str, str, str, str]
    :value: ("PyProjectTOMLParseError", \
-   "PyProjectTOMLReadError", "MissingRequirementsFoldersFiles")
+   "PyProjectTOMLReadError", "MissingPackageBaseFolder", \
+   "MissingRequirementsFoldersFiles")
 
    Module exports
 
@@ -16,6 +17,7 @@ __package__ = "drain_swamp"
 __all__ = (
     "PyProjectTOMLParseError",
     "PyProjectTOMLReadError",
+    "MissingPackageBaseFolder",
     "MissingRequirementsFoldersFiles",
 )
 
@@ -53,6 +55,18 @@ class MissingRequirementsFoldersFiles(AssertionError):
 
     Unabated would produce an empty string snippet. Instead provide
     user feedback
+
+    :ivar msg: The error message
+    :vartype msg: str
+    """
+
+    def __init__(self, msg: str) -> None:
+        """Class constructor."""
+        super().__init__(msg)
+
+
+class MissingPackageBaseFolder(AssertionError):
+    """Loader did not provide package base folder. Do not know the cwd
 
     :ivar msg: The error message
     :vartype msg: str

@@ -1,6 +1,7 @@
 click
 drain-swamp-snippet
 importlib-metadata>=8.5.0
+packaging
 pip-requirements-parser
 pip-tools
 pluggy

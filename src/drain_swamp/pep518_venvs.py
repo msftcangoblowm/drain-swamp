@@ -46,7 +46,12 @@ from ._safe_path import (
     replace_suffixes,
     resolve_joinpath,
 )
+from .check_type import is_ok
 from .constants import SUFFIX_IN
+from .exceptions import (
+    MissingPackageBaseFolder,
+    MissingRequirementsFoldersFiles,
+)
 from .lock_util import (
     is_shared,
     replace_suffixes_last,
@@ -333,7 +338,11 @@ class VenvMapLoader:
 
         return tuple(lst)
 
-    def parse_data(self, check_suffixes=(".in", ".unlock", ".lock")):
+    def parse_data(
+        self,
+        parse_venv_relpath=None,
+        check_suffixes=(".in", ".unlock", ".lock"),
+    ):
         """Take raw TOML section array of tables and parse.
 
         Each datum is stored along with redundant metadata project_base and in_folder.
@@ -367,6 +376,14 @@ class VenvMapLoader:
         msg_exc_field_type_ng = "Expecting requirements to be a list[str]"
         for d_venv in self.l_data:
             venv_relpath = d_venv.get("venv_base_path", None)
+
+            # Skip parsing of other venv requirements
+            if (
+                parse_venv_relpath is not None
+                and isinstance(parse_venv_relpath, str)
+                and venv_relpath != parse_venv_relpath
+            ):
+                continue
 
             # deprecate in_folder
             # in_folder = d_venv.get("in_folder", None)
@@ -590,12 +607,20 @@ class VenvMap(Iterator[VenvReq]):
 
     __slots__ = ("_loader", "_venvs", "_iter", "_missing")
 
-    def __init__(self, loader, check_suffixes=(".in", ".unlock", ".lock")):
+    def __init__(
+        self,
+        loader,
+        parse_venv_relpath=None,
+        check_suffixes=(".in", ".unlock", ".lock"),
+    ):
         """Class constructor."""
         # Load data should occur once. Not each iteration.
         self._loader = loader
 
-        venvs, missing = self._loader.parse_data(check_suffixes=check_suffixes)
+        venvs, missing = self._loader.parse_data(
+            parse_venv_relpath=parse_venv_relpath,
+            check_suffixes=check_suffixes,
+        )
 
         """Simplifies a Mapping down into a list[dataclass]. Each item
         contains both key and values"""
@@ -806,3 +831,120 @@ class VenvMap(Iterator[VenvReq]):
         ]
 
         return reqs
+
+
+def check_loader(loader):
+    """Check loader valid
+
+    :param loader: Should be a VenvMapLoader
+    :type loader: typing.Any
+    :raises:
+
+        - :py:exc:`drain_swamp.exceptions.MissingPackageBaseFolder` --
+          loader not provided. Loader provides package base folder
+
+    """
+    is_loader_ng = loader is None or not isinstance(loader, VenvMapLoader)
+    if is_loader_ng:
+        msg_warn = "loader not provided. Loader provides package base folder"
+        raise MissingPackageBaseFolder(msg_warn)
+    else:  # pragma: no cover
+        pass
+
+
+def get_reqs(loader, venv_path=None, suffix_last=SUFFIX_IN):
+    """get absolute path to requirement files
+
+    Filtering by venv relative or absolute path is recommended
+
+    :param loader: Contains some paths and loaded unparsed mappings
+    :type loader: drain_swamp.pep518_venvs.VenvMapLoader
+    :param venv_path: Filter by venv relative or absolute path
+    :type venv_path: typing.Any
+    :param suffix_last: Default ``.in``. Last suffix is replaced, not all suffixes
+    :type suffix_last: str
+    :returns: Sequence of absolute path to requirements files
+    :rtype: tuple[pathlib.Path]
+    :raises:
+
+       - :py:exc:`NotADirectoryError` -- venv relative paths do not correspond to
+         actual venv folders
+
+       - :py:exc:`ValueError` -- expecting [[tool.venvs]] field reqs to be a
+         sequence
+
+       - :py:exc:`KeyError` -- No such venv found
+
+       - :py:exc:`drain_swamp.exceptions.MissingRequirementsFoldersFiles` --
+         There are missing ``.in`` files. Support file(s) not checked
+
+       - :py:exc:`drain_swamp.exceptions.MissingPackageBaseFolder` --
+         loader invalid. Does not provide package base folder
+
+    """
+    # raises MissingPackageBaseFolder
+    check_loader(loader)
+
+    is_abs_path = is_ok(venv_path) and Path(venv_path).is_absolute()
+    is_abspath = (
+        venv_path is not None
+        and issubclass(type(venv_path), PurePath)
+        and venv_path.is_absolute()
+    )
+    if is_abs_path or is_abspath:
+        venv_path = Path(venv_path).relative_to(loader.project_base).as_posix()
+    else:  # pragma: no cover
+        pass
+
+    check_suffixes = (suffix_last,)
+
+    venv_relpaths = loader.venv_relpaths
+
+    # Ensure requirements files defined in [[tool.venvs]] reqs exists
+    try:
+        venvs = VenvMap(
+            loader,
+            parse_venv_relpath=venv_path,
+            check_suffixes=check_suffixes,
+        )
+        msg_missing = "\n".join(venvs.missing)
+        is_missing = len(venvs.missing) != 0
+        if is_missing:
+            raise MissingRequirementsFoldersFiles(msg_missing)
+        else:  # pragma: no cover
+            pass
+        assert len(venvs.missing) == 0, msg_missing
+    except (NotADirectoryError, ValueError, AssertionError):
+        raise
+
+    set_out = set()
+    is_get_all = venv_path is None
+    is_venvs_found = venv_path is not None and venv_path in venv_relpaths
+    if is_get_all or is_venvs_found:
+        venv_relpaths_filtered = [
+            venv_path_key
+            for venv_path_key in venv_relpaths
+            if is_get_all or venv_path_key == venv_path
+        ]
+        for venv_path_key in venv_relpaths_filtered:
+            # filtered so no KeyError
+            reqs = venvs.reqs(venv_path_key)
+
+            for path_in_ in reqs:
+                # requirements .unlock files, not the source within .in files
+                # where to apply ``nudges`` is another story.
+                path_venvreq = cast(
+                    "Path",
+                    resolve_joinpath(path_in_.project_base, path_in_.req_relpath),
+                )
+                abspath_req = replace_suffixes_last(path_venvreq, suffix_last)
+                set_out.add(abspath_req)
+    else:
+        # venv_path not in venv_relpaths
+        msg_warn = (
+            f"venv {venv_path} not in [[tool.{TOML_SECTION_VENVS}]] "
+            f"venv paths {venv_relpaths}"
+        )
+        raise KeyError(msg_warn)
+
+    return tuple(set_out)

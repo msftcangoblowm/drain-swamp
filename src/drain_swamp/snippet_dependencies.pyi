@@ -1,4 +1,5 @@
 import logging
+import sys
 from collections.abc import (
     Iterator,
     Mapping,
@@ -6,7 +7,10 @@ from collections.abc import (
 )
 from pathlib import Path
 
-from typing_extensions import TypeAlias
+if sys.version_info >= (3, 10):  # pragma: no cover py-gte-310-else
+    from typing import TypeAlias
+else:  # pragma: no cover py-gte-310
+    from typing_extensions import TypeAlias
 
 __all__ = (
     "SnippetDependencies",

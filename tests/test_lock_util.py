@@ -11,12 +11,18 @@ Unit test -- Module
 
 """
 
+import site
 from contextlib import nullcontext as does_not_raise
-from pathlib import PurePath
+from pathlib import (
+    Path,
+    PurePath,
+)
+from typing import cast
 
 import pytest
 from logging_strict.tech_niques import get_locals  # noqa: F401
 
+from drain_swamp._safe_path import resolve_joinpath
 from drain_swamp.constants import (  # g_app_name,  # noqa: F401
     SUFFIX_IN,
     SUFFIX_LOCKED,
@@ -24,7 +30,10 @@ from drain_swamp.constants import (  # g_app_name,  # noqa: F401
     SUFFIX_UNLOCKED,
 )
 from drain_swamp.lock_util import (
+    abspath_relative_to_package_base_folder,
+    check_relpath,
     is_shared,
+    is_suffixes_ok,
     replace_suffixes_last,
 )
 
@@ -193,3 +202,177 @@ def test_replace_suffixes_last(
         with pytest.raises(ValueError):
             relpath_f = abspath_f.relative_to(tmp_path)
             replace_suffixes_last(relpath_f, suffix)
+
+
+testdata_is_suffixes_ok = (
+    (
+        "requirements/prod.shared",
+        "prod.shared",
+        pytest.raises(ValueError),
+    ),
+    (
+        "requirements/prod",
+        "prod",
+        pytest.raises(ValueError),
+    ),
+    (
+        "requirements/prod.shared.frog",
+        "prod.shared",
+        pytest.raises(ValueError),
+    ),
+    (
+        "requirements/prod.frog",
+        "prod",
+        pytest.raises(ValueError),
+    ),
+    (
+        7.4,
+        "prod",
+        pytest.raises(TypeError),
+    ),
+    (
+        "requirements/prod.shared.in",
+        "prod.shared.in",
+        does_not_raise(),
+    ),
+    (
+        Path("requirements/prod.shared.in"),
+        "prod.shared.in",
+        does_not_raise(),
+    ),
+)
+ids_is_suffixes_ok = (
+    "no ENDING",
+    "No suffixes",
+    ".shared then unknown ENDING",
+    "not .shared then unknown ENDING",
+    "unsupported type",
+    "acceptable relative path",
+    "acceptable relative Path",
+)
+
+
+@pytest.mark.parametrize(
+    "relpath, stem, expectation",
+    testdata_is_suffixes_ok,
+    ids=ids_is_suffixes_ok,
+)
+def test_is_suffixes_ok(relpath, stem, expectation):
+    """Test is_suffixes_ok. Demonstrate invalid relpath."""
+    # pytest --showlocals --log-level INFO -k "test_is_suffixes_ok" tests
+    with expectation:
+        is_suffixes_ok(relpath)
+
+
+testdata_check_relpath = (
+    (
+        Path("requirements/pip.in"),
+        does_not_raise(),
+    ),
+)
+ids_check_relpath = ("pip.in 1 constraint 3 requirements",)
+
+
+@pytest.mark.parametrize(
+    "relpath, expectation",
+    testdata_check_relpath,
+    ids=ids_check_relpath,
+)
+def test_check_relpath(
+    relpath,
+    expectation,
+    path_project_base,
+    tmp_path,
+):
+    """check_relpath is relpath relative to cwd"""
+    # pytest --showlocals --log-level INFO -k "test_check_relpath" tests
+    # prepare
+    path_cwd = path_project_base()
+
+    # prepare
+    path_f_in_tmp = cast("Path", resolve_joinpath(tmp_path, "deleteme.txt"))
+    path_f_in_tmp.touch()
+    # no touch
+    path_f_in_cwd = cast("Path", resolve_joinpath(path_cwd, "deleteme.txt"))
+
+    # unsupported type --> TypeError
+    invalids = (
+        None,
+        1.234,
+    )
+    for invalid in invalids:
+        with pytest.raises(TypeError):
+            check_relpath(path_cwd, invalid)
+
+    # no such file --> FileNotFoundError
+    with pytest.raises(FileNotFoundError):
+        check_relpath(path_cwd, path_f_in_cwd)
+
+    # not relative to base folder --> ValueError
+    with pytest.raises(ValueError):
+        check_relpath(path_cwd, path_f_in_tmp)
+
+    # file exists relative to cwd. No exception raised
+    with expectation:
+        check_relpath(path_cwd, relpath)
+
+
+testdata_abspath_relative_to_package_base_folder = (
+    (
+        Path(__file__).parent.parent.joinpath(
+            "docs",
+            "pip-tools.in",
+        ),
+        "../requirements/pins.shared.in",
+        does_not_raise(),
+        "requirements/pins.shared.in",
+    ),
+    (
+        Path(__file__).parent.parent.joinpath(
+            "docs",
+            "pip-tools.in",
+        ),
+        "../requirements/dogfood.shared.in",
+        pytest.raises(FileNotFoundError),
+        "requirements/dogfood.shared.in",
+    ),
+    (
+        Path(site.getuserbase()),
+        "../requirements/dogfood.shared.in",
+        pytest.raises(ValueError),
+        "requirements/dogfood.shared.in",
+    ),
+)
+ids_abspath_relative_to_package_base_folder = (
+    "different folders",
+    "impossible to resolve requirements file not found",
+    "not subpath not relative to",
+)
+
+
+@pytest.mark.parametrize(
+    "abspath_f, constraint_relpath, expectation, expected_relpath",
+    testdata_abspath_relative_to_package_base_folder,
+    ids=ids_abspath_relative_to_package_base_folder,
+)
+def test_abspath_relative_to_package_base_folder(
+    abspath_f,
+    constraint_relpath,
+    expectation,
+    expected_relpath,
+    path_project_base,
+):
+    """Normalize requirement file constraint or requirement relpath to cwd"""
+    # pytest --showlocals --log-level INFO -k "test_abspath_relative_to_package_base_folder" tests
+    # prepare
+    path_cwd = path_project_base()
+
+    with expectation:
+        abspath_actual = abspath_relative_to_package_base_folder(
+            path_cwd,
+            abspath_f,
+            constraint_relpath,
+        )
+    if isinstance(expectation, does_not_raise):
+        relpath_actual = abspath_actual.relative_to(path_cwd)
+        assert str(relpath_actual) == expected_relpath

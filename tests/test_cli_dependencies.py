@@ -182,8 +182,6 @@ testdata_lock_unlock_docs_venv = (
         ".tools",
         (
             "requirements/pins.shared.in",
-            "requirements/pip.in",
-            "requirements/pip-tools.in",
             "docs/pip-tools.in",
         ),
         0,
@@ -194,12 +192,13 @@ testdata_lock_unlock_docs_venv = (
         ".doc/.venv",
         (
             "requirements/prod.shared.in",
+            "requirements/pins-cffi.in",
             "requirements/pins.shared.in",
             "docs/pip-tools.in",
             "docs/requirements.in",
         ),
         0,
-        marks=pytest.mark.skipif(sys.version_info < (3, 10), reason="Sphinx>=8 py310+"),
+        marks=pytest.mark.skipif(sys.version_info < (3, 10), reason="Sphinx>=8 <py310"),
     ),
     pytest.param(
         dependencies_lock,
@@ -207,6 +206,7 @@ testdata_lock_unlock_docs_venv = (
         ".doc/.venv",
         (
             "requirements/prod.shared.in",
+            "requirements/pins-cffi.in",
             "requirements/pins.shared.in",
             "docs/pip-tools.in",
             "docs/requirements.in",
@@ -274,6 +274,7 @@ def test_lock_unlock_docs_venv(
             ".venv",
             ".tools",
             ".doc/.venv",
+            "docs",
         )
         for create_relpath in venv_relpaths:
             abspath_venv = resolve_joinpath(path_tmp_dir, create_relpath)
@@ -299,6 +300,8 @@ def test_lock_unlock_docs_venv(
             "requirements/pip-tools.in",
             "requirements/dev.in",
             "requirements/manage.in",
+            "docs/pip-tools.in",
+            "requirements/pins.shared.in",
         ]
         prepare_folders_files(seq_in_supplamental, path_tmp_dir)
         for relpath_f in seq_in_supplamental:
@@ -312,6 +315,7 @@ def test_lock_unlock_docs_venv(
         actual_exit_code = result.exit_code
         # Contains venv_relpath, lock file, err, exception
         actual_output = result.output  # noqa: F841
+        actual_exception = result.exception  # noqa: F841
         if not is_lock_compile:
             assert actual_exit_code == expected_exit_code
         else:
@@ -403,7 +407,7 @@ testdata_lock_unlock_compile_with_prepare = (
     (
         dependencies_lock,
         Path(__file__).parent.joinpath("_good_files", "complete.pyproject_toml"),
-        ".venv/docs",
+        ".doc/.venv",
         True,
         False,
         6,  # 6 MissingRequirementsFoldersFiles
@@ -411,7 +415,7 @@ testdata_lock_unlock_compile_with_prepare = (
     (
         dependencies_unlock,
         Path(__file__).parent.joinpath("_good_files", "complete.pyproject_toml"),
-        ".venv/docs",
+        ".doc/.venv",
         True,
         False,
         6,  # 6 MissingRequirementsFoldersFiles
@@ -634,10 +638,12 @@ testdata_lock_compile_requires_pip_tools = (
     (
         dependencies_lock,
         Path(__file__).parent.joinpath("_req_files", "venvs_minimal.pyproject_toml"),
-        ".venv/docs",
+        ".tools",
         (
             "docs/pip-tools",
             "requirements/pins.shared",
+            "requirements/pip-tools",
+            "requirements/pip",
         ),
         5,
     ),
@@ -718,10 +724,11 @@ def test_lock_compile_requires_pip_tools(
 
         if expected_exit_code == 5:
             with patch(
-                f"{g_app_name}.lock_inspect.is_package_installed",
+                f"{g_app_name}.lock_compile.is_package_installed",
                 return_value=False,
             ):
                 result = runner.invoke(dependencies_lock, cmd)
+                logger.info(f"output: {result.output}")
                 assert result.exit_code == expected_exit_code
         else:
             result = runner.invoke(dependencies_lock, cmd, catch_exceptions=True)

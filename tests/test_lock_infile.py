@@ -36,10 +36,10 @@ from drain_swamp.constants import (
     g_app_name,
 )
 from drain_swamp.exceptions import MissingRequirementsFoldersFiles
+from drain_swamp.lock_datum import InFileType
 from drain_swamp.lock_infile import (
     InFile,
     InFiles,
-    InFileType,
 )
 from drain_swamp.lock_util import replace_suffixes_last
 
@@ -224,7 +224,7 @@ def test_resolve_loop(
 testdata_infile_instance = (
     (
         Path("requirements/pip.in"),
-        ("requirements/pins.in",),
+        ("requirements/pins.shared.in",),
         ("pip", "setuptools", "setuptools-scm"),
     ),
 )
@@ -242,7 +242,7 @@ def test_infile_instance(
     requirements,
     path_project_base,
 ):
-    """InFiles calls check_path before call to InFile, which does no checks"""
+    """InFiles calls check_relpath before call to InFile, which does no checks"""
     # pytest --showlocals --log-level INFO -k "test_infile_instance" tests
     # prepare
     path_cwd = path_project_base()
@@ -268,20 +268,6 @@ def test_infile_instance(
 
     # eq -- unsupported type
     assert in_ != 1.1234
-
-    # InFile.check_path --> TypeError
-    invalids = (
-        None,
-        1.234,
-    )
-    for invalid in invalids:
-        with pytest.raises(TypeError):
-            in_.check_path(path_cwd, invalid)
-
-    # InFile.check_path --> FileNotFoundError
-    path_f = cast("Path", resolve_joinpath(path_cwd, "deleteme.txt"))
-    with pytest.raises(FileNotFoundError):
-        in_.check_path(path_cwd, path_f)
 
 
 testdata_infile_badies = (
@@ -326,7 +312,9 @@ ids_infile_badies = (
     ids=ids_infile_badies,
 )
 def test_infile_badies(relpath, stem):
-    """Test InFile. Demonstrate invalid relpath."""
+    """Test InFile. Demonstrate invalid relpath.
+    Much of this is redundant and covered by tests.test_lock_util:test_is_suffixes_ok
+    """
     # pytest --showlocals --log-level INFO -k "test_infile_badies" tests
     with pytest.raises(ValueError):
         InFile(relpath, stem)

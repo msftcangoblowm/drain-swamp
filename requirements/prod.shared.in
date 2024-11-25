@@ -18,4 +18,5 @@ pip-tools       # lock requirements
 pluggy          # plugin support in build backend and setuptools.finalize_distribution_options entrypoint
 setuptools-scm  # get current version, `python setup.py --version`
 drain-swamp-snippet
+packaging
 pip-requirements-parser

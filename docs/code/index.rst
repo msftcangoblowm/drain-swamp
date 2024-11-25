@@ -31,6 +31,11 @@ Code manual
 
       - :doc:`lock infile <ext/pipenv_unlock/lock_infile>`
       - :doc:`lock inspect <ext/pipenv_unlock/lock_inspect>`
+      - :doc:`lock collections <ext/pipenv_unlock/lock_collections>`
+      - :doc:`lock filepins <ext/pipenv_unlock/lock_filepins>`
+      - :doc:`lock discrepancy <ext/pipenv_unlock/lock_discrepancy>`
+      - :doc:`lock loader <ext/pipenv_unlock/lock_loader>`
+      - :doc:`lock datum <ext/pipenv_unlock/lock_datum>`
       - :doc:`lock util <ext/pipenv_unlock/lock_util>`
       - :doc:`snippet dependencies <ext/pipenv_unlock/snippet_dependencies>`
 

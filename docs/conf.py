@@ -177,8 +177,10 @@ autodoc_type_aliases = {
     "TOML_RESULT": "drain_swamp.monkey.pyproject_reading.TOML_RESULT",
     "TOML_LOADER": "drain_swamp.monkey.pyproject_reading.TOML_LOADER",
     "_T": "drain_swamp.lock_inspect._T",
+    "DATUM": "drain_swamp.lock_datum.DATUM",
+    "DatumByPkg": "drain_swamp.lock_datum.DatumByPkg",
     "PinsByPkg": "drain_swamp.lock_inspect.PinsByPkg",
-    "PkgsWithIssues": "drain_swamp.lock_inspect.PkgsWithIssues",
+    "PkgsWithIssues": "drain_swamp.lock_discrepancy.PkgsWithIssues",
     "T_REQUIRED": "drain_swamp.snippet_dependencies.T_REQUIRED",
     "T_OPTIONALS": "drain_swamp.snippet_dependencies.T_OPTIONALS",
 }

@@ -11,16 +11,24 @@ Unit test -- Module
 
 """
 
+import shutil
 from contextlib import nullcontext as does_not_raise
 from pathlib import Path
+from typing import cast
 
 import pytest
 
 from drain_swamp._safe_path import resolve_joinpath
+from drain_swamp.constants import SUFFIX_IN
+from drain_swamp.exceptions import (
+    MissingPackageBaseFolder,
+    MissingRequirementsFoldersFiles,
+)
 from drain_swamp.pep518_venvs import (
     VenvMap,
     VenvMapLoader,
     VenvReq,
+    get_reqs,
 )
 
 
@@ -216,3 +224,145 @@ def test_venvreq(
 
         abspath_in_files = list(vr.reqs_all(".in"))
         assert len(abspath_in_files) == len(seq_relpath) / len(suffix_types)
+
+
+testdata_venv_get_reqs = (
+    (
+        Path(__file__).parent.joinpath(
+            "_req_files",
+            "venvs.pyproject_toml",
+        ),
+        ".venv",
+        (
+            (
+                Path(__file__).parent.joinpath(
+                    "_req_files",
+                    "constraints-various.unlock",
+                ),
+                "requirements/dev.in",
+            ),
+            (
+                Path(__file__).parent.joinpath(
+                    "_req_files",
+                    "prod.shared.unlock",
+                ),
+                "requirements/prod.shared.in",
+            ),
+        ),
+        (
+            "docs/pip-tools",
+            "docs/requirements",
+            "requirements/pip-tools",
+            "requirements/pip",
+            "requirements/prod.shared",
+            "requirements/kit",
+            "requirements/tox",
+            "requirements/mypy",
+            "requirements/manage",
+            "requirements/dev",
+        ),
+        8,
+    ),
+    (
+        Path(__file__).parent.joinpath(
+            "_req_files",
+            "venvs.pyproject_toml",
+        ),
+        ".doc/.venv",
+        (
+            (
+                Path(__file__).parent.parent.joinpath(
+                    "docs",
+                    "pip-tools.in",
+                ),
+                "docs/pip-tools.in",
+            ),
+            (
+                Path(__file__).parent.parent.joinpath(
+                    "requirements",
+                    "pins.shared.in",
+                ),
+                "requirements/pins.shared.in",
+            ),
+        ),
+        (
+            "docs/pip-tools",
+            "docs/requirements",
+        ),
+        2,
+    ),
+)
+ids_venv_get_reqs = (
+    "venvs.pyproject_toml .venv",
+    "venvs.pyproject_toml .doc/.venv",
+)
+
+
+@pytest.mark.parametrize(
+    "path_pyproject_toml, venv_relpath, seq_reqs, base_relpaths, expected_req_file_count",
+    testdata_venv_get_reqs,
+    ids=ids_venv_get_reqs,
+)
+def test_venv_get_reqs(
+    path_pyproject_toml,
+    venv_relpath,
+    seq_reqs,
+    base_relpaths,
+    expected_req_file_count,
+    tmp_path,
+    prep_pyproject_toml,
+    prepare_folders_files,
+):
+    """Test get_reqs"""
+    # pytest --showlocals --log-level INFO -k "test_venv_get_reqs" tests
+    # prepare
+    #    pyproject.toml
+    path_dest_pyproject_toml = prep_pyproject_toml(path_pyproject_toml, tmp_path)
+
+    #    empty folders
+    seq_folders = (
+        ".venv/.python-version",
+        ".doc/.venv/.python-version",
+        "docs/empty.txt",
+        "requirements/empty.txt",
+    )
+    prepare_folders_files(seq_folders, tmp_path)
+
+    loader = VenvMapLoader(path_dest_pyproject_toml.as_posix())
+
+    # loader invalid --> MissingPackageBaseFolder
+    with pytest.raises(MissingPackageBaseFolder):
+        get_reqs(None, venv_path=venv_relpath, suffix_last=SUFFIX_IN)
+
+    # missing .in files
+    with pytest.raises(MissingRequirementsFoldersFiles):
+        get_reqs(loader, venv_path=venv_relpath, suffix_last=SUFFIX_IN)
+
+    #    requirements empty files and folders
+    suffixes = (SUFFIX_IN,)
+    seq_rel_paths = []
+    for base_relpath in base_relpaths:
+        for suffix in suffixes:
+            seq_rel_paths.append(f"{base_relpath}{suffix}")
+    prepare_folders_files(seq_rel_paths, tmp_path)
+
+    #    overwrite some req relpath src --> dest e.g. 'requirements/dev.unlock'
+    for t_paths in seq_reqs:
+        src_abspath, dest_relpath = t_paths
+        abspath_dest = cast("Path", resolve_joinpath(tmp_path, dest_relpath))
+        shutil.copy(src_abspath, abspath_dest)
+
+    # No such venv
+    with pytest.raises(KeyError):
+        get_reqs(loader, ".dogfood", suffix_last=SUFFIX_IN)
+
+    # venv_relpath is relative path
+    abspath_reqs_a = get_reqs(loader, venv_relpath, suffix_last=SUFFIX_IN)
+    actual_req_file_count_a = len(abspath_reqs_a)
+    assert actual_req_file_count_a == expected_req_file_count
+
+    # venv_relpath is absolute path
+    abspath_venv_b = cast("Path", resolve_joinpath(tmp_path, venv_relpath))
+    abspath_reqs_b = get_reqs(loader, abspath_venv_b, suffix_last=SUFFIX_IN)
+    actual_req_file_count_b = len(abspath_reqs_b)
+    assert actual_req_file_count_a == actual_req_file_count_b

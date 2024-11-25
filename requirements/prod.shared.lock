@@ -10,6 +10,7 @@ importlib-metadata==8.5.0
     # via -r requirements/prod.shared.in
 packaging==24.1
     # via
+    #   -r requirements/prod.shared.in
     #   build
     #   pip-requirements-parser
     #   setuptools-scm

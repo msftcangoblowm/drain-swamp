@@ -8,6 +8,20 @@ Changelog
    Feature request
    .................
 
+   - venv_path is assumed to be a relative path. What if it's outside of the
+     package folder tree?
+
+   - do not compile/render support files
+     Description:
+     Also gets converted into ``.unlock``. Converts all zeroes.
+     Differentiate between zeroes and support.
+     e.g. pins-cffi.in --> pins-cffi.unlock
+     Reproduce:
+     :code:`cd .tox && tox --root=.. -c ../tox-req.ini -e base --workdir=.; cd - &>/dev/null`
+     Cause: stored in one set, zeroes. There is no set, support
+     Severity: annoying nuisance
+     Cause: :code:`pipenv-unlock fix`
+
    - Confirm setuptools-scm file finders are being called?
 
    - self hosted package server. See article
@@ -27,28 +41,11 @@ Changelog
      docs/requirements.unlock      -- ``pip<24.2``
      docs/requirements.in          -- ``pip<24.2``
 
-   - support ``.in`` files
-     Description:
-     Also gets converted into ``.unlock``. Converts all zeroes.
-     Differentiate between zeroes and support.
-     e.g. pins-cffi.in --> pins-cffi.unlock
-     Reproduce:
-     :code:`cd .tox && tox --root=.. -c ../tox-req.ini -e base --workdir=.; cd - &>/dev/null`
-     Cause: stored in one set, zeroes. There is no set, support
-     Severity: annoying nuisance
-     Cause: :code:`pipenv-unlock fix`
-
    - Detection should not be limited to only version conflicts. When
      to apply qualifiers should be configurable.
 
      Currently there must be a version conflict, then qualifiers are fixed.
      Qualifier fix is clumsy, either apply always or not.
-
-   - pipenv-unlock commands require all venv direct requirements files
-     and support files. So if there are two venvs, and running command
-     against venv B, venv A support files are also required.
-
-     Pins.from_loader also affected
 
    - Cannot test ``.doc/.venv`` venv
      Description:
@@ -93,6 +90,9 @@ Changelog
    Commit items for NEXT VERSION
    ..............................
 
+   - feat: add fix_requirements_lock. Call after lock_compile (#18)
+   - feat(lock_filepins): read each .in requirements file once
+   - refactor(lock_compile): from_loader two implementations the later read files once
    - fix(lock_inspect): get package name in line exact match algo
    - fix(lock_infile): resolution loop sort alphabetically (#16)
    - fix(lock_infile): resolution loop detect missing reqs both factors files and zeroes count

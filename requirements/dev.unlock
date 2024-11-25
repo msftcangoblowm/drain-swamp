@@ -11,6 +11,7 @@ importlib-metadata>=8.5.0
 isort
 logging-strict
 mypy
+packaging
 pip-requirements-parser
 pip-tools
 pluggy

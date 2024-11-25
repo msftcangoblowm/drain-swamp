@@ -2,6 +2,7 @@ click
 drain-swamp-snippet
 importlib-metadata>=8.5.0
 interrogate
+packaging
 pip-requirements-parser
 pip-tools
 pip<24.2

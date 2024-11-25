@@ -1,4 +1,3 @@
-import enum
 import logging
 from collections.abc import (
     Generator,
@@ -15,9 +14,10 @@ from typing import (
     Final,
 )
 
+from .lock_datum import InFileType
+
 __all__ = (
     "strip_inline_comments",
-    "InFileType",
     "InFile",
     "InFiles",
 )
@@ -33,8 +33,6 @@ class InFile(Hashable):
     constraints: set[str] = ...
     requirements: set[str] = ...
 
-    @staticmethod
-    def check_path(cwd: Path, path_to_check: Any) -> None: ...
     def abspath(self, path_package_base: Path) -> Path: ...
     @property
     def depth(self) -> int: ...
@@ -42,12 +40,6 @@ class InFile(Hashable):
     def __hash__(self) -> int: ...
     def __eq__(self, right: object) -> bool: ...
     def __lt__(self, right: object) -> bool: ...
-
-class InFileType(enum.Enum):
-    FILES = enum.auto()
-    ZEROES = enum.auto()
-
-    def __eq__(self, other: object) -> bool: ...
 
 @dataclass
 class InFiles:

@@ -1,3 +1,4 @@
+import sys
 from collections.abc import Callable
 from pathlib import Path
 from typing import (
@@ -5,7 +6,10 @@ from typing import (
     TypedDict,
 )
 
-from typing_extensions import TypeAlias
+if sys.version_info >= (3, 10):  # pragma: no cover py-gte-310-else
+    from typing import TypeAlias
+else:  # pragma: no cover py-gte-310
+    from typing_extensions import TypeAlias
 
 TOML_RESULT: TypeAlias = dict[str, Any]
 TOML_LOADER: TypeAlias = Callable[[str], TOML_RESULT]

@@ -173,7 +173,8 @@ def prepare_folders_files(request):
         """
         set_abs_paths = set()
         is_seq = seq_rel_paths is not None and (
-            isinstance(seq_rel_paths, Sequence) or isinstance(seq_rel_paths, set)
+            (isinstance(seq_rel_paths, Sequence) and not isinstance(seq_rel_paths, str))
+            or isinstance(seq_rel_paths, set)
         )
         if is_seq:
             for posix in seq_rel_paths:

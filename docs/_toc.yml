@@ -44,6 +44,11 @@ subtrees:
         entries:
         - file: code/ext/pipenv_unlock/lock_inspect
         - file: code/ext/pipenv_unlock/lock_infile
+        - file: code/ext/pipenv_unlock/lock_collections
+        - file: code/ext/pipenv_unlock/lock_filepins
+        - file: code/ext/pipenv_unlock/lock_discrepancy
+        - file: code/ext/pipenv_unlock/lock_loader
+        - file: code/ext/pipenv_unlock/lock_datum
         - file: code/ext/pipenv_unlock/lock_util
         - file: code/ext/pipenv_unlock/snippet_dependencies
       - file: code/ext/drain_swamp/index

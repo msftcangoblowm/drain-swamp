@@ -69,7 +69,7 @@
       $ git push
 - Start the kits:
     - Build drain-swamp
-      $ python -m build -C--kind="1.0.0" -C--set-lock="0"
+      $ python -m build -C--kind="1.0.0"
     - Build other package
       $ export DS_CONFIG_SETTINGS=/tmp/setuptools-build.toml
       $ cat <<-EOF > "$DS_CONFIG_SETTINGS"

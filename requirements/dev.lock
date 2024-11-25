@@ -93,6 +93,7 @@ mypy-extensions==1.0.0
     #   mypy
 packaging==24.1
     # via
+    #   -r requirements/prod.shared.in
     #   black
     #   build
     #   pip-requirements-parser

@@ -70,6 +70,7 @@ nodeenv==1.8.0
     # via pre-commit
 packaging==24.1
     # via
+    #   -r requirements/prod.shared.in
     #   build
     #   pip-requirements-parser
     #   pyproject-api

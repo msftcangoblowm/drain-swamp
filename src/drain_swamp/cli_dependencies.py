@@ -79,15 +79,16 @@ else:
 
 from .constants import g_app_name
 from .exceptions import MissingRequirementsFoldersFiles
-from .lock_inspect import (
-    fix_requirements,
+from .lock_collections import unlock_compile
+from .lock_compile import (
     is_timeout,
     lock_compile,
-    unlock_compile,
 )
+from .lock_fixing import fix_requirements_lock
+from .lock_inspect import fix_requirements
 from .pep518_venvs import VenvMapLoader
 
-is_module_debug = False
+is_module_debug = True
 _logger = logging.getLogger(f"{g_app_name}.cli_dependencies")
 
 # taken from pyproject.toml
@@ -266,6 +267,7 @@ def dependencies_lock(path, venv_relpath, timeout):
     :type venv_relpath: pathlib.Path
     """
     str_path = path.as_posix()
+    dotted_path = f"{g_app_name}.cli_dependencies.dependencies_lock"
 
     try:
         loader = VenvMapLoader(str_path)
@@ -283,8 +285,13 @@ def dependencies_lock(path, venv_relpath, timeout):
         click.secho(msg_exc, fg="red", err=True)
         sys.exit(4)
 
-    # compile .lock files
+    if is_module_debug:  # pragma: no cover
+        msg_info = f"{dotted_path} loader.project_base {loader.project_base}"
+        _logger.info(msg_info)
+    else:  # pragma: no cover
+        pass
 
+    # compile .lock files
     try:
         t_status = lock_compile(loader, venv_relpath, timeout)
     except (MissingRequirementsFoldersFiles, AssertionError) as exc:
@@ -313,24 +320,32 @@ def dependencies_lock(path, venv_relpath, timeout):
         # No such venv found
         click.secho(str(exc), fg="red", err=True)
         sys.exit(9)
+
+    is_tuple_two_items = (
+        t_status is not None and isinstance(t_status, tuple) and len(t_status) == 2
+    )
+    assert is_tuple_two_items
+    t_compiled, t_failures = t_status
+    assert isinstance(t_failures, tuple)
+    assert isinstance(t_compiled, tuple)
+    if is_timeout(t_failures):
+        click.secho("Timeout occurred. Check web connection", err=True)
+        sys.exit(10)
     else:
-        is_tuple_two_items = (
-            t_status is not None and isinstance(t_status, tuple) and len(t_status) == 2
-        )
-        assert is_tuple_two_items
-        t_compiled, t_failures = t_status
-        assert isinstance(t_failures, tuple)
-        assert isinstance(t_compiled, tuple)
-        if is_timeout(t_failures):
-            click.secho("Timeout occurred. Check web connection", err=True)
-            sys.exit(10)
-        else:
-            is_failures = len(t_failures) != 0
-            if is_failures:
-                click.secho(f"failures {t_failures}", err=True)
-                sys.exit(1)
-            else:  # pragma: no cover
-                # quiet
+        is_failures = len(t_failures) != 0
+        if is_failures:
+            """To cause a failure, an ``.in`` would have to: be
+            wrong file format or contain invalid entries"""
+            click.secho(f"failures {t_failures}", err=True)
+            sys.exit(1)
+        else:  # pragma: no cover
+            # quiet
+            try:
+                fix_requirements_lock(loader, venv_relpath)
+            except MissingRequirementsFoldersFiles as exc:
+                click.secho(str(exc), fg="red", err=True)
+                sys.exit(6)
+            else:
                 sys.exit(0)
 
 
