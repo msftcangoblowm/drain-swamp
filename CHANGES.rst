@@ -46,6 +46,7 @@ Changelog
    Commit items for NEXT VERSION
    ..............................
 
+   - fix(docs/conf.py): sphinx conf broken import
    - fix: add missing build dependency wreck
    - feat: add wreck support
    - fix: pyproject.toml section pipenv-unlock (#10)

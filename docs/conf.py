@@ -4,8 +4,7 @@ from pathlib import Path
 
 from packaging.version import parse
 from sphinx_pyproject import SphinxConfig
-
-from drain_swamp.pep518_read import find_project_root
+from wreck.pep518_read import find_project_root
 
 path_docs = Path(__file__).parent
 path_package_base = path_docs.parent
