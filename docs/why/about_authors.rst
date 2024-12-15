@@ -60,13 +60,13 @@ Arrives at work
 
 .. code:: shell
 
-   pipenv-unlock lock --snip="bill_murphys_zombie_movie_theater_popcorn"
+   reqs fix --snip="bill_murphys_zombie_movie_theater_popcorn"
 
 Comes back home
 
 .. code:: shell
 
-   pipenv-unlock unlock --snip="bill_murphys_zombie_movie_theater_popcorn"
+   reqs unlock --snip="bill_murphys_zombie_movie_theater_popcorn"
 
 At which point, can inconveniently die without inconveniencing the rest of us.
 

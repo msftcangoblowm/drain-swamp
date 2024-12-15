@@ -1,5 +1,5 @@
 """
-.. moduleauthor:: Dave Faulkmore <https://mastodon.social/@msftcangoblowme>
+.. moduleauthor:: |author-contact|
 
 Get semantic version from scm and write version file
 
@@ -40,9 +40,9 @@ from setuptools_scm.version import (
     guess_next_dev_version,
     tag_to_version,
 )
+from wreck.monkey.patch_pyproject_reading import ReadPyproject
 
 from ..version_file.dump_version import write_version_files
-from .patch_pyproject_reading import ReadPyproject
 
 log = logging.getLogger("drain_swamp.monkey.wrap_get_version")
 
@@ -118,7 +118,7 @@ def scm_version(relative_to, sane_default=SEM_VERSION_FALLBACK_SANE):
 
     .. seealso::
 
-       https://github.com/pypa/setuptools_scm/blob/main/src/setuptools_scm/_get_version_impl.py
+       :ref:`gh_ss:get_version_impl`
 
     """
     mod_path = "drain_swamp.monkey.wrap_get_version:scm_version"
@@ -166,10 +166,9 @@ def write_to_file(
 ) -> None:
     """Write version_file
 
-    read_pyproject default is to combine sections:
-    [tool.drain_swamp] and [tool.pipenv-unlock]
+    read_pyproject default is to combine section, ``[tool.drain_swamp]``
 
-    Does not read section [tool-setuptools-scm]
+    Does not read section ``[tool-setuptools-scm]``
 
     :param name: absolute path to a file on the repo base folder
     :type name: str
@@ -179,7 +178,7 @@ def write_to_file(
     :type write_to: str | None
     :param dist_name:
 
-       Default None. pyproject.toml section [tool.[name]] Unspecified --> pipenv-unlock
+       Default None. pyproject.toml section [tool.[name]] Unspecified --> drain-swamp
 
     :type dist_name: str | None
     :param is_only_not_exists: Default False. Write file only if it does not already exit
@@ -207,14 +206,13 @@ def write_to_file(
         pyproject_data = ReadPyproject()(path=path_file_on_root)
     except LookupError as e:
         msg_info = (
-            "To set version_file, in pyproject.toml [tool.pipenv-unlock] "
+            "To set version_file, in pyproject.toml [tool.drain-swamp] "
             "Set version_file to a relative path to a .py file"
         )
         # log.info(msg_info)
         msg_warn = (
             "Either missing pyproject.toml or missing sections: "
-            "[tool.drain-swamp] and [tool.pipenv-unlock] "
-            f"{path_file_on_root}"
+            f"[tool.drain-swamp] {path_file_on_root}"
         )
         # log.warning(msg_warn)
         msgs = f"{msg_info}\n{msg_warn}"

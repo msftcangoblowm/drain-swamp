@@ -1,5 +1,5 @@
 """
-.. moduleauthor:: Dave Faulkmore <https://mastodon.social/@msftcangoblowme>
+.. moduleauthor:: |author-contact|
 
 Utility function to retrieve the global hook_manager singleton.
 
@@ -77,7 +77,7 @@ def before(hook_name, hook_impls, kwargs):  # pragma: no cover
 
     .. seealso::
 
-       `hookcall monitoring <https://pluggy.readthedocs.io/en/latest/api_reference.html#pluggy.PluginManager.add_hookcall_monitoring>`_
+       :ref:`pluggy:pluginmanager:add_hookcall_monitoring`
 
 
     """
@@ -342,11 +342,15 @@ def _register_hooks_entry_points(hook_manager, entrypoint_plugins, disabled_plug
 
     :type disabled_plugins: collections.abc.Iterable[str]
     :meta private:
+
+    .. seealso::
+
+       :ref:`packaging:spec:entry-points`
+
     """
     already_registered = hook_manager.get_plugins()
     # Method name is misleading:
     # entry points are standard and don't require setuptools,
-    # see https://packaging.python.org/en/latest/specifications/entry-points/
     hook_manager.load_setuptools_entrypoints(entrypoint_plugins)
     disabled_plugins = set(disabled_plugins)
 

@@ -36,16 +36,13 @@ include = ["complete_awesome_perfect*"]
 
 [tool.drain-swamp]
 copyright_start_year = 2024
-
-[tool.pipenv-unlock]
+# Legacy. Obsoleted by tool.venvs
 version_file = 'src/complete_awesome_perfect/_version.py'
 folders = [
     'ci',
 ]
-
 required = { target = "prod", relative_path = 'requirements/prod.shared.in' }
-
-# underscore: hyphen
+#    underscore: hyphen
 optionals = [
     { target = "pip", relative_path = 'requirements/pip.in' },
     { target = "manage", relative_path = 'requirements/manage.in' },

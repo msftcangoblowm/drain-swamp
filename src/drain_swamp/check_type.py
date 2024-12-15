@@ -1,5 +1,5 @@
 """
-.. moduleauthor:: Dave Faulkmore <https://mastodon.social/@msftcangoblowme>
+.. moduleauthor:: |author-contact|
 
 .. py:data:: __all__
    :type: tuple[str, str, str, str]

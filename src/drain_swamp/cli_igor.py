@@ -1,5 +1,5 @@
 """
-.. moduleauthor:: Dave Faulkmore <https://mastodon.social/@msftcangoblowme>
+.. moduleauthor:: |author-contact|
 
 **Update changelog, NOTICE.txt and ``docs?/conf.py``**
 

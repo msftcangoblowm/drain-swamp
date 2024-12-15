@@ -41,25 +41,19 @@ pyproject.toml
    include = ["your_package_name*"]
 
    [tool.setuptools.dynamic]
-   # @@@ editable little_shop_of_horrors_shrine_candles
-   dependencies = { file = ["requirements/prod.lnk"] }
-   optional-dependencies.pip = { file = ["requirements/pip.lnk"] }
-   optional-dependencies.manage = { file = ["requirements/manage.lnk"] }
-   # @@@ end
+   dependencies = { file = ["requirements/prod.unlock"] }
+   optional-dependencies.pip = { file = ["requirements/pip.lock"] }
+   optional-dependencies.manage = { file = ["requirements/manage.lock"] }
 
    [tool.drain-swamp]
    copyright_start_year = 2024
-
-   [tool.pipenv-unlock]
    # wraps-build-backend = "setuptools.build_meta"
    version_file = "src/complete_awesome_perfect/_version.py"
    folders = [
        "ci",
    ]
-
    required = { target = "prod", relative_path = "requirements/prod.in" }
-
-   # underscore: hyphen
+   #    underscore: hyphen
    optionals = [
        { target = "pip", relative_path = "requirements/pip.in" },
        { target = "manage", relative_path = "requirements/manage.in" },

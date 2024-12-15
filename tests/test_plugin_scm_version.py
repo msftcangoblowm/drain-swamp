@@ -277,7 +277,7 @@ def test_on_version_infer(
         "0.2.1.dev4",
     )
     with patch(
-        "drain_swamp._run_cmd.Path.cwd",
+        "wreck._run_cmd.Path.cwd",
         return_value=wd.cwd,
     ):
         if not path_pyproject_toml.exists():
@@ -308,7 +308,7 @@ def test_on_version_infer(
         :code:`scm-version write`. Reason timeout too slow"""
         with (
             patch(
-                "drain_swamp._run_cmd.subprocess.run",
+                "wreck._run_cmd.subprocess.run",
                 side_effect=subprocess.TimeoutExpired(
                     cmd=["the", "cmd"],
                     timeout=1,
@@ -332,7 +332,7 @@ def test_on_version_infer(
         stderr = "not blank means subprocess call failed"
         with (
             patch(
-                "drain_swamp._run_cmd.subprocess.run",
+                "wreck._run_cmd.subprocess.run",
                 side_effect=subprocess.CalledProcessError(
                     code,
                     cmd,

@@ -1,5 +1,5 @@
 """
-.. moduleauthor:: Dave Faulkmore <https://mastodon.social/@msftcangoblowme>
+.. moduleauthor:: |author-contact|
 
 Get scm version, limit to setuptool-scm codebase.
 
@@ -63,7 +63,7 @@ EPILOG_SCM_VERSION_GET = """
 EXIT CODES
 
 3 -- missing pyproject.toml or missing sections tool.drain-swamp and
-     tool.pipenv-unlock
+     tool.drain-swamp
 
 4 -- invalid semantic str. Skip. Do not write that nonsense to version file
 
@@ -72,7 +72,7 @@ EPILOG_SCM_VERSION_WRITE = """
 EXIT CODES
 
 3 -- missing pyproject.toml or missing sections tool.drain-swamp and
-     tool.pipenv-unlock
+     tool.drain-swamp
 
 4 -- invalid semantic str. Skip. Do not write that nonsense to version file
 

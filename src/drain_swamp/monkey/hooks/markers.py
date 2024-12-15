@@ -1,5 +1,5 @@
 """
-.. moduleauthor:: Dave Faulkmore <https://mastodon.social/@msftcangoblowme>
+.. moduleauthor:: |author-contact|
 
 Provides markers for declaring hook specs and implementations
 
@@ -10,7 +10,7 @@ Provides markers for declaring hook specs and implementations
 .. seealso::
 
    pluggy
-   `[docs] <https://pluggy.readthedocs.io/en/stable/#marking-hooks>`_
+   :ref:`[docs] <pluggy:marking-hooks>`
    `[SOURCE] <https://raw.githubusercontent.com/kedro-org/kedro/main/kedro/framework/hooks/markers.py>`_
    `[LICENSE:Apache 2.0] <https://github.com/kedro-org/kedro/blob/main/LICENSE.md>`_
 

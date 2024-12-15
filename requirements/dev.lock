@@ -24,9 +24,9 @@ charset-normalizer==3.3.2
     # via requests
 click==8.1.7
     # via
-    #   -r requirements/prod.shared.in
     #   black
     #   pip-tools
+    #   wreck
 coverage==7.5.0
     # via -r requirements/dev.in
 cryptography==42.0.5
@@ -52,10 +52,10 @@ idna==3.7
     # via requests
 importlib-metadata==8.5.0
     # via
-    #   -r requirements/prod.shared.in
     #   build
     #   keyring
     #   twine
+    #   wreck
 iniconfig==2.0.0
     # via pytest
 isort==5.13.2
@@ -91,22 +91,22 @@ mypy-extensions==1.0.0
     # via
     #   black
     #   mypy
-packaging==24.1
+packaging==24.2
     # via
-    #   -r requirements/prod.shared.in
     #   black
     #   build
     #   pip-requirements-parser
     #   pytest
     #   setuptools-scm
+    #   wreck
 pathspec==0.12.1
     # via
     #   black
     #   blackdoc
 pip-requirements-parser==32.0.1
-    # via -r requirements/prod.shared.in
+    # via wreck
 pip-tools==7.4.1
-    # via -r requirements/prod.shared.in
+    # via wreck
 pkginfo==1.10.0
     # via twine
 platformdirs==4.3.6
@@ -170,7 +170,7 @@ six==1.16.0
     # via python-dateutil
 strictyaml==1.7.3
     # via logging-strict
-tomli==2.0.2 ; python_version < "3.11"
+tomli==2.2.1; python_version<"3.11"
     # via
     #   -c requirements/pins.shared.in
     #   black
@@ -200,16 +200,18 @@ urllib3==2.2.3
 validate-pyproject==0.16
     # via -r requirements/dev.in
 webencodings==0.5.1
-bleach==6.2.0
-wheel==0.44.0
+    # via bleach
+wheel==0.45.1
     # via pip-tools
-zipp==3.20.2
+wreck==0.2.1
+    # via -r requirements/prod.shared.in
+zipp==3.21.0
     # via importlib-metadata
 
 # The following packages are considered to be unsafe in a requirements file:
-pip==24.2
+pip==24.3.1
     # via pip-tools
-setuptools==75.1.0
+setuptools==75.6.0
     # via
     #   -r requirements/prod.shared.in
     #   pip-tools

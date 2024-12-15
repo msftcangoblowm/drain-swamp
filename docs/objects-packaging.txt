@@ -4,3 +4,4 @@
 # The remainder of this file is compressed using zlib.
 packaging.version.Version py:class 1 version.html#$ -
 packaging.specifiers.SpecifierSet py:class 1 specifiers.html#$ -
+packaging:spec:entry-points std:label -1 specifications/entry-points/ Entrypoints spec

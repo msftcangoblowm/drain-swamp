@@ -1,5 +1,5 @@
 """
-.. moduleauthor:: Dave Faulkmore <https://mastodon.social/@msftcangoblowme>
+.. moduleauthor:: |author-contact|
 
 Keep constants out of package module, ``__init__.py``
 
@@ -28,7 +28,7 @@ Keep constants out of package module, ``__init__.py``
    .. seealso::
 
       namespace
-      `naming conversion <https://pluggy.readthedocs.io/en/latest/#a-complete-example>`_
+      :ref:`pluggy:naming-convention`
 
 
 """

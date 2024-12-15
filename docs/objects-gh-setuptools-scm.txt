@@ -1,0 +1,11 @@
+# Sphinx inventory version 2
+# Project: setuptools-scm 8.1.0
+# Version: 8.1.0
+# The remainder of this file is compressed using zlib.
+gh_ss:config std:label -1 blob/main/src/setuptools_scm/_config.py config.py module
+gh_ss:dump_version std:label -1 blob/main/src/setuptools_scm/_integration/dump_version.py dump_version.py module
+gh_ss:get_version_impl std:label -1 blob/main/src/setuptools_scm/_get_version_impl.py get_version_impl.py module
+gh_ss:license std:label -1 blob/main/LICENSE License:MIT
+gh_ss:overrides std:label -1 blob/main/src/setuptools_scm/_overrides.py overrides.py module
+gh_ss:pyproject_reading std:label -1 blob/main/src/setuptools_scm/_integration/pyproject_reading.py pyproject_reading.py module
+gh_ss:setuptools std:label -1 blob/main/src/setuptools_scm/_integration/setuptools.py setuptools.py module

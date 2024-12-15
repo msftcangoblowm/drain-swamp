@@ -46,28 +46,6 @@ Your howto.txt file informs when to use these commands
 
    <div class="white-space-5px"></div>
 
-.. card:: Dependency locks
-   :text-align: left
-   :shadow: none
-
-   .. csv-table::
-      :header: "command", "desc"
-      :widths: auto
-
-      :doc:`pipenv-unlock is_lock <pipenv-unlock-is_lock>`, "| 0 is locked
-      | 1 is unlocked"
-      :doc:`pipenv-unlock lock <pipenv-unlock-lock>`, "same as pip-compile. Creates .lock files"
-      :doc:`pipenv-unlock unlock <pipenv-unlock-unlock>`, "recursively assembles .in --> .unlock files"
-      "pipenv-unlock refresh", "| creates/refreshes package dependency lock .lnk symlinks
-      | updates pyproject.toml dependencys' suffix"
-
-   +++
-   :ref:`Dependencies <getting_started/pipenv-unlock:dependencies>`
-
-.. raw:: html
-
-   <div class="white-space-5px"></div>
-
 .. card:: Misc
    :text-align: left
    :shadow: none

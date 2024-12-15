@@ -34,8 +34,8 @@ from pathlib import Path
 
 import pytest
 from setuptools_scm._version_cls import _version_as_tuple
+from wreck._run_cmd import run_cmd
 
-from drain_swamp._run_cmd import run_cmd
 from drain_swamp.constants import (
     LOGGING,
     g_app_name,

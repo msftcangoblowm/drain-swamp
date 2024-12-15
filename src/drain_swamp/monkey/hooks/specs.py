@@ -1,5 +1,5 @@
 """
-.. moduleauthor:: Dave Faulkmore <https://mastodon.social/@msftcangoblowme>
+.. moduleauthor:: |author-contact|
 
 config_settings dict would normally contain cli args passed thru by
 
@@ -24,7 +24,6 @@ is passed to :code:`python -m build`
 
    [tool.config-settings]
    kind="0.0.1"
-   set-lock="0"
    EOF
    python -m build --no-isolation
 
@@ -34,7 +33,7 @@ str; cli command options are always str
 
 .. seealso::
 
-   `pluggy toy example <https://pluggy.readthedocs.io/en/latest/#a-toy-example>`_
+   pluggy :ref:`pluggy:toy-example`
 
    `pytest specs <https://github.com/pytest-dev/pytest/blob/main/src/_pytest/hookspec.py>`_
 

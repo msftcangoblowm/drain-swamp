@@ -26,8 +26,8 @@ from pathlib import (
 from unittest.mock import patch
 
 import pytest
+from wreck._safe_path import fix_relpath
 
-from drain_swamp._safe_path import fix_relpath
 from drain_swamp.monkey.wrap_get_version import (
     SEM_VERSION_FALLBACK_SANE,
     scm_version,

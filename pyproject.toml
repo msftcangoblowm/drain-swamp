@@ -76,37 +76,32 @@ drain_swamp = "drain_swamp.monkey.wrap_infer_version:infer_version"
 use_scm_version = "drain_swamp.monkey.wrap_version_keyword:version_keyword"
 
 [project.scripts]
-pipenv-unlock = "drain_swamp.cli_dependencies:main"
 drain-swamp = "drain_swamp.cli_igor:main"
 scm-version = "drain_swamp.cli_scm_version:main"
 
 [tool.setuptools.dynamic]
 # required dependencies app --> .lock package --> .unlock
 # optional-dependencies dev env --> .lock feature --> .unlock
-
-# @@@ editable little_shop_of_horrors_shrine_candles
 dependencies = { file = ['requirements/prod.shared.unlock'] }
 optional-dependencies.pip = { file = ['requirements/pip.lock'] }
 optional-dependencies.pip_tools = { file = ['requirements/pip-tools.lock'] }
 optional-dependencies.dev = { file = ['requirements/dev.lock'] }
 optional-dependencies.manage = { file = ['requirements/manage.lock'] }
 optional-dependencies.docs = { file = ['docs/requirements.lock'] }
-# @@@ end
 
 version = {attr = "drain_swamp._version.__version__"}
 
-[tool.pipenv-unlock]
+[tool.drain-swamp]
+copyright_start_year = 2024
 wraps-build-backend = "setuptools.build_meta"
 version_file = 'src/drain_swamp/_version.py'
 folders = [
     "docs",
     "requirements",
 ]
-
 # target contains: alphanumeric+underscore
 # relative path file stem contains: alphanumeric+hyphen
 required = { target = "prod", relative_path = 'requirements/prod.shared.in' }
-
 # target contains: alphanumeric+underscore
 # relative path file stem contains: alphanumeric+hyphen
 optionals = [
@@ -116,9 +111,6 @@ optionals = [
     { target = "manage", relative_path = 'requirements/manage.in' },
     { target = "docs", relative_path = 'docs/requirements.in' },
 ]
-
-[tool.drain-swamp]
-copyright_start_year = 2024
 
 # Each venv relative path is predetermined
 # Into which venv goes which requirements is predetermined
@@ -140,7 +132,6 @@ reqs = [
 venv_base_path = '.doc/.venv'
 reqs = [
     'docs/requirements',
-    'requirements/prod.shared',
 ]
 
 [tool.pip-tools]

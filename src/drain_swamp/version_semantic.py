@@ -1,12 +1,12 @@
 """
-.. moduleauthor:: Dave Faulkmore <https://mastodon.social/@msftcangoblowme>
+.. moduleauthor:: |author-contact|
 
 git --> setuptools-scm --> kitting (howto.txt / igor.py / Makefile) --> semantic versioning
 
 .. seealso::
 
    packaging.version.Version
-   `[docs] <https://packaging.pypa.io/en/stable/version.html>`_
+   :py:class:`[docs] <packaging.version.Version>`
 
 Release phases
 ---------------
@@ -102,12 +102,13 @@ except ImportError:  # pragma: no cover
     from setuptools.extern.packaging.version import InvalidVersion  # type: ignore
     from setuptools.extern.packaging.version import Version as Version  # type: ignore
 
-from ._package_installed import is_package_installed
-from ._run_cmd import run_cmd
-from ._safe_path import (
+from wreck._package_installed import is_package_installed
+from wreck._run_cmd import run_cmd
+from wreck._safe_path import (
     fix_relpath,
     resolve_path,
 )
+
 from .parser_in import TomlParser
 from .version_file._overrides import (
     PRETEND_KEY_NAMED,
@@ -686,6 +687,10 @@ def _arbritary_version(
        This command writes to src/[package name]/_version.py
        Use :py:func:`unittest.mock.patch` to avoid the actual call
 
+    .. seealso::
+
+       :ref:`setuptools:pyprojecttoml:config`
+
     """
     msg_issue = "Could not get tag version from version_file"
     path_cwd = _path_or_cwd(path)
@@ -743,7 +748,6 @@ def _arbritary_version(
         is_attr = "attr" in d_version.keys() and isinstance(d_version["attr"], str)
         is_file = "file" in d_version.keys() and isinstance(d_version["file"], str)
         if is_attr:
-            # https://setuptools.pypa.io/en/latest/userguide/pyproject_config.html
             # ast.literal_eval() ??
             # attr is dotted path to module variable containing semantic version str
             # file would be to a text file

@@ -11,7 +11,6 @@ getting started
 
       - :doc:`installation`
       - :doc:`drain-swamp-files`
-      - :doc:`pipenv-unlock`
       - :doc:`setuptools-scm`
 
 

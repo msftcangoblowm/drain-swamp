@@ -13,7 +13,6 @@ Code manual
    .. grid-item-card:: :material-twotone:`login;2em;sd-text-success` Entrypoints
       :class-card: sd-border-0
 
-      - :doc:`cli_dependencies`
       - :doc:`cli_igor`
       - :doc:`cli_scm_version`
 
@@ -25,20 +24,6 @@ Code manual
 
       - drain_swamp_snippet.Snip
       - drain_swamp_snippet.ReplaceResult
-
-   .. grid-item-card:: :material-twotone:`lock_open;2em;sd-text-success` Dependency locking
-      :class-card: sd-border-0
-
-      - :doc:`lock infile <ext/pipenv_unlock/lock_infile>`
-      - :doc:`lock inspect <ext/pipenv_unlock/lock_inspect>`
-      - :doc:`lock collections <ext/pipenv_unlock/lock_collections>`
-      - :doc:`lock filepins <ext/pipenv_unlock/lock_filepins>`
-      - :doc:`lock discrepancy <ext/pipenv_unlock/lock_discrepancy>`
-      - :doc:`lock loader <ext/pipenv_unlock/lock_loader>`
-      - :doc:`lock datum <ext/pipenv_unlock/lock_datum>`
-      - :doc:`lock util <ext/pipenv_unlock/lock_util>`
-      - :doc:`snippet dependencies <ext/pipenv_unlock/snippet_dependencies>`
-
 
    .. grid-item-card:: :material-twotone:`extension;2em;sd-text-success` drain-swamp utils
       :class-card: sd-border-0
@@ -55,12 +40,8 @@ Code manual
       - :doc:`Constants maybe <general/constants_maybe>`
       - :doc:`Exceptions <general/exceptions>`
       - :doc:`Check type <general/check_type>`
-      - :doc:`pyproject.toml read <general/pep518_read>`
-      - :doc:`pyproject.toml venvs <general/pep518_venvs>`
       - :doc:`pyproject.toml parser <general/parser_in>`
       - :doc:`Package metadata <general/package_metadata>`
-      - :doc:`Package installed <general/package_installed>`
-      - :doc:`Run command <general/run_cmd>`
 
    .. grid-item-card:: :octicon:`versions;2em;sd-text-success` Version file
       :class-card: sd-border-0
@@ -86,7 +67,6 @@ drain-swamp has built-in build plugins and is extendable.
       :class-card: sd-border-0
 
       - :doc:`monkey/config_settings`
-      - :doc:`monkey/patch_pyproject_reading`
 
    .. grid-item-card:: :material-twotone:`schedule;2em;sd-text-primary` Plugin manager
       :class-card: sd-border-0
@@ -115,8 +95,8 @@ drain-swamp has built-in build plugins and is extendable.
    :synopsis: package level exports
 
     .. py:data:: drain_swamp.__all__
-       :type: tuple[str, str, str, str]
-       :value: ("PyProjectTOMLParseError", "BackendNotSupportedError", "PyProjectTOMLReadError", "MissingRequirementsFoldersFiles")
+       :type: tuple[str, str]
+       :value: ("PyProjectTOMLParseError", "PyProjectTOMLReadError")
 
        Package level exports are limited to just custom exceptions. This was originally
        done to avoid unexpected side effects

@@ -24,8 +24,8 @@ from pathlib import Path
 from unittest.mock import patch
 
 import pytest
+from wreck._package_installed import is_package_installed
 
-from drain_swamp._package_installed import is_package_installed
 from drain_swamp.constants import g_app_name
 from drain_swamp.package_metadata import (
     AUTHOR_NAME_FALLBACK,

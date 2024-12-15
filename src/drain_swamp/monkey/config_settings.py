@@ -1,5 +1,5 @@
 """
-.. moduleauthor:: Dave Faulkmore <https://mastodon.social/@msftcangoblowme>
+.. moduleauthor:: |author-contact|
 
 .. py:data:: __all__
    :type: tuple[str]
@@ -22,13 +22,14 @@ from pathlib import (
     PurePath,
 )
 
+from wreck.monkey.patch_pyproject_reading import ReadPyproject
+
+from ..constants import g_app_name
+
 if sys.version_info >= (3, 11):  # pragma: no cover py-gte-311-else
     import tomllib
 else:  # pragma: no cover py-gte-311
     import tomli as tomllib
-
-from ..constants import g_app_name
-from .patch_pyproject_reading import ReadPyproject
 
 __all__ = ("ConfigSettings",)
 log = logging.getLogger(f"{g_app_name}.monkey.config_settings")

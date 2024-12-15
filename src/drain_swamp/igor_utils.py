@@ -1,5 +1,5 @@
 """
-.. moduleauthor:: Dave Faulkmore <https://mastodon.social/@msftcangoblowme>
+.. moduleauthor:: |author-contact|
 
 ``igor.py`` utils
 
@@ -49,9 +49,10 @@ from pathlib import (
     PurePath,
 )
 
-from ._run_cmd import run_cmd
-from ._safe_path import resolve_path
-from .check_type import is_ok
+from wreck._run_cmd import run_cmd
+from wreck._safe_path import resolve_path
+from wreck.check_type import is_ok
+
 from .package_metadata import PackageMetadata
 from .parser_in import TomlParser
 from .snippet_sphinx_conf import SnipSphinxConf
@@ -314,7 +315,7 @@ def edit_for_release(path_cwd, kind, snippet_co=None):
 
 def get_version_file_path(path):
     """Get version file relative path, from pyproject.toml,
-    tool.pipenv-unlock.version_file
+    tool.drain-swamp.version_file
 
     :param path: absolute path to either package base folder or ``pyproject.toml``
     :type path: pathlib.Path
@@ -331,7 +332,7 @@ def get_version_file_path(path):
     if d_pyproject_toml is not None:
         ret = (
             d_pyproject_toml.get("tool", {})
-            .get("pipenv-unlock", {})
+            .get("drain-swamp", {})
             .get("version_file", None)
         )
     else:
@@ -553,7 +554,7 @@ def write_version_file(path, kind, is_test=False):
 
     - project.name
 
-    - tool.pipenv-unlock.version_file
+    - tool.drain-swamp.version_file
 
     :param path: current working directory path
     :type path: pathlib.Path

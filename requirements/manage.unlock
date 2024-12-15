@@ -1,21 +1,16 @@
 cffi>=1.17.1
-click
-colorama>=0.4.6 ;platform_system=="Windows"
 drain-swamp-snippet
-importlib-metadata>=8.5.0
-packaging
-pip-requirements-parser
-pip-tools
 pluggy
 pre-commit
 readme_renderer<37
 restview
 setuptools-scm
-setuptools>=75.1.0
-tomli>=2.0.2; python_version<"3.11"
-tox>=4.15.1
+setuptools>=75.6.0
+tomli>=2.2.1; python_version<"3.11"
 twine
 typing-extensions; python_version<"3.10"
-pyproject-api>=1.8.0
-bleach>=6.2.0
-wheel>=0.44.0
+wreck
+packaging>=24.2
+pip>=24.3.1
+wheel>=0.45.1
+zipp>=3.21.0

@@ -1,13 +1,11 @@
 """
-.. moduleauthor:: Dave Faulkmore <https://mastodon.social/@msftcangoblowme>
+.. moduleauthor:: |author-contact|
 
 Package wide exceptions
 
 .. py:data:: __all__
-   :type: tuple[str, str, str, str]
-   :value: ("PyProjectTOMLParseError", \
-   "PyProjectTOMLReadError", "MissingPackageBaseFolder", \
-   "MissingRequirementsFoldersFiles")
+   :type: tuple[str, str]
+   :value: ("PyProjectTOMLParseError", "PyProjectTOMLReadError")
 
    Module exports
 
@@ -17,8 +15,6 @@ __package__ = "drain_swamp"
 __all__ = (
     "PyProjectTOMLParseError",
     "PyProjectTOMLReadError",
-    "MissingPackageBaseFolder",
-    "MissingRequirementsFoldersFiles",
 )
 
 
@@ -40,33 +36,6 @@ class PyProjectTOMLReadError(OSError):
 
 class PyProjectTOMLParseError(ValueError):
     """No point in continuing if the ``pyproject.toml`` can't be parsed and loaded.
-
-    :ivar msg: The error message
-    :vartype msg: str
-    """
-
-    def __init__(self, msg: str) -> None:
-        """Class constructor."""
-        super().__init__(msg)
-
-
-class MissingRequirementsFoldersFiles(AssertionError):
-    """Neglected to create/prepare requirements folders and ``.in`` files.
-
-    Unabated would produce an empty string snippet. Instead provide
-    user feedback
-
-    :ivar msg: The error message
-    :vartype msg: str
-    """
-
-    def __init__(self, msg: str) -> None:
-        """Class constructor."""
-        super().__init__(msg)
-
-
-class MissingPackageBaseFolder(AssertionError):
-    """Loader did not provide package base folder. Do not know the cwd
 
     :ivar msg: The error message
     :vartype msg: str

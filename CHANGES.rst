@@ -8,20 +8,6 @@ Changelog
    Feature request
    .................
 
-   - venv_path is assumed to be a relative path. What if it's outside of the
-     package folder tree?
-
-   - do not compile/render support files
-     Description:
-     Also gets converted into ``.unlock``. Converts all zeroes.
-     Differentiate between zeroes and support.
-     e.g. pins-cffi.in --> pins-cffi.unlock
-     Reproduce:
-     :code:`cd .tox && tox --root=.. -c ../tox-req.ini -e base --workdir=.; cd - &>/dev/null`
-     Cause: stored in one set, zeroes. There is no set, support
-     Severity: annoying nuisance
-     Cause: :code:`pipenv-unlock fix`
-
    - Confirm setuptools-scm file finders are being called?
 
    - self hosted package server. See article
@@ -29,36 +15,6 @@ Changelog
 
    Known regressions
    ..................
-
-   - Switch operator ``pip<24.2`` --> ``pip>=24.1.2``
-     Affects docs/requirements.unlock
-     Reproduce:
-     :code:`cd .tox && tox --root=.. -c ../tox-req.ini -e docs --workdir=.; cd - &>/dev/null`
-     Occurs during fix, not unlock/lock
-
-     requirements/prod.shared.lock -- ``pip==24.2 # via pip-tools``
-     docs/requirements.lock        -- ``pip==24.1.2``
-     docs/requirements.unlock      -- ``pip<24.2``
-     docs/requirements.in          -- ``pip<24.2``
-
-   - Detection should not be limited to only version conflicts. When
-     to apply qualifiers should be configurable.
-
-     Currently there must be a version conflict, then qualifiers are fixed.
-     Qualifier fix is clumsy, either apply always or not.
-
-   - Cannot test ``.doc/.venv`` venv
-     Description:
-     venv-base-path comes from VenvMapLoader.project_base. During
-     tests, that folder is tmp_path, not package base folder
-     Proposed solution:
-     use tox so py interpreter version is known
-     Reproduce:
-     :code:`pipenv-unlock lock --venv-relpath='.doc/.venv'`
-
-   - lock_inspect.get_issues and lock_inspect.fix_resolvables
-     If no version conflicts, only qualifiers differ, issue is not addressed.
-     Purposefully causing a version conflict, the qualifiers get fixed as well.
 
    - release.yml
      affects:
@@ -90,6 +46,9 @@ Changelog
    Commit items for NEXT VERSION
    ..............................
 
+   - feat: one command. reqs fix Creates .lock .unlock and fix both
+   - chore: deprecate reqs unlock and reqs fix_v1
+   - refactor: entrypoint name change pipenv-unlock --> reqs
    - feat: add fix_requirements_lock. Call after lock_compile (#18)
    - feat(lock_filepins): read each .in requirements file once
    - refactor(lock_compile): from_loader two implementations the later read files once

@@ -1,5 +1,4 @@
 from .exceptions import (
-    MissingRequirementsFoldersFiles,
     PyProjectTOMLParseError,
     PyProjectTOMLReadError,
 )
@@ -7,5 +6,4 @@ from .exceptions import (
 __all__ = (
     "PyProjectTOMLParseError",
     "PyProjectTOMLReadError",
-    "MissingRequirementsFoldersFiles",
 )

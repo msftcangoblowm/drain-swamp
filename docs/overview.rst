@@ -124,7 +124,7 @@ abandonware. Packages with locked dependencies do not age well.
 Lets check the license. Hmmm Apache2.0 abandonware, that's a great
 reason to turn the dependency lock off.
 
-**pipenv-unlock** is a light switch to turn on/off dependency locking.
+**reqs** is a light switch to turn on/off dependency locking.
 
 On your repo, set a CI variable and that is the switch.
 
@@ -150,23 +150,8 @@ Create both lock and unlock dependency files
 
 .. code-block:: shell
 
-   pipenv-unlock lock
-   pipenv-unlock unlock
-
-Update the ``pyproject.toml`` snippet and refreshes
-symlinks (.lnk)
-
-.. code-block:: shell
-
-   pipenv-unlock refresh --set-lock "off"
-   pipenv-unlock refresh --set-lock "on"
-
-.. csv-table:: set lock state values
-   :header: "State", "Possible values"
-   :widths: auto
-
-   "lock", """1"", ""true"", ""t"", ""yes"", ""y"", ""on"""
-   "unlock", """0"", ""false"", ""f"", ""no"", ""n"", ""off"""
+   reqs fix
+   reqs unlock
 
 build config settings
 """"""""""""""""""""""
@@ -185,7 +170,7 @@ it's use only in drain-swamp howto.txt
 
 .. code:: shell
 
-   python -m build -C--kind="0.5.1a4.dev6" -C--set-lock="0"
+   python -m build -C--kind="0.5.1a4.dev6"
 
 Unless authoring a custom build backend, can safely
 ignore.

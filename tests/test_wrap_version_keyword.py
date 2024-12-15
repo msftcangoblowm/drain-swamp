@@ -37,12 +37,12 @@ from unittest.mock import (
 import pytest  # noqa: F401
 from setuptools.dist import Distribution
 from setuptools_scm._config import Configuration
+from wreck.monkey.patch_pyproject_reading import ReadPyprojectStrict
 
 from drain_swamp.constants import (
     LOGGING,
     g_app_name,
 )
-from drain_swamp.monkey.patch_pyproject_reading import ReadPyprojectStrict
 from drain_swamp.monkey.wrap_version_keyword import version_keyword
 
 

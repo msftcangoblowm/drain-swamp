@@ -21,7 +21,7 @@ If setuptools worked as expected, this would be the build command
 
 .. code-block:: shell
 
-   python -m build -C--kind="1.0.0" -C--set-lock="0"
+   python -m build -C--kind="1.0.0"
 
 This would build the package with version 1.0.0 and dependencies unlocked.
 
@@ -44,7 +44,6 @@ containing the config_settings
 
    [tool.config-settings]
    kind="1.0.0"
-   set-lock="0"
    EOF
    python -m build
 

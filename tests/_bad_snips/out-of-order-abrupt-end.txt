@@ -1,6 +1,0 @@
-zzzzzzzzzzzzz
-# @@@ editable asdf
-abc abc abc# @@@ end
-# @@@ editable
-# @@@ end
-zzzzzzzzzzzzzzzzzzzzzzzzzzzzz

@@ -7,7 +7,6 @@ subtrees:
     entries:
     - file: getting_started/installation
     - file: getting_started/drain-swamp-files
-    - file: getting_started/pipenv-unlock
     - file: getting_started/setuptools-scm
     - file: getting_started/from-source
     - file: getting_started/build-package
@@ -18,7 +17,6 @@ subtrees:
 - entries:
   - file: code/index
     entries:
-    - file: code/cli_dependencies
     - file: code/cli_igor
     - file: code/cli_scm_version
     - title: Snip
@@ -30,27 +28,11 @@ subtrees:
       - file: code/general/constants
       - file: code/general/constants_maybe
       - file: code/general/exceptions
-      - file: code/general/pep518_read
-      - file: code/general/pep518_venvs
       - file: code/general/parser_in
       - file: code/general/version_semantic
       - file: code/general/package_metadata
-      - file: code/general/run_cmd
-      - file: code/general/safe_path
-      - file: code/general/package_installed
     - file: code/ext/index
       entries:
-      - file: code/ext/pipenv_unlock/index
-        entries:
-        - file: code/ext/pipenv_unlock/lock_inspect
-        - file: code/ext/pipenv_unlock/lock_infile
-        - file: code/ext/pipenv_unlock/lock_collections
-        - file: code/ext/pipenv_unlock/lock_filepins
-        - file: code/ext/pipenv_unlock/lock_discrepancy
-        - file: code/ext/pipenv_unlock/lock_loader
-        - file: code/ext/pipenv_unlock/lock_datum
-        - file: code/ext/pipenv_unlock/lock_util
-        - file: code/ext/pipenv_unlock/snippet_dependencies
       - file: code/ext/drain_swamp/index
         entries:
         - file: code/ext/drain_swamp/sphinx_conf
@@ -62,8 +44,6 @@ subtrees:
     - file: code/monkey/index
       entries:
       - file: code/monkey/config_settings
-      - file: code/monkey/pyproject_reading
-      - file: code/monkey/patch_pyproject_reading
       - file: code/monkey/wrap_get_version
       - file: code/monkey/wrap_infer_version
       - file: code/monkey/wrap_version_keyword

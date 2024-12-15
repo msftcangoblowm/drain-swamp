@@ -1,5 +1,5 @@
 """
-.. moduleauthor:: Dave Faulkmore <https://mastodon.social/@msftcangoblowme>
+.. moduleauthor:: |author-contact|
 
 Module to construct setuptools-scm PRETEND_VERSION environment variable string
 
@@ -22,8 +22,8 @@ Module to construct setuptools-scm PRETEND_VERSION environment variable string
 
 .. seealso::
 
-   `[Source] <https://github.com/pypa/setuptools_scm/blob/main/src/setuptools_scm/_overrides.py>`_
-   `[LICENSE:MIT] <https://github.com/pypa/setuptools_scm/blob/main/LICENSE>`_
+   :ref:`gh_ss:overrides`
+   :ref:`gh_ss:license`
 
 """
 

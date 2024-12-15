@@ -4,8 +4,8 @@ From source code
 Fully support running from source code
 
 ``howto.txt`` has instructions on how to package. The package is not
-assumed to be installed. So the drain-swamp and pipenv-unlock can run
-direct from source code.
+assumed to be installed. Commands :command:`drain-swamp`,
+:command:`scm-version` can run direct from source code.
 
 Requires:
 

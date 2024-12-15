@@ -1,8 +1,8 @@
-packaging==24.1
+packaging==24.2
     # via setuptools-scm
 setuptools-scm==8.1.0
     # via -r requirements/pip.in
-tomli==2.0.2 ; python_version < "3.11"
+tomli==2.2.1; python_version<"3.11"
     # via
     #   -c requirements/pins.shared.in
     #   setuptools-scm
@@ -12,9 +12,9 @@ typing-extensions==4.12.2 ; python_version < "3.10"
     #   setuptools-scm
 
 # The following packages are considered to be unsafe in a requirements file:
-pip==24.2
+pip==24.3.1
     # via -r requirements/pip.in
-setuptools==75.1.0
+setuptools==75.6.0
     # via
     #   -r requirements/pip.in
     #   setuptools-scm

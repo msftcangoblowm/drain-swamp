@@ -1,5 +1,5 @@
 """
-.. moduleauthor:: Dave Faulkmore <https://mastodon.social/@msftcangoblowme>
+.. moduleauthor:: |author-contact|
 
 From pyproject.toml, retrieve authors name and email.
 
@@ -34,8 +34,9 @@ from importlib.metadata import (
     metadata,
 )
 
-from ._package_installed import is_package_installed
-from .check_type import is_ok
+from wreck._package_installed import is_package_installed
+from wreck.check_type import is_ok
+
 from .constants import g_app_name
 from .parser_in import TomlParser
 
@@ -109,7 +110,7 @@ class PackageMetadata:
         if is_package_installed(self.app_name):
             self._full_name, self._email = get_author_and_email(self.app_name)
         else:
-            # Looks alot like :py:func:`drain_swamp.pep518_read.find_pyproject_toml`
+            # Looks alot like :py:func:`wreck.pep518_read.find_pyproject_toml`
             tp = TomlParser(path)
             d_pyproject_toml = tp.d_pyproject_toml
             if d_pyproject_toml is None:

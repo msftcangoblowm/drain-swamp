@@ -61,6 +61,7 @@ project = f"{proj_project} {version_xyz}"
 rst_epilog = """
 .. |project_name| replace:: {slug}
 .. |package-equals-release| replace:: drain_swamp=={release}
+.. |author-contact| replace:: Dave Faulkmore <https://mastodon.social/@msftcangoblowme>
 """.format(
     release=release, slug=slug
 )
@@ -135,9 +136,9 @@ intersphinx_mapping = {
         "https://drain-swamp.readthedocs.io/en/stable",
         ("objects-snip.inv", "objects-snip.txt"),
     ),
-    "black": (
+    "gh-black": (
         "https://github.com/psf/black",
-        ("objects-black.inv", "objects-black.txt"),
+        ("objects-gh-black.inv", "objects-gh-black.txt"),
     ),
     "python-missing": (
         "https://github.com/python/cpython/blob",
@@ -152,12 +153,16 @@ intersphinx_mapping = {
         ("objects-packaging.inv", "objects-packaging.txt"),
     ),
     "pluggy": (
-        "https://pluggy.readthedocs.io/en/latest",
+        "https://pluggy.readthedocs.io/en/stable",
         ("objects-pluggy.inv", "objects-pluggy.txt"),
     ),
     "setuptools": (
-        "https://github.com/pypa/setuptools/blob",
+        "https://setuptools.pypa.io/en/stable",
         ("objects-setuptools.inv", "objects-setuptools.txt"),
+    ),
+    "gh-setuptools": (
+        "https://github.com/pypa/setuptools",
+        ("objects-gh-setuptools.inv", "objects-gh-setuptools.txt"),
     ),
     "dss": (
         "https://drain-swamp-snippet.readthedocs.io/en/stable",
@@ -170,6 +175,10 @@ intersphinx_mapping = {
     "gh-ds": (
         "https://github.com/msftcangoblowm/drain-swamp",
         ("objects-gh-ds.inv", "objects-gh-ds.txt"),
+    ),
+    "gh-setuptools-scm": (
+        "https://github.com/pypa/setuptools-scm",
+        ("objects-gh-setuptools-scm.inv", "objects-gh-setuptools-scm.txt"),
     ),
 }
 intersphinx_disabled_reftypes = ["std:doc"]

@@ -37,8 +37,8 @@ from unittest.mock import (
 )
 
 import pytest
+from wreck._package_installed import is_package_installed
 
-from drain_swamp._package_installed import is_package_installed
 from drain_swamp.constants import (
     LOGGING,
     g_app_name,
@@ -585,7 +585,7 @@ testdata_get_version_file_path = (
     ),
 )
 ids_get_version_file_path = (
-    "In pyproject.toml, missing tool.pipenv-unlock.version_file",
+    "In pyproject.toml, missing tool.drain-swamp.version_file",
 )
 
 
@@ -703,7 +703,7 @@ def test_alter_env(
             write_version_file(tmp_path, kind, is_test=True)
             assert p_ver.stat().st_size == 0
 
-            # Simulate missing tool.pipenv-unlock.version_file or non-str
+            # Simulate missing tool.drain-swamp.version_file or non-str
             with (
                 patch(
                     f"{g_app_name}.igor_utils.get_version_file_path",

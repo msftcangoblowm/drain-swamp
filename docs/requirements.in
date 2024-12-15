@@ -2,7 +2,7 @@
 # For details: https://github.com/msftcangoblowm/drain-swamp/blob/master/NOTICE.txt
 
 -c ../requirements/pins.shared.in
--c ../requirements/prod.shared.in
+-r ../requirements/prod.shared.in
 
 pip<24.2
 sphinx>=8

@@ -1,5 +1,5 @@
 """
-.. moduleauthor:: Dave Faulkmore <https://mastodon.social/@msftcangoblowme>
+.. moduleauthor:: |author-contact|
 
 .. py:data:: __all__
    :type: tuple[str, str, str]
@@ -16,10 +16,11 @@
 
    Sources:
 
-   - `[dump_version.py] <https://github.com/pypa/setuptools_scm/blob/main/src/setuptools_scm/_integration/dump_version.py>`_
-   - `[_get_version_impl.py] <https://github.com/pypa/setuptools_scm/blob/main/src/setuptools_scm/_get_version_impl.py>`_
+   - :ref:`gh_ss:dump_version`
 
-   `[LICENSE:MIT] <https://github.com/pypa/setuptools_scm/blob/main/LICENSE>`_
+   - :ref:`gh_ss:get_version_impl`
+
+   :ref:`gh_ss:license`
 
 """
 

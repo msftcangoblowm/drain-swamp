@@ -1,4 +1,0 @@
-Dependency locking
-===================
-
-.. tableofcontents::

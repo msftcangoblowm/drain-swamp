@@ -14,9 +14,8 @@ from pathlib import (
 from typing import Any
 
 import pytest
-
-from drain_swamp._run_cmd import run_cmd
-from drain_swamp._safe_path import resolve_path
+from wreck._run_cmd import run_cmd
+from wreck._safe_path import resolve_path
 
 from .wd_wrapper import WorkDir
 

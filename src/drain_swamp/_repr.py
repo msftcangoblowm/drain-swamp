@@ -1,5 +1,5 @@
 """
-.. moduleauthor:: Dave Faulkmore <https://mastodon.social/@msftcangoblowme>
+.. moduleauthor:: |author-contact|
 
 repr helpers. Careful to use PurePath subclasses
 
@@ -17,7 +17,7 @@ from collections.abc import (
 )
 from pathlib import PurePath
 
-from ._safe_path import _to_purepath
+from wreck._safe_path import _to_purepath
 
 __all__ = (
     "repr_dict_str_path",

@@ -1,5 +1,5 @@
 """
-.. moduleauthor:: Dave Faulkmore <https://mastodon.social/@msftcangoblowme>
+.. moduleauthor:: |author-contact|
 
 In ``pyproject.toml``, configure the plugin manager to execute the build plugins.
 
@@ -16,32 +16,31 @@ In ``pyproject.toml``, configure the plugin manager to execute the build plugins
 
    These notes lead up to the config_settings UX issue
 
-   `[alter Distribution object] <https://setuptools.pypa.io/en/latest/userguide/extension.html#customizing-distribution-options>`_
+   :ref:`setuptools:distribution-alter`
 
-   Command and sub-command classes
-   https://setuptools.pypa.io/en/latest/userguide/extension.html#customizing-commands
+   :ref:`setuptools:extension:customizing-commands`
 
-   https://github.com/pypa/setuptools_scm/blob/main/src/setuptools_scm/_integration/setuptools.py
+   :ref:`gh_ss:setuptools`
 
-   https://github.com/pypa/setuptools_scm/blob/main/src/setuptools_scm/_integration/pyproject_reading.py
+   :ref:`gh_ss:pyproject_reading`
 
-   https://github.com/pypa/setuptools_scm/blob/main/src/setuptools_scm/_config.py
+   :ref:`gh_ss:config`
 
-   https://github.com/pypa/setuptools_scm/blob/main/src/setuptools_scm/_get_version_impl.py
+   :ref:`gh_ss:get_version_impl`
 
-   https://github.com/pypa/setuptools/blob/e9f0be98ea4faaba4a7b2d07ba994a81fde8f42f/setuptools/build_meta.py#L161
+   :ref:`setuptools:ConfigSettingsTranslator`
 
-   https://github.com/pypa/setuptools/issues/2491
+   :ref:`setuptools:issues:2491`
 
-   https://github.com/pypa/setuptools/discussions/4083
+   :ref:`setuptools:discussions:4083`
 
-   https://github.com/pypa/setuptools/issues/3896#issuecomment-1656714771
+   :ref`setuptools:issues:3896:comment:1656714771`
 
    SOLUTIONS
 
-   - `pass config_settings through backend <https://github.com/pypa/setuptools/commit/fc95b3b83d6d5b561dc0a356995edf4c99785a6f>`_
+   - :ref:`setuptools:commit:fc95b3b83d6d5b561dc0a356995edf4c99785a6f`
 
-   - `throw away setup.cfg file <https://github.com/pypa/setuptools/issues/3896#issuecomment-1708513197>`_
+   - :ref:`setuptools:issue:3896:comment:1708513197`
 
 .. code-block:: text
 
@@ -81,7 +80,8 @@ def inspect_pm(pm) -> None:  # pragma: no cover
 
     .. seealso::
 
-       https://pluggy.readthedocs.io/en/latest/#inspection
+       :ref:`pluggy:inspection`
+
     """
     mod_path = "drain_swamp.monkey.wrap_infer_version:inspect_pm"
 
@@ -110,6 +110,11 @@ def run_build_plugins(d_config_settings):
        :code:`python -m build` config setting cli options
 
     :type d_config_settings: collections.abc.Mapping[str, typing.Any]
+
+    .. seealso::
+
+       :ref:`pluggy:pluginmanager:add_hookcall_monitoring`
+
     """
     mod_path = "drain_swamp.monkey.wrap_infer_version:run_build_plugins"
 
@@ -125,7 +130,6 @@ def run_build_plugins(d_config_settings):
     # pm.check_pending()
     pass
 
-    # https://pluggy.readthedocs.io/en/latest/api_reference.html#pluggy.PluginManager.add_hookcall_monitoring
     # undo = pm.add_hookcall_monitoring(before, after)
     pass
 

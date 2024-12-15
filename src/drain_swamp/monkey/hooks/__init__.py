@@ -1,5 +1,5 @@
 """
-.. moduleauthor:: Dave Faulkmore <https://mastodon.social/@msftcangoblowme>
+.. moduleauthor:: |author-contact|
 
 Provides primitives to use hooks to extend behaviour
 
@@ -28,7 +28,6 @@ is passed to :code:`python -m build`
 
    [tool.config-settings]
    kind="0.0.1"
-   set-lock="0"
    EOF
    python -m build --no-isolation
 

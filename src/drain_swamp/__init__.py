@@ -1,10 +1,9 @@
 """
-.. moduleauthor:: Dave Faulkmore <https://mastodon.social/@msftcangoblowme>
+.. moduleauthor:: |author-contact|
 
 .. py:data:: __all__
-   :type: tuple[str, str, str]
-   :value: ("PyProjectTOMLParseError", \
-    "PyProjectTOMLReadError", "MissingRequirementsFoldersFiles")
+   :type: tuple[str, str]
+   :value: ("PyProjectTOMLParseError", "PyProjectTOMLReadError")
 
    Package level exports
 
@@ -24,7 +23,6 @@ __package__ = __name__
 
 from .constants_maybe import __version_app as __version__  # noqa: F401
 from .exceptions import (
-    MissingRequirementsFoldersFiles,
     PyProjectTOMLParseError,
     PyProjectTOMLReadError,
 )
@@ -32,5 +30,4 @@ from .exceptions import (
 __all__ = (
     "PyProjectTOMLParseError",
     "PyProjectTOMLReadError",
-    "MissingRequirementsFoldersFiles",
 )

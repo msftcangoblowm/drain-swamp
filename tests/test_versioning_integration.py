@@ -37,8 +37,8 @@ from contextlib import nullcontext as does_not_raise
 from pathlib import Path
 
 import pytest
+from wreck._safe_path import fix_relpath
 
-from drain_swamp._safe_path import fix_relpath
 from drain_swamp.constants import (
     LOGGING,
     g_app_name,

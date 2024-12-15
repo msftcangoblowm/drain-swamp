@@ -7,3 +7,8 @@ pluggy.HookImpl py:class 1 api_reference.html#$ -
 pluggy.PluginManager py:class 1 api_reference.html#$ -
 pluggy.HookimplMarker py:decorator 1 api_reference.html#$ -
 pluggy.HookspecMarker py:decorator 1 api_reference.html#$ -
+pluggy:pluginmanager:add_hookcall_monitoring std:label -1 api_reference.html#pluggy.PluginManager.add_hookcall_monitoring hookcall monitoring
+pluggy:marking-hooks std:label -1 #marking-hooks marking-hooks
+pluggy:naming-convention std:label -1 #a-complete-example naming convention
+pluggy:toy-example std:label -1 #a-toy-example toy example
+pluggy:inspection std:label -1 #inspection PluginManager inspection

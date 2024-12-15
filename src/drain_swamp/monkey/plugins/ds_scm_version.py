@@ -1,5 +1,5 @@
 """
-.. moduleauthor:: Dave Faulkmore <https://mastodon.social/@msftcangoblowme>
+.. moduleauthor:: |author-contact|
 
 Get the scm version and writes it to version_file
 
@@ -15,7 +15,7 @@ Get the scm version and writes it to version_file
 
 
 Alternative implementation -- Same as setuptools_scm version_infer
-Raises LookupError if missing pyproject.toml or missing sections tool.drain-swamp and tool.pipenv-unlock
+Raises LookupError if missing pyproject.toml or missing sections tool.drain-swamp
 
 .. code-block:: text
 
@@ -51,12 +51,13 @@ import sys
 import warnings
 from typing import Any
 
-from drain_swamp._package_installed import is_package_installed
-from drain_swamp._run_cmd import run_cmd
-from drain_swamp._safe_path import (
+from wreck._package_installed import is_package_installed
+from wreck._run_cmd import run_cmd
+from wreck._safe_path import (
     fix_relpath,
     resolve_path,
 )
+
 from drain_swamp.monkey.config_settings import ConfigSettings
 from drain_swamp.monkey.hooks import markers
 from drain_swamp.monkey.hooks.constants import HOOK_NAMESPACE
@@ -90,7 +91,7 @@ def _kind(config_settings, fallback="tag"):
             elif "kind" in config_settings.keys():
                 ret = config_settings["kind"]
             else:
-                # Do not use scm version. Version from tool.pipenv-unlock.version_file
+                # Do not use scm version. Version from tool.drain_swamp.version_file
                 ret = str_fallback
 
             # whitespace only is invalid --> AssertionError

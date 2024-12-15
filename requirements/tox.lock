@@ -10,7 +10,7 @@ filelock==3.13.4
     # via
     #   tox
     #   virtualenv
-packaging==24.1
+packaging==24.2
     # via
     #   pyproject-api
     #   tox
@@ -22,7 +22,7 @@ pluggy==1.5.0
     # via tox
 pyproject-api==1.8.0
     # via tox
-tomli==2.0.2 ; python_version < "3.11"
+tomli==2.2.1; python_version<"3.11"
     # via
     #   -c requirements/pins.shared.in
     #   pyproject-api
@@ -30,7 +30,7 @@ tomli==2.0.2 ; python_version < "3.11"
 tox==4.15.1
     # via
     #   -r requirements/tox.in
-    #   tox-gh
+    #   tox-gh-actions
 tox-gh-actions==3.2.0
     # via -r requirements/tox.in
 virtualenv==20.26.0

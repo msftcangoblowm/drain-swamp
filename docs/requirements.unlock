@@ -1,10 +1,5 @@
-click
 drain-swamp-snippet
-importlib-metadata>=8.5.0
 interrogate
-packaging
-pip-requirements-parser
-pip-tools
 pip<24.2
 pluggy
 scriv
@@ -12,7 +7,7 @@ setuptools-scm
 setuptools>=75.1.0
 sphinx-autobuild
 sphinx-copybutton
-sphinx-external-toc-strict>=2.0.0.post1
+sphinx-external-toc-strict
 sphinx-favicon
 sphinx-paramlinks
 sphinx-pyproject
@@ -22,3 +17,4 @@ sphinx_design
 sphobjinv
 tomli>=2.0.2; python_version<"3.11"
 typing-extensions; python_version<"3.10"
+wreck

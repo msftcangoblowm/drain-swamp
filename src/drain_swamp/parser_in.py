@@ -1,5 +1,5 @@
 """
-.. moduleauthor:: Dave Faulkmore <https://mastodon.social/@msftcangoblowme>
+.. moduleauthor:: |author-contact|
 
 ``pyproject.toml`` parsing. text --> dict
 
@@ -28,12 +28,13 @@ from pathlib import (
     PurePath,
 )
 
+from wreck.pep518_read import find_pyproject_toml
+
 from .constants import g_app_name
 from .exceptions import (
     PyProjectTOMLParseError,
     PyProjectTOMLReadError,
 )
-from .pep518_read import find_pyproject_toml
 
 if sys.version_info >= (3, 11):  # pragma: no cover py-gte-311-else
     import tomllib

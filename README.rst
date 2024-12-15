@@ -161,27 +161,17 @@ These include the dependencies and lines with ``-r`` and
 
 Then
 
-Create both lock and unlock dependency files
+Create both lock and unlock dependency files. Fix both.
 
 .. code-block:: shell
 
-   pipenv-unlock lock
-   pipenv-unlock unlock
+   req fix
 
-Update the ``pyproject.toml`` snippet and refreshes
-symlinks (.lnk)
+Deprecated. Create .unlock files
 
 .. code-block:: shell
 
-   pipenv-unlock refresh --set-lock "off"
-   pipenv-unlock refresh --set-lock "on"
-
-.. csv-table:: set lock state values
-   :header: "State", "Possible values"
-   :widths: auto
-
-   "lock", """1"", ""true"", ""t"", ""yes"", ""y"", ""on"""
-   "unlock", """0"", ""false"", ""f"", ""no"", ""n"", ""off"""
+   req unlock
 
 build config settings
 """"""""""""""""""""""
@@ -200,7 +190,7 @@ it's use only in drain-swamp howto.txt
 
 .. code:: shell
 
-   python -m build -C--kind="0.5.1a4.dev6" -C--set-lock="0"
+   python -m build -C--kind="0.5.1a4.dev6"
 
 Unless authoring a custom build backend, can safely
 ignore.

@@ -1,5 +1,5 @@
 """
-.. moduleauthor:: Dave Faulkmore <https://mastodon.social/@msftcangoblowme>
+.. moduleauthor:: |author-contact|
 
 :py:meth:`datetime.datetime.strftime` has spotty feature support.
 
@@ -23,7 +23,7 @@ There are unsupported features affecting particular platforms. Fix those issues.
 import abc
 import shlex
 
-from .._safe_path import (
+from wreck._safe_path import (
     is_linux,
     is_macos,
 )
