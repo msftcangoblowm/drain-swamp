@@ -13,11 +13,11 @@ sys.path.insert(0, str(path_package_base))  # Needed ??
 # @@@ editable
 copyright = "2024–2024, Dave Faulkmore"
 # The short X.Y.Z version.
-version = "2.0.0"
+version = "2.1.0"
 # The full version, including alpha/beta/rc tags.
-release = "2.0.0"
+release = "2.1.0"
 # The date of release, in "monthname day, year" format.
-release_date = "November 6, 2024"
+release_date = "Decement 15, 2024"
 # @@@ end
 
 v = parse(release)

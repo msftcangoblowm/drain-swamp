@@ -46,31 +46,21 @@ Changelog
    Commit items for NEXT VERSION
    ..............................
 
-   - fix: requires latest wreck release
-   - chore: bump wreck
-   - fix(docs/conf.py): sphinx conf broken import
-   - fix: add missing build dependency wreck
-   - feat: add wreck support
-   - fix: pyproject.toml section pipenv-unlock (#10)
-   - refactor: remove entrypoint pipenv-unlock
-   - docs: reduce links in source code not sphinx inventory files
-   - feat: one command. reqs fix Creates .lock .unlock and fix both
-   - chore: deprecate reqs unlock and reqs fix_v1
-   - refactor: entrypoint name change pipenv-unlock --> reqs
-   - feat: add fix_requirements_lock. Call after lock_compile (#18)
-   - feat(lock_filepins): read each .in requirements file once
-   - refactor(lock_compile): from_loader two implementations the later read files once
-   - fix(lock_inspect): get package name in line exact match algo
-   - fix(lock_infile): resolution loop sort alphabetically (#16)
-   - fix(lock_infile): resolution loop detect missing reqs both factors files and zeroes count
-   - feat(lock_infile): sort InFiles.files alphabetically
-   - fix(lock_infile): strictly scrutinize InFile.stem and InFile.relpath
-   - feat: add tox-req.ini tie venv requirements to respective py interpreter version (#17)
-   - feat: pipenv-unlock lock subprocess to use venv py executable otherwise issue warning (#17)
-   - feat(_safe_path): add get_venv_python_abspath to get venv py executable absolute path (#17)
-   - chore(tox.ini): add target format. Separate from lint
-
 .. scriv-start-here
+
+.. _changes_2-1-0:
+
+Version 2.1.0 — 2024-12-15
+--------------------------
+
+- fix(dev.lock): requires latest wreck release
+- chore: bump wreck
+- fix(docs/conf.py): sphinx conf broken import
+- fix(pyproject.toml): add missing build dependency wreck
+- feat: add wreck support
+- fix: pyproject.toml section pipenv-unlock (#10)
+- refactor: remove entrypoint pipenv-unlock
+- docs: reduce links in source code not sphinx inventory files
 
 .. _changes_2-0-0:
 
