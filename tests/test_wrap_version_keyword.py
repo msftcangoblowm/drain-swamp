@@ -53,11 +53,12 @@ def version_file():
     path_f = path_root_dir.joinpath("src", "_version.py")
     path_f.touch()
     yield path_f
-    path_root_dir.joinpath("src", "_version.py").unlink()
+    path_f.unlink()
 
 
 def test_version_keyword(caplog, has_logging_occurred, version_file):
     """setuptools-scm would normally needs a setup.py to be executed"""
+    # pytest --showlocals --log-level INFO -k "test_version_keyword" tests
     LOGGING["loggers"][g_app_name]["propagate"] = True
     logging.config.dictConfig(LOGGING)
     logger = logging.getLogger(name=g_app_name)

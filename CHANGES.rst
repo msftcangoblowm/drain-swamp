@@ -46,6 +46,8 @@ Changelog
    Commit items for NEXT VERSION
    ..............................
 
+   - fix: requires latest wreck release
+   - chore: bump wreck
    - fix(docs/conf.py): sphinx conf broken import
    - fix: add missing build dependency wreck
    - feat: add wreck support

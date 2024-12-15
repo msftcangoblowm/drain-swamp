@@ -60,7 +60,7 @@ authors = [
 "Mastodon" = 'https://mastodon.social/@msftcangoblowme'
 
 [tool.setuptools.packages.find]
-where = ["src"]
+where = ['src']
 include = ["drain_swamp*"]
 
 [project.entry-points."setuptools.finalize_distribution_options"]
@@ -69,7 +69,7 @@ include = ["drain_swamp*"]
 # Replaces: :code:`python -m setuptools_scm`
 # Wraps setuptools_scm, get scm version
 # - Do not require section: tool.setuptools_scm
-# - Use sections: tool.pipenv-unlock or tool.drain-swamp
+# - Use sections: tool.drain-swamp
 drain_swamp = "drain_swamp.monkey.wrap_infer_version:infer_version"
 
 [project.entry-points."distutils.setup_keywords"]
@@ -97,8 +97,8 @@ copyright_start_year = 2024
 wraps-build-backend = "setuptools.build_meta"
 version_file = 'src/drain_swamp/_version.py'
 folders = [
-    "docs",
-    "requirements",
+    'docs',
+    'requirements',
 ]
 # target contains: alphanumeric+underscore
 # relative path file stem contains: alphanumeric+hyphen
