@@ -46,6 +46,11 @@ Changelog
    Commit items for NEXT VERSION
    ..............................
 
+   - fix: add missing build dependency wreck
+   - feat: add wreck support
+   - fix: pyproject.toml section pipenv-unlock (#10)
+   - refactor: remove entrypoint pipenv-unlock
+   - docs: reduce links in source code not sphinx inventory files
    - feat: one command. reqs fix Creates .lock .unlock and fix both
    - chore: deprecate reqs unlock and reqs fix_v1
    - refactor: entrypoint name change pipenv-unlock --> reqs

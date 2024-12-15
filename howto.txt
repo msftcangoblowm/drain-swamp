@@ -79,7 +79,6 @@
 
       [tool.config-settings]
       kind="1.0.0"
-      set-lock="0"
       EOF
       $ python -m build
     - Build drain-swamp as-is
@@ -91,7 +90,6 @@
 
       [tool.config-settings]
       kind="tag"
-      set-lock="0"
       EOF
       $ python -m build
     Trigger the kit GitHub Action (no CI integration yet)
