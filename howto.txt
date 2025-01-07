@@ -1,5 +1,22 @@
 * Release checklist
 
+- pre-commit upgrade
+  $ pre-commit autoupdate
+- Adjust coverage fail under minimal percentage
+  tox-test.ini
+  .github/workflows/test-coverage.yml
+  pyproject.toml [tool.coverage.report]
+  Makefile target coverage
+- Identify issues with requirements
+  $ tox -e docs
+  $ tox -e lint
+  $ tox -e mypy
+  $ tox -e pre-commit
+  $ tox -e interrogate
+  $ rm -rf ./build; mkdir ./build; cd .tox && tox -r --root=.. -c ../tox-test.ini -e py39-linux --workdir=.; cd - &>/dev/null
+  $ rm -rf ./build; mkdir ./build; cd .tox && tox -r --root=.. -c ../tox-test.ini -e pypy-3.9-linux --workdir=.; cd - &>/dev/null
+  $ cd .tox && tox -r --root=.. -c ../tox-req.ini -e base --workdir=. -vvv; cd - &>/dev/null
+  $ cd .tox && tox -r --root=.. -c ../tox-req.ini -e docs --workdir=.; cd - &>/dev/null
 - Run twice
   $ make pre-commit
 - Remove old branches

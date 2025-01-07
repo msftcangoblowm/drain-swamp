@@ -2,25 +2,26 @@ black
 blackdoc
 cffi>=1.17.1
 coverage
-drain-swamp-snippet
+drain-swamp-snippet>=1.0.2
 flake8
 flake8-pyi
 flake8-pyproject
 isort
-logging-strict
+logging-strict>=1.4.2
 mypy
 pluggy
+pytest-logging-strict
 pytest-regressions
 pytest>=7.1
 setuptools-scm
-setuptools>=75.6.0
-tomli>=2.2.1; python_version<"3.11"
+setuptools>=75.7.0
+tomli>=2.0.2; python_version<"3.11"
 twine
 types-setuptools
 typing-extensions; python_version<"3.10"
 validate-pyproject
-wreck
-packaging>=24.2
-pip>=24.3.1
-wheel>=0.45.1
-zipp>=3.21.0
+wreck>=0.2.4
+attrs>=24.3.0
+click>=8.1.8
+pyparsing>=3.2.1
+six>=1.17.0

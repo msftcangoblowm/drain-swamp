@@ -7,7 +7,7 @@ setuptools-scm
 setuptools>=75.1.0
 sphinx-autobuild
 sphinx-copybutton
-sphinx-external-toc-strict
+sphinx-external-toc-strict>=2.0.0.post1
 sphinx-favicon
 sphinx-paramlinks
 sphinx-pyproject

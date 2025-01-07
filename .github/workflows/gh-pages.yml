@@ -56,7 +56,7 @@ jobs:
     - id: prepare-config-settings
       name: >-
         Build Plugin parameters
-      uses: 'msftcangoblowm/drain-swamp-action@1.0.2'
+      uses: msftcangoblowm/drain-swamp-action@1.0.3
       with:
         plugin_parameters: '{"set-lock": "${{ vars.DRAINSWAMP_SET_LOCK }}", "kind": "current"}'
         checkout: true
@@ -69,7 +69,7 @@ jobs:
         path: '${{ runner.temp }}'
 
     - name: Checkout the repo
-      uses: actions/checkout@v4.2.0
+      uses: actions/checkout@v4.2.2
       with:
         repository: '${{ github.repository }}'
         # fetch all branches and tags instead of only fetching the ref/SHA that triggered the workflow
@@ -83,7 +83,7 @@ jobs:
         echo "tag=$(git describe --tags)" >> $GITHUB_OUTPUT
 
     - name: "Install Python"
-      uses: actions/setup-python@v5.2.0
+      uses: actions/setup-python@v5.3.0
       with:
         python-version: '${{ matrix.python-version }}' # default of sphinx-notes/pages
         # cache: pip
@@ -105,7 +105,7 @@ jobs:
 
     - name: deploy Sphinx --> Github pages
       id: deployment
-      uses: sphinx-notes/pages@3.1  # MIT
+      uses: sphinx-notes/pages@ac8f69cf857af3879e6251c386d4a9c6ffb4f890  # MIT 3.1
       with:
         checkout: false
         requirements_path: docs/requirements${{ env.LOCK_SUFFIX }}

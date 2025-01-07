@@ -71,47 +71,6 @@ package level constants
 
    Regex compiled Pattern to find [file name].in files
 
-.. py:data:: LOGGING
-   :type: dict[str, typing.Any]
-
-   logging dict input to logging.dictConfig
-
-   pytest aware. :code:`"propagate": True,` is required by pytest.
-   Otherwise cannot see log messages
-
-   If :code:`DEBUG is True` would require package colorlog. So DEBUG
-   is purposefully FALSE
-
-   This logging dict formatter requires package, colorlog. colorized
-   debug messages is a feature
-
-   The below code was removed
-
-   .. code-block:: text
-
-      'verbose_with_color': {
-          '()': 'colorlog.ColoredFormatter',
-          'format': '{log_color}{levelname}{reset} {asctime} {cyan}{name}{reset}: {message}',
-          'style': '{',
-      },
-
-   .. caution::
-
-      This is example of py38- usage. From py39+, this is no longer valid
-
-      .. code-block:: text
-
-         'root': {
-              'handlers': ['console'],
-              'level': 'INFO',
-         },
-
-   .. seealso::
-
-      `pytest#3697 <https://github.com/pytest-dev/pytest/issues/3697#issuecomment-1984895577>`_
-
-      `pytest#10606 <https://github.com/pytest-dev/pytest/issues/10606#issuecomment-1550123106>`_
-
 """
 
 import re
@@ -140,43 +99,6 @@ SUFFIX_SHARED_IN = ".shared.in"
 SUFFIX_LOCKED = ".lock"
 SUFFIX_UNLOCKED = ".unlock"
 SUFFIX_SYMLINK = ".lnk"
-
-# Required only for pytest
-DEBUG = False
-IS_TESTING = "pytest" in sys.modules
-formatting = "verbose_with_color" if DEBUG else "simple"
-LOGGING = {
-    "version": 1,
-    "disable_existing_loggers": False,
-    "formatters": {
-        "simple": {
-            "format": "{levelname} {name}: {message}",
-            "style": "{",
-        },
-    },
-    "handlers": {
-        "console": {
-            "level": "DEBUG",
-            "class": "logging.StreamHandler",
-            "formatter": formatting,
-        },
-        "null": {
-            "class": "logging.NullHandler",
-        },
-    },
-    "loggers": {
-        "django.server": {  # Suppress django HTTP logging because we do it in a middleware
-            "handlers": ["console"],
-            "level": "WARNING",
-            "propagate": IS_TESTING,
-        },
-        g_app_name: {
-            "handlers": ["console"],
-            "level": "DEBUG",
-            "propagate": IS_TESTING,
-        },
-    },
-}
 
 _PATH_VENV = Path(sys.exec_prefix) / "bin"
 PATH_PIP_COMPILE = _PATH_VENV / "pip-compile"

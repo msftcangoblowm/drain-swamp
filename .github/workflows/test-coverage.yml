@@ -52,7 +52,7 @@ jobs:
     - id: prepare-config-settings
       name: >-
         Build Plugin parameters
-      uses: 'msftcangoblowm/drain-swamp-action@1.0.2'
+      uses: msftcangoblowm/drain-swamp-action@1.0.3
       with:
         plugin_parameters: '{"set-lock": "${{ vars.DRAINSWAMP_SET_LOCK }}", "kind": "current"}'
         checkout: true
@@ -65,7 +65,7 @@ jobs:
         path: '${{ runner.temp }}'
 
     - name: Trans jobs artifact -- upload
-      uses: actions/upload-artifact@v4.4.0
+      uses: actions/upload-artifact@v4.5.0
       with:
           name: config-settings-toml-${{ matrix.platform || matrix.os }}-${{ matrix.python-version }}
           path: '${{ env.DS_CONFIG_SETTINGS }}'
@@ -107,14 +107,14 @@ jobs:
         echo 'DS_CONFIG_SETTINGS=${{ needs.get-toml-cov.outputs.config_settings }}' >> "$GITHUB_ENV"
 
     - name: "Check out the repo"
-      uses: actions/checkout@v4.2.0
+      uses: actions/checkout@v4.2.2
       with:
         repository: '${{ github.repository }}'
         # fetch all branches and tags instead of only fetching the ref/SHA that triggered the workflow
         fetch-depth: 0
 
     - name: Set up Python ${{ matrix.python-version }}
-      uses: actions/setup-python@v5.2.0
+      uses: actions/setup-python@v5.3.0
       with:
         python-version: "${{ matrix.python-version }}"
         # cache: pip
@@ -145,14 +145,14 @@ jobs:
         python -m coverage combine
         python -m coverage xml --fail-under=93
     - name: "Upload to Codecov"
-      uses: codecov/codecov-action@b9fd7d16f6d7d1b5d2bec1a2887e65ceed900238 # 4.5.0
+      uses: codecov/codecov-action@v5.1.2
       with:
         name: unittest-py${{ matrix.python-version }}
         token: ${{ secrets.CODECOV_TOKEN }}
         slug: msftcangoblowm/drain-swamp
         os: linux
         flags: unittests
-        file: ./coverage.xml
+        files: ./coverage.xml
         env_vars: OS,PYTHON
         fail_ci_if_error: true
         verbose: true

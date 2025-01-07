@@ -314,6 +314,13 @@ filterwarnings = [
 log_format = "%(asctime)s %(levelname)s %(message)s"
 log_date_format = "%Y-%m-%d %H:%M:%S"
 
+logging_strict_yaml_package_name = 'logging_strict'
+logging_strict_package_data_folder_start = 'configs'
+logging_strict_category = 'worker'
+logging_strict_genre = 'mp'
+logging_strict_flavor = 'asz'
+logging_strict_version_no = '1'
+
 [tool.interrogate]
 color = true
 exclude = [

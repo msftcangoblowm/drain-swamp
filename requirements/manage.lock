@@ -18,7 +18,7 @@ chardet==5.2.0
     # via tox
 charset-normalizer==3.3.2
     # via requests
-click==8.1.7
+click==8.1.8
     # via
     #   pip-tools
     #   wreck
@@ -32,7 +32,7 @@ docutils==0.21.2
     # via
     #   readme-renderer
     #   restview
-drain-swamp-snippet==1.0.1
+drain-swamp-snippet==1.0.2
     # via -r requirements/prod.shared.in
 filelock==3.13.4
     # via
@@ -101,7 +101,7 @@ pygments==2.18.0
     #   readme-renderer
     #   restview
     #   rich
-pyparsing==3.2.0
+pyparsing==3.2.1
     # via pip-requirements-parser
 pyproject-api==1.8.0
     # via tox
@@ -132,7 +132,7 @@ secretstorage==3.3.3
     # via keyring
 setuptools-scm==8.1.0
     # via -r requirements/prod.shared.in
-tomli==2.2.1; python_version<"3.11"
+tomli==2.2.1 ; python_version < "3.11"
     # via
     #   -c requirements/pins.shared.in
     #   build
@@ -164,7 +164,7 @@ webencodings==0.5.1
     # via bleach
 wheel==0.45.1
     # via pip-tools
-wreck==0.2.3
+wreck==0.2.4
     # via -r requirements/prod.shared.in
 zipp==3.21.0
     # via importlib-metadata
@@ -172,7 +172,7 @@ zipp==3.21.0
 # The following packages are considered to be unsafe in a requirements file:
 pip==24.3.1
     # via pip-tools
-setuptools==75.6.0
+setuptools==75.7.0
     # via
     #   -r requirements/prod.shared.in
     #   nodeenv

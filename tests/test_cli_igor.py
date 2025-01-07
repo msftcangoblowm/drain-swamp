@@ -22,8 +22,6 @@ Integration test
 """
 
 import copy
-import logging
-import logging.config
 import shlex
 import subprocess
 import traceback
@@ -45,10 +43,7 @@ from drain_swamp.cli_igor import (
     tag_version,
     validate_tag,
 )
-from drain_swamp.constants import (
-    LOGGING,
-    g_app_name,
-)
+from drain_swamp.constants import g_app_name
 
 
 def test_cli_main():
@@ -372,6 +367,7 @@ ids_snippets_list = (
 )
 
 
+@pytest.mark.logging_package_name(g_app_name)
 @pytest.mark.parametrize(
     "doc_relpath, path_confpy_src, expected_exit_code, keys_expected",
     testdata_snippets_list,
@@ -383,15 +379,12 @@ def test_snippets_list(
     expected_exit_code,
     keys_expected,
     tmp_path,
-    caplog,
+    logging_strict,
 ):
     """lists snippets in doc?/conf.py --> :code:`drain-swamp list`."""
     # pytest --showlocals --log-level INFO -k "test_snippets_list" tests
-    LOGGING["loggers"][g_app_name]["propagate"] = True
-    logging.config.dictConfig(LOGGING)
-    logger = logging.getLogger(name=g_app_name)
-    logger.addHandler(hdlr=caplog.handler)
-    caplog.handler.level = logger.level
+    t_two = logging_strict()
+    logger, loggers = t_two
 
     runner = CliRunner()
     with runner.isolated_filesystem(temp_dir=tmp_path) as tmp_dir_path:
@@ -556,6 +549,7 @@ ids_write_version_normal = (
 )
 
 
+@pytest.mark.logging_package_name(g_app_name)
 @pytest.mark.parametrize(
     "path_toml_src, kind, expected",
     testdata_write_version_normal,
@@ -568,16 +562,13 @@ def test_write_version_normal(
     tmp_path,
     prep_pyproject_toml,
     prepare_folders_files,
-    caplog,
-    has_logging_occurred,
+    logging_strict,
+    # has_logging_occurred,
 ):
     """Write version file typical situation."""
     # pytest --showlocals --log-level INFO -k "test_write_version_normal" tests
-    LOGGING["loggers"][g_app_name]["propagate"] = True
-    logging.config.dictConfig(LOGGING)
-    logger = logging.getLogger(name=g_app_name)
-    logger.addHandler(hdlr=caplog.handler)
-    caplog.handler.level = logger.level
+    t_two = logging_strict()
+    logger, loggers = t_two
 
     runner = CliRunner(mix_stderr=False)
     with runner.isolated_filesystem(temp_dir=tmp_path) as tmp_dir_path:
@@ -620,7 +611,7 @@ def test_write_version_normal(
         logger.info(f"exc: {result_ver.exception}")
         logger.info(f"err: {result_ver.stderr}")
         logger.info(f"out: {result_ver.stdout}")
-        assert has_logging_occurred(caplog)
+        # assert has_logging_occurred(caplog)
 
         assert result_ver.exit_code == 0
         # str_ver_stderr = result_ver.stderr.strip()
@@ -702,20 +693,18 @@ def test_write_version_exceptions(
         assert exit_code_actual == exit_code_expected
 
 
+@pytest.mark.logging_package_name(g_app_name)
 def test_tag_version(
     tmp_path,
     prep_pyproject_toml,
     prepare_folders_files,
-    caplog,
-    has_logging_occurred,
+    logging_strict,
+    # has_logging_occurred,
 ):
     """Get semantic version from version file."""
     # pytest --showlocals --log-level INFO -k "test_tag_version" tests
-    LOGGING["loggers"][g_app_name]["propagate"] = True
-    logging.config.dictConfig(LOGGING)
-    logger = logging.getLogger(name=g_app_name)
-    logger.addHandler(hdlr=caplog.handler)
-    caplog.handler.level = logger.level
+    t_two = logging_strict()
+    logger, loggers = t_two
 
     runner = CliRunner(mix_stderr=False)
     with runner.isolated_filesystem(temp_dir=tmp_path) as tmp_dir_path:

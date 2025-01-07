@@ -1,6 +1,5 @@
 colorama>=0.4.6 ;platform_system=="Windows"
-tomli>=2.2.1; python_version<"3.11"
+tomli>=2.0.2; python_version<"3.11"
 tox
 tox-gh-actions
 typing-extensions; python_version<"3.10"
-packaging>=24.2

@@ -31,18 +31,13 @@ Integration test
 
 """
 
-import logging
-import logging.config
 from contextlib import nullcontext as does_not_raise
 from pathlib import Path
 
 import pytest
 from wreck._safe_path import fix_relpath
 
-from drain_swamp.constants import (
-    LOGGING,
-    g_app_name,
-)
+from drain_swamp.constants import g_app_name
 from drain_swamp.version_file.dump_version import write_version_files
 from drain_swamp.version_semantic import _tag_version
 
@@ -82,6 +77,7 @@ ids_version_file_read_normal = (
 )
 
 
+@pytest.mark.logging_package_name(g_app_name)
 @pytest.mark.parametrize(
     "path_config_src, version_file_relpath, expectation, kind_expected",
     testdata_version_file_read_normal,
@@ -95,16 +91,13 @@ def test_version_file_read_normal(
     tmp_path,
     prep_pyproject_toml,
     prepare_folders_files,
-    caplog,
-    has_logging_occurred,
+    logging_strict,
+    # has_logging_occurred,
 ):
     """Version file contains the tag version, retrieve it. Does not depend on git."""
     # pytest --showlocals --log-level INFO -k "test_version_file_read_normal" tests
-    LOGGING["loggers"][g_app_name]["propagate"] = True
-    logging.config.dictConfig(LOGGING)
-    logger = logging.getLogger(name=g_app_name)
-    logger.addHandler(hdlr=caplog.handler)
-    caplog.handler.level = logger.level
+    t_two = logging_strict()
+    logger, loggers = t_two
 
     kind = "0.0.5"
 

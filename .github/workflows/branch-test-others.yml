@@ -43,20 +43,20 @@ jobs:
 
     steps:
     - name: "Check out the repo"
-      uses: actions/checkout@v4.2.0
+      uses: actions/checkout@v4.2.2
       with:
         repository: '${{ github.repository }}'
         # fetch all branches and tags instead of only fetching the ref/SHA that triggered the workflow
         fetch-depth: 0
 
     - name: "Install ${{ matrix.python-version }} with setup-python"
-      uses: actions/setup-python@v5.2.0
+      uses: actions/setup-python@v5.3.0
       if: startsWith(matrix.python-version, 'pypy-')
       with:
         python-version: "${{ matrix.python-version }}"
 
     - name: "Install ${{ matrix.python-version }} with deadsnakes"
-      uses: deadsnakes/action@v3.2.0
+      uses: deadsnakes/action@5bd83736ba0d62b1b9fd1079e1cbe1f9449222ca
       if: ${{ ! startsWith(matrix.python-version, 'pypy-') }}
       with:
         python-version: "${{ matrix.python-version }}"
@@ -110,6 +110,6 @@ jobs:
 
     steps:
     - name: Decide whether the needed jobs succeeded or failed
-      uses: re-actors/alls-green@05ac9388f0aebcb5727afa17fcccfecd6f8ec5fe
+      uses: re-actors/alls-green@223e4bb7a751b91f43eda76992bcfbf23b8b0302
       with:
         jobs: ${{ toJSON(needs) }}

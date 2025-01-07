@@ -25,8 +25,6 @@ Integration test
 
 """
 
-import logging
-import logging.config
 from collections.abc import Mapping
 from pathlib import Path
 from unittest.mock import (
@@ -39,10 +37,7 @@ from setuptools.dist import Distribution
 from setuptools_scm._config import Configuration
 from wreck.monkey.patch_pyproject_reading import ReadPyprojectStrict
 
-from drain_swamp.constants import (
-    LOGGING,
-    g_app_name,
-)
+from drain_swamp.constants import g_app_name
 from drain_swamp.monkey.wrap_version_keyword import version_keyword
 
 
@@ -56,14 +51,12 @@ def version_file():
     path_f.unlink()
 
 
-def test_version_keyword(caplog, has_logging_occurred, version_file):
+@pytest.mark.logging_package_name(g_app_name)
+def test_version_keyword(logging_strict, has_logging_occurred, version_file):
     """setuptools-scm would normally needs a setup.py to be executed"""
     # pytest --showlocals --log-level INFO -k "test_version_keyword" tests
-    LOGGING["loggers"][g_app_name]["propagate"] = True
-    logging.config.dictConfig(LOGGING)
-    logger = logging.getLogger(name=g_app_name)
-    logger.addHandler(hdlr=caplog.handler)
-    caplog.handler.level = logger.level
+    t_two = logging_strict()
+    logger, loggers = t_two
 
     path_root_dir = Path(__file__).parent.parent
     path_version_file_relpath = str(version_file.relative_to(path_root_dir))

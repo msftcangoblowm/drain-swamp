@@ -1,6 +1,6 @@
 appdirs==1.4.4
     # via logging-strict
-attrs==23.2.0
+attrs==24.3.0
     # via logging-strict
 backports-tarfile==1.1.1
     # via jaraco-context
@@ -22,7 +22,7 @@ cffi==1.17.1
     #   cryptography
 charset-normalizer==3.3.2
     # via requests
-click==8.1.7
+click==8.1.8
     # via
     #   black
     #   pip-tools
@@ -33,7 +33,7 @@ cryptography==42.0.5
     # via secretstorage
 docutils==0.21.2
     # via readme-renderer
-drain-swamp-snippet==1.0.1
+drain-swamp-snippet==1.0.2
     # via -r requirements/prod.shared.in
 exceptiongroup==1.2.1
     # via pytest
@@ -72,8 +72,10 @@ jeepney==0.8.0
     #   secretstorage
 keyring==25.1.0
     # via twine
-logging-strict==1.3.6
-    # via -r requirements/dev.in
+logging-strict==1.4.2
+    # via
+    #   -r requirements/dev.in
+    #   pytest-logging-strict
 markdown-it-py==3.0.0
     # via rich
 mccabe==0.7.0
@@ -127,7 +129,7 @@ pygments==2.18.0
     # via
     #   readme-renderer
     #   rich
-pyparsing==3.2.0
+pyparsing==3.2.1
     # via pip-requirements-parser
 pyproject-hooks==1.2.0
     # via
@@ -137,9 +139,12 @@ pytest==8.1.1
     # via
     #   -r requirements/dev.in
     #   pytest-datadir
+    #   pytest-logging-strict
     #   pytest-regressions
 pytest-datadir==1.5.0
     # via pytest-regressions
+pytest-logging-strict==0.1.0.post1
+    # via -r requirements/dev.in
 pytest-regressions==2.5.0
     # via -r requirements/dev.in
 python-dateutil==2.9.0.post0
@@ -166,11 +171,13 @@ secretstorage==3.3.3
     # via keyring
 setuptools-scm==8.1.0
     # via -r requirements/prod.shared.in
-six==1.16.0
+six==1.17.0
     # via python-dateutil
 strictyaml==1.7.3
-    # via logging-strict
-tomli==2.2.1; python_version<"3.11"
+    # via
+    #   logging-strict
+    #   pytest-logging-strict
+tomli==2.2.1 ; python_version < "3.11"
     # via
     #   -c requirements/pins.shared.in
     #   black
@@ -192,6 +199,7 @@ typing-extensions==4.12.2 ; python_version < "3.10"
     #   black
     #   logging-strict
     #   mypy
+    #   pytest-logging-strict
     #   setuptools-scm
 urllib3==2.2.3
     # via
@@ -203,7 +211,7 @@ webencodings==0.5.1
     # via bleach
 wheel==0.45.1
     # via pip-tools
-wreck==0.2.3
+wreck==0.2.4
     # via -r requirements/prod.shared.in
 zipp==3.21.0
     # via importlib-metadata
@@ -211,7 +219,7 @@ zipp==3.21.0
 # The following packages are considered to be unsafe in a requirements file:
 pip==24.3.1
     # via pip-tools
-setuptools==75.6.0
+setuptools==75.7.0
     # via
     #   -r requirements/prod.shared.in
     #   pip-tools

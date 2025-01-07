@@ -26,8 +26,6 @@ Integration test
 
 """
 
-import logging
-import logging.config
 import shutil
 import sys
 from pathlib import Path
@@ -36,10 +34,7 @@ import pytest
 from setuptools_scm._version_cls import _version_as_tuple
 from wreck._run_cmd import run_cmd
 
-from drain_swamp.constants import (
-    LOGGING,
-    g_app_name,
-)
+from drain_swamp.constants import g_app_name
 from drain_swamp.monkey.config_settings import ConfigSettings
 from drain_swamp.monkey.wrap_infer_version import _rage_quit
 
@@ -93,6 +88,7 @@ ids_dist_get_cmdline_options = (
 )
 
 
+@pytest.mark.logging_package_name(g_app_name)
 @pytest.mark.parametrize(
     "p_toml_file, app_name, commit_version_str, kind",
     testdata_dist_get_cmdline_options,
@@ -105,7 +101,7 @@ def test_dist_get_cmdline_options(
     kind,
     prep_pyproject_toml,
     prepare_folders_files,
-    caplog,
+    logging_strict,
     has_logging_occurred,
     wd: WorkDir,
     monkeypatch: pytest.MonkeyPatch,
@@ -122,11 +118,8 @@ def test_dist_get_cmdline_options(
 
     """
     # pytest --showlocals --log-level INFO -k "test_dist_get_cmdline_options" tests
-    LOGGING["loggers"][g_app_name]["propagate"] = True
-    logging.config.dictConfig(LOGGING)
-    logger = logging.getLogger(name=g_app_name)
-    logger.addHandler(hdlr=caplog.handler)
-    caplog.handler.level = logger.level
+    t_two = logging_strict()
+    logger, loggers = t_two
 
     p_base = wd.cwd.parent
     logger.info(f"wd.cwd: {wd.cwd}")
@@ -262,7 +255,7 @@ def test_dist_get_cmdline_options(
     logger.info(f"err {err!r}")
     logger.info(list(cwd.glob("**/*.tar.gz")))
 
-    assert has_logging_occurred(caplog)
+    assert has_logging_occurred()
     assert exc is None
 
     condition = "Missing dependencies" in out
@@ -383,6 +376,7 @@ ids_config_settings_read = (
 )
 
 
+@pytest.mark.logging_package_name(g_app_name)
 @pytest.mark.parametrize(
     "toml_contents, section_key_count, has_log_warning",
     testdata_config_settings_read,
@@ -393,16 +387,13 @@ def test_config_settings_read(
     section_key_count,
     has_log_warning,
     tmp_path,
-    caplog,
+    logging_strict,
     has_logging_occurred,
 ):
     """Test ConfigSettings read."""
     # pytest --showlocals --log-level INFO -k "test_get_config_settings" tests
-    LOGGING["loggers"][g_app_name]["propagate"] = True
-    logging.config.dictConfig(LOGGING)
-    logger = logging.getLogger(name=g_app_name)
-    logger.addHandler(hdlr=caplog.handler)
-    caplog.handler.level = logger.level
+    t_two = logging_strict()
+    logger, loggers = t_two
 
     # prepare
     cs = ConfigSettings()
@@ -420,7 +411,7 @@ def test_config_settings_read(
     assert actual_count == section_key_count
 
     if has_log_warning:
-        assert has_logging_occurred(caplog)
+        assert has_logging_occurred()
 
 
 @pytest.mark.parametrize(

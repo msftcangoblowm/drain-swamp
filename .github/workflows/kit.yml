@@ -142,18 +142,18 @@ jobs:
     steps:
       - name: "Setup QEMU"
         if: matrix.os == 'ubuntu'
-        uses: docker/setup-qemu-action@49b3bc8e6bdd4a60e6116a5414239cba5943d3cf
+        uses: docker/setup-qemu-action@8b562efa09ec1557a9e26f25a7c6292838acea94
         with:
           platforms: arm64
 
       - name: "Check out the repo"
-        uses: actions/checkout@v4.2.0
+        uses: actions/checkout@v4.2.2
         with:
           # fetch all branches and tags instead of only fetching the ref/SHA that triggered the workflow
           fetch-depth: 0
 
       - name: "Install Python 3.9"
-        uses: actions/setup-python@v5.2.0
+        uses: actions/setup-python@v5.3.0
         with:
           # PYVERSIONS
           python-version: "3.9"
@@ -179,7 +179,7 @@ jobs:
           ls -al wheelhouse/
 
       - name: "Upload wheels"
-        uses: actions/upload-artifact@50769540e7f4bd5e21e526ee35c689e35e0d6874 # v4.4.0
+        uses: actions/upload-artifact@v4.5.0
         with:
           name: dist-${{ env.MATRIX_ID }}
           path: wheelhouse/*.whl
@@ -190,7 +190,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: "Check out the repo"
-        uses: actions/checkout@v4.2.0
+        uses: actions/checkout@v4.2.2
         with:
           # fetch all branches and tags instead of only fetching the ref/SHA that triggered the workflow
           fetch-depth: 0
@@ -203,7 +203,7 @@ jobs:
           echo "tag=$(git describe --tags)" >> $GITHUB_OUTPUT
 
       - name: "Install Python 3.9"
-        uses: actions/setup-python@v5.2.0
+        uses: actions/setup-python@v5.3.0
         with:
           # PYVERSIONS
           python-version: "3.9"
@@ -227,7 +227,7 @@ jobs:
           ls -al dist/
 
       - name: "Upload sdist"
-        uses: actions/upload-artifact@v4.4.0
+        uses: actions/upload-artifact@v4.5.0
         with:
           name: dist-sdist
           path: dist/*.tar.gz
@@ -238,13 +238,13 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: "Check out the repo"
-        uses: actions/checkout@v4.2.0
+        uses: actions/checkout@v4.2.2
         with:
           # fetch all branches and tags instead of only fetching the ref/SHA that triggered the workflow
           fetch-depth: 0
 
       - name: "Install PyPy"
-        uses: actions/setup-python@v5.2.0
+        uses: actions/setup-python@v5.3.0
         with:
           python-version: "pypy-3.9" # Minimum of PyPy PYVERSIONS
           # cache: pip
@@ -269,7 +269,7 @@ jobs:
           ls -al dist/
 
       - name: "Upload wheels"
-        uses: actions/upload-artifact@v4.4.0
+        uses: actions/upload-artifact@v4.5.0
         with:
           name: dist-pypy
           path: dist/*.whl
@@ -294,7 +294,7 @@ jobs:
           merge-multiple: true
 
       - name: "Sign artifacts"
-        uses: sigstore/gh-action-sigstore-python@f514d46b907ebcd5bedc05145c03b69c1edd8b46 # v3.0.0
+        uses: sigstore/gh-action-sigstore-python@ff22c455543724b5d6fb8d679179ddb195cfac11 # v3.0.0
         with:
           inputs: drain-swamp-*.*
 
@@ -303,7 +303,7 @@ jobs:
           ls -alR
 
       - name: "Upload signatures"
-        uses: actions/upload-artifact@v4.4.0
+        uses: actions/upload-artifact@v4.5.0
         with:
           name: signatures
           path: |

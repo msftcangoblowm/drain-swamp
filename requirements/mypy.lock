@@ -2,7 +2,7 @@ mypy==1.10.0
     # via -r requirements/mypy.in
 mypy-extensions==1.0.0
     # via mypy
-tomli==2.2.1; python_version<"3.11"
+tomli==2.2.1 ; python_version < "3.11"
     # via
     #   -c requirements/pins.shared.in
     #   mypy

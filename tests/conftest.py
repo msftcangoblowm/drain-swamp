@@ -19,6 +19,10 @@ from wreck._safe_path import resolve_path
 
 from .wd_wrapper import WorkDir
 
+pytest_plugins = [
+    "logging_strict",
+]
+
 
 class FileRegression:
     """Compare previous runs files.
@@ -105,7 +109,7 @@ def pytest_runtest_makereport(item, call):
 
 
 @pytest.fixture()
-def has_logging_occurred():
+def has_logging_occurred(caplog):
     """Display caplog capture text.
 
     Usage
@@ -113,17 +117,17 @@ def has_logging_occurred():
     .. code-block: text
 
        import pytest
-       import logging
-       import logging.config
-       from drain_swamp.constants import g_app_name, LOGGING
 
-       def test_something(caplog, has_logging_occurred):
-           LOGGING['loggers'][g_app_name]['propagate'] = True
-           logging.config.dictConfig(LOGGING)
-           logger = logging.getLogger(name=g_app_name)
-           logger.addHandler(hdlr=caplog.handler)
-           caplog.handler.level = logger.level
-           assert has_logging_occurred(caplog)
+       from drain_swamp.constants import g_app_name
+
+       @pytest.mark.logging_package_name(g_app_name)
+       def test_something(logging_strict, has_logging_occurred):
+           t_two = logging_strict()
+           logger, loggers = t_two
+
+           logger.info("Hello world!")
+
+           assert has_logging_occurred()
 
     .. seealso::
 
@@ -133,7 +137,7 @@ def has_logging_occurred():
 
     """
 
-    def _method(caplog) -> bool:
+    def _method() -> bool:
         """Check if there is at least one log message. Print log messages.
 
         :returns: True if logging occurred otherwise False

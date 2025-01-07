@@ -21,8 +21,6 @@ Integration test
 
 import contextlib
 import io
-import logging
-import logging.config
 import re
 import subprocess
 from contextlib import nullcontext as does_not_raise
@@ -39,10 +37,7 @@ from unittest.mock import (
 import pytest
 from wreck._package_installed import is_package_installed
 
-from drain_swamp.constants import (
-    LOGGING,
-    g_app_name,
-)
+from drain_swamp.constants import g_app_name
 from drain_swamp.igor_utils import (
     SCRIV_START,
     UNRELEASED,
@@ -272,6 +267,7 @@ ids_edit_for_release = (
 )
 
 
+@pytest.mark.logging_package_name(g_app_name)
 @pytest.mark.parametrize(
     "path_changes, path_notice, path_snip, path_pyproject_toml, snippet_co, sem_version_str, expected_exit_co",
     testdata_edit_for_release,
@@ -287,16 +283,13 @@ def test_edit_for_release(
     expected_exit_co,
     tmp_path,
     prep_pyproject_toml,
-    caplog,
-    has_logging_occurred,
+    logging_strict,
+    # has_logging_occurred,
 ):
     """Test edit_for_release."""
     # pytest --showlocals --log-level INFO -k "test_edit_for_release" tests
-    LOGGING["loggers"][g_app_name]["propagate"] = True
-    logging.config.dictConfig(LOGGING)
-    logger = logging.getLogger(name=g_app_name)
-    logger.addHandler(hdlr=caplog.handler)
-    caplog.handler.level = logger.level
+    t_two = logging_strict()
+    logger, loggers = t_two
 
     cmd = []
     kind = sem_version_str

@@ -46,6 +46,12 @@ Changelog
    Commit items for NEXT VERSION
    ..............................
 
+   - ci: bump actions versions
+   - chore: update requirements
+   - chore(pre-commit): update requirements
+   - refactor: remove logging config dict constants.LOGGING
+   - test: add pytest-logging-strict support
+
 .. scriv-start-here
 
 .. _changes_2-1-0:

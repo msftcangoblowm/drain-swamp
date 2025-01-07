@@ -19,8 +19,6 @@ Integration test
 
 """
 
-import logging
-import logging.config
 from pathlib import Path
 from unittest.mock import patch
 
@@ -33,10 +31,7 @@ from drain_swamp.cli_scm_version import (
     main,
     write_scm_version,
 )
-from drain_swamp.constants import (
-    LOGGING,
-    g_app_name,
-)
+from drain_swamp.constants import g_app_name
 
 
 def test_cli_main():
@@ -83,8 +78,13 @@ def test_get_scm_version_missing_pyproject_toml(tmp_path, prepare_folders_files)
         assert result.exit_code == 3
 
 
+@pytest.mark.logging_package_name(g_app_name)
 def test_get_scm_version_normal(
-    tmp_path, prep_pyproject_toml, prepare_folders_files, caplog, has_logging_occurred
+    tmp_path,
+    prep_pyproject_toml,
+    prepare_folders_files,
+    logging_strict,
+    has_logging_occurred,
 ):
     """How to simulate reading version from git?
 
@@ -95,11 +95,8 @@ def test_get_scm_version_normal(
 
     """
     # pytest --showlocals --log-level INFO -k "test_get_scm_version_normal" tests
-    LOGGING["loggers"][g_app_name]["propagate"] = True
-    logging.config.dictConfig(LOGGING)
-    logger = logging.getLogger(name=g_app_name)
-    logger.addHandler(hdlr=caplog.handler)
-    caplog.handler.level = logger.level
+    t_two = logging_strict()
+    logger, loggers = t_two
 
     runner = CliRunner()
     with runner.isolated_filesystem(temp_dir=tmp_path) as tmp_dir_path:
@@ -167,4 +164,4 @@ def test_get_scm_version_normal(
             result = runner.invoke(get_scm_version, cmd)
             assert result.exit_code == 4
 
-    assert has_logging_occurred(caplog)
+    assert has_logging_occurred()
