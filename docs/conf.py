@@ -11,13 +11,13 @@ path_package_base = path_docs.parent
 sys.path.insert(0, str(path_package_base))  # Needed ??
 
 # @@@ editable
-copyright = "2024–2024, Dave Faulkmore"
+copyright = "2024–2025, Dave Faulkmore"
 # The short X.Y.Z version.
-version = "2.1.0"
+version = "2.1.1"
 # The full version, including alpha/beta/rc tags.
-release = "2.1.0"
+release = "2.1.1"
 # The date of release, in "monthname day, year" format.
-release_date = "Decement 15, 2024"
+release_date = "January 7, 2025"
 # @@@ end
 
 v = parse(release)

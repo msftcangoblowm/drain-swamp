@@ -28,9 +28,10 @@
 
 \* Python 3.9 through 3.13, PyPy
 
-**new in 2.1.0**
+**new in 2.1.x**
 
 fork dependency fixing into separate package; add wreck support;
+add pytest-logging-strict support;
 
 **new in 2.0.x**
 
