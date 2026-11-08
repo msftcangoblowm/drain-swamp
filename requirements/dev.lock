@@ -2,26 +2,16 @@ appdirs==1.4.4
     # via logging-strict
 attrs==24.3.0
     # via logging-strict
-backports-tarfile==1.1.1
-    # via jaraco-context
 black==24.4.1
     # via
     #   -r requirements/dev.in
     #   blackdoc
 blackdoc==0.3.9
     # via -r requirements/dev.in
-bleach==6.2.0
-    # via readme-renderer
 build==1.2.2.post1
     # via pip-tools
-certifi==2024.8.30
-    # via requests
 cffi==1.17.1
-    # via
-    #   -c requirements/pins-cffi.in
-    #   cryptography
-charset-normalizer==3.3.2
-    # via requests
+    # via -c requirements/pins-cffi.in
 click==8.1.8
     # via
     #   black
@@ -29,10 +19,6 @@ click==8.1.8
     #   wreck
 coverage==7.5.0
     # via -r requirements/dev.in
-cryptography==42.0.5
-    # via secretstorage
-docutils==0.21.2
-    # via readme-renderer
 drain-swamp-snippet==1.0.2
     # via -r requirements/prod.shared.in
 exceptiongroup==1.2.1
@@ -48,31 +34,15 @@ flake8-pyi==24.4.1
     # via -r requirements/dev.in
 flake8-pyproject==1.2.3
     # via -r requirements/dev.in
-idna==3.7
-    # via requests
-importlib-metadata==8.5.0
+importlib-metadata==8.7.0
     # via
     #   build
-    #   keyring
-    #   twine
     #   wreck
 iniconfig==2.0.0
     # via pytest
 isort==5.13.2
     # via -r requirements/dev.in
-jaraco-classes==3.4.0
-    # via keyring
-jaraco-context==5.3.0
-    # via keyring
-jaraco-functools==4.0.1
-    # via keyring
-jeepney==0.8.0
-    # via
-    #   keyring
-    #   secretstorage
-keyring==25.1.0
-    # via twine
-logging-strict==1.4.2
+logging-strict==1.7.2.post1
     # via
     #   -r requirements/dev.in
     #   pytest-logging-strict
@@ -83,17 +53,14 @@ mccabe==0.7.0
 mdurl==0.1.2
     # via markdown-it-py
 more-itertools==10.2.0
-    # via
-    #   blackdoc
-    #   jaraco-classes
-    #   jaraco-functools
-mypy==1.10.0
+    # via blackdoc
+mypy==1.15.0
     # via -r requirements/dev.in
 mypy-extensions==1.0.0
     # via
     #   black
     #   mypy
-packaging==24.2
+packaging==26.3
     # via
     #   black
     #   build
@@ -107,13 +74,11 @@ pathspec==0.12.1
     #   blackdoc
 pip-requirements-parser==32.0.1
     # via wreck
-pip-tools==7.4.1
+pip-tools==7.6.2
     # via wreck
-pkginfo==1.10.0
-    # via twine
-platformdirs==4.3.6
+platformdirs==4.9.6
     # via black
-pluggy==1.5.0
+pluggy==1.6.0
     # via
     #   -r requirements/prod.shared.in
     #   pytest
@@ -125,17 +90,15 @@ pyflakes==3.2.0
     # via
     #   flake8
     #   flake8-pyi
-pygments==2.18.0
-    # via
-    #   readme-renderer
-    #   rich
+pygments==2.19.1
+    # via rich
 pyparsing==3.2.1
     # via pip-requirements-parser
 pyproject-hooks==1.2.0
     # via
     #   build
     #   pip-tools
-pytest==8.1.1
+pytest==8.3.4
     # via
     #   -r requirements/dev.in
     #   pytest-datadir
@@ -143,7 +106,7 @@ pytest==8.1.1
     #   pytest-regressions
 pytest-datadir==1.5.0
     # via pytest-regressions
-pytest-logging-strict==0.1.0.post1
+pytest-logging-strict==0.2.4
     # via -r requirements/dev.in
 pytest-regressions==2.5.0
     # via -r requirements/dev.in
@@ -153,23 +116,9 @@ python-dateutil==2.9.0.post0
     #   strictyaml
 pyyaml==6.0.2
     # via pytest-regressions
-readme-renderer==36.0
-    # via twine
-requests==2.32.3
-    # via
-    #   requests-toolbelt
-    #   twine
-requests-toolbelt==1.0.0
-    # via twine
-rfc3986==2.0.0
-    # via twine
 rich==13.7.1
-    # via
-    #   blackdoc
-    #   twine
-secretstorage==3.3.3
-    # via keyring
-setuptools-scm==8.1.0
+    # via blackdoc
+setuptools-scm==8.3.1
     # via -r requirements/prod.shared.in
 six==1.17.0
     # via python-dateutil
@@ -177,41 +126,13 @@ strictyaml==1.7.3
     # via
     #   logging-strict
     #   pytest-logging-strict
-tomli==2.2.1 ; python_version < "3.11"
-    # via
-    #   -c requirements/pins.shared.in
-    #   black
-    #   blackdoc
-    #   build
-    #   flake8-pyproject
-    #   logging-strict
-    #   mypy
-    #   pip-tools
-    #   pytest
-    #   setuptools-scm
-twine==5.0.0
+types-setuptools==78.1.0.20250329
     # via -r requirements/dev.in
-types-setuptools==70.1.0.20240627
+validate-pyproject==0.24.1
     # via -r requirements/dev.in
-typing-extensions==4.12.2 ; python_version < "3.10"
-    # via
-    #   -c requirements/pins.shared.in
-    #   black
-    #   logging-strict
-    #   mypy
-    #   pytest-logging-strict
-    #   setuptools-scm
-urllib3==2.2.3
-    # via
-    #   requests
-    #   twine
-validate-pyproject==0.16
-    # via -r requirements/dev.in
-webencodings==0.5.1
-    # via bleach
 wheel==0.45.1
     # via pip-tools
-wreck==0.2.4
+wreck==0.3.7
     # via -r requirements/prod.shared.in
 zipp==3.21.0
     # via importlib-metadata
@@ -219,8 +140,3 @@ zipp==3.21.0
 # The following packages are considered to be unsafe in a requirements file:
 pip==24.3.1
     # via pip-tools
-setuptools==75.7.0
-    # via
-    #   -r requirements/prod.shared.in
-    #   pip-tools
-    #   setuptools-scm

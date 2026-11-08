@@ -13,7 +13,7 @@ there is no reason to allow this fyi only package info to be the cause of failur
    release candidate, and dev releases are possible
 
    tagged post releases are encouraged. Cuz that means used
-   :command:`git rebase` to fix a problem at when it originally occured
+   :command:`git rebase` to fix a problem at when it originally occurred
    rather than applying the fix and ignoring the past
 
 .. py:data:: __url__
@@ -31,7 +31,7 @@ there is no reason to allow this fyi only package info to be the cause of failur
 .. todo:: lookup module
 
    Lookup in pyproject.toml for the dotted path of version file. Then
-   atttempt to import it
+   attempt to import it
 
 """
 

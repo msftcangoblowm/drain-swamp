@@ -63,7 +63,7 @@ def ds_before_version_infer(config_settings: dict[str, Any]) -> str | None:
 
     So for example, if ``setuptools-scm`` is in build-system.requires,
     it's hooks are executed after drain-swamp hooks. This is
-    counter-intuitive, a pleasent surprise, and known only thru experience
+    counter-intuitive, a pleasant surprise, and known only thru experience
 
     :param config_settings:
 

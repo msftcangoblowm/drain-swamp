@@ -11,13 +11,13 @@ path_package_base = path_docs.parent
 sys.path.insert(0, str(path_package_base))  # Needed ??
 
 # @@@ editable
-copyright = "2024–2025, Dave Faulkmore"
+copyright = "2024–2026, Dave Faulkmore"
 # The short X.Y.Z version.
-version = "2.1.1"
+version = "2.1.2"
 # The full version, including alpha/beta/rc tags.
-release = "2.1.1"
+release = "2.1.2"
 # The date of release, in "monthname day, year" format.
-release_date = "January 7, 2025"
+release_date = "November 8, 2026"
 # @@@ end
 
 v = parse(release)
@@ -61,9 +61,7 @@ rst_epilog = """
 .. |project_name| replace:: {slug}
 .. |package-equals-release| replace:: drain_swamp=={release}
 .. |author-contact| replace:: Dave Faulkmore <https://mastodon.social/@msftcangoblowme>
-""".format(
-    release=release, slug=slug
-)
+""".format(release=release, slug=slug)
 
 html_theme_options = {
     "description": proj_description,
@@ -143,10 +141,6 @@ intersphinx_mapping = {
         "https://github.com/python/cpython/blob",
         ("objects-python-missing.inv", "objects-python-missing.txt"),
     ),
-    "setuptools-scm": (
-        "https://setuptools-scm.readthedocs.io/en/stable",
-        ("objects-setuptools-scm.inv", "objects-setuptools-scm.txt"),
-    ),
     "packaging": (
         "https://packaging.pypa.io/en/stable",
         ("objects-packaging.inv", "objects-packaging.txt"),
@@ -174,10 +168,6 @@ intersphinx_mapping = {
     "gh-ds": (
         "https://github.com/msftcangoblowm/drain-swamp",
         ("objects-gh-ds.inv", "objects-gh-ds.txt"),
-    ),
-    "gh-setuptools-scm": (
-        "https://github.com/pypa/setuptools-scm",
-        ("objects-gh-setuptools-scm.inv", "objects-gh-setuptools-scm.txt"),
     ),
 }
 intersphinx_disabled_reftypes = ["std:doc"]

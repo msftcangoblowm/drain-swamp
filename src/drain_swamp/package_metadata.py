@@ -34,8 +34,8 @@ from importlib.metadata import (
     metadata,
 )
 
+from logging_strict.util.check_type import is_ok
 from wreck._package_installed import is_package_installed
-from wreck.check_type import is_ok
 
 from .constants import g_app_name
 from .parser_in import TomlParser

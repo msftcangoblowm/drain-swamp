@@ -13,12 +13,8 @@ pluggy
 pytest-logging-strict
 pytest-regressions
 pytest>=7.1
-setuptools-scm
-setuptools>=75.7.0
-tomli>=2.0.2; python_version<"3.11"
-twine
+setuptools-scm>=8.2.0,<10
 types-setuptools
-typing-extensions; python_version<"3.10"
 validate-pyproject
 wreck>=0.2.4
 attrs>=24.3.0

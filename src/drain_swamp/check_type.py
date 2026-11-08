@@ -99,11 +99,9 @@ def is_relative_required(
 
     """
     lst_ext = []
-    if not is_iterable_not_str(extensions):
+    if not is_iterable_not_str(extensions):  # pragma: no branch
         msg_exc = "Unsupported type expected a sequence (tuple or list)"
         raise TypeError(msg_exc)
-    else:  # pragma: no cover
-        pass
 
     # If not a str, ignore it
     exts = [ext for ext in extensions if isinstance(ext, str)]
@@ -115,14 +113,12 @@ def is_relative_required(
         else:
             lst_ext.append(ext)
 
-    if len(lst_ext) == 0:
+    if not lst_ext:  # pragma: no branch
         msg_exc = (
             "Expecting at least one suffix to compare against the "
             "relative paths suffixes"
         )
         raise ValueError(msg_exc)
-    else:  # pragma: no cover
-        pass
 
     is_relative_path_acceptable = (
         path_relative is not None
@@ -144,11 +140,7 @@ def is_iterable_not_str(mixed):
     """
     ret = (
         mixed is not None
-        and (
-            isinstance(mixed, Sequence)
-            or isinstance(mixed, set)
-            or isinstance(mixed, Generator)
-        )
+        and isinstance(mixed, Generator | Sequence | set)
         and not isinstance(mixed, str)
     )
 

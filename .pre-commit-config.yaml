@@ -2,65 +2,80 @@
 # pre-commit install
 
 exclude: >
-    (?x)^(
-      \.vscode/settings\.json|
-      tests/.*xml|
-      tests/.*txt|
-      src/drain_swamp/\_version\.py|
-    )$
+  (?x)^(
+    \.vscode/settings\.json|
+    tests/.*xml|
+    tests/.*txt|
+    src/drain_swamp/\_version\.py|
+  )$
 
 repos:
+- repo: https://github.com/pre-commit/pre-commit-hooks
+  rev: v5.0.0
+  hooks:
+  - id: debug-statements
+  - id: check-merge-conflict
+  - id: trailing-whitespace
+  - id: end-of-file-fixer
+  - id: check-json
+  - id: check-yaml
+  - id: check-toml
 
-  - repo: https://github.com/pre-commit/pre-commit-hooks
-    rev: v5.0.0
-    hooks:
-    - id: check-merge-conflict
-    - id: trailing-whitespace
-    - id: end-of-file-fixer
-    - id: check-docstring-first
-    - id: check-json
-    - id: check-yaml
-    - id: debug-statements
+- repo: https://github.com/crate-ci/typos
+  rev: v1
+  hooks:
+  - id: typos
 
+- repo: https://github.com/abravalheri/validate-pyproject
+  rev: v0.25
+  hooks:
+  - id: validate-pyproject
 
-  - repo: https://github.com/abravalheri/validate-pyproject
-    rev: v0.23
-    hooks:
-      - id: validate-pyproject
+- repo: https://github.com/macisamuele/language-formatters-pre-commit-hooks
+  rev: v2.16.0
+  hooks:
+  - id: pretty-format-yaml
+    args: [--autofix, --indent, '2']
 
-  - repo: https://github.com/psf/black
-    rev: 24.10.0
-    hooks:
-      - id: black
+- repo: https://github.com/psf/black
+  rev: 26.10.1
+  hooks:
+  - id: black
 
-  - repo: https://github.com/keewis/blackdoc
-    rev: v0.3.9
-    hooks:
-      - id: blackdoc
-        additional_dependencies: ["black==24.10.0"]
-      - id: blackdoc-autoupdate-black
+- repo: https://github.com/keewis/blackdoc
+  rev: v0.4.6
+  hooks:
+  - id: blackdoc
+    additional_dependencies: [black==26.10.1]
+  - id: blackdoc-autoupdate-black
 
-  - repo: https://github.com/PyCQA/flake8
-    rev: 7.1.1
-    hooks:
-      - id: flake8
-        args: ["--ignore=E704,E203,W503,W605,W293,W291,E501"]
+- repo: https://github.com/PyCQA/flake8
+  rev: 7.3.0
+  hooks:
+  - id: flake8
+    args: ['--ignore=E704,E203,W503,W605,W293,W291,E501']
 
-  - repo: https://github.com/PyCQA/isort
-    rev: 5.13.2
-    hooks:
-      - id: isort
+- repo: https://github.com/PyCQA/isort
+  rev: 9.0.0a3
+  hooks:
+  - id: isort
 
-  - repo: https://github.com/pre-commit/mirrors-mypy
-    rev: v1.14.1
-    hooks:
-    - id: mypy
-      pass_filenames: false
-      entry: mypy src/drain_swamp/
+- repo: https://github.com/pre-commit/mirrors-mypy
+  rev: v2.1.0
+  hooks:
+  - id: mypy
+    pass_filenames: false
+    entry: mypy src/drain_swamp/
+    additional_dependencies: [click]
 
-  - repo: https://github.com/econchick/interrogate
-    rev: 1.7.0  # or master if you're bold
-    hooks:
-      - id: interrogate
-        args: ["-v", "--fail-under=100", "--omit-covered-files"]
-        pass_filenames: false  # needed if excluding files with pyproject.toml
+- repo: https://github.com/econchick/interrogate
+  rev: 1.7.0    # or master if you're bold
+  hooks:
+  - id: interrogate
+    args: [-v, --fail-under=100, --omit-covered-files, --exclude, src/drain_swamp/_version.py, tests, src]
+    pass_filenames: false      # needed if excluding files with pyproject.toml
+
+- repo: https://github.com/dosisod/refurb
+  rev: v2.3.1
+  hooks:
+  - id: refurb

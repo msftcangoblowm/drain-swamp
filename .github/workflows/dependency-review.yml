@@ -9,12 +9,12 @@
 # Source repository: https://github.com/actions/dependency-review-action
 # Public documentation: https://docs.github.com/en/code-security/supply-chain-security/understanding-your-software-supply-chain/about-dependency-review#dependency-review-enforcement
 
-name: 'Dependency Review'
+name: Dependency Review
 on:
   push:
     branches:
-      - master
-      - msftcangoblowm/*
+    - master
+    - msftcangoblowm/*
   pull_request:
   workflow_dispatch:
 
@@ -26,11 +26,11 @@ jobs:
     if: github.repository_owner == 'msftcangoblowm'
     runs-on: ubuntu-latest
     steps:
-      - name: 'Checkout Repository'
-        uses: actions/checkout@v4.2.2
+    - name: Checkout Repository
+      uses: actions/checkout@v7.0.1
 
-      - name: 'Dependency Review'
-        uses: actions/dependency-review-action@v4.5.0
-        with:
-          base-ref: ${{ github.event.pull_request.base.sha || 'master' }}
-          head-ref: ${{ github.event.pull_request.head.sha || github.ref }}
+    - name: Dependency Review
+      uses: actions/dependency-review-action@v5.0.0
+      with:
+        base-ref: ${{ github.event.pull_request.base.sha || 'master' }}
+        head-ref: ${{ github.event.pull_request.head.sha || github.ref }}

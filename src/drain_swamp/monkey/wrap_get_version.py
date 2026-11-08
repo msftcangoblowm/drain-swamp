@@ -6,13 +6,8 @@ Get semantic version from scm and write version file
 Limit to setuptools-scm codebase. Is exactly equivalent to generic
 setuptools-scm ``setup.py``
 
-.. py:data:: log
-   :type: logging.Logger
-
-   Module level logger
-
 .. py:data:: __all__
-   :type: tuple[str, str, str]
+   :type: tuple[str, ...]
    :value: ("scm_version", "write_to_file", "SEM_VERSION_FALLBACK_SANE")
 
 """
@@ -25,6 +20,7 @@ import logging
 import warnings
 from pathlib import Path
 
+from packaging.version import InvalidVersion
 from setuptools_scm import (
     Configuration,
     _get_version,
@@ -32,8 +28,6 @@ from setuptools_scm import (
     hg,
 )
 from setuptools_scm._integration.pyproject_reading import get_args_for_pyproject
-from setuptools_scm._overrides import read_toml_overrides
-from setuptools_scm._version_cls import InvalidVersion
 from setuptools_scm.fallbacks import parse_pkginfo
 from setuptools_scm.version import (
     get_local_node_and_date,
@@ -44,6 +38,15 @@ from wreck.monkey.patch_pyproject_reading import ReadPyproject
 
 from ..version_file.dump_version import write_version_files
 
+try:
+    from setuptools_scm._overrides import read_toml_overrides
+except ModuleNotFoundError:  # pragma: no cover
+    # introduced in v10.0.0, has dependency packaging>=26.2 which is ng
+    from vcs_versioning._overrides import (
+        read_toml_overrides,  # type: ignore[import-not-found]  # pyright: ignore[reportMissingImports]  # fmt: skip
+    )
+
+#: logging.Logger: Module level logger
 log = logging.getLogger("drain_swamp.monkey.wrap_get_version")
 
 __all__ = (
@@ -72,9 +75,9 @@ def _parse(root, config):
 
        A data class usually derived for the most part from ``pyproject.toml``
 
-    :type config: Configuration
+    :type config: setuptools_scm.Configuration
     :returns: version str from the underlying scm
-    :rtype: ScmVersion | None
+    :rtype: setuptools_scm.ScmVersion | None
     :meta private:
     """
     mod_path = "drain_swamp.monkey.wrap_get_version._parse"
@@ -90,12 +93,10 @@ def _parse(root, config):
             msg_info = f"{mod_path} parse with {maybe_parse!s} failed with: {e!s}"
             log.info(msg_info)
         else:
-            if parsed is not None:  # pragma: no cover
+            if parsed is not None:  # pragma: no cover  # pragma: no branch
                 """tox, runs within it's own virtual environment, during
                 testing, does not see git. So file finder will not find any match"""
                 return parsed
-            else:  # pragma: no cover
-                pass
     else:
         return None
 
@@ -116,10 +117,6 @@ def scm_version(relative_to, sane_default=SEM_VERSION_FALLBACK_SANE):
     :returns: parsed version str
     :rtype: str
 
-    .. seealso::
-
-       :ref:`gh_ss:get_version_impl`
-
     """
     mod_path = "drain_swamp.monkey.wrap_get_version:scm_version"
     is_empty = (
@@ -127,10 +124,8 @@ def scm_version(relative_to, sane_default=SEM_VERSION_FALLBACK_SANE):
         or not isinstance(sane_default, str)
         or len(sane_default.strip()) == 0
     )
-    if is_empty:  # pragma: no cover
+    if is_empty:  # pragma: no cover  # pragma: no branch
         sane_default = SEM_VERSION_FALLBACK_SANE
-    else:  # pragma: no cover
-        pass
 
     """Configuration.from_file needs to be patched, not Configuration.from_data
     Configuration.from_data does not parse pyproject.toml can't / don't
@@ -192,10 +187,10 @@ def write_to_file(
          to version file skipped
 
     """
-    if is_only_not_exists is None or not isinstance(is_only_not_exists, bool):
+    if is_only_not_exists is None or not isinstance(
+        is_only_not_exists, bool
+    ):  # pragma: no branch
         is_only_not_exists = False
-    else:  # pragma: no cover
-        pass
 
     kwargs = {}
     path_file_on_root = Path(name)
@@ -262,16 +257,16 @@ def write_to_file(
             else:
                 is_invalid = False
 
-        if is_invalid is True:
+        if is_invalid:  # pragma: no branch
             raise ValueError(msg_warn)
-        else:
-            # str(Version("0.0.1")) --> "0.0.1"
-            str_ver_clean = str(ver_clean)
-            assert str_ver_clean is not None and isinstance(str_ver_clean, str)
-            write_version_files(
-                str_ver_clean,
-                path_root,
-                str_write_to,
-                version_file,
-                is_only_not_exists=is_only_not_exists,
-            )
+
+        # str(Version("0.0.1")) --> "0.0.1"
+        str_ver_clean = str(ver_clean)
+        assert str_ver_clean is not None and isinstance(str_ver_clean, str)
+        write_version_files(
+            str_ver_clean,
+            path_root,
+            str_write_to,
+            version_file,
+            is_only_not_exists=is_only_not_exists,
+        )

@@ -1,7 +1,7 @@
 """
 .. moduleauthor:: Dave Faulkmore <https://mastodon.social/@msftcangoblowme>
 
-Unit test -- Module
+With coverage
 
 .. code-block:: shell
 
@@ -22,6 +22,7 @@ Integration test
 
 import subprocess
 from pathlib import Path
+from typing import TYPE_CHECKING
 from unittest.mock import patch
 
 import pytest
@@ -33,6 +34,13 @@ from drain_swamp.monkey.plugins.ds_scm_version import (
 )
 
 from .wd_wrapper import WorkDir
+
+if TYPE_CHECKING:
+    from collections.abc import (
+        Callable,
+        MutableSet,
+        Sequence,
+    )
 
 
 @pytest.fixture()
@@ -66,55 +74,54 @@ def wd(wd: WorkDir) -> WorkDir:
     return wd
 
 
-testdata_kind_arg_filter_normal = (
-    (
-        (
-            "[project]\n"
-            """name = "great-package"\n"""
-            """version = "99.99.99a1.dev6"\n"""
-            "[tool.config-settings]\n"
-            """kind="current"\n"""
-            """set-lock="0"\n\n"""
-        ),
-        "tag",
-        "current",
-    ),
-    (
-        (
-            "[project]\n"
-            """name = "great-package"\n"""
-            """version = "99.99.99a1.dev6"\n"""
-            "[tool.config-settings]\n"
-            """kind="current"\n"""
-            """set-lock="0"\n\n"""
-        ),
-        None,
-        "current",
-    ),
-    (
-        (
-            "[project]\n"
-            """name = "great-package"\n"""
-            """version = "99.99.99a1.dev6"\n"""
-            "[tool.config-settings]\n"
-        ),
-        "tag",
-        "tag",
-    ),
-)
-ids_kind_arg_filter_normal = (
-    "kind current fallback tag",
-    "kind current fallback None",
-    "no kind",
-)
-
-
 @pytest.mark.parametrize(
     "toml_contents, fallback, expected_kind",
-    testdata_kind_arg_filter_normal,
-    ids=ids_kind_arg_filter_normal,
+    (
+        pytest.param(
+            (
+                "[project]\n"
+                """name = "great-package"\n"""
+                """version = "99.99.99a1.dev6"\n"""
+                "[tool.config-settings]\n"
+                """kind="current"\n"""
+                """set-lock="0"\n\n"""
+            ),
+            "tag",
+            "current",
+            id="kind-current-fallback-tag",
+        ),
+        pytest.param(
+            (
+                "[project]\n"
+                """name = "great-package"\n"""
+                """version = "99.99.99a1.dev6"\n"""
+                "[tool.config-settings]\n"
+                """kind="current"\n"""
+                """set-lock="0"\n\n"""
+            ),
+            None,
+            "current",
+            id="kind-current-fallback-None",
+        ),
+        pytest.param(
+            (
+                "[project]\n"
+                """name = "great-package"\n"""
+                """version = "99.99.99a1.dev6"\n"""
+                "[tool.config-settings]\n"
+            ),
+            "tag",
+            "tag",
+            id="no-kind",
+        ),
+    ),
 )
-def test_kind_arg_filter_normal(toml_contents, fallback, expected_kind, tmp_path):
+def test_kind_arg_filter_normal(
+    toml_contents: str,
+    fallback: str | None,
+    expected_kind: str,
+    tmp_path: "Path",
+) -> None:
     """Test _kind."""
     # pytest --showlocals --log-level INFO -k "test_kind_arg_filter_normal" tests
     # d_section not a dict
@@ -137,44 +144,43 @@ def test_kind_arg_filter_normal(toml_contents, fallback, expected_kind, tmp_path
     assert actual_kind == "0.0.1"
 
 
-testdata_kind_arg_filter_whitespace = (
-    (
-        (
-            "[project]\n"
-            """name = "great-package"\n"""
-            """version = "99.99.99a1.dev6"\n"""
-            "[tool.config-settings]\n"
-            """kind="   "\n"""
-            """set-lock="0"\n\n"""
-        ),
-        "nonsense",
-        "nonsense",
-    ),
-    (
-        (
-            "[project]\n"
-            """name = "great-package"\n"""
-            """version = "99.99.99a1.dev6"\n"""
-            "[tool.config-settings]\n"
-            """kind=""\n"""
-            """set-lock="0"\n\n"""
-        ),
-        "nonsense",
-        "nonsense",
-    ),
-)
-ids_kind_arg_filter_whitespace = (
-    "kind is just whitespace --> fallback",
-    "kind is empty --> fallback",
-)
-
-
 @pytest.mark.parametrize(
     "toml_contents, fallback, expected_kind",
-    testdata_kind_arg_filter_whitespace,
-    ids=ids_kind_arg_filter_whitespace,
+    (
+        pytest.param(
+            (
+                "[project]\n"
+                """name = "great-package"\n"""
+                """version = "99.99.99a1.dev6"\n"""
+                "[tool.config-settings]\n"
+                """kind="   "\n"""
+                """set-lock="0"\n\n"""
+            ),
+            "nonsense",
+            "nonsense",
+            id="kind-is-just-whitespace--fallback",
+        ),
+        pytest.param(
+            (
+                "[project]\n"
+                """name = "great-package"\n"""
+                """version = "99.99.99a1.dev6"\n"""
+                "[tool.config-settings]\n"
+                """kind=""\n"""
+                """set-lock="0"\n\n"""
+            ),
+            "nonsense",
+            "nonsense",
+            id="kind-is-empty--fallback",
+        ),
+    ),
 )
-def test_kind_arg_filter_whitespace(toml_contents, fallback, expected_kind, tmp_path):
+def test_kind_arg_filter_whitespace(
+    toml_contents: str,
+    fallback: str,
+    expected_kind: str,
+    tmp_path: "Path",
+) -> None:
     """Test _kind expected user warning."""
     # pytest --showlocals --log-level INFO -k "test_kind_arg_filter_whitespace" tests
     d_section = ConfigSettings.get_section_dict(tmp_path, toml_contents)
@@ -191,9 +197,9 @@ def test_kind_arg_filter_whitespace(toml_contents, fallback, expected_kind, tmp_
 
 def test_on_version_infer(
     wd: WorkDir,
-    prep_pyproject_toml,
-    prepare_folders_files,
-):
+    prep_pyproject_toml: "Callable[[Path, Path, Path | str | None], Path]",
+    prepare_folders_files: "Callable[[Sequence[str | Path] | MutableSet[str | Path]], set[Path]]",
+) -> None:
     """Test on_version_infer."""
     # pytest --showlocals --log-level INFO -k "test_on_version_infer" tests
     # tag. Does not modify the version file

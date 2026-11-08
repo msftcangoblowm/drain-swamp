@@ -46,6 +46,12 @@ Changelog
    Commit items for NEXT VERSION
    ..............................
 
+   - fix: setuptools_scm split off vcs_versioning
+   - chore: license change to encourage upstreaming MPL-2.0
+   - ci: bump versions
+   - chore: requirements bump versions
+   - tests: pytest.mark.parametrize with pytest.param and id
+
 .. scriv-start-here
 
 .. _changes_2-1-1:
@@ -231,7 +237,7 @@ Version 1.7.1 — 2024-09-10
 - fix: run_cmd file not found error message is platform specific
 - test: if Windows, unlink file not symlink
 - fix: patch strftime. Platform consistency
-- test(backend_setuptools): apply platform line seperator
+- test(backend_setuptools): apply platform line separator
 
 .. _changes_1-7-0:
 
@@ -536,7 +542,7 @@ Version 1.2.1 — 2024-08-05
 Version 1.2.0 — 2024-08-05
 --------------------------
 
-- style: watchmen Dr Manhatten stands by does nothing expresses academic curiousity
+- style: watchmen Dr Manhattan stands by does nothing expresses academic curiosity
 - feat: add param is_only_not_exists. Create nonexistent version file during write
 - fix: version file is generated, git no track. During build, not exists, create it
 - fix: in build backend, lazy load plugins after ensuring existence of version file
@@ -685,7 +691,7 @@ Version 0.2.0 — 2024-05-28
 - ci(howto.txt): sanitize a semantic version str
 - ci(howto.txt): should be master, not main
 - refactor(igor.py): remove print_banner
-- style: package was renamed, in requirments .in files, refer to the new package name
+- style: package was renamed, in requirements .in files, refer to the new package name
 - refactor: add setuptool-scm as a dependency. Get the current version
 - refactor(version_semantic): private member prepend with single underscore
 - docs: inventory for setuptools-scm

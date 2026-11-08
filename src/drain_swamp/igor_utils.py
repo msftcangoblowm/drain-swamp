@@ -3,33 +3,11 @@
 
 ``igor.py`` utils
 
-.. py:data:: _logger
-   :type: logging.Logger
-
-   Module level logger
-
 .. py:data:: __all__
    :type: tuple[str, str, str, str, str, str, str]
    :value: ("seed_changelog", "edit_for_release", "build_package", "pretag", "print_cheats", "get_tag_version", "write_version_file")
 
    Module level exports
-
-.. py:data:: SCRIV_START
-   :type: str
-   :value: ".. scriv-start-here\\n\\n"
-
-   In ``CHANGES.rst``, token beneath which a changelog entry is written
-
-.. py:data:: UNRELEASED
-   :type: str
-   :value: "Unreleased\\n----------"
-
-   Written into ``CHANGES.rst``, the start of what is being called, the seed
-
-.. py:data:: REGEX_COPYRIGHT_LINE
-   :type: str
-
-   ``NOTICE.txt`` has a start and end year. Regex for grabbing both.
 
 .. py:data:: COPYRIGHT_START_YEAR_FALLBACK
    :type: int
@@ -49,9 +27,9 @@ from pathlib import (
     PurePath,
 )
 
+from logging_strict.util.check_type import is_ok
 from wreck._run_cmd import run_cmd
 from wreck._safe_path import resolve_path
-from wreck.check_type import is_ok
 
 from .package_metadata import PackageMetadata
 from .parser_in import TomlParser
@@ -77,9 +55,12 @@ __all__ = (
 )
 __package__ = "drain_swamp"
 
+#: str: Written into ``CHANGES.rst``, the start of what is being called, the seed
 UNRELEASED = "Unreleased\n----------"
+#: str: In ``CHANGES.rst``, token beneath which a changelog entry is written
 SCRIV_START = ".. scriv-start-here\n\n"
 COPYRIGHT_START_YEAR_FALLBACK = 1970
+#: str: ``NOTICE.txt`` has a start and end year. Regex for grabbing both.
 REGEX_COPYRIGHT_LINE = r"Copyright {0}.*? {1}"
 
 
@@ -99,7 +80,7 @@ def update_file(fname, pattern, replacement):
 
     """
     is_path_or_str = is_ok(fname) or issubclass(type(fname), PurePath)
-    if not is_path_or_str:
+    if not is_path_or_str:  # pragma: no branch
         msg_exc = f"Expected a non-empty str path or Path got {fname}"
         print(msg_exc, file=sys.stderr)
         return
@@ -118,18 +99,14 @@ def update_file(fname, pattern, replacement):
 
         new_text = re.sub(pattern, replacement, old_text, count=1)
 
-        if new_text != old_text:
+        if new_text != old_text:  # pragma: no branch
             msg_info = f"Updating {fname}"
             print(msg_info, file=sys.stderr)
 
             path_file.write_text(new_text)
-        else:  # pragma: no cover
-            # Do nothing
-            pass
     else:
         msg_exc = f"Provide an absolute path to a file. Got, {fname}"
         print(msg_exc, file=sys.stderr)
-        return
 
 
 def seed_changelog(path_cwd):
@@ -158,8 +135,8 @@ def seed_changelog(path_cwd):
         contents = path_changelog.read_text()
 
         prog = re.compile(pattern)
-        lst_matches = re.findall(prog, contents)
-        if len(lst_matches) == 0:
+        lst_matches = prog.findall(contents)
+        if not lst_matches:
             msg_warn = (
                 f"Start token not found. In CHANGES.rst, add token, {SCRIV_START}"
             )
@@ -229,9 +206,8 @@ def edit_for_release(path_cwd, kind, snippet_co=None):
 
     # Get copyright_start_year from pyproject.toml
     d_section = d_pyproject_toml.get("tool", {}).get("drain-swamp", {})
-    if "copyright_start_year" in d_section.keys() and (
-        isinstance(d_section["copyright_start_year"], int)
-        or isinstance(d_section["copyright_start_year"], str)
+    if "copyright_start_year" in d_section.keys() and isinstance(
+        d_section["copyright_start_year"], int | str
     ):
         try:
             copyright_start_year = int(d_section["copyright_start_year"])
@@ -272,7 +248,7 @@ def edit_for_release(path_cwd, kind, snippet_co=None):
     author_first_name = sc.author_name_left
 
     is_dev = sc.SV.dev is not None and isinstance(sc.SV.dev, int)
-    if is_dev:
+    if is_dev:  # pragma: no branch
         msg_info = f"**\n** This is a dev release: {sc.SV.__version__}\n**\n\nNo edits"
         print(msg_info, file=sys.stderr)
         return
@@ -295,7 +271,7 @@ def edit_for_release(path_cwd, kind, snippet_co=None):
     # CHANGES.rst
     ver = sc.SV.__version__
     anchor = sc.SV.anchor()
-    if ver is not None and anchor is not None:
+    if ver is not None and anchor is not None:  # pragma: no branch
         title = f"Version {ver} — {str_dt_ymd}"
         rule = "-" * len(title)
         new_head = f".. _changes_{anchor}:\n\n{title}\n{rule}"
@@ -309,8 +285,6 @@ def edit_for_release(path_cwd, kind, snippet_co=None):
             update_file(path_changelog, pattern, replacement)
         else:  # pragma: no cover
             pass
-    else:  # pragma: no cover
-        pass
 
 
 def get_version_file_path(path):
@@ -379,7 +353,7 @@ class AlterEnv:
         try:
             sv = SemVersion(path=path)
         except (NotADirectoryError, FileNotFoundError) as e:
-            msg_exc = f"Expecting a folder path. Got a file {path}.\n{str(e)}"
+            msg_exc = f"Expecting a folder path. Got a file {path}.\n{e!s}"
             raise NotADirectoryError(msg_exc) from e
 
         try:
@@ -400,11 +374,10 @@ class AlterEnv:
         self._scm_override_val = ver
 
         pkg_name = get_package_name(path)
-        if pkg_name is None:
+        if pkg_name is None:  # pragma: no branch
             msg_exc = "Could not get package name from pyproject.toml"
             raise AssertionError(msg_exc)
-        else:  # pragma: no cover
-            pass
+
         self._pkg_name = pkg_name
 
         self.scm_key = _scm_key(pkg_name)
@@ -457,12 +430,10 @@ class AlterEnv:
         :param val: Value to be set
         :type val: typing.Any
         """
-        if val is not None and isinstance(val, str):
+        if val is not None and isinstance(val, str):  # pragma: no branch
             val = val.upper()
             ret = val.replace("-", "_")
             self._scm_override_key = ret
-        else:  # pragma: no cover
-            pass
 
     @property
     def scm_val(self):
@@ -541,7 +512,7 @@ def get_tag_version(path):
         raise
 
     # tag version (from version file) fallback current version
-    # catpure warnings and redirect to stderr
+    # capture warnings and redirect to stderr
     ver = ae.scm_val
 
     return ver
@@ -576,10 +547,8 @@ def write_version_file(path, kind, is_test=False):
        - :py:exc:`ValueError` -- Only support write to .py or .txt file
 
     """
-    if is_test is None or not isinstance(is_test, bool):
+    if is_test is None or not isinstance(is_test, bool):  # pragma: no branch
         is_test = False
-    else:  # pragma: no cover
-        pass
 
     try:
         ae = AlterEnv(path, kind)
@@ -806,7 +775,7 @@ def print_cheats(path, kind):
         PROJECT_NAME = ""
 
     is_pyproject_toml = PROJECT_NAME is not None
-    if is_pyproject_toml:
+    if is_pyproject_toml:  # pragma: no branch
         prints = []
 
         intro_ = f"{PROJECT_NAME} version is {ver}"
@@ -849,5 +818,3 @@ def print_cheats(path, kind):
 
         str_print = "\n".join(prints)
         print(str_print)
-    else:  # pragma: no cover
-        pass

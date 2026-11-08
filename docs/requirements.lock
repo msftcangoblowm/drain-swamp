@@ -15,13 +15,13 @@ babel==2.16.0
     # via sphinx
 build==1.2.2.post1
     # via pip-tools
-certifi==2024.8.30
+certifi==2026.10.23
     # via
     #   requests
     #   sphobjinv
 charset-normalizer==3.4.0
     # via requests
-click==8.1.7
+click==8.1.8
     # via
     #   click-log
     #   interrogate
@@ -49,7 +49,7 @@ domdf-python-tools==3.9.0
     # via
     #   dom-toml
     #   sphinx-pyproject
-drain-swamp-snippet==1.0.1
+drain-swamp-snippet==1.0.3
     # via -r docs/../requirements/prod.shared.in
 exceptiongroup==1.2.2
     # via anyio
@@ -61,7 +61,7 @@ idna==3.10
     #   requests
 imagesize==1.4.1
     # via sphinx
-importlib-metadata==8.5.0
+importlib-metadata==8.7.0
     # via wreck
 interrogate==1.7.0
     # via -r docs/requirements.in
@@ -89,7 +89,7 @@ myst-parser==4.0.0
     # via sphinx-external-toc-strict
 natsort==8.4.0
     # via domdf-python-tools
-packaging==24.2
+packaging==26.3
     # via
     #   build
     #   pip-requirements-parser
@@ -98,7 +98,7 @@ packaging==24.2
     #   wreck
 pip-requirements-parser==32.0.1
     # via wreck
-pip-tools==7.4.1
+pip-tools==7.6.2
     # via wreck
 pluggy==1.5.0
     # via -r docs/../requirements/prod.shared.in
@@ -157,7 +157,7 @@ sphinx-copybutton==0.5.2
     # via -r docs/requirements.in
 sphinx-design==0.6.1
     # via -r docs/requirements.in
-sphinx-external-toc-strict==2.0.1
+sphinx-external-toc-strict==2.0.4.post0
     # via -r docs/requirements.in
 sphinx-favicon==1.0.1
     # via -r docs/requirements.in
@@ -187,20 +187,6 @@ strictyaml==1.7.3
     # via sphinx-external-toc-strict
 tabulate==0.9.0
     # via interrogate
-tomli==2.2.1 ; python_version < "3.11"
-    # via
-    #   -c docs/../requirements/pins.shared.in
-    #   build
-    #   dom-toml
-    #   interrogate
-    #   pip-tools
-    #   setuptools-scm
-    #   sphinx
-typing-extensions==4.12.2
-    # via
-    #   anyio
-    #   domdf-python-tools
-    #   uvicorn
 urllib3==2.2.3
     # via requests
 uvicorn==0.32.1
@@ -211,7 +197,7 @@ websockets==14.1
     # via sphinx-autobuild
 wheel==0.45.1
     # via pip-tools
-wreck==0.2.1
+wreck==0.3.7
     # via -r docs/../requirements/prod.shared.in
 zipp==3.21.0
     # via importlib-metadata

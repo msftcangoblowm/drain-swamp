@@ -1,7 +1,7 @@
 """
 .. moduleauthor:: Dave Faulkmore <https://mastodon.social/@msftcangoblowme>
 
-Unit test -- Module
+With coverage
 
 .. code-block:: shell
 
@@ -21,6 +21,7 @@ Integration test
 
 from contextlib import nullcontext as does_not_raise
 from datetime import datetime as dt
+from typing import TYPE_CHECKING
 from unittest.mock import patch
 
 import pytest
@@ -32,45 +33,47 @@ from drain_swamp.monkey.patch_strftime import (
     StrFTime,
 )
 
-testdata_patches = (
-    pytest.param(
-        PatchLeadingDay,
-        ",%-d,",
-        does_not_raise(),
-        marks=pytest.mark.skipif(
-            not PatchLeadingDay.AFFECTS, reason="does not apply to this platform"
-        ),
-    ),
-    pytest.param(
-        PatchAggregateD,
-        ",%D,",
-        does_not_raise(),
-        marks=pytest.mark.skipif(
-            not PatchAggregateD.AFFECTS, reason="does not apply to this platform"
-        ),
-    ),
-    pytest.param(
-        PatchAggregateT,
-        ",%T,",
-        does_not_raise(),
-        marks=pytest.mark.skipif(
-            not PatchAggregateT.AFFECTS, reason="does not apply to this platform"
-        ),
-    ),
-)
-ids_patches = (
-    "PatchLeadingDay linux feature",
-    "PatchAggregateD MacOS issue",
-    "PatchAggregateT Windows issue",
-)
+if TYPE_CHECKING:
+    from .typing_only import DOES_NOT_OR_DOES
 
 
 @pytest.mark.parametrize(
     "cls_patch, format_str, expectation",
-    testdata_patches,
-    ids=ids_patches,
+    (
+        pytest.param(
+            PatchLeadingDay,
+            ",%-d,",
+            does_not_raise(),
+            marks=pytest.mark.skipif(
+                not PatchLeadingDay.AFFECTS, reason="does not apply to this platform"
+            ),
+            id="PatchLeadingDay-linux-feature",
+        ),
+        pytest.param(
+            PatchAggregateD,
+            ",%D,",
+            does_not_raise(),
+            marks=pytest.mark.skipif(
+                not PatchAggregateD.AFFECTS, reason="does not apply to this platform"
+            ),
+            id="PatchAggregateD-MacOS-issue",
+        ),
+        pytest.param(
+            PatchAggregateT,
+            ",%T,",
+            does_not_raise(),
+            marks=pytest.mark.skipif(
+                not PatchAggregateT.AFFECTS, reason="does not apply to this platform"
+            ),
+            id="PatchAggregateT-Windows-issue",
+        ),
+    ),
 )
-def test_patch_leading_day(cls_patch, format_str, expectation):
+def test_patch_leading_day(
+    cls_patch: type,
+    format_str: str,
+    expectation: "DOES_NOT_OR_DOES",
+) -> None:
     """Run patch if an affected platform."""
     # pytest --showlocals --log-level INFO -k "test_patch_leading_day" tests
     dt_now = dt.now()
@@ -82,43 +85,40 @@ def test_patch_leading_day(cls_patch, format_str, expectation):
         assert actual != format_str
 
 
-testdata_unpatched_strftime = (
-    (
-        None,
-        pytest.raises(TypeError),
-    ),
-    (
-        1.2345,
-        pytest.raises(TypeError),
-    ),
-    (
-        "%T",
-        pytest.raises(ValueError) if PatchAggregateT.AFFECTS else does_not_raise(),
-    ),
-    (
-        "%D",
-        pytest.raises(ValueError) if PatchAggregateD.AFFECTS else does_not_raise(),
-    ),
-    (
-        "%-d",
-        pytest.raises(ValueError) if PatchLeadingDay.AFFECTS else does_not_raise(),
-    ),
-)
-ids_unpatched_strftime = (
-    "None",
-    "float",
-    "Windows issue. Aggregate equivalent to %H:%M:%S",
-    "MacOS issue. Aggregate equivalent to %m/%d/%Y",
-    "Linux flavor only. Day without leading zero",
-)
-
-
 @pytest.mark.parametrize(
     "format_str, expectation",
-    testdata_unpatched_strftime,
-    ids=ids_unpatched_strftime,
+    (
+        pytest.param(
+            None,
+            pytest.raises(TypeError),
+            id="None",
+        ),
+        pytest.param(
+            1.2345,
+            pytest.raises(TypeError),
+            id="float",
+        ),
+        pytest.param(
+            "%T",
+            pytest.raises(ValueError) if PatchAggregateT.AFFECTS else does_not_raise(),
+            id="Windows-issue.-Aggregate-equivalent-to-%H:%M:%S",
+        ),
+        pytest.param(
+            "%D",
+            pytest.raises(ValueError) if PatchAggregateD.AFFECTS else does_not_raise(),
+            id="MacOS-issue.-Aggregate-equivalent-to-%m/%d/%Y",
+        ),
+        pytest.param(
+            "%-d",
+            pytest.raises(ValueError) if PatchLeadingDay.AFFECTS else does_not_raise(),
+            id="Linux-flavor-only.-Day-without-leading-zero",
+        ),
+    ),
 )
-def test_unpatched_strftime(format_str, expectation):
+def test_unpatched_strftime(
+    format_str: str | float | None,
+    expectation: "DOES_NOT_OR_DOES",
+) -> None:
     """Should prove strftime has issues with format str on certain platforms."""
     # pytest --showlocals --log-level INFO -k "test_unpatched_strftime" tests
     dt_now = dt.now()
@@ -126,43 +126,37 @@ def test_unpatched_strftime(format_str, expectation):
         dt_now.strftime(format_str)
 
 
-testdata_patched_strftime = (
-    (
-        "%T",
-        does_not_raise(),
-    ),
-    (
-        "%D",
-        does_not_raise(),
-    ),
-    (
-        "%-d",
-        does_not_raise(),
-    ),
-    (
-        None,
-        pytest.raises(TypeError),
-    ),
-    (
-        1.2345,
-        pytest.raises(TypeError),
-    ),
-)
-ids_patched_strftime = (
-    "Windows issue. Aggregate equivalent to %H:%M:%S",
-    "MacOS issue. Aggregate equivalent to %m/%d/%Y",
-    "Linux flavor only. Day without leading zero",
-    "Unsupported type None",
-    "Unsupported type float",
-)
-
-
 @pytest.mark.parametrize(
     "format_str, expectation",
-    testdata_patched_strftime,
-    ids=ids_patched_strftime,
+    (
+        pytest.param(
+            "%T",
+            does_not_raise(),
+            id="Windows-issue.-Aggregate-equivalent-to-%H:%M:%S",
+        ),
+        pytest.param(
+            "%D",
+            does_not_raise(),
+            id="MacOS-issue.-Aggregate-equivalent-to-%m/%d/%Y",
+        ),
+        pytest.param(
+            "%-d",
+            does_not_raise(),
+            id="Linux-flavor-only.-Day-without-leading-zero",
+        ),
+        pytest.param(
+            None,
+            pytest.raises(TypeError),
+            id="Unsupported-type-None",
+        ),
+        pytest.param(
+            1.2345,
+            pytest.raises(TypeError),
+            id="Unsupported-type-float",
+        ),
+    ),
 )
-def test_patched_strftime(format_str, expectation):
+def test_patched_strftime(format_str: str, expectation: "DOES_NOT_OR_DOES") -> None:
     """Patch datetime.datetime.strftime. Prove doesn't fail."""
     # pytest --showlocals --log-level INFO -k "test_patched_strftime" tests
     dt_now = dt.now()
@@ -172,35 +166,34 @@ def test_patched_strftime(format_str, expectation):
         sft.strftime(format_str)
 
 
-testdata_strftime_exception = (
+@pytest.mark.parametrize(
+    "format_str, year, expectation",
     (
-        -999,
-        pytest.raises(ValueError),
+        pytest.param(
+            "%m/%d/%Y",
+            -999,
+            pytest.raises(ValueError),
+            id="Ancient-times",
+        ),
     ),
 )
-ids_strftime_exception = ("Ancient times",)
-
-
-@pytest.mark.parametrize(
-    "year, expectation",
-    testdata_strftime_exception,
-    ids=ids_strftime_exception,
-)
-def test_strftime_exception(year, expectation):
+def test_strftime_exception(
+    format_str: str,
+    year: int,
+    expectation: "DOES_NOT_OR_DOES",
+) -> None:
     """Try to cause the elusive ValueError."""
     # pytest --showlocals --log-level INFO -k "test_strftime_exception" tests
     # https://github.com/python/cpython/blob/01748b75de54c7ec70e345f704c886457f113fc8/Lib/_pydatetime.py#L1564
     # The year must be >= 1000 else Python's strftime implementation
-    # can raise a bogus exception
-    format_str = "%m/%d/%Y"
-    expectation = pytest.raises(ValueError)
+    # can raise a bogus Exception
     with expectation:
         dt_ancient_times = dt(year, 7, 14, 12, 30)
         sft = StrFTime(dt_ancient_times)
         sft.strftime(format_str)
 
 
-def test_patch_linux():
+def test_patch_linux() -> None:
     """Linux Python interpretor is too perfect, so break it."""
     # pytest --showlocals --log-level INFO -k "test_patch_linux" tests
     dt_now = dt.now()

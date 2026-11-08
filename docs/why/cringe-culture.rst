@@ -39,9 +39,9 @@ our culture, muhahahaha (gay not gay right hand pinky to side of
 mouth -- Austin powers A spy who shagged me!)
 
 Come to think of it, why isn't stupid the singular focus of our
-existance /nosarc? We are literally surrounded by stupids. Oh was i
+existence /nosarc? We are literally surrounded by stupids. Oh was i
 not supposed to say the quiet part out loud? Go ahead and cancel an
-influencial vital package author.
+influential vital package author.
 
 Wait!
 
@@ -95,7 +95,7 @@ A deep philosophical question, lets clear up any confusion
   where can i buy that bra?
 
   Maybe having to watch only Korean dramas will teach you not to make
-  backwards incompatiable breaking changes!
+  backwards incompatible breaking changes!
 
 ^^ Can't remember; print it on a t-shirt!
 

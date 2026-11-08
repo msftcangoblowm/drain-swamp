@@ -1,9 +1,9 @@
 [build-system]
 requires = [
-    "setuptools>=70.0.0",
+    "setuptools>=77.0.3",
     "wheel",
     "build",
-    "setuptools_scm>=8",
+    "setuptools_scm",
     "click",
     "pluggy",
     "drain-swamp-snippet",
@@ -22,23 +22,26 @@ dynamic = [
     "dependencies",
     "version",
 ]
-license = {file = "LICENSE"}
+license = "MPL-2.0"
+license-files = [
+    "LICEN[CS]E*",
+    "NOTICE*",
+]
 description = "Python build backend with build plugins and dependency lock switch"
 keywords = ["pipenv", "pip", "pip-tools", "dependency lock"]
 readme = "README.rst"
-requires-python = ">=3.9"
+requires-python = ">=3.11"
 classifiers = [
     "Environment :: Console",
     "Development Status :: 3 - Alpha",
     "Intended Audience :: Developers",
-    "License :: OSI Approved :: GNU Affero General Public License v3 or later (AGPLv3+)",
     "Operating System :: OS Independent",
     "Programming Language :: Python :: 3",
-    "Programming Language :: Python :: 3.9",
-    "Programming Language :: Python :: 3.10",
     "Programming Language :: Python :: 3.11",
     "Programming Language :: Python :: 3.12",
     "Programming Language :: Python :: 3.13",
+    "Programming Language :: Python :: 3.14",
+    "Programming Language :: Python :: 3.15",
     "Programming Language :: Python :: Implementation :: CPython",
     "Programming Language :: Python :: Implementation :: PyPy",
     "Topic :: Software Development :: Build Tools",
@@ -234,6 +237,7 @@ extensions = [
     "sphinx_favicon",
 ]
 linkcheck_ignore = [
+    'https?://stackoverflow\.com/.*',
     'https://github.com/crdoconnor/strictyaml/blob/dfd93f9740ebd5e7150029bc3d89ea102bcddf00/strictyaml/representation.py#L48',
     'https://github.com/crdoconnor/strictyaml/blob/dfd93f9740ebd5e7150029bc3d89ea102bcddf00/strictyaml/representation.py#L114',
     'https://github.com/PyCQA/flake8/blob/fb9a02aaf77b56fcad4320971e7edca0cea93489/src/flake8/options/config.py#L56',
@@ -241,7 +245,6 @@ linkcheck_ignore = [
     'https://github.com/csachs/pyproject-flake8/blob/16b9dd4d2f19dcf0bfb3a3110f98227627cd67fe/pflake8/__init__.py#L22',
     'https://github.com/csachs/pyproject-flake8/blob/16b9dd4d2f19dcf0bfb3a3110f98227627cd67fe/pflake8/__init__.py#L86',
     'https://github.com/executablebooks/sphinx-external-toc/#development-notes',
-    'https://stackoverflow.com/a/32190021',
     'https://github.com/python/cpython/blob/bac277f1dd1f1895ee54a0ae4bf11cf1f2dc5ac2/Modules/_abc.c#L279',
     'https://github.com/python/cpython/blob/ca2275025bf25427758bc5d7adecc0455068f1e9/Lib/dataclasses.py#L268',
     'https://github.com/python/cpython/blob/8edfa0b0b4ae4235bb3262d952c23e7581516d4f/Lib/os.py#L701',
@@ -301,6 +304,10 @@ extend_ignore = [
 ]
 exclude = [
     'src/drain_swamp/_version.py',
+]
+per-file-ignores = [
+    'src/drain_swamp/cli_igor.pyi: Y020',
+    'src/drain_swamp/cli_scm_version.pyi: Y020',
 ]
 
 [tool.twine]

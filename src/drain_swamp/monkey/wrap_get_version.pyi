@@ -30,4 +30,5 @@ def write_to_file(
     str_ver: str,
     write_to: str | None = None,
     dist_name: str | None = None,
+    is_only_not_exists: bool | None = False,
 ) -> None: ...

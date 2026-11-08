@@ -1,15 +1,15 @@
-# Licensed under the AGPLv3+ License: https://www.gnu.org/licenses/
+# Licensed under the MPL-2.0 License: https://www.mozilla.org/en-US/MPL/2.0/
 # For details: https://github.com/msftcangoblowm/drain-swamp/blob/master/NOTICE.txt
 # https://github.com/pyscaffold/pyscaffold/blob/master/src/pyscaffold/templates/github_ci_workflow.template
 # https://docs.github.com/en/actions/using-workflows/storing-workflow-data-as-artifacts#passing-data-between-jobs-in-a-workflow
 
-name: "Tests"
+name: Tests
 
 on:
   push:
     branches:
-      - master
-      - msftcangoblowm/*
+    - master
+    - msftcangoblowm/*
   pull_request:
   workflow_dispatch:
 
@@ -34,62 +34,57 @@ concurrency:
 
 jobs:
   tests:
-    name: "${{ matrix.python-version }} on ${{ matrix.platform }}"
-    runs-on: "${{ matrix.platform }}"
+    name: ${{ matrix.python-version }} on ${{ matrix.platform }}
+    runs-on: ${{ matrix.platform }}
     # Don't run tests if the branch name includes "-notests"
     if: "!contains(github.ref, '-notests')"
     strategy:
       matrix:
         platform:
-          - ubuntu-latest
-          - macos-latest
-          - windows-latest
+        - ubuntu-latest
+        - macos-latest
+        - windows-latest
         python-version:
           # When changing this list, be sure to check the [gh] list in
           # tox.ini so that tox will run properly. PYVERSIONS
           # Available versions:
           # https://github.com/actions/python-versions/blob/main/versions-manifest.json
           # https://github.com/actions/setup-python/blob/main/docs/advanced-usage.md#available-versions-of-python-and-pypy
-          - "3.9"
-          - "3.10"
-          - "3.11"
-          - "3.12"
-          - "3.13"
-          - "pypy-3.9"
-          - "pypy-3.10"
-        exclude:
-          # https://github.com/pypy/pypy/issues/4958
-          - platform: windows-latest
-            python-version: "pypy-3.9"
+        - '3.11'
+        - '3.12'
+        - '3.13'
+        - '3.14'
+        - '3.15'
+        - pypy-3.11
       fail-fast: false
 
     steps:
     - id: prepare-config-settings
       name: >-
         Build Plugin parameters
-      uses: msftcangoblowm/drain-swamp-action@1.0.3
+      uses: msftcangoblowm/drain-swamp-action@1.0.5
       with:
         plugin_parameters: '{"set-lock": "${{ vars.DRAINSWAMP_SET_LOCK }}", "kind": "current"}'
         checkout: true
-        python_version: "${{ matrix.python-version }}"
+        python_version: ${{ matrix.python-version }}
 
-    - name: "Download artifact"
-      uses: actions/download-artifact@v4.1.8
+    - name: Download artifact
+      uses: actions/download-artifact@v8.0.2
       with:
         name: config-settings-${{ matrix.platform || matrix.os }}-${{ matrix.python-version }}
-        path: '${{ runner.temp }}'
+        path: ${{ runner.temp }}
 
-    - name: "Check out the repo"
-      uses: actions/checkout@v4.2.2
+    - name: Check out the repo
+      uses: actions/checkout@v7.0.1
       with:
-        repository: '${{ github.repository }}'
+        repository: ${{ github.repository }}
         # fetch all branches and tags instead of only fetching the ref/SHA that triggered the workflow
         fetch-depth: 0
 
-    - name: "Set up Python"
-      uses: actions/setup-python@v5.3.0
+    - name: Set up Python
+      uses: actions/setup-python@v7.1.0
       with:
-        python-version: "${{ matrix.python-version }}"
+        python-version: ${{ matrix.python-version }}
         allow-prereleases: true
         # At a certain point, installing dependencies failed on pypy 3.9 and
         # 3.10 on Windows.  Commenting out the cache here fixed it.  Someday
@@ -98,7 +93,7 @@ jobs:
         # cache-dependency-path: |
         #   requirements/*${{ env.LOCK_SUFFIX }}
 
-    - name: "Show environment"
+    - name: Show environment
       run: |
         set -xe
         python -VV
@@ -107,35 +102,46 @@ jobs:
         # python -c "import urllib.request as r; exec(r.urlopen('https://bit.ly/pydoctor').read())"
         env
 
-    - name: "Install dependencies"
+    - name: Install dependencies
       run: |
-        python -m pip install -r requirements/tox.lock -r requirements/prod.shared.unlock -r requirements/kit.lock
+        python -m pip install -r requirements/tox$LOCK_SUFFIX -r requirements/prod.shared.unlock -r requirements/kit$LOCK_SUFFIX
 
     # Create generated files: version file and .lnk files. sdist tarball ignored
-    - name: "Build sdist to run plugins. Create generated files"
+    - name: Build sdist to run plugins. Create generated files
       run: |
         # TOML file location ${{ runner.temp }}/${{ steps.outcome.inputs.toml_file_name }}
         # env.DS_CONFIG_SETTINGS contains (OS independent) path to TOML file
         cat '${{ env.DS_CONFIG_SETTINGS }}'
         python -m build
 
-    - name: get-os-short
-      # tox needs just the OS; platform is `{OS}-{OS version}`
-      # matrix.os-short side effect, more matrix runs; total * [OS count]
+    - name: Set OS and Python short vars
       run: |
-        python -c 'import os; lst="${{ matrix.platform }}".split("-"); os_short = lst[0]; env_file = os.environ.get("GITHUB_ENV"); f = open(env_file, "a"); print(f"OS_SHORT={os_short}", file=f); f.close();'
+        platform="${{ matrix.platform }}"
+        python_version="${{ matrix.python-version }}"
+        OS_SHORT="${platform%%-*}"
+        OS_SHORT="${OS_SHORT/ubuntu/linux}"
+        echo "OS_SHORT=$OS_SHORT" >> $GITHUB_ENV
+        if [[ "$python_version" == pypy-* ]]; then
+          ver_short="${python_version//-/}"  # pypy3.11
+        else
+          ver_short="py${python_version//-/}"  # py3.14
+        fi
+        ver_short="${ver_short//./}"  # remove dots → pypy311 or py314
+        echo "VER_SHORT=$ver_short" >> $GITHUB_ENV
 
     - name: Test with tox
       run: |
         echo "env.OS_SHORT ${{ env.OS_SHORT }}"
-        python -m tox -vv -c tox-test.ini -e ${{ matrix.python-version }}-${{ env.OS_SHORT }}
+        echo "env.VER_SHORT ${{ env.VER_SHORT }}"
+        python -m tox -vv -c tox-test.ini -e ${{ env.VER_SHORT }}-${{ env.OS_SHORT }}
 
-    - name: "Retry ${{ matrix.python-version }}-${{ matrix.platform }}"
+    - name: Retry ${{ matrix.python-version }}-${{ matrix.platform }}
       if: failure()
       run: |
         echo "env.OS_SHORT ${{ env.OS_SHORT }}"
+        echo "env.VER_SHORT ${{ env.VER_SHORT }}"
         # `exit 1` makes sure that the job remains red with flaky runs
-        python -m tox -vv -c tox-test.ini -e ${{ matrix.python-version }}-${{ env.OS_SHORT }} && exit 1
+        python -m tox -vv -c tox-test.ini -e ${{ env.VER_SHORT }}-${{ env.OS_SHORT }} && exit 1
 
   # This job aggregates test results. It's the required check for branch protection.
   # https://github.com/marketplace/actions/alls-green#why
@@ -145,10 +151,10 @@ jobs:
     # The tests didn't run if the branch name includes "-notests"
     if: "!contains(github.ref, '-notests')"
     needs:
-      - tests
+    - tests
     runs-on: ubuntu-latest
     steps:
-      - name: Decide whether the needed jobs succeeded or failed
-        uses: re-actors/alls-green@223e4bb7a751b91f43eda76992bcfbf23b8b0302
-        with:
-          jobs: ${{ toJSON(needs) }}
+    - name: Decide whether the needed jobs succeeded or failed
+      uses: re-actors/alls-green@e68df088d4e9ee6bc36b8ea7deacf96161902d2a
+      with:
+        jobs: ${{ toJSON(needs) }}

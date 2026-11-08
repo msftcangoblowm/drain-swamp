@@ -1,1 +1,17 @@
 include _req_links/backend.py
+
+prune .github
+
+global-exclude .gitignore
+global-exclude .pre-commit-config.yaml
+global-exclude .readthedocs.yaml
+global-exclude Makefile
+global-exclude codecov.yml
+global-exclude stubtest_allowlist.txt
+global-exclude tox-req.ini
+global-exclude tox-test.ini
+global-exclude tox.ini
+global-exclude howto.txt
+
+global-exclude docs/.gitattributes
+global-exclude docs/Makefile

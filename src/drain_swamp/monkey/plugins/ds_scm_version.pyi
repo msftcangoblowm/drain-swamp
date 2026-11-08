@@ -3,7 +3,7 @@ from typing import Any
 
 from drain_swamp.monkey.hooks import markers
 
-logger: logging.Logger
+log: logging.Logger
 
 def _kind(
     config_settings: dict[str, Any] | None, fallback: str | None = "tag"

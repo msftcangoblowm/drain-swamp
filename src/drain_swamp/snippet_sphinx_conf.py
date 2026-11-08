@@ -295,8 +295,7 @@ class SnipSphinxConf:
         now_year = cls.now_to_str("%Y")
         # replaces f"""{self.now:%B %-d, %Y}"""
         now_full = cls.now_to_str("%B %-d, %Y")
-        contents = textwrap.dedent(
-            f"""\
+        contents = textwrap.dedent(f"""\
             copyright = "{copyright_start_year}\N{EN DASH}{now_year}, {author.full_name}"
             # The short X.Y.Z version.
             version = "{ver_xyz}"
@@ -304,8 +303,7 @@ class SnipSphinxConf:
             release = "{ver_full}"
             # The date of release, in "monthname day, year" format.
             release_date = "{now_full}"
-            """
-        )
+            """)
         self._contents = contents.rstrip()
 
     def replace(self, snippet_co=None):

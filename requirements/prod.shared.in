@@ -1,4 +1,4 @@
-# Licensed under the AGPLv3+ License: https://www.gnu.org/licenses/
+# Licensed under the MPL-2.0 License: https://www.mozilla.org/en-US/MPL/2.0/
 # For details: https://github.com/msftcangoblowm/drain-swamp/blob/master/NOTICE.txt
 
 ##########
@@ -6,7 +6,6 @@
 ##########
 # pip>=24.2  # <-- conflicts with docs pip<24.2
 
-setuptools>=75.1.0
 pluggy               # plugin support in build backend and setuptools.finalize_distribution_options entrypoint
 setuptools-scm       # get current version, `python setup.py --version`
 drain-swamp-snippet  # update docs/conf.py

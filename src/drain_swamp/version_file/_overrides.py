@@ -20,11 +20,6 @@ Module to construct setuptools-scm PRETEND_VERSION environment variable string
 
    Module exports
 
-.. seealso::
-
-   :ref:`gh_ss:overrides`
-   :ref:`gh_ss:license`
-
 """
 
 import os
@@ -48,7 +43,7 @@ def normalize_dist_name(dist_name):
     :rtype: str
     """
     normalized_dist_name = re.sub(r"[-_.]+", "-", dist_name)
-    env_var_dist_name = normalized_dist_name.replace("-", "_").upper()
+    env_var_dist_name = normalized_dist_name.replace("-", "_").upper()  # noqa: FURB184  # fmt: skip
 
     return env_var_dist_name
 

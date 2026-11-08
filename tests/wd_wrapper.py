@@ -93,9 +93,10 @@ class WorkDir:
         :rtype: str
         """
         if given_reason is None:
-            return f"number-{next(self.__counter)}"
+            ret = f"number-{next(self.__counter)}"
         else:
-            return given_reason
+            ret = given_reason
+        return ret
 
     def add_and_commit(
         self, reason: str | None = None, signed: bool = False, **kwargs: object

@@ -12,7 +12,7 @@ therefore pytest is avoided.
 
    integration unittest are not run along with 1st run unittests.
 
-   Does not play nice with coverage. Necessary to isolate execution; run seperately.
+   Does not play nice with coverage. Necessary to isolate execution; run separately.
 
 """
 
@@ -44,7 +44,7 @@ class TestPep366(unittest.TestCase):
             ),
             (
                 (sys.executable, "src/drain_swamp/cli_unlock.py", "is_lock"),
-                lambda x: x in [0, 1],
+                lambda x: x in (0, 1),
             ),
         )
 
@@ -75,7 +75,7 @@ class TestPep366(unittest.TestCase):
         Equivalent to
         :code:`python src/drain_swamp/cli_unlock.py is_lock --path pyproject.toml`
         """
-        fcn_exit_compare = lambda x: x in [0, 1]  # noqa: E731
+        fcn_exit_compare = lambda x: x in (0, 1)  # noqa: E731
 
         cmd = (
             sys.executable,

@@ -1,11 +1,9 @@
 """
 .. moduleauthor:: Dave Faulkmore <https://mastodon.social/@msftcangoblowme>
 
-..
-
 Unittest for repr helper module
 
-Unit test -- Module
+With coverage
 
 .. code-block:: shell
 
@@ -25,6 +23,7 @@ Integration test
 
 from contextlib import nullcontext as does_not_raise
 from pathlib import PurePath
+from typing import TYPE_CHECKING
 
 import pytest
 
@@ -34,82 +33,88 @@ from drain_swamp._repr import (
     repr_set_path,
 )
 
-testdata_repr_path = (
-    (
-        "path_goodies",
-        None,
-        None,
-        pytest.raises(TypeError),
-        False,
-    ),
-    (
-        "path_goodies",
-        1.213,
-        None,
-        pytest.raises(TypeError),
-        False,
-    ),
-    (
-        None,
-        PurePath("/etc/passwd"),
-        None,
-        pytest.raises(TypeError),
-        False,
-    ),
-    (
-        1.213,
-        PurePath("/etc/passwd"),
-        None,
-        pytest.raises(TypeError),
-        False,
-    ),
-    (
-        "path_goodies",
-        PurePath("/etc/passwd"),
-        None,
-        does_not_raise(),
-        True,
-    ),
-    (
-        "path_goodies",
-        PurePath("/etc/passwd"),
-        1.2345,
-        does_not_raise(),
-        True,
-    ),
-    (
-        "path_goodies",
-        PurePath("/etc/passwd"),
-        False,
-        does_not_raise(),
-        True,
-    ),
-    (
-        "path_goodies",
-        PurePath("/etc/passwd"),
-        True,
-        does_not_raise(),
-        False,
-    ),
-)
-ids_repr_path = (
-    "path is None --> TypeError",
-    "path unsupported type --> TypeError",
-    "k is None --> TypeError",
-    "k is unsupported type --> TypeError",
-    "None --> False --> has comma",
-    "Unsupported type --> False --> has comma",
-    "False --> has comma",
-    "True --> no comma",
-)
+if TYPE_CHECKING:
+    from pathlib import Path
+
+    from .typing_only import DOES_NOT_OR_DOES
 
 
 @pytest.mark.parametrize(
-    "key, path, is_last, exceptation, has_comma",
-    testdata_repr_path,
-    ids=ids_repr_path,
+    "key, path, is_last, expectation, has_comma",
+    (
+        pytest.param(
+            "path_goodies",
+            None,
+            None,
+            pytest.raises(TypeError),
+            False,
+            id="path-is-None--TypeError",
+        ),
+        pytest.param(
+            "path_goodies",
+            1.213,
+            None,
+            pytest.raises(TypeError),
+            False,
+            id="path-unsupported-type--TypeError",
+        ),
+        pytest.param(
+            None,
+            PurePath("/etc/passwd"),
+            None,
+            pytest.raises(TypeError),
+            False,
+            id="k-is-None--TypeError",
+        ),
+        pytest.param(
+            1.213,
+            PurePath("/etc/passwd"),
+            None,
+            pytest.raises(TypeError),
+            False,
+            id="k-is-unsupported-type--TypeError",
+        ),
+        pytest.param(
+            "path_goodies",
+            PurePath("/etc/passwd"),
+            None,
+            does_not_raise(),
+            True,
+            id="None--False--has-comma",
+        ),
+        pytest.param(
+            "path_goodies",
+            PurePath("/etc/passwd"),
+            1.2345,
+            does_not_raise(),
+            True,
+            id="Unsupported-type--False--has-comma",
+        ),
+        pytest.param(
+            "path_goodies",
+            PurePath("/etc/passwd"),
+            False,
+            does_not_raise(),
+            True,
+            id="False--has-comma",
+        ),
+        pytest.param(
+            "path_goodies",
+            PurePath("/etc/passwd"),
+            True,
+            does_not_raise(),
+            False,
+            id="True--no-comma",
+        ),
+    ),
 )
-def test_repr_path(key, path, is_last, exceptation, has_comma):
+def test_repr_path(
+    key: str | float | None,
+    path: "Path | float | None",
+    is_last: bool | float | None,
+    expectation: "DOES_NOT_OR_DOES",
+    has_comma: bool,
+) -> None:
     """Check repr_path exceptions.
 
     .. code-block:: shell
@@ -124,172 +129,194 @@ def test_repr_path(key, path, is_last, exceptation, has_comma):
 
     """
     # pytest --showlocals --log-level INFO -k "test_repr_path" tests
-    with exceptation:
+    with expectation:
         out = repr_path(key, path, is_last=is_last)
-
-    if isinstance(exceptation, does_not_raise):
+    if isinstance(expectation, does_not_raise):
         end_token = ", "
         actual = out.endswith(end_token)
         assert actual == has_comma
 
 
-testdata_repr_set_path = (
-    (
-        "path_goodies",
-        None,
-        None,
-        pytest.raises(TypeError),
-        False,
-    ),
-    (
-        "path_goodies",
-        1.213,
-        None,
-        pytest.raises(TypeError),
-        False,
-    ),
-    (
-        None,
-        {
-            PurePath("/etc/passwd"),
-        },
-        None,
-        pytest.raises(TypeError),
-        False,
-    ),
-    (
-        1.213,
-        {
-            PurePath("/etc/passwd"),
-        },
-        None,
-        pytest.raises(TypeError),
-        False,
-    ),
-    (
-        "path_goodies",
-        {
-            PurePath("/etc/passwd"),
-        },
-        None,
-        does_not_raise(),
-        True,
-    ),
-    (
-        "path_goodies",
-        {
-            PurePath("/etc/passwd"),
-        },
-        1.2345,
-        does_not_raise(),
-        True,
-    ),
-    (
-        "path_goodies",
-        {PurePath("/etc/passwd"), PurePath("/etc/skel/.bashrc")},
-        False,
-        does_not_raise(),
-        True,
-    ),
-    (
-        "path_goodies",
-        {PurePath("/etc/passwd"), PurePath("/etc/skel/.bashrc")},
-        True,
-        does_not_raise(),
-        False,
-    ),
-)
-
-
 @pytest.mark.parametrize(
-    "key, set_0, is_last, exceptation, has_comma",
-    testdata_repr_set_path,
-    ids=ids_repr_path,
+    "key, set_0, is_last, expectation, has_comma",
+    (
+        pytest.param(
+            "path_goodies",
+            None,
+            None,
+            pytest.raises(TypeError),
+            False,
+            id="path-is-None--TypeError",
+        ),
+        pytest.param(
+            "path_goodies",
+            1.213,
+            None,
+            pytest.raises(TypeError),
+            False,
+            id="path-unsupported-type--TypeError",
+        ),
+        pytest.param(
+            None,
+            {
+                PurePath("/etc/passwd"),
+            },
+            None,
+            pytest.raises(TypeError),
+            False,
+            id="k-is-None--TypeError",
+        ),
+        pytest.param(
+            1.213,
+            {
+                PurePath("/etc/passwd"),
+            },
+            None,
+            pytest.raises(TypeError),
+            False,
+            id="k-is-unsupported-type--TypeError",
+        ),
+        pytest.param(
+            "path_goodies",
+            {
+                PurePath("/etc/passwd"),
+            },
+            None,
+            does_not_raise(),
+            True,
+            id="None--False--has-comma",
+        ),
+        pytest.param(
+            "path_goodies",
+            {
+                PurePath("/etc/passwd"),
+            },
+            1.2345,
+            does_not_raise(),
+            True,
+            id="Unsupported-type--False--has-comma",
+        ),
+        pytest.param(
+            "path_goodies",
+            {PurePath("/etc/passwd"), PurePath("/etc/skel/.bashrc")},
+            False,
+            does_not_raise(),
+            True,
+            id="False--has-comma",
+        ),
+        pytest.param(
+            "path_goodies",
+            {PurePath("/etc/passwd"), PurePath("/etc/skel/.bashrc")},
+            True,
+            does_not_raise(),
+            False,
+            id="True--no-comma",
+        ),
+    ),
 )
-def test_repr_set_path(key, set_0, is_last, exceptation, has_comma):
+def test_repr_set_path(
+    key: str | None,
+    set_0: "set[Path] | float | None",
+    is_last: bool | float | None,
+    expectation: "DOES_NOT_OR_DOES",
+    has_comma: bool,
+) -> None:
     """Given a set which contain Path, check produced repr lines."""
     # pytest --showlocals --log-level INFO -k "test_repr_set_path" tests
-    with exceptation:
+    with expectation:
         out = repr_set_path(key, set_0, is_last=is_last)
 
-    if isinstance(exceptation, does_not_raise):
+    if isinstance(expectation, does_not_raise):
         end_token = ", "
         actual = out.endswith(end_token)
         assert actual == has_comma
 
 
-testdata_repr_dict_str_path = (
-    (
-        "path_goodies",
-        None,
-        None,
-        pytest.raises(TypeError),
-        False,
-    ),
-    (
-        "path_goodies",
-        1.213,
-        None,
-        pytest.raises(TypeError),
-        False,
-    ),
-    (
-        None,
-        {"dev": PurePath("/etc/passwd")},
-        None,
-        pytest.raises(TypeError),
-        False,
-    ),
-    (
-        1.213,
-        {"dev": PurePath("/etc/passwd")},
-        None,
-        pytest.raises(TypeError),
-        False,
-    ),
-    (
-        "path_goodies",
-        {"dev": PurePath("/etc/passwd")},
-        None,
-        does_not_raise(),
-        True,
-    ),
-    (
-        "path_goodies",
-        {"dev": PurePath("/etc/passwd")},
-        1.2345,
-        does_not_raise(),
-        True,
-    ),
-    (
-        "path_goodies",
-        {"dev": PurePath("/etc/passwd"), "prod": PurePath("/etc/skel/.bashrc")},
-        False,
-        does_not_raise(),
-        True,
-    ),
-    (
-        "path_goodies",
-        {"dev": PurePath("/etc/passwd"), "prod": PurePath("/etc/skel/.bashrc")},
-        True,
-        does_not_raise(),
-        False,
-    ),
-)
-
-
 @pytest.mark.parametrize(
-    "key, d_paths, is_last, exceptation, has_comma",
-    testdata_repr_dict_str_path,
-    ids=ids_repr_path,
+    "key, d_paths, is_last, expectation, has_comma",
+    (
+        pytest.param(
+            "path_goodies",
+            None,
+            None,
+            pytest.raises(TypeError),
+            False,
+            id="path-is-None--TypeError",
+        ),
+        pytest.param(
+            "path_goodies",
+            1.213,
+            None,
+            pytest.raises(TypeError),
+            False,
+            id="path-unsupported-type--TypeError",
+        ),
+        pytest.param(
+            None,
+            {"dev": PurePath("/etc/passwd")},
+            None,
+            pytest.raises(TypeError),
+            False,
+            id="k-is-None--TypeError",
+        ),
+        pytest.param(
+            1.213,
+            {"dev": PurePath("/etc/passwd")},
+            None,
+            pytest.raises(TypeError),
+            False,
+            id="k-is-unsupported-type--TypeError",
+        ),
+        pytest.param(
+            "path_goodies",
+            {"dev": PurePath("/etc/passwd")},
+            None,
+            does_not_raise(),
+            True,
+            id="None--False--has-comma",
+        ),
+        pytest.param(
+            "path_goodies",
+            {"dev": PurePath("/etc/passwd")},
+            1.2345,
+            does_not_raise(),
+            True,
+            id="Unsupported-type--False--has-comma",
+        ),
+        pytest.param(
+            "path_goodies",
+            {"dev": PurePath("/etc/passwd"), "prod": PurePath("/etc/skel/.bashrc")},
+            False,
+            does_not_raise(),
+            True,
+            id="False--has-comma",
+        ),
+        pytest.param(
+            "path_goodies",
+            {"dev": PurePath("/etc/passwd"), "prod": PurePath("/etc/skel/.bashrc")},
+            True,
+            does_not_raise(),
+            False,
+            id="True--no-comma",
+        ),
+    ),
 )
-def test_repr_dict_str_path(key, d_paths, is_last, exceptation, has_comma):
+def test_repr_dict_str_path(
+    key: str | float | None,
+    d_paths: "dict[str, Path] | float | None",
+    is_last: bool | float | None,
+    expectation: "DOES_NOT_OR_DOES",
+    has_comma: bool,
+) -> None:
     """Given a dict which has value Path, check produced repr lines."""
     # pytest --showlocals --log-level INFO -k "test_repr_dict_str_path" tests
-    with exceptation:
-        out = repr_dict_str_path(key, d_paths, is_last=is_last)
-
-    if isinstance(exceptation, does_not_raise):
+    with expectation:
+        out = repr_dict_str_path(
+            key,  # type: ignore[arg-type]
+            d_paths,  # type: ignore[arg-type]
+            is_last=is_last,  # type: ignore[arg-type]
+        )
+    if isinstance(expectation, does_not_raise):
         end_token = ", "
         actual = out.endswith(end_token)
         assert actual == has_comma

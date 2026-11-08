@@ -11,7 +11,7 @@ from pathlib import (
     Path,
     PurePath,
 )
-from typing import Any
+from typing import TYPE_CHECKING
 
 import pytest
 from wreck._run_cmd import run_cmd
@@ -22,6 +22,16 @@ from .wd_wrapper import WorkDir
 pytest_plugins = [
     "logging_strict",
 ]
+
+if TYPE_CHECKING:
+    from collections.abc import (
+        Callable,
+        Generator,
+        MutableSet,
+    )
+    from typing import Any
+
+    import pluggy
 
 
 class FileRegression:
@@ -51,7 +61,7 @@ class FileRegression:
         """FileRegression constructor."""
         self.file_regression = file_regression
 
-    def check(self, data: str, **kwargs: dict[str, Any]) -> str:
+    def check(self, data: str, **kwargs: "dict[str, Any]") -> str:
         """Check previous run against current run file.
 
         :param data: file contents
@@ -90,7 +100,10 @@ def file_regression(file_regression: "FileRegression") -> FileRegression:
 
 
 @pytest.hookimpl(hookwrapper=True)
-def pytest_runtest_makereport(item, call):
+def pytest_runtest_makereport(
+    item: pytest.Item,
+    call: pytest.CallInfo[None],
+) -> "Generator[None, pluggy.Result[pytest.TestReport], None]":
     """
     attach each test's TestReport to the test Item so fixtures can
     decide how to finalize based on the test result.
@@ -109,59 +122,17 @@ def pytest_runtest_makereport(item, call):
 
 
 @pytest.fixture()
-def has_logging_occurred(caplog):
-    """Display caplog capture text.
-
-    Usage
-
-    .. code-block: text
-
-       import pytest
-
-       from drain_swamp.constants import g_app_name
-
-       @pytest.mark.logging_package_name(g_app_name)
-       def test_something(logging_strict, has_logging_occurred):
-           t_two = logging_strict()
-           logger, loggers = t_two
-
-           logger.info("Hello world!")
-
-           assert has_logging_occurred()
-
-    .. seealso::
-
-       https://github.com/pytest-dev/pytest/discussions/11011
-       https://github.com/thebuzzstop/pytest_caplog/tree/master
-       `pass params fixture <https://stackoverflow.com/a/44701916>`_
-
-    """
-
-    def _method() -> bool:
-        """Check if there is at least one log message. Print log messages.
-
-        :returns: True if logging occurred otherwise False
-        :rtype: bool
-        """
-        print("\nCAPLOG:")
-        output = caplog.text.rstrip("\n").split(sep="\n")
-        if output == [""]:
-            print("Nothing captured")
-            return False
-        for i in range(len(output)):
-            print(f"{i}: {output[i]}")
-        return True
-
-    return _method
-
-
-@pytest.fixture()
-def prepare_folders_files(request):
+def prepare_folders_files(
+    request: pytest.FixtureRequest,
+) -> "Callable[[Sequence[str | Path] | MutableSet[str | Path]], set[Path]]":
     """Prepare folders and files within folder."""
 
     set_folders = set()
 
-    def _method(seq_rel_paths, tmp_path):
+    def _method(
+        seq_rel_paths: "Sequence[str | Path] | MutableSet[str | Path]",
+        tmp_path: "Path",
+    ) -> "set[Path]":
         """Creates folders and empty files
 
         :param seq_rel_paths: Relative file paths. Creates folders as well
@@ -211,13 +182,19 @@ def prepare_folders_files(request):
 
 
 @pytest.fixture()
-def prep_pyproject_toml(request):
+def prep_pyproject_toml(
+    request: pytest.FixtureRequest,
+) -> "Callable[[Path, Path, Path | None], Path | None]":
     """cli doesn't offer a ``parent_dir`` option to bypass ``--path``.
     Instead copy and rename the test ``pyproject.toml`` to the ``tmp_path``
     """
     lst_delete_me = []
 
-    def _method(p_toml_file, path_dest_dir, rename="pyproject.toml"):
+    def _method(
+        p_toml_file: "Path",
+        path_dest_dir: "Path",
+        rename: "Path | None" = "pyproject.toml",
+    ) -> "Path | None":
         """Copy and rename file. Does not necessarily have to be ``pyproject.toml``
 
         :param p_toml_file:
@@ -259,10 +236,10 @@ def prep_pyproject_toml(request):
 
 
 @pytest.fixture
-def path_project_base():
+def path_project_base() -> "Callable[[], Path]":
     """Fixture to get project base folder"""
 
-    def _method():
+    def _method() -> "Path":
         """Get project base folder."""
         if "__pycache__" in __file__:
             # cached
@@ -302,10 +279,10 @@ def wd(tmp_path: Path) -> WorkDir:
 
 
 @pytest.fixture
-def verify_tag_version():
+def verify_tag_version() -> "Callable[[Path, str], bool]":
     """Fixture to verify version file contents."""
 
-    def _method(cwd, sem_ver_str):
+    def _method(cwd: "Path", sem_ver_str: str) -> bool:
         """Verify version file contains a given semantic version str.
 
         :param cwd: package base folder

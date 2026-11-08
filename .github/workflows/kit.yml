@@ -19,17 +19,17 @@
 # of Python: https://cibuildwheel.readthedocs.io/en/stable/options/#prerelease-pythons
 # So we don't.
 
-name: "Kits"
+name: Kits
 
 on:
   push:
     branches:
       # Don't build kits all the time, but do if the branch is about kits.
-      - "**/*kit*"
+    - '**/*kit*'
   workflow_dispatch:
   repository_dispatch:
     types:
-      - build-kits
+    - build-kits
 
 defaults:
   run:
@@ -43,15 +43,15 @@ permissions:
   contents: read
 
 concurrency:
-  group: "${{ github.workflow }}-${{ github.ref }}"
+  group: ${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
 
 jobs:
   wheels:
-    name: "${{ matrix.py }} ${{ matrix.os }} ${{ matrix.arch }} wheels"
+    name: ${{ matrix.py }} ${{ matrix.os }} ${{ matrix.arch }} wheels
     runs-on: ${{ matrix.os }}-latest
     env:
-      MATRIX_ID: "${{ matrix.py }}-${{ matrix.os }}-${{ matrix.arch }}"
+      MATRIX_ID: ${{ matrix.py }}-${{ matrix.os }}-${{ matrix.arch }}
     strategy:
       matrix:
         include:
@@ -101,213 +101,195 @@ jobs:
           #               }
           #               print(f"- {json.dumps(them)}")
           # ]]]
-          - {"os": "ubuntu", "py": "cp39", "arch": "x86_64"}
-          - {"os": "ubuntu", "py": "cp310", "arch": "x86_64"}
-          - {"os": "ubuntu", "py": "cp311", "arch": "x86_64"}
-          - {"os": "ubuntu", "py": "cp312", "arch": "x86_64"}
-          - {"os": "ubuntu", "py": "cp313", "arch": "x86_64"}
-          - {"os": "ubuntu", "py": "cp39", "arch": "i686"}
-          - {"os": "ubuntu", "py": "cp310", "arch": "i686"}
-          - {"os": "ubuntu", "py": "cp311", "arch": "i686"}
-          - {"os": "ubuntu", "py": "cp312", "arch": "i686"}
-          - {"os": "ubuntu", "py": "cp313", "arch": "i686"}
-          - {"os": "ubuntu", "py": "cp39", "arch": "aarch64"}
-          - {"os": "ubuntu", "py": "cp310", "arch": "aarch64"}
-          - {"os": "ubuntu", "py": "cp311", "arch": "aarch64"}
-          - {"os": "ubuntu", "py": "cp312", "arch": "aarch64"}
-          - {"os": "ubuntu", "py": "cp313", "arch": "aarch64"}
-          # - {"os": "macos", "py": "cp38", "arch": "arm64"}
-          - {"os": "macos", "py": "cp39", "arch": "arm64"}
-          - {"os": "macos", "py": "cp310", "arch": "arm64"}
-          - {"os": "macos", "py": "cp311", "arch": "arm64"}
-          - {"os": "macos", "py": "cp312", "arch": "arm64"}
-          # - {"os": "macos", "py": "cp38", "arch": "x86_64"}
-          - {"os": "macos", "py": "cp39", "arch": "x86_64"}
-          - {"os": "macos", "py": "cp310", "arch": "x86_64"}
-          - {"os": "macos", "py": "cp311", "arch": "x86_64"}
-          - {"os": "macos", "py": "cp312", "arch": "x86_64"}
-          # - {"os": "windows", "py": "cp38", "arch": "x86"}
-          - {"os": "windows", "py": "cp39", "arch": "x86"}
-          - {"os": "windows", "py": "cp310", "arch": "x86"}
-          - {"os": "windows", "py": "cp311", "arch": "x86"}
-          - {"os": "windows", "py": "cp312", "arch": "x86"}
-          # - {"os": "windows", "py": "cp38", "arch": "AMD64"}
-          - {"os": "windows", "py": "cp39", "arch": "AMD64"}
-          - {"os": "windows", "py": "cp310", "arch": "AMD64"}
-          - {"os": "windows", "py": "cp311", "arch": "AMD64"}
-          - {"os": "windows", "py": "cp312", "arch": "AMD64"}
+        - {os: ubuntu, py: cp311, arch: x86_64}
+        - {os: ubuntu, py: cp312, arch: x86_64}
+        - {os: ubuntu, py: cp313, arch: x86_64}
+        - {os: ubuntu, py: cp311, arch: i686}
+        - {os: ubuntu, py: cp312, arch: i686}
+        - {os: ubuntu, py: cp313, arch: i686}
+        - {os: ubuntu, py: cp311, arch: aarch64}
+        - {os: ubuntu, py: cp312, arch: aarch64}
+        - {os: ubuntu, py: cp313, arch: aarch64}
+        - {os: macos, py: cp311, arch: arm64}
+        - {os: macos, py: cp312, arch: arm64}
+        - {os: macos, py: cp311, arch: x86_64}
+        - {os: macos, py: cp312, arch: x86_64}
+        - {os: windows, py: cp311, arch: x86}
+        - {os: windows, py: cp312, arch: x86}
+        - {os: windows, py: cp311, arch: AMD64}
+        - {os: windows, py: cp312, arch: AMD64}
         # [[[end]]] (checksum: a6ca53e9c620c9e5ca85e7322122056c)
       fail-fast: false
 
     steps:
-      - name: "Setup QEMU"
-        if: matrix.os == 'ubuntu'
-        uses: docker/setup-qemu-action@8b562efa09ec1557a9e26f25a7c6292838acea94
-        with:
-          platforms: arm64
+    - name: Setup QEMU
+      if: matrix.os == 'ubuntu'
+      uses: docker/setup-qemu-action@v4.4.0
+      with:
+        platforms: arm64
 
-      - name: "Check out the repo"
-        uses: actions/checkout@v4.2.2
-        with:
+    - name: Check out the repo
+      uses: actions/checkout@v7.0.1
+      with:
           # fetch all branches and tags instead of only fetching the ref/SHA that triggered the workflow
-          fetch-depth: 0
+        fetch-depth: 0
 
-      - name: "Install Python 3.9"
-        uses: actions/setup-python@v5.3.0
-        with:
+    - name: Install Python 3.11
+      uses: actions/setup-python@v7.1.0
+      with:
           # PYVERSIONS
-          python-version: "3.9"
+        python-version: '3.11'
           # cache: pip
           # cache-dependency-path: |
           #   requirements/*${{ env.LOCK_SUFFIX }}
 
-      - name: "Install tools"
-        run: |
-          python -m pip install -r requirements/kit.lock
+    - name: Install tools
+      run: |
+        python -m pip install -r requirements/kit.lock
 
-      - name: "Build wheels"
-        env:
-          CIBW_BUILD: ${{ matrix.py }}-*
-          CIBW_ARCHS: ${{ matrix.arch }}
-          CIBW_ENVIRONMENT: PIP_DISABLE_PIP_VERSION_CHECK=1
-          CIBW_PRERELEASE_PYTHONS: True
-        run: |
-          python -m cibuildwheel --output-dir wheelhouse
+    - name: Build wheels
+      env:
+        CIBW_BUILD: ${{ matrix.py }}-*
+        CIBW_ARCHS: ${{ matrix.arch }}
+        CIBW_ENVIRONMENT: PIP_DISABLE_PIP_VERSION_CHECK=1
+        CIBW_PRERELEASE_PYTHONS: true
+      run: |
+        python -m cibuildwheel --output-dir wheelhouse
 
-      - name: "List wheels"
-        run: |
-          ls -al wheelhouse/
+    - name: List wheels
+      run: |
+        ls -al wheelhouse/
 
-      - name: "Upload wheels"
-        uses: actions/upload-artifact@v4.5.0
-        with:
-          name: dist-${{ env.MATRIX_ID }}
-          path: wheelhouse/*.whl
-          retention-days: 7
+    - name: Upload wheels
+      uses: actions/upload-artifact@v7.0.2
+      with:
+        name: dist-${{ env.MATRIX_ID }}
+        path: wheelhouse/*.whl
+        retention-days: 7
 
   sdist:
-    name: "Source distribution"
+    name: Source distribution
     runs-on: ubuntu-latest
     steps:
-      - name: "Check out the repo"
-        uses: actions/checkout@v4.2.2
-        with:
+    - name: Check out the repo
+      uses: actions/checkout@v7.0.1
+      with:
           # fetch all branches and tags instead of only fetching the ref/SHA that triggered the workflow
-          fetch-depth: 0
+        fetch-depth: 0
 
       # https://stackoverflow.com/questions/66349002/get-latest-tag-git-describe-tags-when-repo-is-cloned-with-depth-1
       # echo "tag=$(git describe --tags `git rev-list --tags --max-count=1`)" >> $GITHUB_OUTPUT
-      - name: Get latest tag
-        id: vars
-        run: |
-          echo "tag=$(git describe --tags)" >> $GITHUB_OUTPUT
+    - name: Get latest tag
+      id: vars
+      run: |
+        echo "tag=$(git describe --tags)" >> $GITHUB_OUTPUT
 
-      - name: "Install Python 3.9"
-        uses: actions/setup-python@v5.3.0
-        with:
+    - name: Install Python 3.11
+      uses: actions/setup-python@v7.1.0
+      with:
           # PYVERSIONS
-          python-version: "3.9"
+        python-version: '3.11'
           # cache: pip
           # cache-dependency-path: |
           #   requirements/*${{ env.LOCK_SUFFIX }}
 
-      - name: "Install tools"
-        run: |
-          python -m pip install -r requirements/kit.lock
+    - name: Install tools
+      run: |
+        python -m pip install -r requirements/kit.lock
 
-      - name: "Build sdist"
-        env:
-          RELEASE_VERSION: ${{ steps.vars.outputs.tag }}
-        run: |
-          echo "python -m build -C--kind=current -C--set-lock=${{ vars.DRAINSWAMP_SET_LOCK }}"
-          python -m build -C--kind="current" -C--set-lock="${{ vars.DRAINSWAMP_SET_LOCK }}"
+    - name: Build sdist
+      env:
+        RELEASE_VERSION: ${{ steps.vars.outputs.tag }}
+      run: |
+        echo "python -m build -C--kind=current -C--set-lock=${{ vars.DRAINSWAMP_SET_LOCK }}"
+        python -m build -C--kind="current" -C--set-lock="${{ vars.DRAINSWAMP_SET_LOCK }}"
 
-      - name: "List tarballs"
-        run: |
-          ls -al dist/
+    - name: List tarballs
+      run: |
+        ls -al dist/
 
-      - name: "Upload sdist"
-        uses: actions/upload-artifact@v4.5.0
-        with:
-          name: dist-sdist
-          path: dist/*.tar.gz
-          retention-days: 7
+    - name: Upload sdist
+      uses: actions/upload-artifact@v7.0.2
+      with:
+        name: dist-sdist
+        path: dist/*.tar.gz
+        retention-days: 7
 
   pypy:
-    name: "PyPy wheel"
+    name: PyPy wheel
     runs-on: ubuntu-latest
     steps:
-      - name: "Check out the repo"
-        uses: actions/checkout@v4.2.2
-        with:
+    - name: Check out the repo
+      uses: actions/checkout@v7.0.1
+      with:
           # fetch all branches and tags instead of only fetching the ref/SHA that triggered the workflow
-          fetch-depth: 0
+        fetch-depth: 0
 
-      - name: "Install PyPy"
-        uses: actions/setup-python@v5.3.0
-        with:
-          python-version: "pypy-3.9" # Minimum of PyPy PYVERSIONS
+    - name: Install PyPy
+      uses: actions/setup-python@v7.1.0
+      with:
+        python-version: pypy-3.11     # Minimum of PyPy PYVERSIONS
           # cache: pip
           # cache-dependency-path: |
           #   requirements/*${{ env.LOCK_SUFFIX }}
 
-      - name: "Install requirements"
-        run: |
-          pypy3 -m pip install -r requirements/kit.lock
+    - name: Install requirements
+      run: |
+        pypy3 -m pip install -r requirements/kit.lock
 
-      - name: "Build wheel"
-        env:
-          DIST_EXTRA_CONFIG: extra.cfg
-        run: |
-          # One wheel works for all PyPy versions. PYVERSIONS
-          # yes, this is weird syntax: https://github.com/pypa/build/issues/202
-          echo -e "[bdist_wheel]\npython_tag=pp39.pp310" > $DIST_EXTRA_CONFIG
-          pypy3 -m build -w
+    - name: Build wheel
+      env:
+        DIST_EXTRA_CONFIG: extra.cfg
+      run: |
+        # One wheel works for all PyPy versions. PYVERSIONS
+        # yes, this is weird syntax: https://github.com/pypa/build/issues/202
+        echo -e "[bdist_wheel]\npython_tag=pp39.pp310" > $DIST_EXTRA_CONFIG
+        pypy3 -m build -w
 
-      - name: "List wheels"
-        run: |
-          ls -al dist/
+    - name: List wheels
+      run: |
+        ls -al dist/
 
-      - name: "Upload wheels"
-        uses: actions/upload-artifact@v4.5.0
-        with:
-          name: dist-pypy
-          path: dist/*.whl
-          retention-days: 7
+    - name: Upload wheels
+      uses: actions/upload-artifact@v7.0.2
+      with:
+        name: dist-pypy
+        path: dist/*.whl
+        retention-days: 7
 
   sign:
     # This signs our artifacts, but we don't use the signatures for anything
     # yet.  Someday maybe PyPI will have a way to upload and verify them.
-    name: "Sign artifacts"
+    name: Sign artifacts
     needs:
-      - wheels
-      - sdist
-      - pypy
+    - wheels
+    - sdist
+    - pypy
     runs-on: ubuntu-latest
     permissions:
       id-token: write
     steps:
-      - name: "Download artifacts"
-        uses: actions/download-artifact@v4.1.8
-        with:
-          pattern: dist-*
-          merge-multiple: true
+    - name: Download artifacts
+      uses: actions/download-artifact@v8.0.2
+      with:
+        pattern: dist-*
+        merge-multiple: true
 
-      - name: "Sign artifacts"
-        uses: sigstore/gh-action-sigstore-python@ff22c455543724b5d6fb8d679179ddb195cfac11 # v3.0.0
-        with:
-          inputs: drain-swamp-*.*
+    - name: Sign artifacts
+      uses: sigstore/gh-action-sigstore-python@ff22c455543724b5d6fb8d679179ddb195cfac11   # v3.0.0
+      with:
+        inputs: drain-swamp-*.*
 
-      - name: "List files"
-        run: |
-          ls -alR
+    - name: List files
+      run: |
+        ls -alR
 
-      - name: "Upload signatures"
-        uses: actions/upload-artifact@v4.5.0
-        with:
-          name: signatures
-          path: |
-            *.crt
-            *.sig
-            *.sigstore
-          retention-days: 7
+    - name: Upload signatures
+      uses: actions/upload-artifact@v7.0.2
+      with:
+        name: signatures
+        path: |
+          *.crt
+          *.sig
+          *.sigstore
+        retention-days: 7

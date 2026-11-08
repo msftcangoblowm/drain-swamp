@@ -3,7 +3,7 @@
 
 Unittest for module, drain_swamp.parser_in
 
-Unit test -- Module
+With coverage
 
 .. code-block:: shell
 
@@ -21,12 +21,14 @@ Integration test
 
 """
 
-import sys
+import platform
+from collections.abc import Mapping
 from contextlib import nullcontext as does_not_raise
 from pathlib import (
     Path,
     PurePath,
 )
+from typing import TYPE_CHECKING
 
 import pytest
 
@@ -36,97 +38,99 @@ from drain_swamp.exceptions import (
 )
 from drain_swamp.parser_in import TomlParser
 
-if sys.version_info >= (3, 9):  # pragma: no cover
-    from collections.abc import Mapping
-else:
-    from typing import Mapping
+if TYPE_CHECKING:
+    from collections.abc import Callable
 
-testdata_unsupported_type = [
-    (None,),
-    ("Hello world!",),
-    (1.1234,),
-    (1,),
-]
-ids_unsupported_type = (
-    "None",
-    "str",
-    "float",
-    "int",
-)
+    from .typing_only import DOES_NOT_OR_DOES
 
 
 @pytest.mark.parametrize(
-    "invalid",
-    testdata_unsupported_type,
-    ids=ids_unsupported_type,
+    "invalid, expectation",
+    (
+        pytest.param(
+            None,
+            pytest.raises(PyProjectTOMLReadError),
+            id="None",
+        ),
+        pytest.param(
+            "Hello world!",
+            pytest.raises(PyProjectTOMLReadError),
+            id="str",
+        ),
+        pytest.param(
+            1.1234,
+            pytest.raises(PyProjectTOMLReadError),
+            id="float",
+        ),
+        pytest.param(
+            1,
+            pytest.raises(PyProjectTOMLReadError),
+            id="int",
+        ),
+        pytest.param(
+            Path("/etc"),
+            pytest.raises(PyProjectTOMLReadError),
+            marks=pytest.mark.skipif(
+                platform.system().lower() != "linux",
+                reason="linux like fs path",
+            ),
+            id="folder-without-a-pyproject.toml-in-it",
+        ),
+        pytest.param(
+            Path("/etc/dog_shit_throwing_monkey.conf"),
+            pytest.raises(PyProjectTOMLReadError),
+            marks=pytest.mark.skipif(
+                platform.system().lower() != "linux",
+                reason="linux like fs path",
+            ),
+            id="absolute-but-nonexistent",
+        ),
+        pytest.param(
+            Path("__init__.py"),
+            does_not_raise(),
+            id="relative-path-which-shockingly-resolves",
+        ),
+    ),
 )
-def test_get_pyproject_toml_unsupported_type(invalid):
+def test_get_pyproject_toml_path_and_unsupported_type(
+    invalid: "Path | str | float | int | None",
+    expectation: "DOES_NOT_OR_DOES",
+) -> None:
     """Unsupported types feed to TomlParser"""
-    # pytest --showlocals --log-level INFO -k "test_get_pyproject_toml_unsupported_type" tests
-    with pytest.raises(PyProjectTOMLReadError):
-        TomlParser(invalid, raise_exceptions=True)
-
-
-testdata_random_folders_and_files = (
-    (
-        Path("/etc"),
-        pytest.raises(PyProjectTOMLReadError),
-    ),
-    (
-        Path("/etc/dog_shit_throwing_monkey.conf"),
-        pytest.raises(PyProjectTOMLReadError),
-    ),
-    (
-        Path("__init__.py"),
-        does_not_raise(),
-    ),
-)
-ids_random_folders_and_files = (
-    "folder without a pyproject.toml in it",
-    "absolute but nonexistent",
-    "realitive path which shockingly resolves",
-)
-
-
-@pytest.mark.parametrize(
-    "path_f, expectation",
-    testdata_random_folders_and_files,
-    ids=ids_random_folders_and_files,
-)
-def test_random_folders_and_files(path_f, expectation):
-    """Chaos monkey various paths."""
-    # pytest --showlocals --log-level INFO -k "test_random_folders_and_files" tests
-    # A Path but dodgy --> FileNotFoundError
+    # pytest --showlocals --log-level INFO -k "test_get_pyproject_toml_path_and_unsupported_type" tests
+    #    If a Path but dodgy --> FileNotFoundError
     with expectation:
-        TomlParser(path_f, raise_exceptions=True)
-
-
-testdata_unparsable = (
-    (
-        Path(__file__).parent.joinpath("_bad_files", "backend_only.pyproject_toml"),
-        pytest.raises(PyProjectTOMLParseError),
-    ),
-)
-ids_unparsable = ("backend only",)
+        TomlParser(
+            invalid,  # type: ignore[arg-type]
+            raise_exceptions=True,
+        )
 
 
 @pytest.mark.parametrize(
-    "path_toml_src, expectation",
-    testdata_unparsable,
-    ids=ids_unparsable,
+    "relpath_toml_src, expectation",
+    (
+        pytest.param(
+            Path("_bad_files").joinpath("backend_only.pyproject_toml"),
+            pytest.raises(PyProjectTOMLParseError),
+            id="backend-only",
+        ),
+    ),
 )
 def test_get_pyproject_toml_bad(
-    path_toml_src,
-    expectation,
-    tmp_path,
-    prep_pyproject_toml,
-):
+    relpath_toml_src: "Path",
+    expectation: "DOES_NOT_OR_DOES",
+    tmp_path: "Path",
+    request: pytest.FixtureRequest,
+    prep_pyproject_toml: "Callable[[Path, Path, Path | None], Path | None]",
+) -> None:
     """Parse a bad pyproject.toml."""
     # pytest --showlocals --log-level INFO -k "test_get_pyproject_toml_bad" tests
+    abspath_tests_dir = request.path.parent
+    abspath_toml_src = abspath_tests_dir.joinpath(relpath_toml_src)
 
     # file_as_str = path.read_text()
     # Provide a path, not the file contents
-    path_f = prep_pyproject_toml(path_toml_src, tmp_path)
+    path_f = prep_pyproject_toml(abspath_toml_src, tmp_path)
     invalids = (path_f,)
     for invalid in invalids:
         with expectation:
@@ -158,7 +162,11 @@ testdata_valid_pyproject_toml = list(
     testdata_valid_pyproject_toml,
     ids=[path.name.rsplit(".", 1)[0] for path in testdata_valid_pyproject_toml],
 )
-def test_get_pyproject_toml_good(path_toml_src, tmp_path, prep_pyproject_toml):
+def test_get_pyproject_toml_good(
+    path_toml_src: "Path",
+    tmp_path: "Path",
+    prep_pyproject_toml: "Callable[[Path, Path, Path | None], Path | None]",
+) -> None:
     """Parse a valid pyproject.toml."""
     # pytest --showlocals --log-level INFO -k "test_get_pyproject_toml_good" tests
     # prepare
@@ -180,22 +188,20 @@ def test_get_pyproject_toml_good(path_toml_src, tmp_path, prep_pyproject_toml):
         assert actual_dict_0 == actual_dict_1
 
 
-testdata_search_for_pyproject_toml = (
-    Path(__file__).parent.parent,
-    Path(__file__).parent,
-)
-ids_search_for_pyproject_toml = (
-    "package base folder",
-    "tests folder",
-)
-
-
 @pytest.mark.parametrize(
     "path_dir",
-    testdata_search_for_pyproject_toml,
-    ids=ids_search_for_pyproject_toml,
+    (
+        pytest.param(
+            Path(__file__).parent.parent,
+            id="package-base-folder",
+        ),
+        pytest.param(
+            Path(__file__).parent,
+            id="tests-folder",
+        ),
+    ),
 )
-def test_search_for_pyproject_toml(path_dir):
+def test_search_for_pyproject_toml(path_dir: "Path") -> None:
     """TomlParser Reverse searches for pyproject.toml."""
     # pytest --showlocals --log-level INFO -k "test_get_pyproject_toml_dir" tests
     tp = TomlParser(path_dir, raise_exceptions=True)
@@ -208,7 +214,7 @@ def test_search_for_pyproject_toml(path_dir):
     assert issubclass(type(actual), PurePath)
 
 
-def test_pyproject_toml_search_fail(tmp_path):
+def test_pyproject_toml_search_fail(tmp_path: "Path") -> None:
     """Chaos monkey test TomlParser."""
     # pytest --showlocals --log-level INFO -k "test_pyproject_toml_search_fail" tests
     # there should be no pyproject.toml in the reverse path
@@ -225,34 +231,37 @@ def test_pyproject_toml_search_fail(tmp_path):
         assert tp.d_pyproject_toml is None
 
 
-testdata_toml_parser_read = (
-    (
-        Path(__file__).parent.joinpath("_bad_files", "backend_only.pyproject_toml"),
-        pytest.raises(PyProjectTOMLParseError),
-    ),
-    (
-        Path(__file__).parent.joinpath("_good_files", "nonexistent.pyproject_toml"),
-        pytest.raises(PyProjectTOMLReadError),
-    ),
-)
-ids_toml_parser_read = (
-    "unparsable pyproject-toml",
-    "no such pyproject-toml",
-)
-
-
 @pytest.mark.parametrize(
-    "path_toml_src, expectation",
-    testdata_toml_parser_read,
-    ids=ids_toml_parser_read,
+    "relpath_toml_src, expectation",
+    (
+        pytest.param(
+            Path("_bad_files").joinpath("backend_only.pyproject_toml"),
+            pytest.raises(PyProjectTOMLParseError),
+            id="unparsable-pyproject-toml",
+        ),
+        pytest.param(
+            Path("_good_files").joinpath("nonexistent.pyproject_toml"),
+            pytest.raises(PyProjectTOMLReadError),
+            id="no-such-pyproject-toml",
+        ),
+    ),
 )
-def test_toml_parser_read(path_toml_src, expectation, tmp_path, prep_pyproject_toml):
+def test_toml_parser_read(
+    relpath_toml_src: "Path",
+    expectation: "DOES_NOT_OR_DOES",
+    tmp_path: "Path",
+    request: pytest.FixtureRequest,
+    prep_pyproject_toml: "Callable[[Path, Path, Path | None], Path | None]",
+) -> None:
     """Parse pyproject.toml file with TomlParser."""
     # pytest --showlocals --log-level INFO -k "test_toml_parser_read" -v tests
-    if not path_toml_src.exists():
+    abspath_tests_dir = request.path.parent
+    abspath_toml_src = abspath_tests_dir.joinpath(relpath_toml_src)
+
+    if not abspath_toml_src.exists():
         path_f = tmp_path
     else:
-        path_f = prep_pyproject_toml(path_toml_src, tmp_path)
+        path_f = prep_pyproject_toml(abspath_toml_src, tmp_path)
 
     # Either could raise PyProjectTOMLParseError or PyProjectTOMLReadError
     with expectation:

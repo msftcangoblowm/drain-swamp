@@ -1,0 +1,5 @@
+# no mypy or pyright
+pytest>=7.1
+pytest-logging-strict
+pytest-regressions
+types-setuptools

@@ -26,7 +26,7 @@
 
 .. PYVERSIONS
 
-\* Python 3.9 through 3.13, PyPy
+\* Python 3.11 through 3.15, pypy-3.11
 
 **new in 2.1.x**
 

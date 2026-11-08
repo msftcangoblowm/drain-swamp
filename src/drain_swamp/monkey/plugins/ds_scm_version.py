@@ -3,11 +3,6 @@
 
 Get the scm version and writes it to version_file
 
-.. py:data:: log
-   :type: logging.Logger
-
-   Module level logger
-
 .. seealso::
 
    `kedro hooks <https://docs.kedro.org/en/latest/extend_kedro/plugins.html#hooks>`_
@@ -37,7 +32,7 @@ Raises LookupError if missing pyproject.toml or missing sections tool.drain-swam
            new_callable=MagicMock(wraps=ReadPyprojectStrict),
        ),
    ):
-       # Limited to only setuptools_scm._config.Configuation fields
+       # Limited to only setuptools_scm._config.Configuration fields
        _infer_version(dist)
 
 
@@ -62,6 +57,7 @@ from drain_swamp.monkey.config_settings import ConfigSettings
 from drain_swamp.monkey.hooks import markers
 from drain_swamp.monkey.hooks.constants import HOOK_NAMESPACE
 
+#: logging.Logger: Module level logger
 log = logging.getLogger(__name__)
 
 
@@ -120,7 +116,7 @@ def on_version_infer(config_settings: dict[str, Any]) -> str | None:
     ret = None
     with warnings.catch_warnings(record=True) as w:
         kind = _kind(config_settings)
-        if len(w) != 0:
+        if w:  # pragma: no branch
             ret = str(w[0].message)
 
     log.info(f"[{mod_path}] kind: {kind!r}")

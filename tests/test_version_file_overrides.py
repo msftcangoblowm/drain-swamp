@@ -22,34 +22,29 @@ from drain_swamp.version_file._overrides import (
     read_named_env,
 )
 
-testdata_normalize_dist_name = (
-    (
-        "awesome.special_project",
-        "AWESOME_SPECIAL_PROJECT",
-    ),
-    (
-        "awesome.special-project-",
-        "AWESOME_SPECIAL_PROJECT_",
-    ),
-)
-ids_normalize_dist_name = (
-    "period and underline",
-    "period and hyphens. Trailing hyphen",
-)
-
 
 @pytest.mark.parametrize(
     "dist_name, expected",
-    testdata_normalize_dist_name,
-    ids=ids_normalize_dist_name,
+    (
+        pytest.param(
+            "awesome.special_project",
+            "AWESOME_SPECIAL_PROJECT",
+            id="period-and-underline",
+        ),
+        pytest.param(
+            "awesome.special-project-",
+            "AWESOME_SPECIAL_PROJECT_",
+            id="period-and-hyphens.-Trailing-hyphen",
+        ),
+    ),
 )
-def test_normalize_dist_name(dist_name, expected):
+def test_normalize_dist_name(dist_name: str, expected: str) -> None:
     """Test normalizing dist name."""
     actual = normalize_dist_name(dist_name)
     assert actual == expected
 
 
-def test_read_named_env():
+def test_read_named_env() -> None:
     """Test read_named_env."""
     env_0 = os.environ.copy()
     dist_name = "AWESOME_SPECIAL_PROJECT"

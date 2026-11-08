@@ -9,11 +9,6 @@ Utility function to retrieve the global hook_manager singleton.
 
    Entrypoint to load hooks from for built-in or installed plugins
 
-.. py:data:: logger
-   :type: logging.Logger
-
-   Module level logger
-
 .. seealso::
 
    kedro manager
@@ -42,6 +37,7 @@ from .constants import (
 if TYPE_CHECKING:
     from importlib.machinery import ModuleSpec
 
+#: logging.Logger: Module level logger
 logger = logging.getLogger(__name__)
 
 __all__ = (
@@ -124,7 +120,7 @@ def lazy_dotted_path(dotted_path):
     """
     mod_path = "drain_swamp.monkey.hooks:lazy_dotted_path"
     is_ng = dotted_path is None or not isinstance(dotted_path, str)
-    if is_ng:
+    if is_ng:  # pragma: no branch
         msg_warn = (
             f"{mod_path} Expecting valid dotted path to module "
             "containing plugin functions"
@@ -136,7 +132,7 @@ def lazy_dotted_path(dotted_path):
     except KeyError:
         mod = None
 
-    if mod is None:
+    if mod is None:  # pragma: no branch
         try:
             spec = importlib.util.find_spec(dotted_path)
             module = importlib.util.module_from_spec(spec)
@@ -145,10 +141,8 @@ def lazy_dotted_path(dotted_path):
             loader.exec_module(module)
             mod = module
         except ModuleNotFoundError as exc:
-            msg_warn = f"{mod_path} dotted path to nonexistant module {dotted_path}"
+            msg_warn = f"{mod_path} dotted path to nonexistent module {dotted_path}"
             raise ValueError(msg_warn) from exc
-    else:  # pragma: no cover
-        pass
 
     return mod
 
@@ -183,7 +177,7 @@ def lazy_package(mod_pkg):
 
     mod_path = "drain_swamp.monkey.hooks.manager:lazy_package"
     is_not_module = mod_pkg is None or not inspect.ismodule(mod_pkg)
-    if is_not_module:
+    if is_not_module:  # pragma: no branch
         msg_warn = f"{mod_path} Expected package module got {type(mod_pkg)}"
         raise TypeError(msg_warn)
 
@@ -228,7 +222,7 @@ def _filter_specs(member):  # pragma: no cover
 
 
 def iter_specs(mod, filter_=_filter_specs):  # pragma: no cover
-    """Iteratable of pluggy spec or impl classes
+    """Iterable of pluggy spec or impl classes
 
     Too hard to inspect spec and impl classes and functions. Using spec
     module ``__all__`` in leiu of inspection or validator.
@@ -310,15 +304,11 @@ def _register_hooks(pm, hooks):
         # Avoids ValueError
         is_registered = pm.is_registered(plugin)
 
-        if inspect.ismodule(plugin) or inspect.isaclass(plugin):
+        if inspect.ismodule(plugin) or inspect.isaclass(plugin):  # pragma: no branch
             # module containing only functions
             # class implementing spec functions as class methods
-            if not is_registered:
+            if not is_registered:  # pragma: no branch
                 pm.register(plugin)
-            else:  # pragma: no cover
-                pass
-        else:  # pragma: no cover
-            pass
 
 
 def _register_hooks_entry_points(hook_manager, entrypoint_plugins, disabled_plugins):
@@ -371,14 +361,12 @@ def _register_hooks_entry_points(hook_manager, entrypoint_plugins, disabled_plug
         else:  # pragma: no cover
             pass
 
-    if len(disabled_plugin_names) != 0:  # pragma: no cover
+    if disabled_plugin_names:  # pragma: no cover  # pragma: no branch
         str_disabled_plugins = ", ".join(sorted(disabled_plugin_names))
         msg_debug = (f"Hooks are disabled for plugin(s): {str_disabled_plugins}",)
         logger.debug(msg_debug)
-    else:  # pragma: no cover
-        pass
 
-    if len(plugin_names) != 0:  # pragma: no cover
+    if plugin_names:  # pragma: no cover  # pragma: no branch
         str_plugin_names = ", ".join(sorted(plugin_names))
         str_plugin_count = len(plugin_names)
         msg_debug = (
@@ -386,8 +374,6 @@ def _register_hooks_entry_points(hook_manager, entrypoint_plugins, disabled_plug
             f"plugin(s): {str_plugin_names}"
         )
         logger.debug(msg_debug)
-    else:  # pragma: no cover
-        pass
 
 
 def get_plugin_manager(
@@ -424,7 +410,7 @@ def get_plugin_manager(
     :raises:
 
       - :py:exc:TypeError -- Expected param mod_pkg_plugins to be a types.ModuleType
-        Package folder with modules containg hook implementation functions
+        Package folder with modules containing hook implementation functions
 
     """
     try:
@@ -432,31 +418,25 @@ def get_plugin_manager(
     except AssertionError as e:
         msg_exc = (
             "Positional param expected package module. Package folder "
-            "with modules containg hook implementation functions"
+            "with modules containing hook implementation functions"
         )
         raise TypeError(msg_exc) from e
 
     is_namespace_ng = namespace is None or not isinstance(namespace, str)
-    if is_namespace_ng:  # pragma: no cover
+    if is_namespace_ng:  # pragma: no cover  # pragma: no branch
         namespace = HOOK_NAMESPACE
-    else:  # pragma: no cover
-        pass
 
     is_spec_dotted_path_ng = specs_dotted_path is None or not isinstance(
         specs_dotted_path, str
     )
-    if is_spec_dotted_path_ng:  # pragma: no cover
+    if is_spec_dotted_path_ng:  # pragma: no cover  # pragma: no branch
         specs_dotted_path = DOTTED_PATH_SPECS
-    else:  # pragma: no cover
-        pass
 
     is_ep_plugins_ng = entrypoint_plugins is None or not isinstance(
         entrypoint_plugins, str
     )
-    if is_ep_plugins_ng:  # pragma: no cover
+    if is_ep_plugins_ng:  # pragma: no cover  # pragma: no branch
         entrypoint_plugins = _PLUGIN_HOOKS
-    else:  # pragma: no cover
-        pass
 
     pm = _create_hook_manager(namespace, specs_dotted_path)
 

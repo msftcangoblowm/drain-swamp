@@ -1,7 +1,4 @@
 pip-tools
 pip>=24.2
-setuptools-scm>=8.1.0
-setuptools>=75.7.0
-tomli>=2.0.2; python_version<"3.11"
-typing-extensions; python_version<"3.10"
+setuptools-scm>=8.2.0,<10
 click>=8.1.8

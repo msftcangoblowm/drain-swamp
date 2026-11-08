@@ -1,7 +1,7 @@
 """
 .. moduleauthor:: Dave Faulkmore <https://mastodon.social/@msftcangoblowme>
 
-Unit test -- Module
+With coverage
 
 .. code-block:: shell
 
@@ -23,6 +23,7 @@ from pathlib import (
     Path,
     PurePath,
 )
+from typing import TYPE_CHECKING
 from unittest.mock import patch
 
 import pytest
@@ -40,6 +41,13 @@ from drain_swamp.version_file.dump_version import (
 )
 
 from .wd_wrapper import WorkDir
+
+if TYPE_CHECKING:
+    from collections.abc import (
+        Callable,
+        MutableSet,
+        Sequence,
+    )
 
 
 @pytest.fixture()
@@ -75,9 +83,9 @@ def wd(wd: WorkDir) -> WorkDir:
 
 
 def test_dump_version(
-    tmp_path,
-    prepare_folders_files,
-):
+    tmp_path: "Path",
+    prepare_folders_files: "Callable[[Sequence[str | Path] | MutableSet[str | Path]], set[Path]]",
+) -> None:
     """Test dump version file."""
     # pytest --showlocals --log-level INFO -k "test_dump_version" tests
     # prepare
@@ -91,35 +99,32 @@ def test_dump_version(
         dump_version(tmp_path, version, write_to)
 
 
-testdata_write_to_file = (
+@pytest.mark.parametrize(
+    "relpath_toml_file, app_name, kind",
     (
-        Path(__file__).parent.joinpath(
-            "_project",
-            "install_minimum.pyproject_toml",
+        pytest.param(
+            Path("_project").joinpath("install_minimum.pyproject_toml"),
+            "complete_awesome_perfect",
+            "0.0.2",
+            id="write-version-file-verify-version-str",
         ),
-        "complete_awesome_perfect",
-        "0.0.2",
     ),
 )
-ids_write_to_file = ("write version file verify version str",)
-
-
-@pytest.mark.parametrize(
-    "p_toml_file, app_name, kind",
-    testdata_write_to_file,
-    ids=ids_write_to_file,
-)
 def test_write_to_file(
-    p_toml_file,
-    app_name,
-    kind,
-    wd,
-    prep_pyproject_toml,
-    prepare_folders_files,
-    verify_tag_version,
-):
+    relpath_toml_file: Path,
+    app_name: str,
+    kind: str,
+    wd: WorkDir,
+    prep_pyproject_toml: "Callable[[Path, Path, Path | None], Path | None]",
+    prepare_folders_files: "Callable[[Sequence[str | Path] | MutableSet[str | Path]], set[Path]]",
+    verify_tag_version: "Callable[[Path, str], bool]",
+    request: pytest.FixtureRequest,
+) -> None:
     """Test write_to_file. Assumes a real Python project skeleton."""
     # pytest --showlocals --log-level INFO -k "test_write_to_file" tests
+    abspath_tests_dir = request.path.parent
+    p_toml_file = abspath_tests_dir.joinpath(relpath_toml_file)
+
     assert wd.cwd.exists() and wd.cwd.is_dir()
 
     # prepare
@@ -156,7 +161,7 @@ def test_write_to_file(
     wd.cwd.joinpath("dist", "empty.txt").unlink()
 
     #    src/complete_awesome_perfect/__main__.py
-    path_dir_src = Path(__file__).parent.joinpath(
+    path_dir_src = abspath_tests_dir.joinpath(
         "_project",
         "src",
         app_name,
@@ -166,16 +171,19 @@ def test_write_to_file(
     prep_pyproject_toml(path_f, path_dir_dest, rename="__main__.py")
 
     # Act
-    #    write to nonexistant version file
+    #    write to nonexistent version file
     write_to_file(p_config, kind, is_only_not_exists=True)
     #    None --> False
     write_to_file(p_config, kind, is_only_not_exists=None)
 
     # Verify version file contains "0.0.2"
-    assert verify_tag_version(wd.cwd, kind) is True
+    assert verify_tag_version(wd.cwd, kind)
 
 
-def test_validate_template(tmp_path, prepare_folders_files):
+def test_validate_template(
+    tmp_path: "Path",
+    prepare_folders_files: "Callable[[Sequence[str | Path] | MutableSet[str | Path]], set[Path]]",
+) -> None:
     """Test _validate_template."""
     # pytest --showlocals --log-level INFO -k "test_validate_template" tests
 
@@ -218,52 +226,44 @@ def test_validate_template(tmp_path, prepare_folders_files):
     assert isinstance(actual, dict)
 
 
-testdata_write_version_files = (
-    (
-        Path(__file__).parent.joinpath(
-            "_project",
-            "install_minimum.pyproject_toml",
-        ),
-        "complete_awesome_perfect",
-        "0.0.2",
-        None,
-        "src/{app_name}/_version.py",
-    ),
-    (
-        Path(__file__).parent.joinpath(
-            "_project",
-            "install_minimum.pyproject_toml",
-        ),
-        "complete_awesome_perfect",
-        "0.0.2",
-        "src/{app_name}/_version.py",
-        None,
-    ),
-)
-ids_write_version_files = (
-    "With version_file",
-    "With write_to",
-)
-
-
 @pytest.mark.parametrize(
-    "p_toml_file, app_name, kind, str_write_to, str_version_file",
-    testdata_write_version_files,
-    ids=ids_write_version_files,
+    "relp_toml_file, app_name, kind, str_write_to, str_version_file",
+    (
+        pytest.param(
+            Path("_project").joinpath("install_minimum.pyproject_toml"),
+            "complete_awesome_perfect",
+            "0.0.2",
+            None,
+            "src/{app_name}/_version.py",
+            id="With-version_file",
+        ),
+        pytest.param(
+            Path("_project").joinpath("install_minimum.pyproject_toml"),
+            "complete_awesome_perfect",
+            "0.0.2",
+            "src/{app_name}/_version.py",
+            None,
+            id="With-write_to",
+        ),
+    ),
 )
 def test_write_version_files(
-    p_toml_file,
-    app_name,
-    kind,
-    str_write_to,
-    str_version_file,
-    wd,
-    prep_pyproject_toml,
-    prepare_folders_files,
-    verify_tag_version,
-):
+    relp_toml_file: Path,
+    app_name: str,
+    kind: str,
+    str_write_to: str,
+    str_version_file: str | None,
+    wd: WorkDir,
+    prep_pyproject_toml: "Callable[[Path, Path, Path | None], Path | None]",
+    prepare_folders_files: "Callable[[Sequence[str | Path] | MutableSet[str | Path]], set[Path]]",
+    verify_tag_version: "Callable[[Path, str], bool]",
+    request: pytest.FixtureRequest,
+) -> None:
     """Test write_version_files."""
     # pytest --showlocals --log-level INFO -k "test_write_version_files" tests
+    abspath_tests_dir = request.path.parent
+    p_toml_file = abspath_tests_dir.joinpath(relp_toml_file)
+
     p_ver_file = wd.cwd.joinpath("src", app_name, "_version.py")
     p_empty_txt = wd.cwd.joinpath("dist", "empty.txt")
     root = wd.cwd
@@ -296,7 +296,7 @@ def test_write_version_files(
     #   Only wanted the folder
     p_empty_txt.unlink()
     version_file_contents = p_ver_file.read_text()
-    assert len(version_file_contents) == 0
+    assert not version_file_contents
 
     # Act
     #     version file exist, so write is skipped
@@ -311,7 +311,7 @@ def test_write_version_files(
     #     version file exists and is empty. Cuz exists, write skipped
     version_file_contents_after = p_ver_file.read_text()
     if version_file is not None:
-        assert len(version_file_contents_after) == 0
+        assert not version_file_contents_after
 
     #     None --> False. Write version file
     write_version_files(
@@ -321,47 +321,38 @@ def test_write_version_files(
         version_file,
         is_only_not_exists=None,
     )
-    assert verify_tag_version(wd.cwd, kind) is True
-
-
-testdata_scm_version_fail = (
-    (
-        Path(__file__).parent.joinpath(
-            "_project",
-            "install_minimum.pyproject_toml",
-        ),
-        None,
-        SEM_VERSION_FALLBACK_SANE,
-    ),
-    (
-        Path(__file__).parent.joinpath(
-            "_project",
-            "install_minimum.pyproject_toml",
-        ),
-        "0.0.2",
-        "0.0.2",
-    ),
-)
-ids_scm_version_fail = (
-    "_get_version returns None --> sane default",
-    "x.y.z --> x.y.z",
-)
+    assert verify_tag_version(wd.cwd, kind)
 
 
 @pytest.mark.parametrize(
-    "p_toml_file, scm_str, expected",
-    testdata_scm_version_fail,
-    ids=ids_scm_version_fail,
+    "relp_toml_file, scm_str, expected",
+    (
+        pytest.param(
+            Path("_project").joinpath("install_minimum.pyproject_toml"),
+            None,
+            SEM_VERSION_FALLBACK_SANE,
+            id="_get_version-returns-None--sane-default",
+        ),
+        pytest.param(
+            Path("_project").joinpath("install_minimum.pyproject_toml"),
+            "0.0.2",
+            "0.0.2",
+            id="x.y.z--x.y.z",
+        ),
+    ),
 )
 def test_scm_version_fail(
-    p_toml_file,
-    scm_str,
-    expected,
-    wd,
-    prep_pyproject_toml,
-):
+    relp_toml_file: Path,
+    scm_str: str | None,
+    expected: str,
+    wd: WorkDir,
+    prep_pyproject_toml: "Callable[[Path, Path, Path | None], Path | None]",
+    request: pytest.FixtureRequest,
+) -> None:
     """Test scm_version fail conditions."""
     # pytest --showlocals --log-level INFO -k "test_scm_version_fail" tests
+    abspath_tests_dir = request.path.parent
+    p_toml_file = abspath_tests_dir.joinpath(relp_toml_file)
 
     # prepare
     #    pyproject.toml

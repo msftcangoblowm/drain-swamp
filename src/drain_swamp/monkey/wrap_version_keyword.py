@@ -5,16 +5,10 @@ Removes the need for a ``setup.py`` file.
 
 In ``pyproject.toml``,
 
-    .. code-block:: text
+.. code-block:: text
 
-       [project.entry-points."distutils.setup_keywords"]
-       use_scm_version = "drain_swamp.monkey.wrap_version_keyword:version_keyword"
-
-
-.. py:data:: log
-   :type: logging.Logger
-
-   Module level logger
+   [project.entry-points."distutils.setup_keywords"]
+   use_scm_version = "drain_swamp.monkey.wrap_version_keyword:version_keyword"
 
 """
 
@@ -26,6 +20,7 @@ from setuptools_scm.version import (
     guess_next_dev_version,
 )
 
+#: logging.Logger: Module level logger
 log = logging.getLogger("drain_swamp.monkey.wrap_version_keyword")
 
 

@@ -56,5 +56,5 @@ As coders, who should be focusing on the code, imposing burdens and kyc,
 means the funds come with strings requiring our time.
 
 This violates the point of a donation, to focus time and attention on the
-project. Not on never ending conformance rituals and tests of loyality
+project. Not on never ending conformance rituals and tests of loyalty
 and group identity.

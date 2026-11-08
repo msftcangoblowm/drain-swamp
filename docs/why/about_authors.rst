@@ -79,7 +79,7 @@ That one guy
 Captain Obvious the master of facts everyone already knows says::
 
   pip strongly discourages making multiple wheels with slight variations,
-  besides archecture or OS, for the same release
+  besides architecture or OS, for the same release
 
 Remember that?
 

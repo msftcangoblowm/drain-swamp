@@ -1,7 +1,7 @@
 license for closed source
 ==========================
 
-To request a commericial license for closed source projects and services
+To request a commercial license for closed source projects and services
 
 Definitions
 ------------
@@ -13,7 +13,7 @@ exclusion from the projects license, for a specific entity and time period
 copyright holder
 """""""""""""""""
 
-Someone who forks the project, simply by editting the legal notices, does
+Someone who forks the project, simply by editing the legal notices, does
 not suddenly become the copyright holder.
 
 Under copyright law, a maintainer, having forked a project, cannot
@@ -54,7 +54,7 @@ infrastructure.
 author cannot attract maintainers
 """"""""""""""""""""""""""""""""""
 
-Common situation is the repository is in a preceived negative situation,
+Common situation is the repository is in a perceived negative situation,
 forcing others to fork the project and take on the enormous burden and
 responsibility.
 
@@ -68,7 +68,7 @@ This is reoccurring real issue.
 
 Maintainer(s) who step forward and have the talent, the author will depend on.
 
-There being no non-subjective reprecussions for bad behavior or just to get
+There being no non-subjective repercussions for bad behavior or just to get
 attention, at some point, in an innocent looking commit, malware gets introduced.
 
 Obfusicated code is placed in either the build system or in unittest assets.

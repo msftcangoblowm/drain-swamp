@@ -31,46 +31,6 @@ or
 
 First first form can be run from source, without the package being installed
 
-.. py:data:: _logger
-   :type: logging.Logger
-
-   Module level logger
-
-.. py:data:: help_path
-   :type: str
-
-   cli option ``--path`` doc string
-
-.. py:data:: help_kind
-   :type: str
-
-   cli option ``--kind`` doc string
-
-.. py:data:: help_snippet_co
-   :type: str
-
-   cli option --snip doc string
-
-.. py:data:: EPILOG_SEED
-   :type: str
-
-   Exit codes explanation for command, ``seed``
-
-.. py:data:: EPILOG_EDITS
-   :type: str
-
-   Exit codes explanation for command, ``edits``
-
-.. py:data:: EPILOG_BUILD
-   :type: str
-
-   Exit codes explanation for command, ``build``
-
-.. py:data:: EPILOG_PRETAG
-   :type: str
-
-   Exit codes explanation for command, ``pretag``
-
 """
 
 import contextlib
@@ -121,7 +81,7 @@ if __name__ == "__main__" and __spec__ is None:  # pragma: no cover
     spec_this = importlib.util.spec_from_file_location(dotted_path_this, Path(__file__))
     __spec__ = spec_this
 elif (
-    __name__ == "__main__" and isinstance(__package__, str) and len(__package__) == 0
+    __name__ == "__main__" and isinstance(__package__, str) and not __package__
 ):  # pragma: no cover
     # When package is not installed
     # python -m drain_swamp.cli_igor build --kind="0.0.1"
@@ -150,20 +110,25 @@ from .igor_utils import (
 )
 from .snippet_sphinx_conf import SnipSphinxConf
 
+#: logging.Logger: Module level logger
 _logger = logging.getLogger(f"{g_app_name}.cli_igor")
 # taken from pyproject.toml
 entrypoint_name = "drain-swamp"  # noqa: F401
 
+#: str: cli option ``--path`` doc string
 help_path = "package root folder"
+#: str: cli option --snip doc string
 help_snippet_co = (
     "Snippet code, within a file, unique id of an editable region, aka snippet. "
     "Only necessary if allows for multiple snippets"
 )
+#: str: cli option ``--kind`` doc string
 help_kind = (
     "version string kind: now (alias of current), current, tag, or "
     "explicit semantic version"
 )
 
+#: str: Exit codes explanation for command, ``seed``
 EPILOG_SEED = """
 EXIT CODES
 
@@ -173,6 +138,7 @@ EXIT CODES
 
 """
 
+#: str: Exit codes explanation for command, ``edits``
 EPILOG_EDITS = """
 EXIT CODES
 
@@ -199,6 +165,7 @@ EXIT CODES
 
 """
 
+#: str: Exit codes explanation for command, ``build``
 EPILOG_BUILD = """
 EXIT CODES
 
@@ -226,6 +193,7 @@ EPILOG_SCM_PAIR = """
 
 """
 
+#: str: Exit codes explanation for command, ``pretag``
 EPILOG_PRETAG = """
 EXIT CODES
 
@@ -558,7 +526,7 @@ def setuptools_scm_key_value_pair(path, kind):
     .. deprecated:: 0.5.1
 
        Version file written by plugin, ds_scm_version, during sdist
-       build. Might remain relevent only to initially create the version file
+       build. Might remain relevant only to initially create the version file
 
     """
     try:

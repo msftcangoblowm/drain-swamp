@@ -1,7 +1,7 @@
 """
 .. moduleauthor:: Dave Faulkmore <https://mastodon.social/@msftcangoblowme>
 
-Unit test -- Module
+With coverage
 
 .. code-block:: shell
 
@@ -20,40 +20,41 @@ Integration test
 """
 
 from collections.abc import Mapping
+from typing import TYPE_CHECKING
 
 import pytest
 
 from drain_swamp.monkey.config_settings import ConfigSettings
 
-testdata_config_settings_malformed = (
-    (
-        (
-            "[project]\n"
-            """name = "great-package"\n"""
-            """version = "99.99.99a1.dev6"\n"""
-            "[tool.config-settings]\n"
-            """kind="current"\n"""
-            """set-lock="1"\n"""
-            """snip-co={}\n\n"""
-        ),
-        "my_snippet_co",
-        0,
-    ),
-)
-ids_config_settings_malformed = ("Missing double quotes surroundeding snip-co",)
+if TYPE_CHECKING:
+    from pathlib import Path
 
 
 @pytest.mark.parametrize(
     "toml_contents, snippet_co, expected_count",
-    testdata_config_settings_malformed,
-    ids=ids_config_settings_malformed,
+    (
+        pytest.param(
+            (
+                "[project]\n"
+                """name = "great-package"\n"""
+                """version = "99.99.99a1.dev6"\n"""
+                "[tool.config-settings]\n"
+                """kind="current"\n"""
+                """set-lock="1"\n"""
+                """snip-co={}\n\n"""
+            ),
+            "my_snippet_co",
+            0,
+            id="Missing-double-quotes-surroundeding-snip-co",
+        ),
+    ),
 )
 def test_config_settings_malformed(
-    toml_contents,
-    snippet_co,
-    expected_count,
-    tmp_path,
-):
+    toml_contents: str,
+    snippet_co: str,
+    expected_count: int,
+    tmp_path: "Path",
+) -> None:
     """Malformed config_settings."""
     # pytest --showlocals --log-level INFO -k "test_config_settings_malformed" tests
     # prepare

@@ -1,7 +1,7 @@
 """
 .. moduleauthor:: Dave Faulkmore <https://mastodon.social/@msftcangoblowme>
 
-Unit test -- Module
+With coverage
 
 .. code-block:: shell
 
@@ -21,6 +21,7 @@ Integration test
 
 from contextlib import nullcontext as does_not_raise
 from pathlib import Path
+from typing import TYPE_CHECKING
 from unittest.mock import patch
 
 import pytest
@@ -33,37 +34,37 @@ from drain_swamp.package_metadata import (
     get_author_and_email,
 )
 
-testdata_play_with_cache = (
-    (
-        "blarneys_blowup_doll",
-        False,
-        AUTHOR_NAME_FALLBACK,
-        None,
-    ),
-    (
-        "drain_swamp",
-        True,
-        "Dave Faulkmore",
-        "faulkmore@protonmail.com",
-    ),
-)
-ids_play_with_cache = (
-    "nonexistant package. Not installed",
-    "existant package. Installed",
-)
+if TYPE_CHECKING:
+    from collections.abc import Callable
+
+    from .typing_only import DOES_NOT_OR_DOES
 
 
 @pytest.mark.parametrize(
     "app_name, is_installed, author_name_expected, author_email_expected",
-    testdata_play_with_cache,
-    ids=ids_play_with_cache,
+    (
+        pytest.param(
+            "blarneys_blowup_doll",
+            False,
+            AUTHOR_NAME_FALLBACK,
+            None,
+            id="nonexistent-package.-Not-installed",
+        ),
+        pytest.param(
+            "drain_swamp",
+            True,
+            "Dave Faulkmore",
+            "faulkmore@protonmail.com",
+            id="existent-package.-Installed",
+        ),
+    ),
 )
 def test_play_with_cache(
-    app_name,
-    is_installed,
-    author_name_expected,
-    author_email_expected,
-):
+    app_name: str,
+    is_installed: bool,
+    author_name_expected: str,
+    author_email_expected: str,
+) -> None:
     """If package is not installed, then author cache will contain only fallbacks."""
     # pytest --showlocals --log-level INFO -k "test_play_with_cache" tests
     assert is_package_installed(app_name) is is_installed
@@ -72,103 +73,109 @@ def test_play_with_cache(
     assert author_email == author_email_expected
 
 
-testdata_package_metadata_construct = (
-    (
-        "blarneys_blowup_doll",
-        None,
-        AUTHOR_NAME_FALLBACK,
-        None,
-        does_not_raise(),
-    ),
-    (
-        "blarneys_blowup_doll",
-        1.1234,
-        AUTHOR_NAME_FALLBACK,
-        None,
-        does_not_raise(),
-    ),
-    (
-        "blarneys_blowup_doll",
-        Path(__file__).parent.joinpath("_good_files", "complete.pyproject_toml"),
-        AUTHOR_NAME_FALLBACK,
-        None,
-        does_not_raise(),
-    ),
-    (
-        "blarneys_blowup_doll",
-        Path(__file__).parent.joinpath("_bad_files", "backend_only.pyproject_toml"),
-        AUTHOR_NAME_FALLBACK,
-        None,
-        does_not_raise(),
-    ),
-    (
-        "blarneys_blowup_doll",
-        Path(__file__).parent.joinpath("_good_files", "no_project_name.pyproject_toml"),
-        "Dave Faulkmore",
-        "faulkmore@protonmail.com",
-        does_not_raise(),
-    ),
-    (
-        None,
-        Path(__file__).parent.joinpath("_good_files", "complete.pyproject_toml"),
-        None,
-        None,
-        pytest.raises(ValueError),
-    ),
-    (
-        "",
-        Path(__file__).parent.joinpath("_good_files", "complete.pyproject_toml"),
-        None,
-        None,
-        pytest.raises(ValueError),
-    ),
-    (
-        "   ",
-        Path(__file__).parent.joinpath("_good_files", "complete.pyproject_toml"),
-        None,
-        None,
-        pytest.raises(ValueError),
-    ),
-    (
-        "complete-awesome-perfect",
-        Path(__file__).parent.joinpath("_good_files", "complete.pyproject_toml"),
-        "Anonymous",
-        None,
-        does_not_raise(),
-    ),
-)
-
-ids_package_metadata_construct = (
-    "Unsupported type. Expected Path got None",
-    "Unsupported type. Expected Path got float",
-    "pyproject.toml lacks author name and email",
-    "invalid pyproject.toml. Cannot parse",
-    "pyproject.toml has author name and email",
-    "app name is None",
-    "app name is empty",
-    "app name is non-empty whitespace",
-    "matching package name. No author name nor email address",
-)
-
-
 @pytest.mark.parametrize(
-    "app_name, path_config, expected_name, expected_email, expectation",
-    testdata_package_metadata_construct,
-    ids=ids_package_metadata_construct,
+    "app_name, relpath_config, expected_name, expected_email, expectation",
+    (
+        pytest.param(
+            "blarneys_blowup_doll",
+            None,
+            AUTHOR_NAME_FALLBACK,
+            None,
+            does_not_raise(),
+            id="Unsupported-type.-Expected-Path-got-None",
+        ),
+        pytest.param(
+            "blarneys_blowup_doll",
+            1.1234,
+            AUTHOR_NAME_FALLBACK,
+            None,
+            does_not_raise(),
+            id="Unsupported=type.-Expected-Path-got-float",
+        ),
+        pytest.param(
+            "blarneys_blowup_doll",
+            Path("_good_files").joinpath("complete.pyproject_toml"),
+            AUTHOR_NAME_FALLBACK,
+            None,
+            does_not_raise(),
+            id="pyproject.toml=lacks-author-name-and-email",
+        ),
+        pytest.param(
+            "blarneys_blowup_doll",
+            Path("_bad_files").joinpath("backend_only.pyproject_toml"),
+            AUTHOR_NAME_FALLBACK,
+            None,
+            does_not_raise(),
+            id="invalid-pyproject.toml.-Cannot-parse",
+        ),
+        pytest.param(
+            "blarneys_blowup_doll",
+            Path("_good_files").joinpath("no_project_name.pyproject_toml"),
+            "Dave Faulkmore",
+            "faulkmore@protonmail.com",
+            does_not_raise(),
+            id="pyproject.toml-has-author-name-and-email",
+        ),
+        pytest.param(
+            None,
+            Path("_good_files").joinpath("complete.pyproject_toml"),
+            None,
+            None,
+            pytest.raises(ValueError),
+            id="app-name-is-None",
+        ),
+        pytest.param(
+            "",
+            Path("_good_files").joinpath("complete.pyproject_toml"),
+            None,
+            None,
+            pytest.raises(ValueError),
+            id="app-name-is-empty",
+        ),
+        pytest.param(
+            "   ",
+            Path("_good_files").joinpath("complete.pyproject_toml"),
+            None,
+            None,
+            pytest.raises(ValueError),
+            id="app-name-is-non-empty=whitespace",
+        ),
+        pytest.param(
+            "complete-awesome-perfect",
+            Path("_good_files").joinpath("complete.pyproject_toml"),
+            "Anonymous",
+            None,
+            does_not_raise(),
+            id="matching-package-name.-No-author-name-nor-email-address",
+        ),
+    ),
 )
 def test_package_metadata_construct(
-    app_name,
-    path_config,
-    expected_name,
-    expected_email,
-    expectation,
-    tmp_path,
-    prep_pyproject_toml,
-):
+    app_name: str | None,
+    relpath_config: "Path | float | None",
+    expected_name: str | None,
+    expected_email: str | None,
+    expectation: "DOES_NOT_OR_DOES",
+    tmp_path: "Path",
+    request: pytest.FixtureRequest,
+    prep_pyproject_toml: "Callable[[Path, Path, Path | str | None], Path]",
+) -> None:
     """Retrieve author first name and email from package metadata."""
     # pytest --showlocals --log-level INFO -k "test_package_metadata_construct" tests
+    if TYPE_CHECKING:
+        abspath_config: Path | float | None
+
+    abspath_tests_dir = request.path.parent
+    if relpath_config is None or isinstance(relpath_config, float):
+        abspath_config = relpath_config
+    else:
+        abspath_config = abspath_tests_dir.joinpath(relpath_config)
+
     # prepare
-    path_pyproject_toml = prep_pyproject_toml(path_config, tmp_path)
+    path_pyproject_toml = prep_pyproject_toml(
+        abspath_config,  # type: ignore[arg-type]
+        tmp_path,
+    )
 
     # nonexistent package. Just checked, it's available.
     with expectation:
@@ -181,37 +188,37 @@ def test_package_metadata_construct(
             assert isinstance(pm.d_pyproject_toml, dict)
 
 
-testdata_package_construct_with_patch = (
+@pytest.mark.parametrize(
+    "app_name, relpath_config, expected_name, expected_email, expectation",
     (
-        "complete-awesome-perfect",
-        Path(__file__).parent.joinpath("_good_files", "complete.pyproject_toml"),
-        "Anonymous",
-        None,
-        does_not_raise(),
+        pytest.param(
+            "complete-awesome-perfect",
+            Path("_good_files").joinpath("complete.pyproject_toml"),
+            "Anonymous",
+            None,
+            does_not_raise(),
+            id="no-author-email-anonymous",
+        ),
     ),
 )
-ids_package_construct_with_patch = ("",)
-
-
-@pytest.mark.parametrize(
-    "app_name, path_config, expected_name, expected_email, expectation",
-    testdata_package_construct_with_patch,
-    ids=ids_package_construct_with_patch,
-)
 def test_package_construct_with_patch(
-    app_name,
-    path_config,
-    expected_name,
-    expected_email,
-    expectation,
-    tmp_path,
-    prep_pyproject_toml,
-):
+    app_name: str,
+    relpath_config: "Path",
+    expected_name: str,
+    expected_email: str | None,
+    expectation: "DOES_NOT_OR_DOES",
+    tmp_path: "Path",
+    request: pytest.FixtureRequest,
+    prep_pyproject_toml: "Callable[[Path, Path, Path | None], Path | None]",
+) -> None:
     """Patch it til you make it."""
     # pytest --showlocals --log-level INFO -k "test_package_metadata_construct" tests
+    abspath_tests_dir = request.path.parent
+    abspath_config = abspath_tests_dir.joinpath(relpath_config)
+
     # prepare
     #    pyproject.toml
-    path_pyproject_toml = prep_pyproject_toml(path_config, tmp_path)
+    path_pyproject_toml = prep_pyproject_toml(abspath_config, tmp_path)
 
     with expectation:
         with patch(

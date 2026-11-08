@@ -38,7 +38,7 @@ ifeq ($(is_venv),1)
   is_wheel ?= $(call IS_PACKAGE,wheel)
   is_piptools ?= $(call IS_PACKAGE,pip-tools)
 
-  find_whl = $(shell [[ -z "$(3)" ]] && extention=".whl" || extention="$(3)"; [[ -z "$(2)" ]] && srcdir="dist" || srcdir="$(2)/dist"; [[ -z "$(1)" ]] && whl=$$(ls $$srcdir/$(APP_NAME)*.whl  --format="single-column") || whl=$$(ls $$srcdir/$(1)*.whl --format="single-column"); echo $${whl##*/})
+  find_whl = $(shell [[ -z "$(3)" ]] && extension=".whl" || extension="$(3)"; [[ -z "$(2)" ]] && srcdir="dist" || srcdir="$(2)/dist"; [[ -z "$(1)" ]] && whl=$$(ls $$srcdir/$(APP_NAME)*.whl  --format="single-column") || whl=$$(ls $$srcdir/$(1)*.whl --format="single-column"); echo $${whl##*/})
 endif
 
 ##@ Helpers
@@ -95,8 +95,16 @@ diff_upgrade:			## Summarize the last `make upgrade`
 
 #run all pre-commit checks
 .PHONY: pre-commit
-pre-commit:				## Run checks found in .pre-commit-config.yaml
-	@pre-commit run --all-files
+pre-commit: private target_tty = $(if $(show),1,0)
+pre-commit:				## Run pre-commit checks w/o pyright -- make [show=1] pre-commit
+ifeq ($(is_venv),1)
+	@out=$$(PRE_COMMIT_COLOR=never SKIP=pyright pre-commit run --all-files ||:)
+	if [[ $(target_tty) -eq 1 ]]; then
+	echo "$$out" | tee /tmp/out.txt
+	else
+	echo "$$out" > /tmp/out.txt
+	fi
+endif
 
 #--strict is on
 .PHONY: mypy
@@ -128,20 +136,6 @@ ifeq ($(is_venv),1)
 	$(VENV_BIN_PYTHON) -m flake8 tests/
 endif
 
-# --cov-report=xml
-# Dependencies: pytest, pytest-cov, pytest-regressions
-# make [v=1] coverage
-# $(VENV_BIN)/pytest --showlocals --cov=drain_swamp --cov-report=term-missing --cov-config=pyproject.toml $(verbose_text) tests
-.PHONY: coverage
-coverage: private verbose_text = $(if $(v),"--verbose")
-coverage:				## Run tests, generate coverage reports -- make [v=1] coverage
-ifeq ($(is_venv),1)
-	-@$(VENV_BIN_PYTHON) -m coverage erase
-	$(VENV_BIN_PYTHON) -m coverage run --parallel -m pytest --showlocals $(verbose_text) tests
-	$(VENV_BIN_PYTHON) -m coverage combine
-	$(VENV_BIN_PYTHON) -m coverage report --fail-under=95
-endif
-
 ##@ Kitting
 # Initial build
 # mkdir dist/ ||:; python -m build --outdir dist/ .
@@ -151,39 +145,55 @@ REPO_OWNER := msftcangoblowm/drain-swamp
 REPO := $(REPO_OWNER)/drain_swamp
 
 .PHONY: edit_for_release cheats relbranch kit_check kit_build kit_upload
-.PHONY: test_upload kits_build kits_download github_releases
+.PHONY: test_upload kits_download github_releases
 
-edit_for_release:               ## Edit sources to insert release facts (see howto.txt)
-	python igor.py edit_for_release
+edit_for_release:		## Edit sources to insert release facts (see howto.txt)
+ifeq ($(is_venv),1)
+	$(VENV_BIN_PYTHON) igor.py edit_for_release
+endif
 
-cheats:                                 ## Create some useful snippets for releasing (see howto.txt)
-	python igor.py cheats | tee cheats.txt
+cheats:					## Create some useful snippets for releasing (see howto.txt)
+	$(VENV_BIN_PYTHON) igor.py cheats | tee cheats.txt
 
-relbranch:                              ## Create the branch for releasing (see howto.txt)
+relbranch:				## Create the branch for releasing (see howto.txt)
 	@git switch -c $(REPO_OWNER)/release-$$(date +%Y%m%d)
 
 # Do not create a target(s) kit: or kits:
-kit_check:                              ## Check that dist/* are well-formed
-	python -m twine check dist/*
+kit_check:				## Check that dist/* are well-formed
+ifeq ($(is_venv),1)
+	$(VENV_BIN_PYTHON) -m twine check dist/*
 	@echo $$(ls -1 dist | wc -l) distribution kits
+endif
 
-kit_build:                              ## Make the source distribution
-	python igor.py build_next ""
+kit_upload:				## Upload the built distributions to PyPI
+ifeq ($(is_venv),1)
+	$(VENV_BIN_PYTHON) -m twine upload --verbose dist/*
+endif
 
-kit_upload:                             ## Upload the built distributions to PyPI
-	twine upload --verbose dist/*
-
-test_upload:                    ## Upload the distributions to PyPI's testing server
-	twine upload --verbose --repository testpypi --password $$TWINE_TEST_PASSWORD dist/*
+test_upload:			## Upload the distributions to PyPI's testing server
+ifeq ($(is_venv),1)
+	$(VENV_BIN_PYTHON) -m twine upload --verbose --repository testpypi --password $$TWINE_TEST_PASSWORD dist/*
+endif
 
 kits_build:                             ## Trigger GitHub to build kits
-	python ci/trigger_build_kits.py $(REPO_OWNER)
+ifeq ($(is_venv),1)
+	$(VENV_BIN_PYTHON)  ci/trigger_build_kits.py $(REPO_OWNER)
+endif
 
-kits_download:                  ## Download the built kits from GitHub
-	python ci/download_gha_artifacts.py $(REPO_OWNER) 'dist-*' dist
+kits_download:			## Download the built kits from GitHub
+	$(VENV_BIN_PYTHON) ci/download_gha_artifacts.py $(REPO_OWNER) 'dist-*' dist
 
-github_releases: $(DOCBIN)              ## Update GitHub releases.
+github_releases: $(DOCBIN)	## Update GitHub releases.
 	$(DOCBIN)/python -m scriv github-release --all
+
+##@ GNU Make standard targets
+
+# kind: tag, current, or a semantic version str
+.PHONY: build
+build:					## Make the source distribution
+ifeq ($(is_venv),1)
+	$(VENV_BIN_PYTHON) -m build -C--kind="current"
+endif
 
 .PHONY: install
 install: override usage := make [force=1]
@@ -206,3 +216,26 @@ endif
 .PHONY: install-force
 install-force: force := 1
 install-force: install	## Force install even if exact same version
+
+# --cov-report=xml
+# Dependencies: pytest, pytest-cov, pytest-regressions
+# make [v=1] check
+# $(VENV_BIN)/pytest --showlocals --cov=drain_swamp --cov-report=term-missing --cov-config=pyproject.toml $(verbose_text) tests
+.PHONY: check
+check: private verbose_text = $(if $(v),"--verbose")
+check: private target_tty = $(if $(show),1,0)
+check:					## Run tests, generate coverage reports -- make [v=1] [show=1] check
+ifeq ($(is_venv),1)
+	-@$(VENV_BIN_PYTHON) -m coverage erase
+	if [[ $(target_tty) -eq 1 ]]; then
+	$(VENV_BIN_PYTHON) -m coverage run --parallel -m pytest --showlocals $(verbose_text) tests
+	else
+	$(VENV_BIN_PYTHON) -m coverage run --parallel -m pytest --showlocals $(verbose_text) tests > /tmp/out_tests.err
+	fi
+	$(VENV_BIN_PYTHON) -m coverage combine
+	if [[ $(target_tty) -eq 1 ]]; then
+	$(VENV_BIN_PYTHON) -m coverage report --fail-under=95
+	else
+	$(VENV_BIN_PYTHON) -m coverage report --fail-under=95 > /tmp/out_tests.err
+	fi
+endif

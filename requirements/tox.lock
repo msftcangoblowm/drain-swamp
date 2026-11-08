@@ -4,34 +4,29 @@ chardet==5.2.0
     # via tox
 colorama==0.4.6
     # via tox
-distlib==0.3.8
+distlib==0.4.4
     # via virtualenv
-filelock==3.13.4
+filelock==4.2.9
     # via
     #   tox
     #   virtualenv
-packaging==24.2
+packaging==26.3
     # via
     #   pyproject-api
     #   tox
-platformdirs==4.3.6
+platformdirs==4.9.6
     # via
     #   tox
     #   virtualenv
-pluggy==1.5.0
+pluggy==1.6.0
     # via tox
 pyproject-api==1.8.0
     # via tox
-tomli==2.2.1 ; python_version < "3.11"
-    # via
-    #   -c requirements/pins.shared.in
-    #   pyproject-api
-    #   tox
 tox==4.15.1
     # via
     #   -r requirements/tox.in
     #   tox-gh-actions
 tox-gh-actions==3.2.0
     # via -r requirements/tox.in
-virtualenv==20.26.0
+virtualenv==21.14.13
     # via tox

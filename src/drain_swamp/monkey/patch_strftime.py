@@ -5,18 +5,18 @@
 
 There are unsupported features affecting particular platforms. Fix those issues.
 
+.. py:data:: __all__
+   :type: tuple[str]
+   :value: ("StrFTime",)
+
+   Module exports.
+
 .. py:data:: _d_convert
    :type: dict[str, tuple[Callable[[dt, str], bool], str]
 
    The key is a strftime format str that needs a fix for a particular platform
    Value tuple contains a fix function and a boolean indicating if the platform
    needs to apply this fix.
-
-.. py:data:: __all__
-   :type: tuple[str]
-   :value: ("StrFTime",)
-
-   Module exports.
 
 """
 
@@ -195,11 +195,10 @@ class StrFTime:
                 affects = cls_patch.AFFECTS
                 token = cls_patch.AFFECTED_TOKEN
                 is_affected = affects and token in str_part
-                if is_affected:
+                if is_affected:  # pragma: no branch
                     # Apply patch
                     parts[idx] = cls_patch()(dt_a, str_part)
-                else:  # pragma: no cover
-                    pass
+
         str_fixed = " ".join(parts)
 
         return str_fixed
@@ -218,14 +217,11 @@ class StrFTime:
            - :py:exc:`TypeError` -- Unsupported type expected str
 
         """
-        if format_ is None or not isinstance(format_, str):
+        if format_ is None or not isinstance(format_, str):  # pragma: no branch
             msg_warn = f"Unsupported type expected str got {type(format_)}"
             raise TypeError(msg_warn)
-        else:  # pragma: no cover
-            pass
 
-        cls = type(self)
-        str_fixed = cls.fix_strftime_input(self._dt, format_)
+        str_fixed = type(self).fix_strftime_input(self._dt, format_)
         ret = self._dt.strftime(str_fixed)
 
         return ret

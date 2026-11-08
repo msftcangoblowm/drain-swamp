@@ -1,5 +1,4 @@
 drain-swamp-snippet
 pluggy
 setuptools-scm
-setuptools>=75.1.0
 wreck

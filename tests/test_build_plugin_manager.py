@@ -1,11 +1,9 @@
 """
 .. moduleauthor:: Dave Faulkmore <https://mastodon.social/@msftcangoblowme>
 
-..
-
 Unittest for build plugins manager
 
-Unit test -- Module
+With coverage
 
 .. code-block:: shell
 
@@ -24,6 +22,7 @@ Integration test
 """
 
 from contextlib import nullcontext as does_not_raise
+from typing import TYPE_CHECKING
 
 import pytest
 from pluggy import PluginManager
@@ -35,48 +34,52 @@ from drain_swamp.monkey.hooks.manager import (
     lazy_package,
 )
 
-testdata_get_plugin_manager = (
-    (
-        None,
-        {},
-        pytest.raises(TypeError),
-    ),
-    (
-        1.2,
-        {},
-        pytest.raises(TypeError),
-    ),
-    (
-        package_plugins,
-        {"namespace": None},
-        does_not_raise(),
-    ),
-    (
-        package_plugins,
-        {"specs_dotted_path": None},
-        does_not_raise(),
-    ),
-    (
-        package_plugins,
-        {"entrypoint_plugins": None},
-        does_not_raise(),
-    ),
-)
-ids_get_plugin_manager = (
-    "module is None",
-    "module unsupposed type",
-    "namespace None",
-    "specs_dotted_path None",
-    "entrypoint_plugins None",
-)
+if TYPE_CHECKING:
+    from types import ModuleType
+
+    from .typing_only import DOES_NOT_OR_DOES
 
 
 @pytest.mark.parametrize(
     "mod_pkg, kwargs, expectation",
-    testdata_get_plugin_manager,
-    ids=ids_get_plugin_manager,
+    (
+        pytest.param(
+            None,
+            {},
+            pytest.raises(TypeError),
+            id="module-is-None",
+        ),
+        pytest.param(
+            1.2,
+            {},
+            pytest.raises(TypeError),
+            id="module-unsupported-type",
+        ),
+        pytest.param(
+            package_plugins,
+            {"namespace": None},
+            does_not_raise(),
+            id="namespace-None",
+        ),
+        pytest.param(
+            package_plugins,
+            {"specs_dotted_path": None},
+            does_not_raise(),
+            id="specs_dotted_path-None",
+        ),
+        pytest.param(
+            package_plugins,
+            {"entrypoint_plugins": None},
+            does_not_raise(),
+            id="entrypoint_plugins-None",
+        ),
+    ),
 )
-def test_get_plugin_manager(mod_pkg, kwargs, expectation):
+def test_get_plugin_manager(
+    mod_pkg: "ModuleType | float | None",
+    kwargs: dict[str, str | None],
+    expectation: "DOES_NOT_OR_DOES",
+) -> None:
     """Test get_plugin_manager."""
     # pytest --showlocals --log-level INFO -k "test_get_plugin_manager" tests
     with expectation:
@@ -85,65 +88,57 @@ def test_get_plugin_manager(mod_pkg, kwargs, expectation):
         assert isinstance(pm, PluginManager)
 
 
-testdata_lazy_package = (
-    (
-        None,
-        pytest.raises(TypeError),
-    ),
-)
-ids_lazy_package = ("None is not a module",)
-
-
 @pytest.mark.parametrize(
     "mod_pkg, expectation",
-    testdata_lazy_package,
-    ids=ids_lazy_package,
+    (
+        pytest.param(
+            None,
+            pytest.raises(TypeError),
+            id="None-is-not-a-module",
+        ),
+    ),
 )
-def test_lazy_package(mod_pkg, expectation):
+def test_lazy_package(mod_pkg: str | None, expectation: "DOES_NOT_OR_DOES") -> None:
     """Test lazy_package exceptions."""
     # pytest --showlocals --log-level INFO -k "test_lazy_package" tests
     with expectation:
         lazy_package(mod_pkg)
 
 
-testdata_lazy_dotted_path = (
-    (
-        None,
-        pytest.raises(TypeError),
-    ),
-    (
-        1.2345,
-        pytest.raises(TypeError),
-    ),
-    (
-        "os.path.bingo.moms",
-        pytest.raises(ValueError),
-    ),
-    (
-        "pytest",
-        does_not_raise(),
-    ),
-    (
-        "fileinput",
-        does_not_raise(),
-    ),
-)
-
-ids_lazy_dotted_path = (
-    "None. Expected dotted path str",
-    "Unsupposed type. Expected dotted path str",
-    "dotted path to nonexistant module",
-    "existing package. Already imported",
-    "existing package. Needs to be imported",
-)
-
-
 @pytest.mark.parametrize(
     "dotted_path, expectation",
-    testdata_lazy_dotted_path,
-    ids=ids_lazy_dotted_path,
+    (
+        pytest.param(
+            None,
+            pytest.raises(TypeError),
+            id="None.-Expected-dotted-path-str",
+        ),
+        pytest.param(
+            1.2345,
+            pytest.raises(TypeError),
+            id="Unsupported-type.-Expected-dotted-path-str",
+        ),
+        pytest.param(
+            "os.path.bingo.moms",
+            pytest.raises(ValueError),
+            id="dotted-path-to-nonexistent-module",
+        ),
+        pytest.param(
+            "pytest",
+            does_not_raise(),
+            id="existing-package.-Already-imported",
+        ),
+        pytest.param(
+            "fileinput",
+            does_not_raise(),
+            id="existing-package.-Needs-to-be-imported",
+        ),
+    ),
 )
-def test_lazy_dotted_path(dotted_path, expectation):
+def test_lazy_dotted_path(
+    dotted_path: str | float | None,
+    expectation: "DOES_NOT_OR_DOES",
+) -> None:
     """Test lazy_dotted_path."""
     # pytest --showlocals --log-level INFO -k "test_lazy_dotted_path" tests
     with expectation:

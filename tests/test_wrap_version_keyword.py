@@ -1,7 +1,7 @@
 """
 .. moduleauthor:: Dave Faulkmore <https://mastodon.social/@msftcangoblowme>
 
-Unit test -- Module
+With coverage
 
 .. code-block:: shell
 
@@ -27,6 +27,7 @@ Integration test
 
 from collections.abc import Mapping
 from pathlib import Path
+from typing import TYPE_CHECKING
 from unittest.mock import (
     MagicMock,
     patch,
@@ -40,27 +41,39 @@ from wreck.monkey.patch_pyproject_reading import ReadPyprojectStrict
 from drain_swamp.constants import g_app_name
 from drain_swamp.monkey.wrap_version_keyword import version_keyword
 
+if TYPE_CHECKING:
+    import logging
+    from collections.abc import (
+        Callable,
+        Sequence,
+    )
+
 
 @pytest.fixture
-def version_file():
+def version_file(request: pytest.FixtureRequest) -> "Path":
     """Ensure the temporary version file is removed"""
-    path_root_dir = Path(__file__).parent.parent
-    path_f = path_root_dir.joinpath("src", "_version.py")
+    abspath_root_dir = request.path.parent.parent
+    path_f = abspath_root_dir.joinpath("src", "_version.py")
     path_f.touch()
     yield path_f
     path_f.unlink()
 
 
 @pytest.mark.logging_package_name(g_app_name)
-def test_version_keyword(logging_strict, has_logging_occurred, version_file):
+def test_version_keyword(
+    request: pytest.FixtureRequest,
+    logging_strict: "Callable[[], tuple[logging.Logger, Sequence[logging.Logger]]]",
+    has_logging_occurred: "Callable[[], bool]",
+    version_file: "Path",
+) -> None:
     """setuptools-scm would normally needs a setup.py to be executed"""
     # pytest --showlocals --log-level INFO -k "test_version_keyword" tests
     t_two = logging_strict()
     logger, loggers = t_two
 
-    path_root_dir = Path(__file__).parent.parent
-    path_version_file_relpath = str(version_file.relative_to(path_root_dir))
-    root_abspath = str(path_root_dir)
+    abspath_root_dir = request.path.parent.parent
+    path_version_file_relpath = str(version_file.relative_to(abspath_root_dir))
+    root_abspath = str(abspath_root_dir)
     package_dir = {"": "src"}
     attrs = {
         "src_root": root_abspath,

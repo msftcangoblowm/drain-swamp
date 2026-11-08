@@ -11,7 +11,7 @@ When :code:`python -m build` runs, the build front end calls the build
 backend in a subprocess. Somewhere along the way, neglected to clearly
 specify how to pass arguments along so they are available within the subprocess.
 
-We are in that weird interm period. Waiting for a PEP to appear so **open**
+We are in that weird interim period. Waiting for a PEP to appear so **open**
 discussions on how to handle this situation can occur
 
 How to
@@ -29,7 +29,7 @@ Good news and bad news
 
 The good news is this works for building drain-swamp
 
-Bad news is all other packages will need to use an interm workaround.
+Bad news is all other packages will need to use an interim workaround.
 
 Create an environment variable holding the absolute path to a ``.toml`` file
 containing the config_settings

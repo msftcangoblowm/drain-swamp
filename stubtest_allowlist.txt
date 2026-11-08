@@ -1,0 +1,6 @@
+drain_swamp.monkey.hooks.hook_impl
+drain_swamp.monkey.hooks.markers.HookimplMarker
+drain_swamp.monkey.hooks.markers.hook_impl
+drain_swamp.monkey.hooks.specs.HookspecMarker
+drain_swamp.monkey.hooks.specs.hook_spec
+drain_swamp.monkey.patch_strftime.StrFTime.patches

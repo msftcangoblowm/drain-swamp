@@ -4,7 +4,7 @@ Contributing
 I'm not a coder!
 -----------------
 
-Submit an issue explaining the issue throughly. Not everyone can code
+Submit an issue explaining the issue thoroughly. Not everyone can code
 and there is no shame in that.
 
 End of the day, world+dog wants featureful well written packages which

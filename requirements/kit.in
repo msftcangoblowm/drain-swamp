@@ -1,4 +1,4 @@
-# Licensed under the AGPLv3+ License: https://www.gnu.org/licenses/
+# Licensed under the MPL-2.0 License: https://www.mozilla.org/en-US/MPL/2.0/
 # For details: https://github.com/msftcangoblowm/drain-swamp/blob/master/NOTICE.txt
 
 # Build has a windows-only dependency on colorama:
@@ -8,13 +8,12 @@
 colorama>=0.4.6; platform_system=="Windows"
 
 # pip-tools --> build --> importlib-metadata
-importlib-metadata>=8.5.0
+importlib-metadata>=8.7.0
 
 # Things needed to make distribution kits.
 # "make upgrade" turns this into requirements/kit.pip.
 build
-setuptools>=75.1.0
 
 auditwheel
 cibuildwheel  # .github/workflows/kit.yml
-setuptools-scm>=8.1.0
+setuptools-scm

@@ -3,7 +3,7 @@
 
 Unittest module :py:mod:`drain_swamp.monkey.wrap_infer_version`
 
-Unit test -- Module
+With coverage
 
 .. code-block:: shell
 
@@ -29,6 +29,7 @@ Integration test
 import shutil
 import sys
 from pathlib import Path
+from typing import TYPE_CHECKING
 
 import pytest
 from setuptools_scm._version_cls import _version_as_tuple
@@ -39,6 +40,14 @@ from drain_swamp.monkey.config_settings import ConfigSettings
 from drain_swamp.monkey.wrap_infer_version import _rage_quit
 
 from .wd_wrapper import WorkDir
+
+if TYPE_CHECKING:
+    import logging
+    from collections.abc import (
+        Callable,
+        MutableSet,
+        Sequence,
+    )
 
 
 @pytest.fixture()
@@ -72,41 +81,33 @@ def wd(wd: WorkDir) -> WorkDir:
     return wd
 
 
-testdata_dist_get_cmdline_options = (
-    (
-        Path(__file__).parent.joinpath(
-            "_project",
-            "install_minimum.pyproject_toml",
-        ),
-        "complete_awesome_perfect",
-        "0.2.0",
-        "0.2.1",
-    ),
-)
-ids_dist_get_cmdline_options = (
-    "write config_settings .toml file to pass in kwargs to build plugins",
-)
-
-
 @pytest.mark.logging_package_name(g_app_name)
 @pytest.mark.parametrize(
-    "p_toml_file, app_name, commit_version_str, kind",
-    testdata_dist_get_cmdline_options,
-    ids=ids_dist_get_cmdline_options,
+    "p_toml_file_relpath, app_name, commit_version_str, kind",
+    (
+        pytest.param(
+            Path("_project").joinpath("install_minimum.pyproject_toml"),
+            "complete_awesome_perfect",
+            "0.2.0",
+            "0.2.1",
+            id="write-config_settings-.toml-file-to-pass-in-kwargs-to-build-plugins",
+        ),
+    ),
 )
 def test_dist_get_cmdline_options(
-    p_toml_file,
-    app_name,
-    commit_version_str,
-    kind,
-    prep_pyproject_toml,
-    prepare_folders_files,
-    logging_strict,
-    has_logging_occurred,
+    p_toml_file_relpath: "Path",
+    app_name: str,
+    commit_version_str: str,
+    kind: str,
+    prep_pyproject_toml: "Callable[[Path, Path, Path | None], Path | None]",
+    prepare_folders_files: "Callable[[Sequence[str | Path] | MutableSet[str | Path]], set[Path]]",
+    logging_strict: "Callable[[], tuple[logging.Logger, list[logging.Logger]] | None]",
+    has_logging_occurred: "Callable[[], bool]",
     wd: WorkDir,
     monkeypatch: pytest.MonkeyPatch,
-    verify_tag_version,
-):
+    verify_tag_version: "Callable[[Path, str], bool]",
+    request: pytest.FixtureRequest,
+) -> None:
     """Can access command line options using Distribution.get_cmdline_options.
 
     In tmp path
@@ -120,6 +121,8 @@ def test_dist_get_cmdline_options(
     # pytest --showlocals --log-level INFO -k "test_dist_get_cmdline_options" tests
     t_two = logging_strict()
     logger, loggers = t_two
+
+    abspath_tests_dir = request.path.parent
 
     p_base = wd.cwd.parent
     logger.info(f"wd.cwd: {wd.cwd}")
@@ -162,7 +165,7 @@ def test_dist_get_cmdline_options(
     wd.cwd.joinpath("dist", "empty.txt").unlink()
 
     #    src/complete_awesome_perfect/__main__.py
-    path_dir_src = Path(__file__).parent.joinpath(
+    path_dir_src = abspath_tests_dir.joinpath(
         "_project",
         "src",
         app_name,
@@ -175,7 +178,7 @@ def test_dist_get_cmdline_options(
     str_version_file = (
         f"""__version__ = version = '{commit_version_str}'\n"""
         "__version_tuple__ = version_tuple = "
-        f"""{str(_version_as_tuple(commit_version_str))}\n\n"""
+        f"""{_version_as_tuple(commit_version_str)}\n\n"""
     )
     path_f = path_dir_dest.joinpath("_version.py")
     path_f.write_text(str_version_file)
@@ -231,7 +234,7 @@ def test_dist_get_cmdline_options(
 
     # prepare
     #    pyproject.toml
-    prep_pyproject_toml(p_toml_file, wd.cwd)
+    prep_pyproject_toml(abspath_tests_dir.joinpath(p_toml_file_relpath), wd.cwd)
 
     # plugins: refresh_links (needs set-lock), cli_scm_version.py (needs kind)
     t_ret = run_cmd(cmd, cwd=cwd, env=env)
@@ -277,34 +280,30 @@ def test_dist_get_cmdline_options(
         assert path_dist_dir.exists()
 
         # logger.info(f"version file contents:\n{path_f.read_text()}")
-        assert verify_tag_version(wd.cwd, kind) is True
-
-
-testdata_infer_version_fail = (
-    (
-        "0.0.2",
-        "0",
-        1,
-        "does not appear to be a Python project: no pyproject.toml or setup.py",
-    ),
-)
-ids_infer_version_fail = ("missing pyproject.toml. build fails",)
+        assert verify_tag_version(wd.cwd, kind)
 
 
 @pytest.mark.parametrize(
     "kind, set_lock, exit_code_expected, msg_fragment_expected",
-    testdata_infer_version_fail,
-    ids=ids_infer_version_fail,
+    (
+        pytest.param(
+            "0.0.2",
+            "0",
+            1,
+            "does not appear to be a Python project: no pyproject.toml or setup.py",
+            id="missing-pyproject.toml.-build-fails",
+        ),
+    ),
 )
 def test_infer_version_fail(
-    kind,
-    set_lock,
-    exit_code_expected,
-    msg_fragment_expected,
-    wd,
-    caplog,
-    has_logging_occurred,
-):
+    kind: str,
+    set_lock: str,
+    exit_code_expected: int,
+    msg_fragment_expected: str,
+    wd: WorkDir,
+    caplog: pytest.LogCaptureFixture,
+    has_logging_occurred: "Callable[[], bool]",
+) -> None:
     """Situations where wrap_infer_version would fail."""
     # pytest --showlocals --log-level INFO -k "test_infer_version_fail" tests
 
@@ -383,13 +382,13 @@ ids_config_settings_read = (
     ids=ids_config_settings_read,
 )
 def test_config_settings_read(
-    toml_contents,
-    section_key_count,
-    has_log_warning,
-    tmp_path,
-    logging_strict,
-    has_logging_occurred,
-):
+    toml_contents: str,
+    section_key_count: int,
+    has_log_warning: bool,
+    tmp_path: "Path",
+    logging_strict: "Callable[[], tuple[logging.Logger, list[logging.Logger]] | None]",
+    has_logging_occurred: "Callable[[], bool]",
+) -> None:
     """Test ConfigSettings read."""
     # pytest --showlocals --log-level INFO -k "test_get_config_settings" tests
     t_two = logging_strict()
@@ -405,8 +404,7 @@ def test_config_settings_read(
     ConfigSettings.set_abs_path(path_toml)
 
     # act
-    cs = ConfigSettings()
-    d_section = cs.read()
+    d_section = ConfigSettings().read()
     actual_count = len(d_section.keys())
     assert actual_count == section_key_count
 
@@ -420,13 +418,13 @@ def test_config_settings_read(
     ids=ids_config_settings_read,
 )
 def test_config_settings_set_abs_path(
-    toml_contents,
-    section_key_count,
-    has_log_warning,
-    tmp_path,
-    caplog,
-    has_logging_occurred,
-):
+    toml_contents: str,
+    section_key_count: int,
+    has_log_warning: bool,
+    tmp_path: "Path",
+    caplog: pytest.LogCaptureFixture,
+    has_logging_occurred: "Callable[[], bool]",
+) -> None:
     """Test ConfigSettings set_abs_path."""
     # pytest --showlocals --log-level INFO -k "test_get_config_settings" tests
     # prepare

@@ -1,7 +1,10 @@
+import logging
 from collections.abc import Callable
 from typing import Any
 
 import setuptools
+
+log: logging.Logger
 
 def version_keyword(
     dist: setuptools.Distribution,

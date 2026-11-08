@@ -4,9 +4,9 @@ drain-swamp
 Python build backend with build plugins and dependency lock switch
 
 |  |kit| |codecov| |license|
-|  |last-commit| |test-status| |quality-status| |docs|
-|  |versions| |implementations|
-|  |platforms| |black|
+|  |last-commit| |quality-status| |docs|
+|  |platforms| |test-status| |versions|
+|  |implementations| |black|
 |  |downloads| |stars|
 |  |mastodon-msftcangoblowm|
 
@@ -14,7 +14,7 @@ Python build backend with build plugins and dependency lock switch
 
 .. PYVERSIONS
 
-\* Python 3.9 through 3.13, PyPy
+\* Python 3.11 through 3.15, pypy-3.11
 
 **new in 2.1.x**
 
@@ -201,7 +201,7 @@ Use bash-workaround_
 
 **tox**
 
-Similiar to *cli*. During ``pre_command``, the TOML file and
+Similar to *cli*. During ``pre_command``, the TOML file and
 environment variable DS_CONFIG_SETTINGS are created.
 
 tox test -- drain-swamp-tox-test_
@@ -252,9 +252,12 @@ See also ``gh workflows`` folder -- drain-swamp-gh-workflows_
 .. |kit| image:: https://img.shields.io/pypi/v/drain-swamp
     :target: https://pypi.org/project/drain-swamp/
     :alt: PyPI status
-.. |versions| image:: https://img.shields.io/pypi/pyversions/drain-swamp.svg?logo=python&logoColor=FBE072
+.. |versions| image:: https://img.shields.io/badge/CI%20tested-3.11%20%7C%203.12%20%7C%203.13%20%7C%203.14%20%7C%203.15%20%7C%20pypy3.11-blue?logo=python&logoColor=FBE072
     :target: https://pypi.org/project/drain-swamp/
     :alt: Python versions supported
+
+.. https://img.shields.io/pypi/pyversions/drain-swamp.svg?logo=python&logoColor=FBE072
+
 .. |license| image:: https://img.shields.io/github/license/msftcangoblowm/drain-swamp
     :target: https://pypi.org/project/drain-swamp/blob/master/LICENSE
     :alt: License
@@ -271,7 +274,7 @@ See also ``gh workflows`` folder -- drain-swamp-gh-workflows_
    :target: https://github.com/ambv/black
 .. |downloads| image:: https://img.shields.io/pypi/dm/drain-swamp
 .. |implementations| image:: https://img.shields.io/pypi/implementation/drain-swamp
-.. |platforms| image:: https://img.shields.io/badge/platform-linux-lightgrey
+.. |platforms| image:: https://img.shields.io/badge/platform-windows%20%7C%20macos%20%7C%20linux-lightgrey
 
 .. https://img.shields.io/badge/platform-windows%20%7C%20macos%20%7C%20linux-lightgrey
 

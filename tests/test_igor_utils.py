@@ -1,7 +1,7 @@
 """
 .. moduleauthor:: Dave Faulkmore <https://mastodon.social/@msftcangoblowme>
 
-Unit test -- Module
+With coverage
 
 .. code-block:: shell
 
@@ -28,6 +28,7 @@ from pathlib import (
     Path,
     PurePath,
 )
+from typing import TYPE_CHECKING
 from unittest.mock import (
     MagicMock,
     Mock,
@@ -58,57 +59,68 @@ from drain_swamp.igor_utils import (
 from drain_swamp.version_file.dump_version import write_version_files
 from drain_swamp.version_semantic import _scm_key
 
-testdata_update_file = (
-    (
-        None,
-        None,
-        False,
-    ),
-    (
-        "",
-        None,
-        False,
-    ),
-    (
-        "    ",
-        None,
-        False,
-    ),
-    (
-        1.2345,
-        None,
-        False,
-    ),
-    (
-        PurePath("hi/there"),
-        None,
-        False,
-    ),
-    (
-        Path(__file__).parent.joinpath(
-            "_changelog_files",
-            "CHANGES-empty.rst",
-        ),
-        "Nothing yet.",
-        True,
-    ),
-)
-ids_update_file = (
-    "None",
-    "empty string len 0",
-    "whitespace string len not 0",
-    "unsupported type float",
-    "relative path",
-    "skeleton changelog",
-)
+if TYPE_CHECKING:
+    import logging
+    from collections.abc import (
+        Callable,
+        MutableSet,
+        Sequence,
+    )
+
+    from .typing_only import DOES_NOT_OR_DOES
 
 
 @pytest.mark.parametrize(
     "rel_path, expected, is_normal",
-    testdata_update_file,
-    ids=ids_update_file,
+    (
+        pytest.param(
+            None,
+            None,
+            False,
+            id="None",
+        ),
+        pytest.param(
+            "",
+            None,
+            False,
+            id="empty-string-len-0",
+        ),
+        pytest.param(
+            "    ",
+            None,
+            False,
+            id="whitespace-string-len-not-0",
+        ),
+        pytest.param(
+            1.2345,
+            None,
+            False,
+            id="unsupported-type-float",
+        ),
+        pytest.param(
+            PurePath("hi/there"),
+            None,
+            False,
+            id="relative-path",
+        ),
+        pytest.param(
+            Path(__file__).parent.joinpath(
+                "_changelog_files",
+                "CHANGES-empty.rst",
+            ),
+            "Nothing yet.",
+            True,
+            id="skeleton-changelog",
+        ),
+    ),
 )
-def test_update_file(rel_path, expected, is_normal, tmp_path, prep_pyproject_toml):
+def test_update_file(
+    rel_path: PurePath | Path | str | float | None,
+    expected: str | None,
+    is_normal: bool,
+    tmp_path: "Path",
+    prep_pyproject_toml: "Callable[[Path, Path, Path | str | None], Path]",
+) -> None:
     """Test update_file."""
     # pytest --showlocals --log-level INFO -k "test_update_file" tests
     pattern = re.escape(SCRIV_START)
@@ -116,13 +128,21 @@ def test_update_file(rel_path, expected, is_normal, tmp_path, prep_pyproject_tom
 
     # act
     if not is_normal:
-        out = update_file(rel_path, pattern, replacement)
+        out = update_file(
+            rel_path,  # type: ignore[arg-type]
+            pattern,
+            replacement,
+        )
         # verify
         assert out is None
     else:
         # prepare
         #    CHANGES.rst
-        path_empty = prep_pyproject_toml(rel_path, tmp_path, rename="CHANGES.rst")
+        path_empty = prep_pyproject_toml(
+            rel_path,  # type: ignore[arg-type]
+            tmp_path,
+            rename="CHANGES.rst",
+        )
         existing_text = path_empty.read_text()
 
         # act
@@ -137,41 +157,33 @@ def test_update_file(rel_path, expected, is_normal, tmp_path, prep_pyproject_tom
         assert expected in actual_text
 
 
-testdata_seed_changelog = (
-    (
-        Path(__file__).parent.joinpath(
-            "_changelog_files",
-            "CHANGES-empty.rst",
-        ),
-        0,
-    ),
-    (
-        Path(__file__).parent.joinpath(
-            "_changelog_files",
-            "CHANGES-missing-start-token.rst",
-        ),
-        1,
-    ),
-)
-ids_seed_changelog = (
-    "normal skeleton",
-    "start token missing",
-)
-
-
 @pytest.mark.parametrize(
-    "path_change_rst, exit_code_expected",
-    testdata_seed_changelog,
-    ids=ids_seed_changelog,
+    "relpath_change_rst, exit_code_expected",
+    (
+        pytest.param(
+            Path("_changelog_files").joinpath("CHANGES-empty.rst"),
+            0,
+            id="normal-skeleton",
+        ),
+        pytest.param(
+            Path("_changelog_files").joinpath("CHANGES-missing-start-token.rst"),
+            1,
+            id="start-token-missing",
+        ),
+    ),
 )
 def test_seed_changelog(
-    path_change_rst,
-    exit_code_expected,
-    tmp_path,
-    prep_pyproject_toml,
-):
+    relpath_change_rst: "Path",
+    exit_code_expected: int,
+    tmp_path: "Path",
+    prep_pyproject_toml: "Callable[[Path, Path, Path | str | None], Path]",
+    request: pytest.FixtureRequest,
+) -> None:
     """Look for start token below add a seed token."""
     # pytest --showlocals --log-level INFO -k "test_seed_changelog" tests
+    abspath_tests_dir = request.path.parent
+    abspath_change_rst = abspath_tests_dir.joinpath(relpath_change_rst)
+
     expected_token = "Nothing yet."
 
     # no prepare
@@ -179,7 +191,7 @@ def test_seed_changelog(
     assert exit_code_actual == 2
 
     # prepare
-    path_empty = prep_pyproject_toml(path_change_rst, tmp_path, rename="CHANGES.rst")
+    path_empty = prep_pyproject_toml(abspath_change_rst, tmp_path, rename="CHANGES.rst")
     contents_before = path_empty.read_text()
 
     # act
@@ -199,95 +211,84 @@ def test_seed_changelog(
         assert expected_token not in contents_after
 
 
-testdata_edit_for_release = (
-    (
-        Path(__file__).parent.joinpath("_changelog_files", "CHANGES-empty.rst"),
-        Path(__file__).parent.joinpath("_changelog_files", "NOTICE-empty.txt"),
-        Path(__file__).parent.joinpath(
-            "_good_snips", "test_snip_harden_one_snip__with_id_.txt"
-        ),
-        Path(__file__).parent.joinpath("_good_files", "no_project_name.pyproject_toml"),
-        "asdf",
-        "0.0.1",
-        2,
-    ),
-    (
-        Path(__file__).parent.joinpath("_changelog_files", "CHANGES-empty.rst"),
-        Path(__file__).parent.joinpath("_changelog_files", "NOTICE-empty.txt"),
-        Path(__file__).parent.joinpath(
-            "_good_snips", "test_snip_harden_one_snip__with_id_.txt"
-        ),
-        Path(__file__).parent.joinpath("_good_files", "no_copyright.pyproject_toml"),
-        "asdf",
-        "0.0.1",
-        None,
-    ),
-    (
-        Path(__file__).parent.joinpath("_changelog_files", "CHANGES-empty.rst"),
-        Path(__file__).parent.joinpath("_changelog_files", "NOTICE-empty.txt"),
-        Path(__file__).parent.joinpath(
-            "_good_snips", "test_snip_harden_one_snip__with_id_.txt"
-        ),
-        Path(__file__).parent.joinpath("_good_files", "no_copyright.pyproject_toml"),
-        "asdf",
-        "0.0.1.dev0",
-        None,
-    ),
-    (
-        Path(__file__).parent.joinpath("_changelog_files", "CHANGES-empty.rst"),
-        Path(__file__).parent.joinpath("_changelog_files", "NOTICE-empty.txt"),
-        Path(__file__).parent.joinpath(
-            "_good_snips", "test_snip_harden_one_snip__with_id_.txt"
-        ),
-        Path(__file__).parent.joinpath("_good_files", "weird_copyright.pyproject_toml"),
-        "asdf",
-        "0.0.1",
-        None,
-    ),
-    (
-        Path(__file__).parent.joinpath("_changelog_files", "CHANGES-empty.rst"),
-        Path(__file__).parent.joinpath("_changelog_files", "NOTICE-empty.txt"),
-        Path(__file__).parent.joinpath(
-            "_good_snips", "test_snip_harden_one_snip__with_id_.txt"
-        ),
-        Path(__file__).parent.joinpath(
-            "_good_files", "weird_copyright-2.pyproject_toml"
-        ),
-        "asdf",
-        "0.0.1",
-        None,
-    ),
-)
-ids_edit_for_release = (
-    "has copyright start year",
-    "no copyright start year",
-    "no copyright start year. dev release",
-    "float copyright start year",
-    "str not an int copyright start year",
-)
-
-
 @pytest.mark.logging_package_name(g_app_name)
 @pytest.mark.parametrize(
-    "path_changes, path_notice, path_snip, path_pyproject_toml, snippet_co, sem_version_str, expected_exit_co",
-    testdata_edit_for_release,
-    ids=ids_edit_for_release,
+    "relpath_changes, relpath_notice, relpath_snip, relpath_pyproject_toml, snippet_co, sem_version_str, expected_exit_co",
+    (
+        pytest.param(
+            Path("_changelog_files").joinpath("CHANGES-empty.rst"),
+            Path("_changelog_files").joinpath("NOTICE-empty.txt"),
+            Path("_good_snips").joinpath("test_snip_harden_one_snip__with_id_.txt"),
+            Path("_good_files").joinpath("no_project_name.pyproject_toml"),
+            "asdf",
+            "0.0.1",
+            2,
+            id="has-copyright-start-year",
+        ),
+        pytest.param(
+            Path("_changelog_files").joinpath("CHANGES-empty.rst"),
+            Path("_changelog_files").joinpath("NOTICE-empty.txt"),
+            Path("_good_snips").joinpath("test_snip_harden_one_snip__with_id_.txt"),
+            Path("_good_files").joinpath("no_copyright.pyproject_toml"),
+            "asdf",
+            "0.0.1",
+            None,
+            id="no-copyright-start-year",
+        ),
+        pytest.param(
+            Path("_changelog_files").joinpath("CHANGES-empty.rst"),
+            Path("_changelog_files").joinpath("NOTICE-empty.txt"),
+            Path("_good_snips").joinpath("test_snip_harden_one_snip__with_id_.txt"),
+            Path("_good_files").joinpath("no_copyright.pyproject_toml"),
+            "asdf",
+            "0.0.1.dev0",
+            None,
+            id="no-copyright-start-year.-dev-release",
+        ),
+        pytest.param(
+            Path("_changelog_files").joinpath("CHANGES-empty.rst"),
+            Path("_changelog_files").joinpath("NOTICE-empty.txt"),
+            Path("_good_snips").joinpath("test_snip_harden_one_snip__with_id_.txt"),
+            Path("_good_files").joinpath("weird_copyright.pyproject_toml"),
+            "asdf",
+            "0.0.1",
+            None,
+            id="float-copyright-start-year",
+        ),
+        pytest.param(
+            Path("_changelog_files").joinpath("CHANGES-empty.rst"),
+            Path("_changelog_files").joinpath("NOTICE-empty.txt"),
+            Path("_good_snips").joinpath("test_snip_harden_one_snip__with_id_.txt"),
+            Path("_good_files").joinpath("weird_copyright-2.pyproject_toml"),
+            "asdf",
+            "0.0.1",
+            None,
+            id="str-not-an-int-copyright-start-year",
+        ),
+    ),
 )
 def test_edit_for_release(
-    path_changes,
-    path_notice,
-    path_snip,
-    path_pyproject_toml,
-    snippet_co,
-    sem_version_str,
-    expected_exit_co,
-    tmp_path,
-    prep_pyproject_toml,
-    logging_strict,
+    relpath_changes: "Path",
+    relpath_notice: "Path",
+    relpath_snip: "Path",
+    relpath_pyproject_toml: "Path",
+    snippet_co: str,
+    sem_version_str: str,
+    expected_exit_co: int | None,
+    tmp_path: "Path",
+    prep_pyproject_toml: "Callable[[Path, Path, Path | str | None], Path]",
+    logging_strict: "Callable[[], tuple[logging.Logger, Sequence[logging.Logger]]]",
+    request: pytest.FixtureRequest,
     # has_logging_occurred,
-):
+) -> None:
     """Test edit_for_release."""
     # pytest --showlocals --log-level INFO -k "test_edit_for_release" tests
+    abspath_tests_dir = request.path.parent
+    path_changes = abspath_tests_dir.joinpath(relpath_changes)
+    path_notice = abspath_tests_dir.joinpath(relpath_notice)
+    path_snip = abspath_tests_dir.joinpath(relpath_snip)
+    path_pyproject_toml = abspath_tests_dir.joinpath(relpath_pyproject_toml)
+
     t_two = logging_strict()
     logger, loggers = t_two
 
@@ -343,7 +344,10 @@ def test_edit_for_release(
     pass
 
 
-def test_build_package(prep_pyproject_toml, tmp_path):
+def test_build_package(
+    prep_pyproject_toml: "Callable[[Path, Path, Path | str | None], Path]",
+    tmp_path: "Path",
+) -> None:
     """Fake world fake building package."""
     # pytest --showlocals --log-level INFO -k "test_build_package" tests
     # Not a folder
@@ -453,36 +457,34 @@ def test_build_package(prep_pyproject_toml, tmp_path):
         assert bool_out is True
 
 
-testdata_pretag = (
-    (
-        "1!v1.0.1+g4b33a80.d20240129",
-        "1.0.1",
-        does_not_raise(),
-    ),
-    (
-        "0.1.1.candidate1dev1+g4b33a80.d20240129",
-        "0.1.1rc1.dev1",
-        does_not_raise(),
-    ),
-    (
-        "five element spirit or nature?",
-        "Version contains invalid token. Invalid version:",
-        does_not_raise(),
-    ),
-)
-ids_pretag = (
-    "with epoch locals and prepended v",
-    "malformed semantic ver str raise ValueError",
-    "complete garbage str that is not a semantic version str",
-)
-
-
 @pytest.mark.parametrize(
     "ver, expected, expectation",
-    testdata_pretag,
-    ids=ids_pretag,
+    (
+        pytest.param(
+            "1!v1.0.1+g4b33a80.d20240129",
+            "1.0.1",
+            does_not_raise(),
+            id="with-epoch-locals-and-prepended-v",
+        ),
+        pytest.param(
+            "0.1.1.candidate1dev1+g4b33a80.d20240129",
+            "0.1.1rc1.dev1",
+            does_not_raise(),
+            id="malformed-semantic-ver-str-raise-ValueError",
+        ),
+        pytest.param(
+            "five element spirit or nature?",
+            "Version contains invalid token. Invalid version:",
+            does_not_raise(),
+            id="complete-garbage-str-that-is-not-a-semantic-version-str",
+        ),
+    ),
 )
-def test_pretag(ver, expected, expectation):
+def test_pretag(
+    ver: str,
+    expected: str,
+    expectation: "DOES_NOT_OR_DOES",
+) -> None:
     """Sanitize ver str.
 
     From just this unittest non-obvious how to sanitize a ver str containing an epoch.
@@ -500,7 +502,7 @@ def test_pretag(ver, expected, expectation):
             assert expected in actual
 
 
-def test_get_current_version(path_project_base):
+def test_get_current_version(path_project_base: "Callable[[], Path]") -> None:
     """Get the current version of this package. Requires package setuptools-scm."""
     ver = get_current_version(path_project_base())
     if is_package_installed("setuptools_scm"):
@@ -509,7 +511,11 @@ def test_get_current_version(path_project_base):
         assert ver is None
 
 
-def test_print_cheats(path_project_base, prep_pyproject_toml, tmp_path):
+def test_print_cheats(
+    path_project_base: "Callable[[], Path]",
+    prep_pyproject_toml: "Callable[[Path, Path, Path | str | None], Path]",
+    tmp_path: "Path",
+) -> None:
     """Prints non-vital info. Useful urls and commands."""
     # pytest --showlocals --log-level INFO -k "test_print_cheats" tests
     path_cwd = path_project_base()
@@ -529,7 +535,7 @@ def test_print_cheats(path_project_base, prep_pyproject_toml, tmp_path):
 
     # kind="tag". Missing ``pyproject.toml``. Need to prepare that
     # Only for missing or unparsable results in AssertionError.
-    # For all other issues, issues warning and fallsback to current version
+    # For all other issues, issues warning and fallback to current version
     kind = "tag"
     with pytest.raises(AssertionError):
         print_cheats(tmp_path, kind)
@@ -546,7 +552,7 @@ def test_print_cheats(path_project_base, prep_pyproject_toml, tmp_path):
         out = f.getvalue()
         assert out is not None
         assert isinstance(out, str)
-        assert len(out.strip()) != 0
+        assert out.strip()
 
         branches = (
             "important_branch",
@@ -565,36 +571,30 @@ def test_print_cheats(path_project_base, prep_pyproject_toml, tmp_path):
             out = f.getvalue()
             assert out is not None
             assert isinstance(out, str)
-            assert len(out.strip()) != 0
-
-
-testdata_get_version_file_path = (
-    (
-        Path(__file__).parent.joinpath(
-            "_good_files",
-            "no_project_name.pyproject_toml",
-        ),
-        None,
-    ),
-)
-ids_get_version_file_path = (
-    "In pyproject.toml, missing tool.drain-swamp.version_file",
-)
+            assert out.strip()
 
 
 @pytest.mark.parametrize(
-    "p_toml_file, expected_version_file",
-    testdata_get_version_file_path,
-    ids=ids_get_version_file_path,
+    "relpath_toml_file, expected_version_file",
+    (
+        pytest.param(
+            Path("_good_files").joinpath("no_project_name.pyproject_toml"),
+            None,
+            id="In-pyproject.toml-missing-tool.drain-swamp.version_file",
+        ),
+    ),
 )
 def test_get_version_file_path(
-    p_toml_file,
-    expected_version_file,
-    tmp_path,
-    prep_pyproject_toml,
-):
+    relpath_toml_file: "Path",
+    expected_version_file: str | None,
+    tmp_path: "Path",
+    prep_pyproject_toml: "Callable[[Path, Path, Path | str | None], Path]",
+    request: pytest.FixtureRequest,
+) -> None:
     """Test get_version_file_path."""
     # pytest --showlocals --log-level INFO -k "test_get_version_file_path" tests
+    abspath_tests_dir = request.path.parent
+    p_toml_file = abspath_tests_dir.joinpath(relpath_toml_file)
 
     path_f = tmp_path / "pyproject.toml"
     actual_version_file = get_version_file_path(path_f)
@@ -607,33 +607,32 @@ def test_get_version_file_path(
     assert actual_version_file == expected_version_file
 
 
-testdata_alter_env = (
+@pytest.mark.parametrize(
+    "relpath_toml_file, pkg_name_expected",
     (
-        Path(__file__).parent.joinpath(
-            "_good_files",
-            "complete-manage-pip-prod-unlock.pyproject_toml",
+        pytest.param(
+            Path("_good_files").joinpath(
+                "complete-manage-pip-prod-unlock.pyproject_toml",
+            ),
+            "complete-awesome-perfect",
+            id="Buildable-package-pyproject.toml",
         ),
-        "complete-awesome-perfect",
     ),
 )
-ids_alter_env = ("Buildable package pyproject.toml",)
-
-
-@pytest.mark.parametrize(
-    "p_toml_file, pkg_name_expected",
-    testdata_alter_env,
-    ids=ids_alter_env,
-)
 def test_alter_env(
-    p_toml_file,
-    pkg_name_expected,
-    path_project_base,
-    prep_pyproject_toml,
-    prepare_folders_files,
-    tmp_path,
-):
+    relpath_toml_file: "Path",
+    pkg_name_expected: str | None,
+    path_project_base: "Callable[[], Path]",
+    prep_pyproject_toml: "Callable[[Path, Path, Path | str | None], Path]",
+    prepare_folders_files: "Callable[[Sequence[str | Path] | MutableSet[str | Path] | Path], set[Path]]",
+    tmp_path: "Path",
+    request: pytest.FixtureRequest,
+) -> None:
     """Test AlterEnv."""
     # pytest --showlocals --log-level INFO -k "test_alter_env" tests
+    abspath_tests_dir = request.path.parent
+    p_toml_file = abspath_tests_dir.joinpath(relpath_toml_file)
+
     path_cwd = path_project_base()
     # NotADirectoryError
     kind = "tag"
@@ -707,7 +706,10 @@ def test_alter_env(
                 ae = AlterEnv(tmp_path, kind)
 
 
-def test_write_version_file(tmp_path, prep_pyproject_toml):
+def test_write_version_file(
+    tmp_path: "Path",
+    prep_pyproject_toml: "Callable[[Path, Path, Path | str | None], Path]",
+) -> None:
     """Test write_version_file."""
     # pytest --showlocals --log-level INFO -k "test_write_version_file" tests
     # prepare
@@ -759,13 +761,20 @@ def test_write_version_file(tmp_path, prep_pyproject_toml):
             write_version_file(tmp_path, kind, is_test=True)
 
 
-def test_get_tag_version(tmp_path, prep_pyproject_toml, prepare_folders_files):
+def test_get_tag_version(
+    tmp_path: "Path",
+    prep_pyproject_toml: "Callable[[Path, Path, Path | str | None], Path]",
+    prepare_folders_files: "Callable[[Sequence[str | Path] | MutableSet[str | Path] | Path], set[Path]]",
+) -> None:
     """Test get_tag_version."""
     # pytest --showlocals --log-level INFO -k "test_get_tag_version" tests
     path_cwd = tmp_path / "complete_awesome_perfect"
     path_cwd.mkdir()
-    path_dir_dest = path_cwd.joinpath("src", "complete_awesome_perfect")
-    path_version_file = path_dir_dest.joinpath("_version.py")
+    path_version_file = path_cwd.joinpath(
+        "src",
+        "complete_awesome_perfect",
+        "_version.py",
+    )
     version_file_relpath = Path("src").joinpath(
         "complete_awesome_perfect",
         "_version.py",
@@ -809,11 +818,36 @@ def test_get_tag_version(tmp_path, prep_pyproject_toml, prepare_folders_files):
     assert sem_ver == sane_fallback
 
 
-def test_no_git_not_installed():
+@pytest.mark.parametrize(
+    "fcn, patch_target, patch_verb, patch_val, expected",
+    (
+        pytest.param(
+            _get_sha,
+            f"{g_app_name}.igor_utils.resolve_path",
+            "return_value",
+            None,
+            "",
+            id="_get_sha",
+        ),
+        pytest.param(
+            _get_branch,
+            f"{g_app_name}.igor_utils.resolve_path",
+            "return_value",
+            None,
+            "",
+            id="_get_branch",
+        ),
+    ),
+)
+def test_no_git_not_installed(
+    fcn: "Callable[[], str]",
+    patch_target: str,
+    patch_verb: str,
+    patch_val: str | None,
+    expected: str | None,
+) -> None:
     """Pretend git is not installed."""
-    expected = ""
-    with patch(f"{g_app_name}.igor_utils.resolve_path", return_value=None):
-        actual = _get_sha()
-        assert actual == expected
-        actual = _get_branch()
+    # pytest --showlocals --log-level INFO -k "test_no_git_not_installed" tests
+    with patch(patch_target, **{patch_verb: patch_val}):
+        actual = fcn()
         assert actual == expected

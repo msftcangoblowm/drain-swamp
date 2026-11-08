@@ -1,7 +1,7 @@
 """
 .. moduleauthor:: Dave Faulkmore <https://mastodon.social/@msftcangoblowme>
 
-Unit test -- Module
+With coverage
 
 .. code-block:: shell
 
@@ -26,6 +26,7 @@ from pathlib import (
     Path,
     PurePath,
 )
+from typing import TYPE_CHECKING
 from unittest.mock import patch
 
 import pytest
@@ -33,24 +34,37 @@ import pytest
 from drain_swamp.constants import g_app_name
 from drain_swamp.snippet_sphinx_conf import SnipSphinxConf
 
-testdata_snip_sphinx_conf_init = (
-    (None, pytest.raises(NotADirectoryError)),
-    ("doc", pytest.raises(FileNotFoundError)),
-    ("docs", pytest.raises(FileNotFoundError)),
-)
-ids_snip_sphinx_conf_init = (
-    "No doc/ or docs/ sub-folder",
-    "doc/ sub-folder",
-    "docs/ sub-folder",
-)
+if TYPE_CHECKING:
+    from collections.abc import Callable
+
+    from .typing_only import DOES_NOT_OR_DOES
 
 
 @pytest.mark.parametrize(
     "a_folder, expectation",
-    testdata_snip_sphinx_conf_init,
-    ids=ids_snip_sphinx_conf_init,
+    (
+        pytest.param(
+            None,
+            pytest.raises(NotADirectoryError),
+            id="No-doc-or-docs-sub-folder",
+        ),
+        pytest.param(
+            "doc",
+            pytest.raises(FileNotFoundError),
+            id="doc-sub-folder",
+        ),
+        pytest.param(
+            "docs",
+            pytest.raises(FileNotFoundError),
+            id="docs-sub-folder",
+        ),
+    ),
 )
-def test_snip_sphinx_conf_init(a_folder, expectation, tmp_path):
+def test_snip_sphinx_conf_init(
+    a_folder: str | None,
+    expectation: "DOES_NOT_OR_DOES",
+    tmp_path: "Path",
+) -> None:
     """Sphinx [sub-folder]/conf.py does not exist exceptions."""
     # pytest --showlocals --log-level INFO -k "test_snip_sphinx_conf_init" tests
     if a_folder is not None and isinstance(a_folder, str):
@@ -61,63 +75,85 @@ def test_snip_sphinx_conf_init(a_folder, expectation, tmp_path):
         SnipSphinxConf(path=tmp_path)
 
 
-testdata_now_to_str = (
-    (
-        None,
-        pytest.raises(TypeError),
-    ),
-    (
-        1.2345,
-        pytest.raises(TypeError),
-    ),
-    (
-        "%T",
-        does_not_raise(),
-    ),
-    (
-        "%D",
-        does_not_raise(),
-    ),
-    (
-        "%-d",
-        does_not_raise(),
-    ),
-)
-ids_now_to_str = (
-    "None",
-    "float",
-    "Windows issue. Aggregate equivalent to %H:%M:%S",
-    "MacOS issue. Aggregate equivalent to %m/%d/%Y",
-    "Linux flavor only. Day without leading zero",
-)
-
-
 @pytest.mark.parametrize(
     "format_str, expectation",
-    testdata_now_to_str,
-    ids=ids_now_to_str,
+    (
+        pytest.param(
+            None,
+            pytest.raises(TypeError),
+            id="None",
+        ),
+        pytest.param(
+            1.2345,
+            pytest.raises(TypeError),
+            id="float",
+        ),
+        pytest.param(
+            "%T",
+            does_not_raise(),
+            id="Windows-issue.-Aggregate-equivalent-to-%H:%M:%S",
+        ),
+        pytest.param(
+            "%D",
+            does_not_raise(),
+            id="MacOS-issue.-Aggregate-equivalent-to-%m/%d/%Y",
+        ),
+        pytest.param(
+            "%-d",
+            does_not_raise(),
+            id="Linux-flavor-only.-Day-without-leading-zero",
+        ),
+    ),
 )
-def test_now_to_str(format_str, expectation, path_project_base):
+def test_now_to_str(
+    format_str: str | float | None,
+    expectation: "DOES_NOT_OR_DOES",
+    path_project_base: "Callable[[], Path]",
+) -> None:
     """Test now_to_str. Patched, so should never fail."""
     # pytest --showlocals --log-level INFO -k "test_now_to_str" tests
     assert isinstance(SnipSphinxConf.now(), datetime)
     # strftime / strptime format str
     with expectation:
-        SnipSphinxConf.now_to_str(format_str)
+        SnipSphinxConf.now_to_str(
+            format_str,  # type: ignore[arg-type]
+        )
 
 
-def test_now_to_str_split():
+@pytest.mark.parametrize(
+    "dodgy, expectation",
+    (
+        pytest.param(
+            "%T",
+            does_not_raise(),
+            id="Windows-issue",
+        ),
+        pytest.param(
+            "%D",
+            does_not_raise(),
+            id="MacOS-issue",
+        ),
+        pytest.param(
+            "%-d",
+            does_not_raise(),
+            id="linux-only-flavor",
+        ),
+    ),
+)
+def test_now_to_str_split(
+    dodgy: str,
+    expectation: "DOES_NOT_OR_DOES",
+) -> None:
     """Test now_to_str_split."""
-    expectation = does_not_raise()
-    dodgys = ("%T", "%D", "%-d")
     # pytest --showlocals --log-level INFO -k "test_now_to_str_split" tests
     assert isinstance(SnipSphinxConf.now(), datetime)
-    for dodgy in dodgys:
-        with expectation:
-            assert isinstance(SnipSphinxConf.now_to_str(dodgy), str)
+    with expectation:
+        assert isinstance(SnipSphinxConf.now_to_str(dodgy), str)
 
 
-def test_snip_sphinx_conf_properties(path_project_base):
+def test_snip_sphinx_conf_properties(
+    path_project_base: "Callable[[], Path]",
+) -> None:
     """SnipSphinxConf properties."""
     # pytest --showlocals --log-level INFO -k "test_snip_sphinx_conf_properties" tests
     sc = SnipSphinxConf(path=path_project_base)
@@ -140,32 +176,46 @@ def test_snip_sphinx_conf_properties(path_project_base):
     assert sc.author_name_left is None
 
 
-test_data_contents = (
-    ("0.0.1", g_app_name, "1850", "0.0.1"),
-    ("now", g_app_name, "1850", "0.0.1"),
-    ("current", g_app_name, "1850", "0.0.1"),
-    ("tag", g_app_name, "1850", "0.0.1"),
-)
-ids_data_contents = (
-    "kind -- explicit version str",
-    "kind -- current alias",
-    "kind -- current",
-    "kind -- tag, fallback current",
-)
-
-
 @pytest.mark.parametrize(
     "kind, package_name, copyright_start_year, sem_version_str",
-    test_data_contents,
-    ids=ids_data_contents,
+    (
+        pytest.param(
+            "0.0.1",
+            g_app_name,
+            "1850",
+            "0.0.1",
+            id="kind--explicit-version-str",
+        ),
+        pytest.param(
+            "now",
+            g_app_name,
+            "1850",
+            "0.0.1",
+            id="kind--current-alias",
+        ),
+        pytest.param(
+            "current",
+            g_app_name,
+            "1850",
+            "0.0.1",
+            id="kind--current",
+        ),
+        pytest.param(
+            "tag",
+            g_app_name,
+            "1850",
+            "0.0.1",
+            id="kind--tag,-fallback-current",
+        ),
+    ),
 )
 def test_snip_sphinx_conf_contents(
-    kind,
-    package_name,
-    copyright_start_year,
-    sem_version_str,
-    path_project_base,
-):
+    kind: str,
+    package_name: str,
+    copyright_start_year: str,
+    sem_version_str: str,
+    path_project_base: "Callable[[], Path]",
+) -> None:
     """Test SnipSphinxConf.contents."""
     # pytest --showlocals --log-level INFO -k "test_snip_sphinx_conf_contents" tests
     cmd = []
@@ -214,46 +264,43 @@ def test_snip_sphinx_conf_contents(
         )
 
 
-testdata_snip_sphinx_conf_replace = (
+@pytest.mark.parametrize(
+    "relpath_example, kind, package_name, copyright_start_year, id_, skeleton",
     (
-        Path(__file__).parent.joinpath(
-            "_good_snips",
-            "test_snip_harden_one_snip__with_id_.txt",
-        ),
-        "0.0.1",
-        g_app_name,
-        "1850",
-        "asdf",
-        """zzzzzzzzzzzzz
+        pytest.param(
+            Path("_good_snips").joinpath("test_snip_harden_one_snip__with_id_.txt"),
+            "0.0.1",
+            g_app_name,
+            "1850",
+            "asdf",
+            """zzzzzzzzzzzzz
 # @@@ editable {}
 {}
 # @@@ end
 zzzzzzzzzzzzz""",
+            id="replace-compare-against-template",
+        ),
     ),
 )
-ids_snip_sphinx_conf_replace = ("replace compare against template",)
-
-
-@pytest.mark.parametrize(
-    "path_example, kind, package_name, copyright_start_year, id_, skeleton",
-    testdata_snip_sphinx_conf_replace,
-    ids=ids_snip_sphinx_conf_replace,
-)
 def test_snip_sphinx_conf_replace(
-    path_example,
-    kind,
-    package_name,
-    copyright_start_year,
-    id_,
-    skeleton,
-    tmp_path,
-):
+    relpath_example: "Path",
+    kind: str,
+    package_name: str,
+    copyright_start_year: str,
+    id_: str,
+    skeleton: str,
+    tmp_path: "Path",
+    request: pytest.FixtureRequest,
+) -> None:
     """Test SnipSphinxConf.replace."""
     # pytest --showlocals --log-level INFO -k "test_snip_sphinx_conf_replace" tests
+    abspath_tests_dir = request.path.parent
+    abspath_example = abspath_tests_dir.joinpath(relpath_example)
+
     path_dir = tmp_path.joinpath("docs")
     path_dir.mkdir()
 
-    contents_orig = path_example.read_text()
+    contents_orig = abspath_example.read_text()
 
     path_file = path_dir.joinpath("conf.py")
     path_file.write_text(contents_orig)

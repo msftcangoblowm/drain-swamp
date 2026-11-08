@@ -8,8 +8,7 @@ git --> setuptools-scm --> kitting (howto.txt / igor.py / Makefile) --> semantic
    packaging.version.Version
    :py:class:`[docs] <packaging.version.Version>`
 
-Release phases
----------------
+**Release phases**
 
 Without SETUPTOOLS_SCM_PRETEND_VERSION_FOR_DRAIN_SWAMP environmental variable
 locals are included in version
@@ -75,11 +74,6 @@ Move the tag past post commits
    Read only mapping. key is long name. value is abbreviation. Long
    names will be converted into the abbreviations
 
-.. py:data:: _logger
-   :type: logging.Logger
-
-   Module level logger
-
 """
 
 import importlib.util
@@ -123,6 +117,7 @@ __all__ = (
 )
 
 _map_release = types.MappingProxyType({"alpha": "a", "beta": "b", "candidate": "rc"})
+#: logging.Logger: Module level logger
 _logger = logging.getLogger("drain_swamp.version_semantic")
 
 
@@ -311,16 +306,13 @@ def _remove_v(ver):
     local, remaining = _strip_local(remaining)
 
     # If prepended "v", remove it. epoch e.g. ``1!v1.0.1`` would conceal the "v"
-    if remaining.startswith("v"):
-        remaining = remaining[1:]
+    remaining = remaining.removeprefix("v")
 
     ret = epoch if epoch is not None else ""
     ret += remaining
 
-    if local is not None:
+    if local is not None:  # pragma: no branch
         ret += f"+{local}"
-    else:  # pragma: no cover
-        pass
 
     return ret
 
@@ -421,15 +413,12 @@ def sanitize_tag(ver):
         str_after = str_remaining_whole
         is_still_issue = False
 
-    if is_still_issue:
+    if is_still_issue:  # pragma: no branch
         try:
             v = Version(str_after)
         except InvalidVersion as e:
             msg = f"Version contains invalid token. {e}"
             raise ValueError(msg) from e
-    else:  # pragma: no cover
-        # Do nothing
-        pass
 
     v = Version(str_after)
     ret = str(v)
@@ -462,11 +451,9 @@ def _pre_split(_v):
         ret_long = None
 
         # ret_short means we recognize the short form, regardless of Version's opinion
-        for _, short_ in _map_release.items():
-            if short_ == short:
+        for short_ in _map_release.values():
+            if short_ == short:  # pragma: no branch
                 ret_short = short_
-            else:  # pragma: no cover
-                pass
 
         if ret_short is None:  # pragma: no cover
             # unrecognized short
@@ -474,14 +461,13 @@ def _pre_split(_v):
             pass
         else:  # pragma: no cover
             for long_, short_ in _map_release.items():
-                if ret_short == short_:
+                if ret_short == short_:  # pragma: no branch
                     if long_ != "candidate":
                         ret_long = long_
                     else:
                         # candidate is not a valid semantic version component
                         ret_long = short_
-                else:  # pragma: no cover
-                    pass
+
             ret = (ret_long, serial, ret_short)
 
     return ret
@@ -573,8 +559,8 @@ def get_version(ver, is_use_final=False):
 
 
 def _current_version(path=None):
-    """:py:mod:`setuptools_scm` get the current
-    version. Which more often than not is a development version
+    """``setuptools-scm`` retrieves the current version. Which more often than
+    not is a development version.
 
     :param path:
 
@@ -658,12 +644,12 @@ def _tag_version(
 
     """
     # empty str means take current tag version
-    ret = _arbritary_version(next_version, path=path)
+    ret = _arbitrary_version(next_version, path=path)
 
     return ret
 
 
-def _arbritary_version(
+def _arbitrary_version(
     next_version,
     path=None,
 ):
@@ -948,7 +934,7 @@ class SemVersion:
             return ret
 
         def check_accidental_seq_str(val):
-            """Accidentily pass in a Sequence[str] rather than an str.
+            """Accidentally pass in a Sequence[str] rather than an str.
 
             :param val: Possibly a Sequence[str] or a str
             :type val: typing.Any
@@ -1365,7 +1351,7 @@ class SemVersion:
         else:
             bol_is_latest = is_latest
 
-        if bol_is_latest is True:
+        if bol_is_latest:
             ver_ = "latest"
         else:
             ver_ = self.version_xyz()

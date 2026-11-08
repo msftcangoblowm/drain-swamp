@@ -20,14 +20,6 @@ In ``pyproject.toml``, configure the plugin manager to execute the build plugins
 
    :ref:`setuptools:extension:customizing-commands`
 
-   :ref:`gh_ss:setuptools`
-
-   :ref:`gh_ss:pyproject_reading`
-
-   :ref:`gh_ss:config`
-
-   :ref:`gh_ss:get_version_impl`
-
    :ref:`setuptools:ConfigSettingsTranslator`
 
    :ref:`setuptools:issues:2491`
@@ -235,8 +227,7 @@ def infer_version(dist):
     )
     _rage_quit(project_abspath, msg)
 
-    path_cwd = Path(project_abspath)
-    path_f = path_cwd.joinpath("pyproject.toml")
+    path_f = Path(project_abspath).joinpath("pyproject.toml")
 
     tp = TomlParser(path_f)
 

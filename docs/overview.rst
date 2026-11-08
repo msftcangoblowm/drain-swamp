@@ -181,7 +181,7 @@ Use :ref:`Bash workaround <gh_dsa:bash>`
 
 **tox**
 
-Similiar to *cli*. During ``pre_command``, the TOML file and
+Similar to *cli*. During ``pre_command``, the TOML file and
 environment variable DS_CONFIG_SETTINGS are created.
 
 :ref:`tox test <gh_ds:tox-test>`

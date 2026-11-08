@@ -34,8 +34,6 @@ Usage
 
 """
 
-from __future__ import annotations
-
 import copy
 import sys
 from collections.abc import Mapping
@@ -79,11 +77,11 @@ def get_requires_for_build_sdist(config_settings=None):
     .. note:: setuptools_scm
 
        setuptools_scm hook occurs after our plugins. Would brutishly and
-       clumsly to overwrite the version.
+       clumsily overwrite the version.
 
        Remove pyproject.toml [tool.setuptools_scm] section
 
-       setuptools_scm generates WARNINGs w/ tracebacks; can be safely ignored
+       setuptools_scm generates warnings w/ tracebacks; can be safely ignored
 
     .. note::
 
@@ -130,8 +128,7 @@ def get_requires_for_build_sdist(config_settings=None):
         d_config_settings = copy.deepcopy(config_settings)
 
     # Ensure an initial version file exists. The version within can be incorrect
-    path_cwd = Path.cwd()
-    path_f = path_cwd.joinpath("pyproject.toml")
+    path_f = Path.cwd().joinpath("pyproject.toml")
     write_to_file(str(path_f), SEM_VERSION_FALLBACK_SANE, is_only_not_exists=True)
 
     from drain_swamp.monkey.wrap_infer_version import run_build_plugins
