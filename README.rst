@@ -19,7 +19,7 @@ Python build backend with build plugins and dependency lock switch
 **new in 2.1.x**
 
 fork dependency fixing into separate package; add wreck support;
-add pytest-logging-strict support;
+add pytest-logging-strict support; vcs_versioning support;
 
 **new in 2.0.x**
 

@@ -52,13 +52,18 @@ Changelog
    Commit items for NEXT VERSION
    ..............................
 
-   - feat: vcs_versioning support
-   - chore: license change to encourage upstreaming MPL-2.0
-   - ci: bump versions
-   - chore: requirements bump versions
-   - tests: pytest.mark.parametrize with pytest.param and id
-
 .. scriv-start-here
+
+.. _changes_2-1-2:
+
+Version 2.1.2 — 2026-11-13
+--------------------------
+
+- feat: vcs_versioning support
+- chore: license change to encourage upstreaming MPL-2.0
+- ci: bump versions
+- chore: requirements bump versions
+- tests: pytest.mark.parametrize with pytest.param and id
 
 .. _changes_2-1-1:
 
