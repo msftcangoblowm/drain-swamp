@@ -303,3 +303,21 @@ def verify_tag_version() -> "Callable[[Path, str], bool]":
         return is_eq
 
     return _method
+
+
+@pytest.fixture(scope="session")
+def has_vcs_versioning() -> bool:
+    """Confirm when setuptools-scm needs vcs_versioning"""
+    from importlib.metadata import (
+        PackageNotFoundError,
+        version,
+    )
+
+    from packaging.version import Version
+
+    try:
+        ret = Version(version("setuptools-scm")) >= Version("10")
+    except PackageNotFoundError:
+        ret = False
+
+    return ret

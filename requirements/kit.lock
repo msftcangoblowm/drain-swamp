@@ -28,7 +28,7 @@ pyelftools==0.31
     # via auditwheel
 pyproject-hooks==1.2.0
     # via build
-setuptools-scm==8.3.1
+setuptools-scm==10.3.4
     # via -r requirements/kit.in
 zipp==3.21.0
     # via importlib-metadata

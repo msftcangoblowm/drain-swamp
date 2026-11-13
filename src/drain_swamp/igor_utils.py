@@ -492,8 +492,6 @@ def get_tag_version(path):
 
     :param path: current working directory path
     :type path: pathlib.Path
-    :param is_test: Default False. During testing set to True
-    :type is_test: bool | None
     :returns: tag version fall back to current version
     :rtype: str
     :raises:

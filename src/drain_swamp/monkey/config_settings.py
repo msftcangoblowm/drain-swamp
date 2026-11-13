@@ -7,31 +7,27 @@
 
    Module exports
 
-.. py:data:: log
-   :type: logging.Logger
-
-   Module level logger
-
 """
 
 import logging
 import os
-import sys
+import tomllib
 from pathlib import (
     Path,
     PurePath,
 )
+from typing import TYPE_CHECKING
 
 from wreck.monkey.patch_pyproject_reading import ReadPyproject
 
 from ..constants import g_app_name
 
-if sys.version_info >= (3, 11):  # pragma: no cover py-gte-311-else
-    import tomllib
-else:  # pragma: no cover py-gte-311
-    import tomli as tomllib
+if TYPE_CHECKING:
+    from typing import ClassVar
 
 __all__ = ("ConfigSettings",)
+
+#: logging.Logger: Module level logger
 log = logging.getLogger(f"{g_app_name}.monkey.config_settings")
 
 
@@ -86,9 +82,9 @@ class ConfigSettings:
     :vartype file_name: str | None
     """
 
-    SECTION_NAME: str = "config-settings"
-    ENVIRON_KEY: str = "DS_CONFIG_SETTINGS"
-    FILE_NAME_DEFAULT: str = "setuptools-build.toml"
+    SECTION_NAME: "ClassVar[str]" = "config-settings"
+    ENVIRON_KEY: "ClassVar[str]" = "DS_CONFIG_SETTINGS"
+    FILE_NAME_DEFAULT: "ClassVar[str]" = "setuptools-build.toml"
 
     __slots__ = ("_file_name",)
 
@@ -141,20 +137,20 @@ class ConfigSettings:
         """
         if val is not None and issubclass(type(val), PurePath):
             toml_path = str(val)
-        elif val is not None and isinstance(val, str):
+        elif val is not None and isinstance(val, str) and bool(val.strip()):
+            # non-empty str
             toml_path = val
         else:
             toml_path = None
 
-        if toml_path is not None:
+        if toml_path is not None:  # pragma: no branch
             os.environ[cls.ENVIRON_KEY] = toml_path
-        else:  # pragma: no cover
-            pass
 
     @classmethod
     def remove_abs_path(cls):
         """Remove environment variable holding the config settings temp file path."""
-        del os.environ[cls.ENVIRON_KEY]
+        k = cls.ENVIRON_KEY
+        os.environ.pop(k, None)
 
     def read(self):
         """Environment variable DS_CONFIG_SETTINGS contains an absolute
@@ -197,7 +193,7 @@ class ConfigSettings:
                     d_section = pyproj_data.section
 
                     # No config settings. Log warning
-                    if len(d_section.keys()) == 0:
+                    if len(d_section.keys()) == 0:  # pragma: no branch
                         msg_warn = (
                             "Expected env variable, DS_CONFIG_SETTINGS. Should contain "
                             "path to .toml file. File contains project.name, "
@@ -205,8 +201,6 @@ class ConfigSettings:
                             "tool.config-settings.set-lock"
                         )
                         log.warning(msg_warn)
-                    else:  # pragma: no cover
-                        pass
 
             else:  # pragma: no cover
                 d_section = {}

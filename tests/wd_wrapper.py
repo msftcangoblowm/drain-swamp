@@ -63,7 +63,10 @@ class WorkDir:
         if kw:
             assert isinstance(cmd, str), "formatting the command requires text input"
             cmd = cmd.format(**kw)
-        from setuptools_scm._run_cmd import run
+        try:
+            from vcs_versioning._run_cmd import run
+        except (ModuleNotFoundError, ImportError):
+            from setuptools_scm._run_cmd import run
 
         return run(cmd, cwd=self.cwd).stdout
 
@@ -167,7 +170,10 @@ class WorkDir:
         :rtype: str
         """
         __tracebackhide__ = True
-        from setuptools_scm import get_version
+        try:
+            from vcs_versioning import get_version
+        except (ModuleNotFoundError, ImportError):
+            from setuptools_scm import get_version
 
         version = get_version(root=self.cwd, fallback_root=self.cwd, **kw)
         print(self.cwd.name, version, sep=": ")

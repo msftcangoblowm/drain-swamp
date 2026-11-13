@@ -31,7 +31,7 @@ if TYPE_CHECKING:
 
 
 @pytest.mark.parametrize(
-    "toml_contents, snippet_co, expected_count",
+    "toml_contents, snippet_co, file_name, expected_count",
     (
         pytest.param(
             (
@@ -44,25 +44,60 @@ if TYPE_CHECKING:
                 """snip-co={}\n\n"""
             ),
             "my_snippet_co",
+            None,
             0,
             id="Missing-double-quotes-surroundeding-snip-co",
+        ),
+        pytest.param(
+            (
+                "[project]\n"
+                """name = "great-package"\n"""
+                """version = "99.99.99a1.dev6"\n"""
+                "[tool.config-settings]\n"
+                """kind="current"\n"""
+                """set-lock="1"\n"""
+                """snip-co="{}"\n\n"""
+            ),
+            "my_snippet_co",
+            "setuptools-build.toml",
+            3,
+            id="provide-config-filename-same-as-default",
+        ),
+        pytest.param(
+            (
+                "[project]\n"
+                """name = "great-package"\n"""
+                """version = "99.99.99a1.dev6"\n"""
+                "[tool.config-settings]\n"
+                """kind="current"\n"""
+                """set-lock="1"\n"""
+                """snip-co="{}"\n\n"""
+            ),
+            "my_snippet_co",
+            "my-non-default-config-filename.toml",
+            3,
+            id="provide-config-filename-not-same-as-default",
         ),
     ),
 )
 def test_config_settings_malformed(
     toml_contents: str,
     snippet_co: str,
+    file_name: "str | None",
     expected_count: int,
     tmp_path: "Path",
 ) -> None:
-    """Malformed config_settings."""
+    """Pass build backend options so available build backend during python -m build"""
     # pytest --showlocals --log-level INFO -k "test_config_settings_malformed" tests
-    # prepare
-    #    snippet contents
+    # prepare -- temporary config file contents
     contents = toml_contents.format(snippet_co)
 
     # act
-    d_section = ConfigSettings.get_section_dict(tmp_path, contents)
+    d_section = ConfigSettings.get_section_dict(
+        tmp_path,
+        contents,
+        file_name=file_name,
+    )
 
     # verify
     assert isinstance(d_section, Mapping)

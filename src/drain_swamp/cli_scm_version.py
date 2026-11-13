@@ -76,6 +76,8 @@ EXIT CODES
 
 4 -- invalid semantic str. Skip. Do not write that nonsense to version file
 
+5 -- setuptools-scm encountered (in [tools.vcs-versioning]) or fed (from [tools.drain-swamp]) unexpected keyword argument(s)
+
 """
 
 
@@ -151,6 +153,9 @@ def get_scm_version(path, is_write, write_to):
             # invalid semantic version str (from git?!)
             msg_warn = str(e)
             exit_code = 4
+        except TypeError as e:
+            msg_warn = str(e)
+            exit_code = 5
         else:
             exit_code = 0
 
@@ -219,6 +224,9 @@ def write_scm_version(scm_ver, path, write_to):
         # invalid semantic version str
         msg_warn = str(e)
         exit_code = 4
+    except TypeError as e:
+        msg_warn = str(e)
+        exit_code = 5
     else:
         exit_code = 0
 

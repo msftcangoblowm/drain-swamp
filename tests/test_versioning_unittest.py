@@ -564,35 +564,53 @@ class SemVersioning(unittest.TestCase):
             self.assertTrue(str_url.endswith("latest"))
 
     def test_version_clean(self) -> None:
-        """version_clean can take kind: current, now, tag, version str."""
+        """version_clean can take kind: current, now, tag, version str.
+
+        When ``kind`` is None this implies either:
+
+        - ``git init`` has never been called
+
+        - no commits
+
+        This raises ValueError.
+
+        drain_swamp.version_semantic.SemVersion is stand alone, not integrated
+        as a Python build back.
+        Although would prefer a sane_fallback, there is no way to receive that,
+        non-programmically, not hardcoded, and not causing an UX burden.
+
+        drain_swamp.monkey.wrap_get_version.SEM_VERSION_FALLBACK_SANE is applied
+        at the Python build backend level.
+        """
+        sane_fallback = "0.0.1"
 
         # Specify version explicitly. To transition to pre or post or rc ...
         #    Sanitizes version str
-        kind = "0.0.1"  # use this instead of from git
+        kind_0 = "0.0.1"  # use this instead of from git
         sv = SemVersion(path=self.cwd)
-        actual_ver = sv.version_clean(kind)
-        self.assertEqual(actual_ver, kind)
-        self.assertEqual(actual_ver, sv.__version__)
+        actual_ver_0 = sv.version_clean(kind_0)
+        self.assertEqual(actual_ver_0, kind_0)
+        self.assertEqual(actual_ver_0, sv.__version__)
 
         # invalid explicit version str
         # nowhere boys (aussie series vs some ancient power ranger like cartoon)
-        kind = "five element spirit or nature?"
+        kind_1 = "five element spirit or nature?"
         with self.assertRaises(ValueError):
-            sanitize_tag(kind)
+            sanitize_tag(kind_1)
 
         with self.assertRaises(ValueError):
-            sv.version_clean(kind)
+            sv.version_clean(kind_1)
 
         """tag --> 0.0.1
         Avoid changing _version.py"""
-        kind = "tag"
-        expected = "0.0.1"
+        kind_2 = "tag"
+        expected_2 = "0.0.1"
         #    Avoid changing _version.py
         with (
             patch(f"{g_app_name}.version_semantic._tag_version", return_value="0.0.1"),
         ):
-            actual = sv.version_clean(kind)
-            self.assertEqual(actual, expected)
+            actual_2 = sv.version_clean(kind_2)
+            self.assertEqual(actual_2, expected_2)
 
         """tag. No tagged, so get current. Current found.
         Avoid changing _version.py"""
@@ -600,33 +618,40 @@ class SemVersioning(unittest.TestCase):
         with (
             patch(f"{g_app_name}.version_semantic._tag_version", return_value=None),
             patch(
-                f"{g_app_name}.version_semantic._current_version", return_value=expected
+                f"{g_app_name}.version_semantic._current_version",
+                return_value=expected_2,
             ),
         ):
-            actual_ver = sv.version_clean(kind)
-            self.assertEqual(actual, expected)
+            actual_ver_3 = sv.version_clean(kind_2)
+            self.assertEqual(actual_ver_3, expected_2)
 
         """tag. Both return None; no commits at all.
         Avoid changing _version.py
         """
-        kind = "tag"
-        sane_fallback = "0.0.1"
+        kind_4 = "tag"
+        both_none_4 = None
+        # git init never called or no commits at all
         with (
-            patch(f"{g_app_name}.version_semantic._tag_version", return_value=None),
+            patch(
+                f"{g_app_name}.version_semantic._tag_version",
+                return_value=both_none_4,
+            ),
             patch(
                 f"{g_app_name}.version_semantic._current_version",
-                return_value=sane_fallback,
+                return_value=both_none_4,
             ),
         ):
-            actual_ver = sv.version_clean(kind)
-            self.assertEqual(actual_ver, sane_fallback)
+            # sanitize_tag expects a str. ValueError protects
+            #    sanitize_tag from call where kind=None
+            with self.assertRaises(ValueError):
+                sv.version_clean(kind_4)
 
         # current aliases. git uninitialized --> sane fallback "0.0.1"
-        kinds = (
+        kinds_5 = (
             "current",
             "now",
         )
-        for kind in kinds:
+        for kind_5 in kinds_5:
             #    Avoid changing _version.py
             with (
                 patch(
@@ -634,8 +659,8 @@ class SemVersioning(unittest.TestCase):
                     return_value=sane_fallback,
                 ),
             ):
-                actual_ver = sv.version_clean(kind)
-                self.assertEqual(actual_ver, sane_fallback)
+                actual_ver_5 = sv.version_clean(kind_5)
+                self.assertEqual(actual_ver_5, sane_fallback)
 
     def test_sanitize_kind(self) -> None:
         """Can provide a version str or get latest tag or current dev version."""

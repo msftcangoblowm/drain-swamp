@@ -47,6 +47,8 @@ def version_keyword(dist, keyword, value):
     d_value = {
         "local_scheme": get_local_node_and_date,
         "version_scheme": guess_next_dev_version,
+        # overwrite source code rather than just in build/
+        "write_to_source": True,
     }
     # In version_keyword _config.Configuration.from_file param _require_section=False
     _version_keyword(dist, keyword, d_value)

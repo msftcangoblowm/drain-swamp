@@ -35,11 +35,15 @@ from unittest.mock import (
 
 import pytest  # noqa: F401
 from setuptools.dist import Distribution
-from setuptools_scm._config import Configuration
 from wreck.monkey.patch_pyproject_reading import ReadPyprojectStrict
 
 from drain_swamp.constants import g_app_name
 from drain_swamp.monkey.wrap_version_keyword import version_keyword
+
+try:
+    from setuptools_scm._config import Configuration
+except (ImportError, ModuleNotFoundError):  # pragma: no cover
+    from vcs_versioning._config import Configuration
 
 if TYPE_CHECKING:
     import logging
@@ -65,6 +69,7 @@ def test_version_keyword(
     logging_strict: "Callable[[], tuple[logging.Logger, Sequence[logging.Logger]]]",
     has_logging_occurred: "Callable[[], bool]",
     version_file: "Path",
+    has_vcs_versioning: bool,
 ) -> None:
     """setuptools-scm would normally needs a setup.py to be executed"""
     # pytest --showlocals --log-level INFO -k "test_version_keyword" tests
@@ -96,24 +101,53 @@ def test_version_keyword(
     dist.set_defaults()
 
     relative_to = "pyproject.toml"
-    data = {"root": root_abspath, "write_to": path_version_file_relpath}
-    with (
-        # setuptools_scm._integration.setuptools._assign_version
-        patch(
-            "setuptools_scm._integration.setuptools._config._read_pyproject",
-            new_callable=MagicMock(wraps=ReadPyprojectStrict),
-        ),
-        # setuptools_scm._config.Configuration.from_file
-        patch(
-            "setuptools_scm._config._read_pyproject",
-            new_callable=MagicMock(wraps=ReadPyprojectStrict),
-        ),
-        patch(
-            "setuptools_scm._config.Configuration.from_data",
-            return_value=Configuration.from_data(relative_to, data),
-        ),
-    ):
-        # getter; not a setter. So src/_version.py not written to
+    d_data = {
+        "root": root_abspath,
+        "write_to": path_version_file_relpath,
+        "write_to_source": True,
+    }
+    # tool_names = ["DRAIN_SWAMP"]
+    # env = VcsEnvironment.from_env(*tool_names, dist_name=dist)
+    # pyproject = read_pyproject(path=Path(root_abspath).joinpath(relative_to), tool_names=[])
+
+    if not has_vcs_versioning:
+        # setuptools-scm>=8,<10 was subclassing, a forgiving, PyProjectData
+        with (
+            patch(
+                "setuptools_scm._integration.setuptools._config._read_pyproject",
+                new_callable=MagicMock(wraps=ReadPyprojectStrict),
+            ),
+            patch(
+                "setuptools_scm._config._read_pyproject",
+                new_callable=MagicMock(wraps=ReadPyprojectStrict),
+            ),
+            patch(
+                "setuptools_scm._config.Configuration.from_data",
+                return_value=Configuration.from_data(relative_to, d_data),
+            ),
+        ):
+            # getter; not a setter. So src/_version.py not written to
+            version_keyword(dist, key, value)
+    else:
+        # `vcs_versioning` has a dataclass (not NamedTuple), `PyProjectData`.
+        #    config ([tool.vcs-versioning]) and drain_cfg ([tool.drain-swamp])
+        #    can co-exist. `drain_swamp` only forwards `vcs_versioning` supported
+        #     config settings to `vcs_versioning`.
+        """
+        with (
+            patch(
+                "vcs_versioning._pyproject_reading.read_pyproject",
+                new_callable=MagicMock(wraps=ReadPyprojectStrict),
+            ),
+            patch(
+                "vcs_versioning._config.Configuration.from_data",
+                return_value=Configuration.from_data(relative_to, d_data),  # _env=env
+            ),
+        ):
+            # getter; not a setter. So src/_version.py not written to
+            version_keyword(dist, key, value)
+        """
+        # does this even need to be patched?!
         version_keyword(dist, key, value)
 
     assert isinstance(dist.metadata.version, str)

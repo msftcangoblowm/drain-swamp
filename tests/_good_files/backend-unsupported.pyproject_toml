@@ -1,11 +1,12 @@
 [build-system]
 requires = [
-    "setuptools>=70.0.0",
+    "setuptools>=77.0.3",
     "wheel",
     "build",
-    "setuptools_scm>=8",
+    "setuptools_scm",
     "click",
     "pluggy",
     "drain-swamp-snippet",
+    "wreck",
 ]
 build-backend = "scooby-doo-loud-but-drab-color-scheme.build_meta"

@@ -15,6 +15,7 @@ setuptools-scm ``setup.py``
 from __future__ import annotations
 
 import contextlib
+import copy
 import io
 import logging
 import warnings
@@ -22,29 +23,40 @@ from pathlib import Path
 
 from packaging.version import InvalidVersion
 from setuptools_scm import (
-    Configuration,
-    _get_version,
     git,
     hg,
 )
-from setuptools_scm._integration.pyproject_reading import get_args_for_pyproject
 from setuptools_scm.fallbacks import parse_pkginfo
 from setuptools_scm.version import (
     get_local_node_and_date,
     guess_next_dev_version,
     tag_to_version,
 )
-from wreck.monkey.patch_pyproject_reading import ReadPyproject
+from wreck.monkey.patch_pyproject_reading import ReadPyprojectStrict
 
 from ..version_file.dump_version import write_version_files
 
 try:
+    VcsEnvironment = None
+    from setuptools_scm import (
+        Configuration,
+        _get_version,
+    )
+    from setuptools_scm._integration.pyproject_reading import get_args_for_pyproject
     from setuptools_scm._overrides import read_toml_overrides
 except ModuleNotFoundError:  # pragma: no cover
     # introduced in v10.0.0, has dependency packaging>=26.2 which is ng
+    from vcs_versioning import (
+        PyProjectData,
+        build_configuration_from_pyproject,
+    )
+    from vcs_versioning._config import Configuration
+    from vcs_versioning._environment import VcsEnvironment
     from vcs_versioning._overrides import (
         read_toml_overrides,  # type: ignore[import-not-found]  # pyright: ignore[reportMissingImports]  # fmt: skip
     )
+    from vcs_versioning._pyproject_reading import get_args_for_pyproject
+    from vcs_versioning._toml import InvalidTomlError
 
 #: logging.Logger: Module level logger
 log = logging.getLogger("drain_swamp.monkey.wrap_get_version")
@@ -75,9 +87,9 @@ def _parse(root, config):
 
        A data class usually derived for the most part from ``pyproject.toml``
 
-    :type config: setuptools_scm.Configuration
+    :type config: vcs_versioning._config.Configuration
     :returns: version str from the underlying scm
-    :rtype: setuptools_scm.ScmVersion | None
+    :rtype: vcs_versioning.ScmVersion | None
     :meta private:
     """
     mod_path = "drain_swamp.monkey.wrap_get_version._parse"
@@ -101,8 +113,30 @@ def _parse(root, config):
         return None
 
 
-def scm_version(relative_to, sane_default=SEM_VERSION_FALLBACK_SANE):
-    """Get the scm version from git or Mercurial
+def _scm_version_format(scm_version):
+    """patch (rtype) to override returned sem version str.
+
+    ``setuptools-scm>=8,<10`` setuptools_scm._get_version does not have a clean
+    UI. Must pass in params: config and kwargs.
+
+    :type scm_version: vcs_versioning._scm_version.SemVersion
+    :returns: sem version str
+    :rtype: str | None
+    """
+    optscm_ver = None
+    if VcsEnvironment is not None:  # pragma: no branch
+        # setuptools_scm>=10
+        optscm_ver = scm_version.format() if scm_version is not None else None
+
+    return optscm_ver
+
+
+def scm_version(
+    relative_to,
+    sane_default=SEM_VERSION_FALLBACK_SANE,
+    tool_names=["DRAIN_SWAMP"],
+):
+    """Get the scm version from git or Mercurial.
 
     Does not write to the version_file
 
@@ -114,6 +148,11 @@ def scm_version(relative_to, sane_default=SEM_VERSION_FALLBACK_SANE):
        cuz git uninitialized
 
     :type sane_default: typing.Any | None
+    :param tool_names:
+
+       All caps and underscore package name used in setuptools-scm env variables.
+
+    :type tool_names: list[str]
     :returns: parsed version str
     :rtype: str
 
@@ -127,6 +166,11 @@ def scm_version(relative_to, sane_default=SEM_VERSION_FALLBACK_SANE):
     if is_empty:  # pragma: no cover  # pragma: no branch
         sane_default = SEM_VERSION_FALLBACK_SANE
 
+    if tool_names is None or not isinstance(tool_names, list) or not tool_names:
+        lst_tool_names = ["DRAIN_SWAMP"]
+    else:
+        # this list will be mutated. Avoid working on the original
+        lst_tool_names = copy.copy(tool_names)
     """Configuration.from_file needs to be patched, not Configuration.from_data
     Configuration.from_data does not parse pyproject.toml can't / don't
     write to version_file
@@ -136,15 +180,37 @@ def scm_version(relative_to, sane_default=SEM_VERSION_FALLBACK_SANE):
         "version_scheme": guess_next_dev_version,
         "local_scheme": get_local_node_and_date,
     }
-    config = Configuration.from_data(relative_to, d_data)
+    # get config
+    if VcsEnvironment is not None:
+        env = VcsEnvironment.from_env(*lst_tool_names)
+        d_data["parse"] = None
+        config = env.build_config_from_data(
+            relative_to,
+            d_data,
+        )
+        config.write_to_source = True
+        config.local_scheme = "no-local-version"
+    else:
+        config = Configuration.from_data(relative_to, d_data)
 
-    scm_ver = _get_version(config, force_write_version_files=False)
+    # from config get scm version
+    if VcsEnvironment is not None:  # pragma: no branch
+        workdir = config.discover_workdir()
+        if workdir is None:
+            # git not initialized
+            optscm_ver = None
+        else:
+            scm_version = workdir.get_scm_version()
+            # scm_version.tag w/o distance logic
+            optscm_ver = _scm_version_format(scm_version)
+    else:
+        optscm_ver = _get_version(config, force_write_version_files=False)
 
     # Apply sane default if no override, no version_file, and no fallback
-    if scm_ver is None:
+    if optscm_ver is None:
         ret = sane_default
     else:
-        ret = scm_ver
+        ret = optscm_ver
 
     msg_info = f"INFO {mod_path} parsed version: {ret} "
     log.info(msg_info)
@@ -186,6 +252,8 @@ def write_to_file(
        - :py:exc:`ValueError` -- Semantic version str invalid. Write
          to version file skipped
 
+       - :py:exc:`TypeError` -- setuptool-scm feed unexpected keyword argument(s)
+
     """
     if is_only_not_exists is None or not isinstance(
         is_only_not_exists, bool
@@ -196,40 +264,76 @@ def write_to_file(
     path_file_on_root = Path(name)
     path_root = path_file_on_root.parent
 
-    try:
-        # pyproject_data = read_pyproject(path_file_on_root)
-        pyproject_data = ReadPyproject()(path=path_file_on_root)
-    except LookupError as e:
-        msg_info = (
-            "To set version_file, in pyproject.toml [tool.drain-swamp] "
-            "Set version_file to a relative path to a .py file"
-        )
-        # log.info(msg_info)
-        msg_warn = (
-            "Either missing pyproject.toml or missing sections: "
-            f"[tool.drain-swamp] {path_file_on_root}"
-        )
-        # log.warning(msg_warn)
-        msgs = f"{msg_info}\n{msg_warn}"
-        raise LookupError(msgs) from e
+    msg_info = (
+        "To set version_file, in pyproject.toml [tool.drain-swamp] "
+        "Set version_file to a relative path to a .py file"
+    )
+    # log.info(msg_info)
+    msg_warn = (
+        "Either missing pyproject.toml or missing sections: "
+        f"[tool.drain-swamp] {path_file_on_root}"
+    )
+    # log.warning(msg_warn)
+    msgs_lookup = f"{msg_info}\n{msg_warn}"
 
-    args = get_args_for_pyproject(pyproject_data, dist_name, kwargs)
-    args.update(read_toml_overrides(args["dist_name"]))
-    # relative_to = args.pop("relative_to", name)
+    try:
+        drain_cfg = ReadPyprojectStrict()(path=path_file_on_root)
+    except LookupError as e:
+        raise LookupError(msgs_lookup) from e
+
+    if VcsEnvironment is None:
+        pyproject = drain_cfg
+    else:
+        try:
+            # raises InvalidTomlError, FileNotFoundError
+            pyproject = PyProjectData.from_file(
+                path=path_file_on_root,
+            )
+            # Same issue, Configuration dataclass is too rigid
+            # raises TypeError -- encounter unexpected keyword argument
+            config = build_configuration_from_pyproject(
+                pyproject_data=pyproject,
+                # drain_swamp.constants.package_name
+                dist_name=dist_name,
+                **drain_cfg.section_parent,
+                local_scheme="no-local-version",
+            )
+        except TypeError:
+            raise
+        except (InvalidTomlError, FileNotFoundError) as e:
+            raise LookupError(msgs_lookup) from e
+        # vcs_versioning wants this explicitly set otherwise DepreciationWarning
+        config.write_to_source = True
 
     is_empty = (
         write_to is None or not isinstance(write_to, str) or len(write_to.strip()) == 0
     )
-    if is_empty:
-        version_file = args.get("version_file")
-        str_write_to = None
+
+    if VcsEnvironment is not None:
+        # setuptools_scm>=10
+        if is_empty:
+            version_file = drain_cfg.section.get("version_file")
+            str_write_to = None
+        else:
+            # for testing
+            version_file = None
+            str_write_to = write_to
     else:
-        # for testing
-        version_file = None
-        str_write_to = write_to
+        # setuptools_scm<10
+        args = get_args_for_pyproject(pyproject, dist_name, kwargs)
+        args.update(read_toml_overrides(args["dist_name"]))
+        config = Configuration()
+        if is_empty:
+            version_file = args.get("version_file")
+            str_write_to = None
+        else:
+            # for testing
+            version_file = None
+            str_write_to = write_to
 
     # Check semantic version str. Skip if invalid
-    config = Configuration()
+    # relative_to = args.pop("relative_to", name)
+
     #    py311+ warnings.catch_warnings has category and action kwargs
     with warnings.catch_warnings():
         # setuptools_scm/version.py:102: UserWarning:
@@ -241,7 +345,13 @@ def write_to_file(
         )
         # BUG (upstream setuptools-scm): not catching InvalidVersion exception
         try:
-            ver_clean = tag_to_version(str_ver, config)
+            if VcsEnvironment is not None:
+                ver_clean = tag_to_version(
+                    str_ver,
+                    config,
+                )
+            else:
+                ver_clean = tag_to_version(str_ver, config)
         except InvalidVersion:
             """Passes regex (setuptools_scm.version._parse_version_tag),
             but is invalid semantic version str, e.g. '0.0.1-dev1.g1234123'

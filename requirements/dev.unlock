@@ -13,7 +13,6 @@ pluggy
 pytest-logging-strict
 pytest-regressions
 pytest>=7.1
-setuptools-scm>=8.2.0,<10
 types-setuptools
 validate-pyproject
 wreck>=0.2.4

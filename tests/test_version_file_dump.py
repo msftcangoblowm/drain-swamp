@@ -348,9 +348,11 @@ def test_scm_version_fail(
     wd: WorkDir,
     prep_pyproject_toml: "Callable[[Path, Path, Path | None], Path | None]",
     request: pytest.FixtureRequest,
+    has_vcs_versioning: bool,
 ) -> None:
     """Test scm_version fail conditions."""
     # pytest --showlocals --log-level INFO -k "test_scm_version_fail" tests
+    # pytest --showlocals --log-level INFO "tests/test_version_file_dump.py::test_scm_version_fail[_get_version-returns-None--sane-default]"
     abspath_tests_dir = request.path.parent
     p_toml_file = abspath_tests_dir.joinpath(relp_toml_file)
 
@@ -360,8 +362,15 @@ def test_scm_version_fail(
     config_abspath = str(path_config)
 
     # act
+    if has_vcs_versioning:
+        patch_target = "drain_swamp.monkey.wrap_get_version._scm_version_format"
+    else:
+        # setuptools_scm._get_version imported within module,
+        #    drain_swamp.monkey.wrap_get_version
+        patch_target = "drain_swamp.monkey.wrap_get_version._get_version"
+
     with patch(
-        "drain_swamp.monkey.wrap_get_version._get_version",
+        patch_target,
         return_value=scm_str,
     ):
         sem_ver_str = scm_version(config_abspath)

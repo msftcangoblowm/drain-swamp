@@ -458,7 +458,6 @@ def _pre_split(_v):
         if ret_short is None:  # pragma: no cover
             # unrecognized short
             ret = None
-            pass
         else:  # pragma: no cover
             for long_, short_ in _map_release.items():
                 if ret_short == short_:  # pragma: no branch
@@ -502,10 +501,8 @@ def get_version(ver, is_use_final=False):
          requires one commit. setupttools-scm requires one tagged commit
 
     """
-    if is_use_final is None or not isinstance(is_use_final, bool):
+    if is_use_final is None or not isinstance(is_use_final, bool):  # pragma: no branch
         is_use_final = False
-    else:  # pragma: no cover
-        pass
 
     # epoch and locals and prepend v ... remove
     _v = _remove_v(ver)
@@ -588,10 +585,8 @@ def _current_version(path=None):
     is_drain_swamp = is_package_installed("drain_swamp")
 
     # Check setuptools-scm package is installed
-    if not is_setuptools_scm or not is_drain_swamp:
+    if not is_setuptools_scm or not is_drain_swamp:  # pragma: no branch
         return None
-    else:  # pragma: no cover
-        pass
 
     if ep_path is None:
         cmd = [
@@ -720,15 +715,13 @@ def _arbitrary_version(
         )
 
         # Check tool.setuptools.dynamic.version
-        if not is_version:  # pragma: no cover
+        if not is_version:  # pragma: no cover  # pragma: no branch
             msg_warn = (
                 "Expecting tool.setuptools.dynamic.version to contain "
                 f"attr or file key, {msg_issue}"
             )
             warnings.warn(msg_warn)
             return None
-        else:  # pragma: no cover
-            pass
 
         d_version = d_dynamic["version"]
         is_attr = "attr" in d_version.keys() and isinstance(d_version["attr"], str)
@@ -743,7 +736,7 @@ def _arbitrary_version(
             dotted_path_to_module = dots[:-1]
 
             # this is an assumption
-            # ############################################################################################
+            # ##########################################################################
             lst_relpath = ["src"]
 
             lst_relpath.extend(dotted_path_to_module)
@@ -775,7 +768,9 @@ def _arbitrary_version(
                 loader = importlib.util.LazyLoader(spec.loader)
                 loader.exec_module(module)
                 mixed_var = getattr(module, variable_name, None)
-                if mixed_var is None or not isinstance(mixed_var, str):
+                if mixed_var is None or not isinstance(
+                    mixed_var, str
+                ):  # pragma: no branch
                     msg_warn = (
                         "In version_file (python module), "
                         f"{path_version_file} module  variable, "
@@ -785,8 +780,7 @@ def _arbitrary_version(
                     )
                     warnings.warn(msg_warn)
                     return None
-                else:  # pragma: no cover
-                    pass
+
                 ver_tag = mixed_var
         elif is_file:
             path_f = path_package_base.joinpath(d_version["file"])
@@ -794,18 +788,16 @@ def _arbitrary_version(
             is_not_file = not (
                 path_f.exists() and path_f.is_file() and path_f.suffixes == [".txt"]
             )
-            if is_not_file:
+            if is_not_file:  # pragma: no branch
                 msg_warn = (
                     "Could not find version_file "
                     f"""{d_version["file"]} {msg_issue}"""
                 )
                 warnings.warn(msg_warn)
                 return None
-            else:  # pragma: no cover
-                pass
 
             # limit read size to avoid bufferoverflow attack
-            # ###############################################################################################
+            # ##########################################################################
             ver_tag = path_f.read_text()
         else:  # pragma: no cover
             # Check tool.setuptools.dynamic.version.[file|attr] value valid
@@ -911,7 +903,7 @@ class SemVersion:
            version or want the tagged version. "current" will most likely
            get a development version
 
-        :type kind: str | None
+        :type kind: str
         :returns: kind ("current" or "tag") or a version str
         :rtype: str
         """
@@ -1136,10 +1128,9 @@ class SemVersion:
         """
         ret = val
         for long_, short_ in _map_release.items():
-            if short_ == ret:
+            if short_ == ret:  # pragma: no branch
                 ret = long_
-            else:  # pragma: no cover
-                pass
+
         self._releaselevel = ret
 
     @property
@@ -1152,7 +1143,7 @@ class SemVersion:
         long_form = self.releaselevel
         ret = long_form
         for long_, short_ in _map_release.items():
-            if long_ == long_form:
+            if long_ == long_form:  # pragma: no branch
                 ret = short_
 
         return ret
@@ -1213,15 +1204,11 @@ class SemVersion:
 
         version_fields: tuple[int | str, ...] = sv.release
 
-        if sv.dev is not None:
+        if sv.dev is not None:  # pragma: no branch
             version_fields += (f"dev{sv.dev}",)
-        else:  # pragma: no cover
-            pass
 
-        if sv._local is not None:
+        if sv._local is not None:  # pragma: no branch
             version_fields += (sv._local,)
-        else:  # pragma: no cover
-            pass
 
         return version_fields
 
@@ -1316,7 +1303,7 @@ class SemVersion:
             rel = self.releaselevel_abbr
 
             is_rel = rel is not None and isinstance(rel, str) and len(rel) != 0
-            if is_rel and rel != "final":
+            if is_rel and rel != "final":  # pragma: no branch
                 ret += f"{rel}{self.serial}"
 
         return ret
@@ -1341,10 +1328,8 @@ class SemVersion:
         :rtype: str
         """
         # app-name --> package_name
-        if "_" in package_name:
+        if "_" in package_name:  # pragma: no branch
             package_name = package_name.replace("_", "-")
-        else:  # pragma: no cover
-            pass
 
         if is_latest is None or not isinstance(is_latest, bool):
             bol_is_latest = False
@@ -1355,10 +1340,8 @@ class SemVersion:
             ver_ = "latest"
         else:
             ver_ = self.version_xyz()
-            if ver_ is None:
+            if ver_ is None:  # pragma: no branch
                 ver_ = "latest"
-            else:  # pragma: no cover
-                pass
 
         ret = f"https://{package_name}.readthedocs.io/en/{ver_}"
 
@@ -1407,8 +1390,11 @@ class SemVersion:
         if kind_ not in cls.KINDS:
             # Version str. Will become next version
             git_ver = kind_
+
+            # non-empty str
             try:
-                clean_ver, local = sanitize_tag(git_ver)
+                t_out_0 = sanitize_tag(git_ver)
+                clean_ver, local = t_out_0
             except ValueError:
                 self._version = None
                 raise
@@ -1430,25 +1416,30 @@ class SemVersion:
                 )
                 git_ver = func()
                 # Check -- version file semantic version str
-                if git_ver is not None:
+                if git_ver is not None:  # pragma: no branch
                     try:
                         sanitize_tag(git_ver)
                     except ValueError:
                         # invalid semantic version str in version file
                         git_ver = None
-                else:  # pragma: no cover
-                    pass
 
-                if git_ver is None:
+                if git_ver is None:  # pragma: no branch
                     """No tagged version. Fallback to current version.
                     No git init, current version --> "0.0.1"
                     """
                     func = partial(_current_version, path=self.path_cwd)
                     git_ver = func()
-                else:  # pragma: no cover
-                    pass
 
-            clean_ver, local = sanitize_tag(git_ver)
+            if git_ver is None:  # pragma: no branch
+                self._version = None
+                msg_warn = (
+                    "Could not get tag or current version. Likely no commits."
+                    "Which is why there should be a sane default"
+                )
+                raise ValueError(msg_warn)
+
+            t_out_1 = sanitize_tag(git_ver)
+            clean_ver, local = t_out_1
 
         self._version = clean_ver
 

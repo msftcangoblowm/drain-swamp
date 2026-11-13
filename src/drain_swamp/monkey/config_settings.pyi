@@ -14,7 +14,7 @@ class ConfigSettings:
     ENVIRON_KEY: ClassVar[str]
     FILE_NAME_DEFAULT: ClassVar[str]
 
-    __slots__: ClassVar[tuple[str]] = ("_file_name",)
+    __slots__ = ("_file_name",)
     def __init__(self, file_name: str | None = None) -> None: ...
     @classmethod
     def get_abs_path(cls) -> str | None: ...

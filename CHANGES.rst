@@ -8,6 +8,12 @@ Changelog
    Feature request
    .................
 
+   - test environments
+
+     local restrict to 'setuptools-scm==8.3.1'
+
+     tox uses 'setuptools-scm==10.3.4'
+
    - Confirm setuptools-scm file finders are being called?
 
    - self hosted package server. See article
@@ -46,7 +52,7 @@ Changelog
    Commit items for NEXT VERSION
    ..............................
 
-   - fix: setuptools_scm split off vcs_versioning
+   - feat: vcs_versioning support
    - chore: license change to encourage upstreaming MPL-2.0
    - ci: bump versions
    - chore: requirements bump versions

@@ -19,6 +19,7 @@ Integration test
 
 """
 
+import traceback
 from pathlib import Path
 from typing import TYPE_CHECKING
 from unittest.mock import patch
@@ -80,19 +81,29 @@ def test_get_scm_version_missing_pyproject_toml(
     scm_ver = "0.0.1"
     cmd = (scm_ver, "--path", path_tmp_dir, "--write-to", seq_rel_path[0])
     result = runner.invoke(write_scm_version, cmd)
-    assert result.exit_code == 3
+    exit_code_actual = result.exit_code
+    exit_code_expected = 3
+    assert exit_code_actual == exit_code_expected
     assert path_version_file.stat().st_size == 0
     del scm_ver
 
     # no pyproject.toml --> LookupError (3). Missing sections
     cmd = ("--path", path_tmp_dir, "--is-write", "--write-to", seq_rel_path[0])
     result = runner.invoke(get_scm_version, cmd)
+    result_tb = (  # noqa: F841
+        "".join(
+            traceback.format_exception(*result.exc_info),
+        )
+        if result.exception
+        else ""
+    )
     assert result.exit_code == 3
 
 
 @pytest.mark.logging_package_name(g_app_name)
 def test_get_scm_version_normal(
     tmp_path: "Path",
+    request: pytest.FixtureRequest,
     prep_pyproject_toml: "Callable[[Path, Path, Path | None], Path | None]",
     prepare_folders_files: "Callable[[Sequence[str | Path] | MutableSet[str | Path]], set[Path]]",
     logging_strict: "Callable[[], tuple[logging.Logger, Sequence[logging.Logger]]]",
@@ -110,6 +121,8 @@ def test_get_scm_version_normal(
     t_two = logging_strict()
     logger, loggers = t_two
 
+    abspath_tests_dir = request.path.parent
+
     runner = CliRunner()
     path_tmp_dir = tmp_path
 
@@ -119,7 +132,7 @@ def test_get_scm_version_normal(
 
     # prepare
     #    pyproject.toml
-    p_toml_file = Path(__file__).parent.joinpath(
+    p_toml_file = abspath_tests_dir.joinpath(
         "_good_files", "complete-manage-pip-prod-unlock.pyproject_toml"
     )
     prep_pyproject_toml(p_toml_file, path_tmp_dir)
@@ -132,6 +145,8 @@ def test_get_scm_version_normal(
         """__version_tuple__ = version_tuple = (0, 2, 0)\n\n"""
     )
     path_version_file.write_text(str_version_file)
+
+    # GIT INIT has not occurred --> sane fallback 0.0.1
 
     # act -- get_scm_version
     cmd = ("--path", path_tmp_dir, "--is-write", "--write-to", seq_rel_path[0])

@@ -1,4 +1,3 @@
 colorama>=0.4.6 ;platform_system=="Windows"
-setuptools-scm>=8.2.0,<10
 tox
 tox-gh-actions

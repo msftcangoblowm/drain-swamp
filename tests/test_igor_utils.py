@@ -763,11 +763,14 @@ def test_write_version_file(
 
 def test_get_tag_version(
     tmp_path: "Path",
+    request: pytest.FixtureRequest,
     prep_pyproject_toml: "Callable[[Path, Path, Path | str | None], Path]",
     prepare_folders_files: "Callable[[Sequence[str | Path] | MutableSet[str | Path] | Path], set[Path]]",
 ) -> None:
     """Test get_tag_version."""
     # pytest --showlocals --log-level INFO -k "test_get_tag_version" tests
+    abspath_tests_dir = request.path.parent
+
     path_cwd = tmp_path / "complete_awesome_perfect"
     path_cwd.mkdir()
     path_version_file = path_cwd.joinpath(
@@ -784,14 +787,14 @@ def test_get_tag_version(
     srcs = (path_version_file,)
     prepare_folders_files(srcs, path_cwd)
 
-    sem_ver = "0.0.2"
-    write_version_files(sem_ver, path_cwd, version_file_relpath, None)
+    sem_ver_0 = "0.0.2"
+    write_version_files(sem_ver_0, path_cwd, version_file_relpath, None)
 
     #    no pyproject.toml
     with (pytest.raises(AssertionError),):
         get_tag_version(path_cwd)
 
-    p_toml_src = Path(__file__).parent.joinpath(
+    p_toml_src = abspath_tests_dir.joinpath(
         "_good_files",
         "complete-manage-pip-prod-unlock.pyproject_toml",
     )
@@ -799,7 +802,7 @@ def test_get_tag_version(
 
     #    success
     actual = get_tag_version(path_cwd)
-    assert actual == sem_ver
+    assert actual == sem_ver_0
 
     #    NotADirectory
     path_f = path_cwd.joinpath("fish.txt")
@@ -813,9 +816,13 @@ def test_get_tag_version(
     )
     path_version_file.write_text(str_version_file)
 
-    sane_fallback = "0.0.1"
-    sem_ver = get_tag_version(path_cwd)
-    assert sem_ver == sane_fallback
+    # This situation is supposed to have a sane default/fallback of "0.0.1".
+    # `drain_swamp.igor_utils` does not have integration that drain-swamp has. So cannot
+    # grab the sane default like `drain_swamp.version_semantic` does.
+
+    scm_ver_expected_1 = "0.0.1"
+    scm_ver_actual_1 = get_tag_version(path_cwd)
+    assert scm_ver_actual_1 == scm_ver_expected_1
 
 
 @pytest.mark.parametrize(

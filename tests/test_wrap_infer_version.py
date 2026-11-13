@@ -32,7 +32,6 @@ from pathlib import Path
 from typing import TYPE_CHECKING
 
 import pytest
-from setuptools_scm._version_cls import _version_as_tuple
 from wreck._run_cmd import run_cmd
 
 from drain_swamp.constants import g_app_name
@@ -40,6 +39,11 @@ from drain_swamp.monkey.config_settings import ConfigSettings
 from drain_swamp.monkey.wrap_infer_version import _rage_quit
 
 from .wd_wrapper import WorkDir
+
+try:
+    from setuptools_scm._version_cls import _version_as_tuple
+except (ImportError, ModuleNotFoundError):  # pragma: no cover
+    from vcs_versioning._version_cls import _version_as_tuple
 
 if TYPE_CHECKING:
     import logging
@@ -204,6 +208,7 @@ def test_dist_get_cmdline_options(
         "[project]\n"
         f"""name = "{app_name}"\n"""
         """version = "99.99.99a1.dev6"\n"""
+        """license = "MPL-2.0"\n"""
         f"[tool.{ConfigSettings.SECTION_NAME}]\n"
         f"""kind="{kind}"\n"""
         """set-lock="0"\n\n"""
@@ -390,7 +395,7 @@ def test_config_settings_read(
     has_logging_occurred: "Callable[[], bool]",
 ) -> None:
     """Test ConfigSettings read."""
-    # pytest --showlocals --log-level INFO -k "test_get_config_settings" tests
+    # pytest --showlocals --log-level INFO -k "test_config_settings_read" tests
     t_two = logging_strict()
     logger, loggers = t_two
 
@@ -426,7 +431,7 @@ def test_config_settings_set_abs_path(
     has_logging_occurred: "Callable[[], bool]",
 ) -> None:
     """Test ConfigSettings set_abs_path."""
-    # pytest --showlocals --log-level INFO -k "test_get_config_settings" tests
+    # pytest --showlocals --log-level INFO -k "test_config_settings_set_abs_path" tests
     # prepare
     ConfigSettings.remove_abs_path()
 
@@ -439,6 +444,7 @@ def test_config_settings_set_abs_path(
     invalids = (
         None,
         0.1234,
+        "   ",  # empty str or whitespace only
     )
     for invalid in invalids:
         ConfigSettings.set_abs_path(invalid)
